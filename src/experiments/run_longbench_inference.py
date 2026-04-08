@@ -128,6 +128,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--cache-dir", type=Path)
     parser.add_argument("--hf-token")
     parser.add_argument("--batch-size", type=int, default=1)
+    parser.add_argument("--max-length", type=int, default=32768)
+    parser.add_argument("--disable-entropy-hook", action="store_true")
     parser.add_argument("--eval-perplexity", action="store_true")
     parser.add_argument("--ppl-max-samples", type=int, default=0)
     parser.add_argument("--lm-datasets", nargs="+", choices=sorted(LM_DATASET_SPECS.keys()), default=[])
@@ -422,9 +424,9 @@ def _build_backend(args: argparse.Namespace):
             use_exllama=args.use_exllama,
         ),
         dtype=args.dtype,
-        max_length=32768,
+        max_length=args.max_length,
     )
-    scheduler_hook = EntropyGuidedSchedulerHook(entropy_threshold=5.0)
+    scheduler_hook = None if args.disable_entropy_hook else EntropyGuidedSchedulerHook(entropy_threshold=5.0)
     if args.backend == "ollama":
         return OllamaBackend(
             model_spec=model_spec,
@@ -664,6 +666,8 @@ def run_longbench(args: argparse.Namespace) -> dict[str, object]:
         "dataset_name": args.dataset_name,
         "dataset_config": args.dataset_config,
         "batch_size": args.batch_size,
+        "max_length": args.max_length,
+        "disable_entropy_hook": args.disable_entropy_hook,
         "eval_perplexity": args.eval_perplexity,
         "ppl_max_samples": args.ppl_max_samples,
         "lm_datasets": args.lm_datasets,

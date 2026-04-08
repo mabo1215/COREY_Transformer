@@ -10,6 +10,42 @@ from importlib import metadata
 from typing import Any
 
 
+def official_mamba_fast_path_status() -> dict[str, bool | str | None]:
+    status: dict[str, bool | str | None] = {
+        "selective_scan_fn": None,
+        "mamba_inner_fn": None,
+        "selective_state_update": None,
+        "causal_conv1d_fn": None,
+        "causal_conv1d_update": None,
+        "error": None,
+    }
+    try:
+        from mamba_ssm.ops.selective_scan_interface import mamba_inner_fn, selective_scan_fn
+    except Exception as exc:  # pragma: no cover - depends on optional CUDA extensions
+        status["error"] = repr(exc)
+        return status
+
+    status["selective_scan_fn"] = selective_scan_fn is not None
+    status["mamba_inner_fn"] = mamba_inner_fn is not None
+
+    try:
+        from mamba_ssm.ops.triton.selective_state_update import selective_state_update
+
+        status["selective_state_update"] = selective_state_update is not None
+    except Exception:
+        status["selective_state_update"] = False
+
+    try:
+        from causal_conv1d import causal_conv1d_fn, causal_conv1d_update
+
+        status["causal_conv1d_fn"] = causal_conv1d_fn is not None
+        status["causal_conv1d_update"] = causal_conv1d_update is not None
+    except Exception:
+        status["causal_conv1d_fn"] = False
+        status["causal_conv1d_update"] = False
+    return status
+
+
 @dataclass(frozen=True)
 class QuantizationConfig:
     mode: str = "fp16"
