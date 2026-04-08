@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import json
 import time
+import urllib.error
+import urllib.request
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from importlib import metadata
 from typing import Any
 
 
@@ -40,6 +44,7 @@ class GenerationRequest:
     temperature: float = 0.0
     top_p: float = 1.0
     do_sample: bool = False
+    stop: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -93,8 +98,14 @@ class MambaBackend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def score_perplexity(self, text: str) -> float:
+    def score_perplexity(self, text: str) -> float | None:
         raise NotImplementedError
+
+    def generate_batch(self, requests: list[GenerationRequest]) -> list[GenerationOutput]:
+        return [self.generate(request) for request in requests]
+
+    def score_perplexity_batch(self, texts: list[str]) -> list[float | None]:
+        return [self.score_perplexity(text) for text in texts]
 
 
 class HuggingFaceMambaBackend(MambaBackend):
@@ -121,15 +132,31 @@ class HuggingFaceMambaBackend(MambaBackend):
             ) from exc
         return torch, AutoModelForCausalLM, AutoTokenizer
 
+    def _transformers_uses_dtype_keyword(self) -> bool:
+        version = self._package_version("transformers")
+        if version is None:
+            return False
+        major_version = int(version.split(".", maxsplit=1)[0])
+        return major_version >= 5
+
+    def _package_version(self, package_name: str) -> str | None:
+        try:
+            return metadata.version(package_name)
+        except metadata.PackageNotFoundError:
+            return None
+
     def _load_awq_model(self, model_kwargs: dict[str, Any]) -> Any:
         try:
             from awq import AutoAWQForCausalLM
         except ImportError as exc:
             raise ImportError(
-                "AWQ loading requires the autoawq package."
+                f"AWQ loading requires a working autoawq stack; import failed with: {exc}"
             ) from exc
 
         quantization = self.runtime_config.quantization
+        awq_version = self._package_version("autoawq") or self._package_version("awq")
+        if awq_version is None:
+            raise ImportError("Unable to determine the installed autoawq/awq version.")
         load_kwargs = {
             "trust_remote_code": self.model_spec.trust_remote_code,
             "fuse_layers": quantization.fuse_layers,
@@ -146,10 +173,13 @@ class HuggingFaceMambaBackend(MambaBackend):
             from auto_gptq import AutoGPTQForCausalLM
         except ImportError as exc:
             raise ImportError(
-                "GPTQ loading requires the auto-gptq package."
+                f"GPTQ loading requires a working auto-gptq stack; import failed with: {exc}"
             ) from exc
 
         quantization = self.runtime_config.quantization
+        gptq_version = self._package_version("auto-gptq") or self._package_version("auto_gptq")
+        if gptq_version is None:
+            raise ImportError("Unable to determine the installed auto-gptq version.")
         load_kwargs = {
             "device": self.runtime_config.device,
             "trust_remote_code": self.model_spec.trust_remote_code,
@@ -164,6 +194,19 @@ class HuggingFaceMambaBackend(MambaBackend):
             load_kwargs["group_size"] = quantization.group_size
         return AutoGPTQForCausalLM.from_quantized(self.model_spec.model_id, **load_kwargs)
 
+    def _maybe_move_to_device(self) -> None:
+        assert self.model is not None
+        quantization_backend = (self.runtime_config.quantization.backend or "").lower()
+        if quantization_backend and quantization_backend not in {"none", "fp16"}:
+            return
+        if hasattr(self.model, "to"):
+            self.model.to(self.runtime_config.device)
+
+    def _prepare_quantized_model(self) -> None:
+        assert self.model is not None
+        if hasattr(self.model, "eval"):
+            self.model.eval()
+
     def load(self) -> None:
         torch, auto_model, auto_tokenizer = self._require_dependencies()
         self.torch = torch
@@ -176,10 +219,11 @@ class HuggingFaceMambaBackend(MambaBackend):
 
         quantization_mode = self.runtime_config.quantization.mode.lower()
         quantization_backend = (self.runtime_config.quantization.backend or "").lower()
-        if quantization_mode == "fp16":
-            model_kwargs["torch_dtype"] = getattr(torch, self.runtime_config.dtype)
+        dtype_key = "dtype" if self._transformers_uses_dtype_keyword() else "torch_dtype"
+        if quantization_mode in {"fp16", "fp32"}:
+            model_kwargs[dtype_key] = getattr(torch, self.runtime_config.dtype)
         else:
-            model_kwargs["torch_dtype"] = getattr(torch, "float16")
+            model_kwargs[dtype_key] = getattr(torch, "float16")
 
         self.tokenizer = auto_tokenizer.from_pretrained(self.model_spec.model_id, trust_remote_code=True)
         if quantization_backend in {"awq", "autoawq"}:
@@ -188,8 +232,8 @@ class HuggingFaceMambaBackend(MambaBackend):
             self.model = self._load_gptq_model(model_kwargs)
         else:
             self.model = auto_model.from_pretrained(self.model_spec.model_id, **model_kwargs)
-        self.model.to(self.runtime_config.device)
-        self.model.eval()
+        self._maybe_move_to_device()
+        self._prepare_quantized_model()
 
     def _ensure_loaded(self) -> None:
         if self.model is None or self.tokenizer is None or self.torch is None:
@@ -201,7 +245,12 @@ class HuggingFaceMambaBackend(MambaBackend):
         assert self.tokenizer is not None
         assert self.torch is not None
 
-        encoded = self.tokenizer(request.prompt, return_tensors="pt", truncation=True)
+        encoded = self.tokenizer(
+            request.prompt,
+            return_tensors="pt",
+            truncation=True,
+            max_length=self.runtime_config.max_length,
+        )
         encoded = {key: value.to(self.runtime_config.device) for key, value in encoded.items()}
 
         entropy_before: float | None = None
@@ -215,14 +264,19 @@ class HuggingFaceMambaBackend(MambaBackend):
                 entropy_after = entropy_before
                 tile_size = int(profile["tile_size"])
 
+            generation_kwargs: dict[str, Any] = {
+                "max_new_tokens": request.max_new_tokens,
+                "do_sample": request.do_sample,
+                "pad_token_id": self.tokenizer.eos_token_id,
+            }
+            if request.do_sample:
+                generation_kwargs["temperature"] = request.temperature
+                generation_kwargs["top_p"] = request.top_p
+
             start_time = time.perf_counter()
             generated = self.model.generate(
                 **encoded,
-                max_new_tokens=request.max_new_tokens,
-                do_sample=request.do_sample,
-                temperature=request.temperature,
-                top_p=request.top_p,
-                pad_token_id=self.tokenizer.eos_token_id,
+                **generation_kwargs,
             )
             elapsed_s = time.perf_counter() - start_time
 
@@ -245,17 +299,164 @@ class HuggingFaceMambaBackend(MambaBackend):
             suggested_tile_size=tile_size,
         )
 
-    def score_perplexity(self, text: str) -> float:
+    def generate_batch(self, requests: list[GenerationRequest]) -> list[GenerationOutput]:
+        self._ensure_loaded()
+        assert self.model is not None
+        assert self.tokenizer is not None
+        assert self.torch is not None
+        if not requests:
+            return []
+
+        prompts = [request.prompt for request in requests]
+        encoded = self.tokenizer(
+            prompts,
+            return_tensors="pt",
+            truncation=True,
+            padding=True,
+            max_length=self.runtime_config.max_length,
+        )
+        encoded = {key: value.to(self.runtime_config.device) for key, value in encoded.items()}
+
+        max_new_tokens = max(request.max_new_tokens for request in requests)
+        do_sample = any(request.do_sample for request in requests)
+        generation_kwargs: dict[str, Any] = {
+            "max_new_tokens": max_new_tokens,
+            "do_sample": do_sample,
+            "pad_token_id": self.tokenizer.eos_token_id,
+        }
+        if do_sample:
+            generation_kwargs["temperature"] = max(request.temperature for request in requests)
+            generation_kwargs["top_p"] = min(request.top_p for request in requests)
+
+        entropy_before_values: list[float | None] = [None] * len(requests)
+        tile_sizes: list[int | None] = [None] * len(requests)
+        with self.torch.no_grad():
+            if self.scheduler_hook is not None:
+                embeddings = self.model.get_input_embeddings()(encoded["input_ids"])
+                for index in range(embeddings.shape[0]):
+                    profile = self.scheduler_hook.profile_hidden_states(embeddings[index : index + 1])
+                    entropy_before_values[index] = float(profile["entropy"])
+                    tile_sizes[index] = int(profile["tile_size"])
+
+            start_time = time.perf_counter()
+            generated = self.model.generate(
+                **encoded,
+                **generation_kwargs,
+            )
+            elapsed_s = time.perf_counter() - start_time
+
+        attention_mask = encoded.get("attention_mask")
+        outputs: list[GenerationOutput] = []
+        for index, request in enumerate(requests):
+            prompt_length = int(attention_mask[index].sum().item()) if attention_mask is not None else int(encoded["input_ids"].shape[1])
+            generated_tokens = generated[index, prompt_length : prompt_length + request.max_new_tokens]
+            generated_text = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+            generated_token_count = int(generated_tokens.shape[-1])
+            telemetry = RuntimeTelemetry(
+                prompt_tokens=prompt_length,
+                generated_tokens=generated_token_count,
+                latency_ms=(elapsed_s * 1000.0) / len(requests),
+                tokens_per_second=(generated_token_count / elapsed_s) if elapsed_s > 0 else 0.0,
+            )
+            outputs.append(
+                GenerationOutput(
+                    text=generated_text,
+                    telemetry=telemetry,
+                    entropy_before=entropy_before_values[index],
+                    entropy_after=entropy_before_values[index],
+                    suggested_tile_size=tile_sizes[index],
+                )
+            )
+        return outputs
+
+    def score_perplexity(self, text: str) -> float | None:
         self._ensure_loaded()
         assert self.model is not None
         assert self.tokenizer is not None
         assert self.torch is not None
 
-        encoded = self.tokenizer(text, return_tensors="pt", truncation=True)
+        encoded = self.tokenizer(
+            text,
+            return_tensors="pt",
+            truncation=True,
+            max_length=self.runtime_config.max_length,
+        )
         encoded = {key: value.to(self.runtime_config.device) for key, value in encoded.items()}
         with self.torch.no_grad():
             outputs = self.model(**encoded, labels=encoded["input_ids"])
         return float(self.torch.exp(outputs.loss).item())
+
+    def score_perplexity_batch(self, texts: list[str]) -> list[float | None]:
+        return [self.score_perplexity(text) for text in texts]
+
+
+class OllamaBackend(MambaBackend):
+    def __init__(
+        self,
+        model_spec: ModelSpec,
+        runtime_config: RuntimeConfig,
+        scheduler_hook: EntropyGuidedSchedulerHook | None = None,
+        host: str = "http://127.0.0.1:11434",
+    ) -> None:
+        self.model_spec = model_spec
+        self.runtime_config = runtime_config
+        self.scheduler_hook = scheduler_hook
+        self.host = host.rstrip("/")
+
+    def _post_json(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+        request = urllib.request.Request(
+            url=f"{self.host}{path}",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=300) as response:
+                body = response.read().decode("utf-8")
+        except urllib.error.URLError as exc:
+            raise RuntimeError(f"Failed to reach Ollama at {self.host}") from exc
+        return json.loads(body)
+
+    def load(self) -> None:
+        self._post_json("/api/show", {"model": self.model_spec.model_id})
+
+    def generate(self, request: GenerationRequest) -> GenerationOutput:
+        start_time = time.perf_counter()
+        response = self._post_json(
+            "/api/generate",
+            {
+                "model": self.model_spec.model_id,
+                "prompt": request.prompt,
+                "stream": False,
+                "options": {
+                    "temperature": request.temperature,
+                    "top_p": request.top_p,
+                    "num_predict": request.max_new_tokens,
+                },
+            },
+        )
+        elapsed_s = time.perf_counter() - start_time
+        prompt_tokens = int(response.get("prompt_eval_count", 0))
+        generated_tokens = int(response.get("eval_count", 0))
+        total_duration = response.get("total_duration")
+        latency_ms = float(total_duration) / 1_000_000.0 if total_duration is not None else elapsed_s * 1000.0
+        eval_duration = response.get("eval_duration")
+        if eval_duration:
+            tokens_per_second = generated_tokens / (float(eval_duration) / 1_000_000_000.0)
+        else:
+            tokens_per_second = generated_tokens / elapsed_s if elapsed_s > 0 else 0.0
+        return GenerationOutput(
+            text=str(response.get("response", "")),
+            telemetry=RuntimeTelemetry(
+                prompt_tokens=prompt_tokens,
+                generated_tokens=generated_tokens,
+                latency_ms=latency_ms,
+                tokens_per_second=tokens_per_second,
+            ),
+        )
+
+    def score_perplexity(self, text: str) -> float | None:
+        return None
 
 
 def default_mamba_model_specs() -> list[ModelSpec]:
