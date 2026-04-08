@@ -1,0 +1,340 @@
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import math
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from statistics import mean
+
+import numpy as np
+
+from src.algorithms import (
+    ExponentialMovingEntropy,
+    OperatorSpec,
+    ResourceModel,
+    build_no_fusion_groups,
+    build_static_fusion_groups,
+    entropy_gain,
+    fused_hadamard_projection,
+    normalized_entropy,
+    outlier_ratio,
+    reference_projection,
+    select_fusion_groups,
+)
+
+
+SEQUENCE_BUCKETS = {
+    "short": (1024, 2048),
+    "medium": (4096, 8192),
+    "long": (16384, 32768),
+    "ultra_long": (65536,),
+}
+
+PRECISION_SPEEDUP = {"fp16": 1.0, "w8a8": 1.12, "w4a8": 1.22}
+PRECISION_SENSITIVITY = {"fp16": 0.0, "w8a8": 0.7, "w4a8": 1.3}
+
+
+@dataclass(frozen=True)
+class ExperimentConfig:
+    hidden_dim: int = 192
+    projection_dim: int = 256
+    tau: float = 0.52
+    repeats: int = 5
+    bins: int = 64
+    seed: int = 7
+
+
+@dataclass(frozen=True)
+class ScheduleMetrics:
+    method: str
+    sequence_length: int
+    precision: str
+    latency_ms: float
+    throughput_tokens_per_s: float
+    dram_bytes_per_token: float
+    quality_drop: float
+    average_fusion_depth: float
+    p95_group_depth: float
+    entropy_before: float
+    entropy_after: float
+    entropy_gain: float
+    outlier_before: float
+    outlier_after: float
+    max_projection_error: float
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run entropy-guided fusion experiments.")
+    parser.add_argument("--output-dir", type=Path, default=Path("src/outputs"))
+    parser.add_argument("--tau", type=float, default=0.52)
+    parser.add_argument("--repeats", type=int, default=5)
+    return parser.parse_args()
+
+
+def _sample_count(sequence_length: int) -> int:
+    return min(4096, max(512, sequence_length // 8))
+
+
+def _generate_activations(sequence_length: int, hidden_dim: int, rng: np.random.Generator) -> np.ndarray:
+    samples = _sample_count(sequence_length)
+    gaussian = rng.normal(loc=0.0, scale=1.0, size=(samples, hidden_dim))
+    heavy_tail = 0.35 * rng.standard_t(df=3.0, size=(samples, hidden_dim))
+    length_scale = 1.0 + math.log2(sequence_length) / 20.0
+    return gaussian + length_scale * heavy_tail
+
+
+def _build_operator_chain(
+    activations: np.ndarray,
+    rotated_activations: np.ndarray,
+    sequence_length: int,
+) -> list[OperatorSpec]:
+    templates = [
+        ("input_norm", 1.6, 18.0, 20, 8, 0.94),
+        ("gate_projection", 2.7, 22.0, 36, 12, 0.91),
+        ("selective_scan", 4.8, 31.0, 72, 28, 0.79),
+        ("state_mix", 3.9, 24.0, 54, 22, 0.83),
+        ("output_projection", 3.4, 19.0, 48, 18, 0.87),
+        ("activation", 1.9, 14.0, 24, 8, 0.96),
+        ("residual_merge", 1.5, 12.0, 18, 6, 0.97),
+    ]
+    seq_scale = 1.0 + math.log2(sequence_length) / 6.0
+    operators: list[OperatorSpec] = []
+    channel_splits = np.array_split(np.arange(activations.shape[1]), len(templates))
+
+    for index, (name, arithmetic_base, memory_base, register_cost, shared_memory_cost, occupancy) in enumerate(templates):
+        channels = channel_splits[index]
+        base_slice = activations[:, channels]
+        rotated_slice = rotated_activations[:, channels]
+        local_entropy = 0.55 * normalized_entropy(base_slice) + 0.45 * normalized_entropy(rotated_slice)
+        operators.append(
+            OperatorSpec(
+                name=name,
+                entropy=float(np.clip(local_entropy, 0.0, 1.0)),
+                arithmetic_intensity=arithmetic_base * seq_scale,
+                memory_traffic=memory_base * seq_scale,
+                register_cost=register_cost,
+                shared_memory_cost=shared_memory_cost,
+                occupancy=occupancy,
+            )
+        )
+
+    return operators
+
+
+def _resource_model(sequence_length: int) -> ResourceModel:
+    long_context_penalty = int(math.log2(sequence_length) * 2)
+    return ResourceModel(
+        max_registers=180 - long_context_penalty,
+        max_shared_memory=96 - long_context_penalty,
+        min_occupancy=0.72,
+    )
+
+
+def _group_depth_p95(group_depths: list[int]) -> float:
+    if not group_depths:
+        return 0.0
+    percentile_index = int(math.ceil(0.95 * len(group_depths))) - 1
+    percentile_index = max(0, min(percentile_index, len(group_depths) - 1))
+    return float(sorted(group_depths)[percentile_index])
+
+
+def _estimate_metrics(
+    method: str,
+    sequence_length: int,
+    precision: str,
+    groups,
+    entropy_before_value: float,
+    entropy_after_value: float,
+    entropy_gain_value: float,
+    outlier_before_value: float,
+    outlier_after_value: float,
+    max_projection_error: float,
+) -> ScheduleMetrics:
+    seq_scale = math.log2(sequence_length)
+    speedup = PRECISION_SPEEDUP[precision]
+    quantization_penalty = PRECISION_SENSITIVITY[precision]
+    group_depths = [group.depth for group in groups]
+    average_depth = mean(group_depths)
+
+    total_latency = 0.0
+    total_memory = 0.0
+    for group in groups:
+        memory_reuse = 1.0 - 0.09 * (group.depth - 1) - 0.08 * group.entropy
+        if method == "static_fusion":
+            memory_reuse += 0.04 * max(0.0, 0.62 - group.entropy)
+        if method == "entropy_guided":
+            memory_reuse -= 0.06 * max(entropy_gain_value, 0.0)
+        memory_reuse = float(np.clip(memory_reuse, 0.42, 1.1))
+
+        adjusted_memory = group.memory_traffic * seq_scale * memory_reuse
+        adjusted_compute = group.arithmetic_intensity * seq_scale / speedup
+        launch_overhead = 0.28 if method == "no_fusion" else 0.16
+        launch_overhead += 0.03 * max(group.depth - 3, 0)
+        if method == "entropy_guided":
+            launch_overhead -= 0.02 * min(group.depth - 1, 2)
+
+        total_memory += adjusted_memory
+        total_latency += 0.012 * adjusted_memory + 0.007 * adjusted_compute + launch_overhead
+
+    over_fusion_penalty = max(0.0, average_depth - 2.0) * max(0.0, 0.63 - entropy_after_value)
+    if method == "no_fusion":
+        over_fusion_penalty = 0.0
+    if method == "entropy_guided":
+        over_fusion_penalty *= 0.35
+
+    hadamard_bonus = 0.0
+    if method == "entropy_guided":
+        hadamard_bonus = 0.45 * max(entropy_gain_value, 0.0) + 5.0 * max(outlier_before_value - outlier_after_value, 0.0)
+
+    quality_drop = max(0.0, quantization_penalty * (0.12 + outlier_before_value * 10.0) + over_fusion_penalty - hadamard_bonus)
+    throughput = sequence_length / (total_latency / 1000.0)
+    dram_bytes_per_token = total_memory * 1024.0 / sequence_length
+
+    return ScheduleMetrics(
+        method=method,
+        sequence_length=sequence_length,
+        precision=precision,
+        latency_ms=round(total_latency, 4),
+        throughput_tokens_per_s=round(throughput, 4),
+        dram_bytes_per_token=round(dram_bytes_per_token, 4),
+        quality_drop=round(quality_drop, 4),
+        average_fusion_depth=round(average_depth, 4),
+        p95_group_depth=round(_group_depth_p95(group_depths), 4),
+        entropy_before=round(entropy_before_value, 4),
+        entropy_after=round(entropy_after_value, 4),
+        entropy_gain=round(entropy_gain_value, 4),
+        outlier_before=round(outlier_before_value, 6),
+        outlier_after=round(outlier_after_value, 6),
+        max_projection_error=round(max_projection_error, 10),
+    )
+
+
+def _write_csv(path: Path, rows: list[dict[str, object]]) -> None:
+    if not rows:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _summarize_by_bucket(results: list[ScheduleMetrics]) -> list[dict[str, object]]:
+    summary_rows: list[dict[str, object]] = []
+    for bucket_name, lengths in SEQUENCE_BUCKETS.items():
+        for precision in PRECISION_SPEEDUP:
+            for method in ("no_fusion", "static_fusion", "entropy_guided"):
+                bucket_results = [
+                    result
+                    for result in results
+                    if result.sequence_length in lengths and result.precision == precision and result.method == method
+                ]
+                if not bucket_results:
+                    continue
+                summary_rows.append(
+                    {
+                        "bucket": bucket_name,
+                        "precision": precision,
+                        "method": method,
+                        "latency_ms": round(mean(result.latency_ms for result in bucket_results), 4),
+                        "throughput_tokens_per_s": round(mean(result.throughput_tokens_per_s for result in bucket_results), 4),
+                        "dram_bytes_per_token": round(mean(result.dram_bytes_per_token for result in bucket_results), 4),
+                        "quality_drop": round(mean(result.quality_drop for result in bucket_results), 4),
+                        "average_fusion_depth": round(mean(result.average_fusion_depth for result in bucket_results), 4),
+                        "entropy_gain": round(mean(result.entropy_gain for result in bucket_results), 4),
+                    }
+                )
+    return summary_rows
+
+
+def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, object]:
+    rng = np.random.default_rng(config.seed)
+    results: list[ScheduleMetrics] = []
+    validation_rows: list[dict[str, object]] = []
+
+    for sequence_length in [length for bucket in SEQUENCE_BUCKETS.values() for length in bucket]:
+        moving_entropy = ExponentialMovingEntropy(decay=0.85, bins=config.bins)
+
+        for repeat in range(config.repeats):
+            activations = _generate_activations(sequence_length, config.hidden_dim, rng)
+            weight = rng.normal(size=(config.projection_dim, config.hidden_dim))
+            reference = reference_projection(activations, weight)
+            projected, rotated_inputs, _ = fused_hadamard_projection(activations, weight)
+
+            before_entropy = moving_entropy.update(activations)
+            after_entropy = moving_entropy.update(rotated_inputs)
+            gain = entropy_gain(activations, rotated_inputs, bins=config.bins)
+            before_outlier = outlier_ratio(activations)
+            after_outlier = outlier_ratio(rotated_inputs)
+            max_projection_error = float(np.max(np.abs(reference - projected)))
+
+            validation_rows.append(
+                {
+                    "sequence_length": sequence_length,
+                    "repeat": repeat,
+                    "entropy_before": round(before_entropy, 6),
+                    "entropy_after": round(after_entropy, 6),
+                    "entropy_gain": round(gain, 6),
+                    "outlier_before": round(before_outlier, 8),
+                    "outlier_after": round(after_outlier, 8),
+                    "max_projection_error": round(max_projection_error, 12),
+                }
+            )
+
+            chain = _build_operator_chain(activations, rotated_inputs[:, : config.hidden_dim], sequence_length)
+            resource_model = _resource_model(sequence_length)
+            schedules = {
+                "no_fusion": build_no_fusion_groups(chain),
+                "static_fusion": build_static_fusion_groups(chain, resource_model=resource_model, group_size=3),
+                "entropy_guided": select_fusion_groups(chain, tau=config.tau, resource_model=resource_model),
+            }
+
+            for precision in PRECISION_SPEEDUP:
+                for method, groups in schedules.items():
+                    results.append(
+                        _estimate_metrics(
+                            method=method,
+                            sequence_length=sequence_length,
+                            precision=precision,
+                            groups=groups,
+                            entropy_before_value=before_entropy,
+                            entropy_after_value=after_entropy,
+                            entropy_gain_value=gain,
+                            outlier_before_value=before_outlier,
+                            outlier_after_value=after_outlier,
+                            max_projection_error=max_projection_error,
+                        )
+                    )
+
+    detailed_rows = [asdict(result) for result in results]
+    summary_rows = _summarize_by_bucket(results)
+    _write_csv(output_dir / "detailed_metrics.csv", detailed_rows)
+    _write_csv(output_dir / "bucket_summary.csv", summary_rows)
+    _write_csv(output_dir / "hadamard_validation.csv", validation_rows)
+
+    metadata = {
+        "config": asdict(config),
+        "output_dir": str(output_dir),
+        "sequence_lengths": [length for bucket in SEQUENCE_BUCKETS.values() for length in bucket],
+        "methods": ["no_fusion", "static_fusion", "entropy_guided"],
+        "precisions": list(PRECISION_SPEEDUP.keys()),
+    }
+    (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    return {
+        "metadata": metadata,
+        "summary_rows": summary_rows,
+        "validation_rows": validation_rows,
+    }
+
+
+def main() -> None:
+    args = _parse_args()
+    config = ExperimentConfig(tau=args.tau, repeats=args.repeats)
+    report = run_experiments(config=config, output_dir=args.output_dir)
+    print(json.dumps(report["summary_rows"], indent=2))
+
+
+if __name__ == "__main__":
+    main()
