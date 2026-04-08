@@ -18,6 +18,7 @@
 - 任务 12：按本轮 `docs/revision_suggestions.tex` 完成正文与附录的论文级修订：统一熵记号并引入正式 theorem 环境、将主文表格补齐 Static Fusion 真值行并改用 `[t]` 浮动、明确 `quality drop` 仅为原型 proxy 指标、把 checkpoint smoke-test 数值降级到附录、补充 prototype hardware/software 环境说明，并扩展 Related Work / BibTeX 以纳入 FlashAttention、Triton、SmoothQuant 与 AWQ。
 - 任务 13：补齐真实官方 checkpoint benchmark 闭环：扩展 `run_longbench_inference.py` 以支持 `max_length` 与关闭 entropy hook，新增 `run_official_mamba_benchmark.py` 做 warmup/repeat/内存记录，并在 `state-spaces/mamba-370m-hf` 上完成一次真实 HF benchmark，产出 `src/outputs/official_hf_benchmark/` 与 `src/outputs/official_hf_benchmark_fastpath/`。同时清理 LaTeX 日志中的 duplicate hyperref destination 与 appendix overfull hbox，使论文编译日志显著收敛。
 - 任务 14：确认本机已切换到可用的 NVIDIA 环境后，将 `.venv` 中的 `torch` 重装为 `2.11.0+cu128`，验证 `torch.cuda.is_available()` 与 RTX 3070 可见，并在 GPU 上完成一次真实官方 HF Mamba benchmark，产出 `src/outputs/official_hf_benchmark_gpu/`。同时把 benchmark metadata 改为显式记录 `fast_path_status`，避免把“GPU 但无官方 fused kernel”的运行误标为 deployment-grade。
+- 任务 15：新增 `docs/wsl2_cuda128_migration.md`、`scripts/wsl_setup_cuda128_env.sh` 与 `scripts/wsl_run_official_benchmark.sh`，把 WSL2 CUDA 12.8 对齐迁移清单和一键 benchmark 命令集落到仓库中；同时确认 micromamba root 必须放在 WSL Linux 文件系统而非 `/mnt/c/...`，并进一步定位到 `causal-conv1d` 的上游 `setup.py` 会硬编码多架构 `nvcc` 编译目标，因而其构建耗时不能仅靠 `TORCH_CUDA_ARCH_LIST` 收敛。
 
 ## 未修改或部分修改
 
@@ -31,3 +32,4 @@
 - 【已阻挡】虽然 `.venv` 已切换到 `torch 2.11.0+cu128` 且 GPU benchmark 已能在 RTX 3070 上真实运行，但 `mamba-ssm` / `causal-conv1d` 仍未安装成功，因此官方 HF 路径的 metadata 继续给出 `fast_path_available=false` 与 `deployment_grade=false`。
 - 【已阻挡】当前机器安装的是 CUDA Toolkit 13.2，而可用的 PyTorch wheel 为 `cu128`；在 `--no-build-isolation` 下重装 `mamba-ssm` / `causal-conv1d` 时，构建过程已进入 extension 阶段，但被 `The detected CUDA version (13.2) mismatches the version that was used to compile PyTorch (12.8)` 阻断，同时对应的 Windows 预编译 wheel URL 也返回 404。
 - 【已阻挡】Triton 在当前 Windows 环境中既无法直接 `import triton`，也无法通过 `pip install triton` 获得可用 wheel；因此本机当前无法执行 Triton kernel benchmark，除非切换到支持 Triton 的 Linux/WSL2 CUDA 环境。
+- 【部分缓解】WSL2 `adama-cuda128` 环境现已可在 Linux home 目录下稳定创建，并已成功装入 `torch 2.11.0+cu128` 与 `triton 3.6.0`；但 `causal-conv1d` / `mamba-ssm` 仍需等待源码编译完成，其中 `causal-conv1d` 已确认会在 CUDA 12.8 下硬编码编译 `sm_75/80/87/90/100/120` 等多架构目标，因此 WSL 侧 fast-path 闭环的剩余瓶颈已从“环境错配”收敛到“上游扩展编译时间与兼容性”。
