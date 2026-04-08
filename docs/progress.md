@@ -11,6 +11,7 @@
 - 任务 5：在 `paper/appendix.tex` 中新增 `Detailed Proofs`，把熵增长、融合深度上界、量化稳定性的附录证明细化为正式 appendix 内容。
 - 任务 6：从正文移除 `Rebuttal Points` 这类不适合论文主体的内容，并重新编译论文，确认主文稿和附录仍可成功生成 PDF。
 - 任务 7：继续补全 LongBench inference harness design、真实 Mamba integration skeleton 与更严格的 entropy-majorization 定理表述；其中代码 skeleton 已加入 `src/`，正文与附录的熵证明也已改写为基于 doubly-stochastic mixing 的严格条件版。
+- 任务 8：将 `run_longbench_inference.py` 扩展为同时支持本地 JSONL 与 Hugging Face `datasets` 读取，并在 `mamba_integration.py` 中补充 AWQ / GPTQ 量化 backend 的加载骨架；同时修复 LaTeX 中 figure/table/algorithm 的 `hyperref` anchor 命名，清除 duplicate destination 警告。
 
 ## 未修改或部分修改
 

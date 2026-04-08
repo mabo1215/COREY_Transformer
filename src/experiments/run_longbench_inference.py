@@ -7,6 +7,7 @@ import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from statistics import mean
+from typing import Any
 
 from src.algorithms.mamba_integration import (
     EntropyGuidedSchedulerHook,
@@ -85,15 +86,24 @@ LONG_BENCH_TASKS = {
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run LongBench inference with a Mamba backend skeleton.")
     parser.add_argument("--model", default="mamba-370m", choices=[spec.name for spec in default_mamba_model_specs()])
-    parser.add_argument("--dataset-root", type=Path, required=True)
+    parser.add_argument("--dataset-root", type=Path)
+    parser.add_argument("--dataset-source", default="auto", choices=["auto", "local", "hf"])
+    parser.add_argument("--dataset-name", default="THUDM/LongBench")
+    parser.add_argument("--dataset-config")
     parser.add_argument("--output-dir", type=Path, default=Path("src/outputs/longbench"))
     parser.add_argument("--tasks", nargs="+", default=sorted(LONG_BENCH_TASKS.keys()))
     parser.add_argument("--split", default="test")
     parser.add_argument("--max-samples", type=int, default=0)
     parser.add_argument("--precision", default="fp16", choices=["fp16", "w8a8", "w4a8"])
     parser.add_argument("--backend", default="hf")
+    parser.add_argument("--quant-backend", choices=["awq", "gptq"])
+    parser.add_argument("--quant-bits", type=int)
+    parser.add_argument("--quant-group-size", type=int, default=128)
+    parser.add_argument("--use-exllama", action="store_true")
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--top-p", type=float, default=1.0)
+    parser.add_argument("--cache-dir", type=Path)
+    parser.add_argument("--hf-token")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -174,8 +184,43 @@ def _metric_value(metric_name: str, prediction: str, reference: str) -> float:
     raise ValueError(f"Unsupported metric: {metric_name}")
 
 
-def _load_task_samples(dataset_root: Path, task_name: str, split: str, max_samples: int) -> list[dict[str, object]]:
-    task_path = dataset_root / task_name / f"{split}.jsonl"
+def _require_hf_datasets() -> Any:
+    try:
+        from datasets import load_dataset
+    except ImportError as exc:
+        raise ImportError(
+            "Hugging Face dataset loading requires the datasets package."
+        ) from exc
+    return load_dataset
+
+
+def _normalize_longbench_sample(task: LongBenchTaskSpec, sample: dict[str, Any], sample_id: int) -> dict[str, object]:
+    normalized = dict(sample)
+    if "context" not in normalized:
+        for candidate_key in ("article", "document", "passage", "text"):
+            if candidate_key in normalized:
+                normalized["context"] = normalized[candidate_key]
+                break
+    if task.input_field not in normalized:
+        for candidate_key in ("question", "query", "instruction"):
+            if candidate_key in normalized:
+                normalized[task.input_field] = normalized[candidate_key]
+                break
+    if task.answer_field not in normalized:
+        for candidate_key in ("answer", "label", "output"):
+            if candidate_key in normalized:
+                candidate_value = normalized[candidate_key]
+                normalized[task.answer_field] = candidate_value if isinstance(candidate_value, list) else [candidate_value]
+                break
+    normalized.setdefault("id", str(sample_id))
+    normalized.setdefault("context", "")
+    normalized.setdefault(task.input_field, "")
+    normalized.setdefault(task.answer_field, [])
+    return normalized
+
+
+def _load_local_task_samples(dataset_root: Path, task: LongBenchTaskSpec, split: str, max_samples: int) -> list[dict[str, object]]:
+    task_path = dataset_root / task.name / f"{split}.jsonl"
     if not task_path.exists():
         raise FileNotFoundError(f"Expected LongBench file at {task_path}")
 
@@ -184,8 +229,59 @@ def _load_task_samples(dataset_root: Path, task_name: str, split: str, max_sampl
         for index, line in enumerate(handle):
             if max_samples and index >= max_samples:
                 break
-            samples.append(json.loads(line))
+            loaded = json.loads(line)
+            samples.append(_normalize_longbench_sample(task, loaded, index))
     return samples
+
+
+def _load_hf_task_samples(args: argparse.Namespace, task: LongBenchTaskSpec, max_samples: int) -> list[dict[str, object]]:
+    load_dataset = _require_hf_datasets()
+    candidates: list[tuple[str | None, str]] = []
+    if args.dataset_config:
+        candidates.append((args.dataset_config, args.split))
+    candidates.append((task.name, args.split))
+    candidates.append((None, args.split))
+
+    last_error: Exception | None = None
+    dataset = None
+    for config_name, split_name in candidates:
+        try:
+            dataset = load_dataset(
+                args.dataset_name,
+                name=config_name,
+                split=split_name,
+                cache_dir=str(args.cache_dir) if args.cache_dir else None,
+                token=args.hf_token,
+            )
+            break
+        except Exception as exc:  # pragma: no cover - depends on external dataset layouts
+            last_error = exc
+    if dataset is None:
+        raise RuntimeError(f"Unable to load task {task.name} from {args.dataset_name}") from last_error
+
+    samples: list[dict[str, object]] = []
+    for index, sample in enumerate(dataset):
+        if max_samples and index >= max_samples:
+            break
+        loaded = dict(sample)
+        if loaded.get("dataset") not in (None, task.name) and loaded.get("task") not in (None, task.name):
+            continue
+        samples.append(_normalize_longbench_sample(task, loaded, index))
+    return samples
+
+
+def _load_task_samples(args: argparse.Namespace, task_name: str, split: str, max_samples: int) -> list[dict[str, object]]:
+    task = LONG_BENCH_TASKS[task_name]
+    source = args.dataset_source
+    if source in {"auto", "local"} and args.dataset_root is not None:
+        task_path = args.dataset_root / task_name / f"{split}.jsonl"
+        if task_path.exists():
+            return _load_local_task_samples(args.dataset_root, task, split, max_samples)
+        if source == "local":
+            raise FileNotFoundError(f"Expected LongBench file at {task_path}")
+    if source in {"auto", "hf"}:
+        return _load_hf_task_samples(args, task, max_samples)
+    raise ValueError("No dataset source could be resolved for LongBench loading.")
 
 
 def _render_prompt(task: LongBenchTaskSpec, sample: dict[str, object]) -> str:
@@ -201,11 +297,17 @@ def _reference_text(sample: dict[str, object], answer_field: str) -> str:
     return str(answer)
 
 
-def _build_backend(model_name: str, precision: str) -> HuggingFaceMambaBackend:
+def _build_backend(args: argparse.Namespace) -> HuggingFaceMambaBackend:
     model_lookup = {spec.name: spec for spec in default_mamba_model_specs()}
-    model_spec: ModelSpec = model_lookup[model_name]
+    model_spec: ModelSpec = model_lookup[args.model]
     runtime_config = RuntimeConfig(
-        quantization=QuantizationConfig(mode=precision),
+        quantization=QuantizationConfig(
+            mode=args.precision,
+            backend=args.quant_backend,
+            bits=args.quant_bits,
+            group_size=args.quant_group_size,
+            use_exllama=args.use_exllama,
+        ),
         dtype="float16",
         max_length=32768,
     )
@@ -231,7 +333,7 @@ def _write_summary(path: Path, rows: list[dict[str, object]]) -> None:
 
 
 def run_longbench(args: argparse.Namespace) -> dict[str, object]:
-    backend = _build_backend(args.model, args.precision)
+    backend = _build_backend(args)
     prediction_rows: list[PredictionRecord] = []
     summary_rows: list[dict[str, object]] = []
 
@@ -308,6 +410,10 @@ def run_longbench(args: argparse.Namespace) -> dict[str, object]:
     metadata = {
         "model": args.model,
         "precision": args.precision,
+        "quant_backend": args.quant_backend,
+        "quant_bits": args.quant_bits,
+        "quant_group_size": args.quant_group_size,
+        "use_exllama": args.use_exllama,
         "tasks": args.tasks,
         "split": args.split,
         "max_samples": args.max_samples,

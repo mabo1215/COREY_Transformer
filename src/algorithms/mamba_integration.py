@@ -10,6 +10,10 @@ from typing import Any
 class QuantizationConfig:
     mode: str = "fp16"
     backend: str | None = None
+    bits: int | None = None
+    group_size: int | None = 128
+    use_exllama: bool = False
+    fuse_layers: bool = False
 
 
 @dataclass(frozen=True)
@@ -117,6 +121,49 @@ class HuggingFaceMambaBackend(MambaBackend):
             ) from exc
         return torch, AutoModelForCausalLM, AutoTokenizer
 
+    def _load_awq_model(self, model_kwargs: dict[str, Any]) -> Any:
+        try:
+            from awq import AutoAWQForCausalLM
+        except ImportError as exc:
+            raise ImportError(
+                "AWQ loading requires the autoawq package."
+            ) from exc
+
+        quantization = self.runtime_config.quantization
+        load_kwargs = {
+            "trust_remote_code": self.model_spec.trust_remote_code,
+            "fuse_layers": quantization.fuse_layers,
+            "safetensors": True,
+        }
+        if self.model_spec.revision is not None:
+            load_kwargs["revision"] = self.model_spec.revision
+        if quantization.group_size is not None:
+            load_kwargs["group_size"] = quantization.group_size
+        return AutoAWQForCausalLM.from_quantized(self.model_spec.model_id, **load_kwargs)
+
+    def _load_gptq_model(self, model_kwargs: dict[str, Any]) -> Any:
+        try:
+            from auto_gptq import AutoGPTQForCausalLM
+        except ImportError as exc:
+            raise ImportError(
+                "GPTQ loading requires the auto-gptq package."
+            ) from exc
+
+        quantization = self.runtime_config.quantization
+        load_kwargs = {
+            "device": self.runtime_config.device,
+            "trust_remote_code": self.model_spec.trust_remote_code,
+            "use_safetensors": True,
+            "use_exllama": quantization.use_exllama,
+        }
+        if self.model_spec.revision is not None:
+            load_kwargs["revision"] = self.model_spec.revision
+        if quantization.bits is not None:
+            load_kwargs["bits"] = quantization.bits
+        if quantization.group_size is not None:
+            load_kwargs["group_size"] = quantization.group_size
+        return AutoGPTQForCausalLM.from_quantized(self.model_spec.model_id, **load_kwargs)
+
     def load(self) -> None:
         torch, auto_model, auto_tokenizer = self._require_dependencies()
         self.torch = torch
@@ -128,13 +175,19 @@ class HuggingFaceMambaBackend(MambaBackend):
             model_kwargs["revision"] = self.model_spec.revision
 
         quantization_mode = self.runtime_config.quantization.mode.lower()
+        quantization_backend = (self.runtime_config.quantization.backend or "").lower()
         if quantization_mode == "fp16":
             model_kwargs["torch_dtype"] = getattr(torch, self.runtime_config.dtype)
         else:
             model_kwargs["torch_dtype"] = getattr(torch, "float16")
 
         self.tokenizer = auto_tokenizer.from_pretrained(self.model_spec.model_id, trust_remote_code=True)
-        self.model = auto_model.from_pretrained(self.model_spec.model_id, **model_kwargs)
+        if quantization_backend in {"awq", "autoawq"}:
+            self.model = self._load_awq_model(model_kwargs)
+        elif quantization_backend in {"gptq", "autogptq", "auto-gptq"}:
+            self.model = self._load_gptq_model(model_kwargs)
+        else:
+            self.model = auto_model.from_pretrained(self.model_spec.model_id, **model_kwargs)
         self.model.to(self.runtime_config.device)
         self.model.eval()
 
