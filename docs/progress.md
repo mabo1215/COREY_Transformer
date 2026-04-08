@@ -15,6 +15,7 @@
 - 任务 9：继续把 LongBench runner 扩展为更稳健的多 schema 兼容版本，加入 batch inference、optional perplexity side-eval，以及可直接通过本机 Ollama API 运行的 backend；同时用本地 `llama3:latest` 完成了一次 smoke run，验证输出文件可正常生成。
 - 任务 10：新增独立 `.venv311`，安装 `torch/transformers/datasets` 并将 runner 扩展为统一输出 LongBench 与 WikiText-103 / PG19 的评测协议；同时使用用户指定的 `mlx-community/mamba-1.4b-hf-f32` 作为请求模型 ID，在 Windows/HF 路径下自动解析到其基座 `state-spaces/mamba-1.4b-hf` 并完成真实 HF Mamba-1.4B smoke run。
 - 任务 11：使用本机 `mathstral:latest` 审核论文中 entropy majorization 定理与证明的数学表述，并据此收紧正文 theorem wording 与 appendix 中的 proof phrasing。
+- 任务 12：按本轮 `docs/revision_suggestions.tex` 完成正文与附录的论文级修订：统一熵记号并引入正式 theorem 环境、将主文表格补齐 Static Fusion 真值行并改用 `[t]` 浮动、明确 `quality drop` 仅为原型 proxy 指标、把 checkpoint smoke-test 数值降级到附录、补充 prototype hardware/software 环境说明，并扩展 Related Work / BibTeX 以纳入 FlashAttention、Triton、SmoothQuant 与 AWQ。
 
 ## 未修改或部分修改
 
@@ -24,4 +25,4 @@
 - 【已阻挡】`mlx-community/mamba-1.4b-hf-f32` 是 MLX 模型，不能在当前 Windows `torch/transformers` 路径中直接作为原生权重运行，因此实际实验只能解析到其基座 `state-spaces/mamba-1.4b-hf`。
 - 【已阻挡】GPTQ 路径在当前 `auto-gptq` 上已验证到模型检查阶段，但明确报错 `mamba isn't supported yet`；AWQ 路径在 Windows 上虽然成功安装，但其依赖链仍卡在 `transformers.models.phi3` / kernel extension 兼容问题，因此两条量化路径目前都无法对 Mamba-1.4B 完成真实量化推理。
 - 【已阻挡】PG19 在当前 `datasets` 入口下返回 `Dataset scripts are no longer supported, but found pg19.py`，因此 unified protocol 已支持该数据集的记录与降级，但本机当前环境尚未得到可直接运行的 PG19 HF 入口。
-- 【进行中】下一阶段可继续把 protocol section 升级为真实结果 section，前提是先在 `src/` 中补齐真实模型 benchmark 实现并产出可复现结果。
+- 【已阻挡】本轮 review 中要求的真实 GPU Triton benchmark、公平外部 baseline 对比以及 Theorem 1 的经验条件验证，目前仍缺少可运行内核、硬件测量和对应实验输出，故只能先将主文论断收紧到“controlled prototype study”层面，不能伪造 deployment-grade 结果。
