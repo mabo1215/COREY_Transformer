@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="/mnt/c/source/Corey_Transformer"
-TOOLS_DIR="${HOME}/.corey-wsl-tools"
-MAMBA_ROOT_PREFIX="${HOME}/.corey-micromamba"
-ENV_NAME="corey-cuda128"
+REPO_ROOT="${REPO_ROOT:-/mnt/c/source/COREY_Transformer}"
+TOOLS_DIR="${TOOLS_DIR:-${HOME}/.corey-wsl-tools}"
+MAMBA_ROOT_PREFIX="${MAMBA_ROOT_PREFIX:-${HOME}/.corey-micromamba}"
+ENV_NAME="${ENV_NAME:-corey-cuda128}"
 ENV_PREFIX="$MAMBA_ROOT_PREFIX/envs/$ENV_NAME"
 REPO_MICROMAMBA_BIN="$REPO_ROOT/.wsl-tools/bin/micromamba"
 MICROMAMBA_BIN="$TOOLS_DIR/bin/micromamba"
@@ -19,7 +19,9 @@ fi
 
 export MAMBA_ROOT_PREFIX
 export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.6}"
+export CUDAARCHS="${CUDAARCHS:-86}"
 export MAX_JOBS="${MAX_JOBS:-4}"
+export HF_HOME="${HF_HOME:-/mnt/c/Users/mabo1/.cache/huggingface}"
 
 if [[ -d "$ENV_PREFIX" ]]; then
   if ! "$MICROMAMBA_BIN" run -n "$ENV_NAME" python -m pip --version >/dev/null 2>&1; then
@@ -43,18 +45,41 @@ then
 fi
 "$MICROMAMBA_BIN" run -n "$ENV_NAME" python -m pip install --upgrade transformers datasets sentencepiece accelerate psutil huggingface_hub
 
+install_cuda_extension() {
+  local package_name="$1"
+  local primary_command="$2"
+  local fallback_command="$3"
+
+  if "$MICROMAMBA_BIN" run -n "$ENV_NAME" bash -lc "export TORCH_CUDA_ARCH_LIST='$TORCH_CUDA_ARCH_LIST'; export CUDAARCHS='$CUDAARCHS'; export MAX_JOBS='$MAX_JOBS'; export HF_HOME='$HF_HOME'; ${primary_command}"; then
+    return 0
+  fi
+
+  if [[ -n "$fallback_command" ]] && "$MICROMAMBA_BIN" run -n "$ENV_NAME" bash -lc "export TORCH_CUDA_ARCH_LIST='$TORCH_CUDA_ARCH_LIST'; export CUDAARCHS='$CUDAARCHS'; export MAX_JOBS='$MAX_JOBS'; export HF_HOME='$HF_HOME'; ${fallback_command}"; then
+    return 0
+  fi
+
+  printf '[warn] %s installation failed after primary and fallback attempts\n' "$package_name" >&2
+  return 1
+}
+
 TRITON_STATUS="ok"
 if ! "$MICROMAMBA_BIN" run -n "$ENV_NAME" python -m pip install triton; then
   TRITON_STATUS="failed"
 fi
 
 CAUSAL_STATUS="ok"
-if ! "$MICROMAMBA_BIN" run -n "$ENV_NAME" bash -lc "export TORCH_CUDA_ARCH_LIST='$TORCH_CUDA_ARCH_LIST'; export MAX_JOBS='$MAX_JOBS'; python -m pip install --no-build-isolation causal-conv1d"; then
+if ! install_cuda_extension \
+  "causal-conv1d" \
+  "export CAUSAL_CONV1D_FORCE_BUILD=TRUE; python -m pip install --no-build-isolation --no-deps --no-cache-dir --force-reinstall git+https://github.com/Dao-AILab/causal-conv1d.git@0d2252d" \
+  "python -m pip install --no-build-isolation --no-deps causal-conv1d"; then
   CAUSAL_STATUS="failed"
 fi
 
 MAMBA_STATUS="ok"
-if ! "$MICROMAMBA_BIN" run -n "$ENV_NAME" bash -lc "export TORCH_CUDA_ARCH_LIST='$TORCH_CUDA_ARCH_LIST'; export MAX_JOBS='$MAX_JOBS'; python -m pip install --no-build-isolation mamba-ssm"; then
+if ! install_cuda_extension \
+  "mamba-ssm" \
+  "export MAMBA_FORCE_BUILD=TRUE; python -m pip install --no-build-isolation --no-deps --no-cache-dir --force-reinstall git+https://github.com/state-spaces/mamba.git@v2.3.1" \
+  "python -m pip install --no-build-isolation --no-deps mamba-ssm"; then
   MAMBA_STATUS="failed"
 fi
 

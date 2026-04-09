@@ -64,6 +64,8 @@ LM_DATASET_SPECS = {
     },
 }
 
+DEFAULT_LONG_BENCH_DATASET_NAMES = ("zai-org/LongBench", "THUDM/LongBench")
+
 
 LONG_BENCH_TASKS = {
     "narrativeqa": LongBenchTaskSpec(
@@ -106,7 +108,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--model", default="mamba-370m", choices=[spec.name for spec in default_mamba_model_specs()])
     parser.add_argument("--dataset-root", type=Path)
     parser.add_argument("--dataset-source", default="auto", choices=["auto", "local", "hf"])
-    parser.add_argument("--dataset-name", default="THUDM/LongBench")
+    parser.add_argument("--dataset-name", default=DEFAULT_LONG_BENCH_DATASET_NAMES[0])
     parser.add_argument("--dataset-config")
     parser.add_argument("--hf-model-id")
     parser.add_argument("--output-dir", type=Path, default=Path("src/outputs/longbench"))
@@ -224,6 +226,15 @@ def _require_hf_datasets() -> Any:
     return load_dataset
 
 
+def _candidate_longbench_dataset_names(requested_name: str) -> list[str]:
+    candidates = [requested_name, *DEFAULT_LONG_BENCH_DATASET_NAMES]
+    resolved: list[str] = []
+    for candidate in candidates:
+        if candidate not in resolved:
+            resolved.append(candidate)
+    return resolved
+
+
 def _normalize_longbench_sample(task: LongBenchTaskSpec, sample: dict[str, Any], sample_id: int) -> dict[str, object]:
     normalized = dict(sample)
     context_value = _first_value(
@@ -319,28 +330,31 @@ def _load_local_task_samples(dataset_root: Path, task: LongBenchTaskSpec, split:
 
 def _load_hf_task_samples(args: argparse.Namespace, task: LongBenchTaskSpec, max_samples: int) -> list[dict[str, object]]:
     load_dataset = _require_hf_datasets()
-    candidates: list[tuple[str | None, str]] = []
+    config_candidates: list[tuple[str | None, str]] = []
     if args.dataset_config:
-        candidates.append((args.dataset_config, args.split))
-    candidates.append((task.name, args.split))
-    candidates.append((None, args.split))
+        config_candidates.append((args.dataset_config, args.split))
+    config_candidates.append((task.name, args.split))
+    config_candidates.append((None, args.split))
 
     last_error: Exception | None = None
     dataset = None
-    for config_name, split_name in candidates:
-        try:
-            dataset = load_dataset(
-                args.dataset_name,
-                name=config_name,
-                split=split_name,
-                cache_dir=str(args.cache_dir) if args.cache_dir else None,
-                token=args.hf_token,
-            )
+    for dataset_name in _candidate_longbench_dataset_names(args.dataset_name):
+        for config_name, split_name in config_candidates:
+            try:
+                dataset = load_dataset(
+                    dataset_name,
+                    name=config_name,
+                    split=split_name,
+                    cache_dir=str(args.cache_dir) if args.cache_dir else None,
+                    token=args.hf_token,
+                )
+                break
+            except Exception as exc:  # pragma: no cover - depends on external dataset layouts
+                last_error = exc
+        if dataset is not None:
             break
-        except Exception as exc:  # pragma: no cover - depends on external dataset layouts
-            last_error = exc
     if dataset is None:
-        raise RuntimeError(f"Unable to load task {task.name} from {args.dataset_name}") from last_error
+        raise RuntimeError(f"Unable to load task {task.name} from any known LongBench dataset id.") from last_error
 
     samples: list[dict[str, object]] = []
     for index, sample in enumerate(dataset):
@@ -467,10 +481,46 @@ def _write_summary(path: Path, rows: list[dict[str, object]]) -> None:
         writer.writerows(rows)
 
 
+def _write_metadata(path: Path, metadata: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+
+
 def run_longbench(args: argparse.Namespace) -> dict[str, object]:
     backend = _build_backend(args)
     prediction_rows: list[PredictionRecord] = []
     summary_rows: list[dict[str, object]] = []
+    output_dir = args.output_dir / args.model / args.precision
+    metadata = {
+        "model": args.model,
+        "requested_model_id": args.ollama_model or args.hf_model_id or {spec.name: spec.model_id for spec in default_mamba_model_specs()}[args.model],
+        "resolved_model_id": _build_backend(args).model_spec.model_id,
+        "backend": args.backend,
+        "ollama_host": args.ollama_host if args.backend == "ollama" else None,
+        "device": args.device,
+        "dtype": args.dtype,
+        "precision": args.precision,
+        "quant_backend": args.quant_backend,
+        "quant_bits": args.quant_bits,
+        "quant_group_size": args.quant_group_size,
+        "use_exllama": args.use_exllama,
+        "dataset_source": args.dataset_source,
+        "dataset_name": args.dataset_name,
+        "dataset_config": args.dataset_config,
+        "batch_size": args.batch_size,
+        "max_length": args.max_length,
+        "disable_entropy_hook": args.disable_entropy_hook,
+        "eval_perplexity": args.eval_perplexity,
+        "ppl_max_samples": args.ppl_max_samples,
+        "lm_datasets": args.lm_datasets,
+        "lm_max_samples": args.lm_max_samples,
+        "tasks": args.tasks,
+        "split": args.split,
+        "max_samples": args.max_samples,
+        "dry_run": args.dry_run,
+        "completed_tasks": [],
+    }
+    _write_metadata(output_dir / "metadata.json", metadata)
 
     for task_name in args.tasks:
         task = LONG_BENCH_TASKS[task_name]
@@ -574,6 +624,10 @@ def run_longbench(args: argparse.Namespace) -> dict[str, object]:
                 "mode": "inference",
             }
         )
+        metadata["completed_tasks"].append(task_name)
+        _write_predictions(output_dir / "predictions.jsonl", prediction_rows)
+        _write_summary(output_dir / "summary.csv", summary_rows)
+        _write_metadata(output_dir / "metadata.json", metadata)
 
     for dataset_key in args.lm_datasets:
         try:
@@ -645,39 +699,12 @@ def run_longbench(args: argparse.Namespace) -> dict[str, object]:
                 "mode": "inference",
             }
         )
+        _write_summary(output_dir / "summary.csv", summary_rows)
+        _write_metadata(output_dir / "metadata.json", metadata)
 
-    output_dir = args.output_dir / args.model / args.precision
     _write_predictions(output_dir / "predictions.jsonl", prediction_rows)
     _write_summary(output_dir / "summary.csv", summary_rows)
-    metadata = {
-        "model": args.model,
-        "requested_model_id": args.ollama_model or args.hf_model_id or {spec.name: spec.model_id for spec in default_mamba_model_specs()}[args.model],
-        "resolved_model_id": _build_backend(args).model_spec.model_id,
-        "backend": args.backend,
-        "ollama_host": args.ollama_host if args.backend == "ollama" else None,
-        "device": args.device,
-        "dtype": args.dtype,
-        "precision": args.precision,
-        "quant_backend": args.quant_backend,
-        "quant_bits": args.quant_bits,
-        "quant_group_size": args.quant_group_size,
-        "use_exllama": args.use_exllama,
-        "dataset_source": args.dataset_source,
-        "dataset_name": args.dataset_name,
-        "dataset_config": args.dataset_config,
-        "batch_size": args.batch_size,
-        "max_length": args.max_length,
-        "disable_entropy_hook": args.disable_entropy_hook,
-        "eval_perplexity": args.eval_perplexity,
-        "ppl_max_samples": args.ppl_max_samples,
-        "lm_datasets": args.lm_datasets,
-        "lm_max_samples": args.lm_max_samples,
-        "tasks": args.tasks,
-        "split": args.split,
-        "max_samples": args.max_samples,
-        "dry_run": args.dry_run,
-    }
-    (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    _write_metadata(output_dir / "metadata.json", metadata)
     return {"predictions": len(prediction_rows), "summaries": len(summary_rows), "output_dir": str(output_dir)}
 
 

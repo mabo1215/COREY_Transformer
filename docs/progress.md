@@ -1,6 +1,6 @@
 # 论文进度
 
-最后更新：本轮 revision cycle 已继续推进并重新验证编译。
+最后更新：本轮 revision cycle 已继续推进，并补完 WSL2 下的 1.4B checkpoint sanity-check。
 
 ## 已全部修改
 
@@ -21,6 +21,7 @@
 - 任务 15：新增 `docs/wsl2_cuda128_migration.md`、`scripts/wsl_setup_cuda128_env.sh` 与 `scripts/wsl_run_official_benchmark.sh`，把 WSL2 CUDA 12.8 对齐迁移清单和一键 benchmark 命令集落到仓库中；同时确认 micromamba root 必须放在 WSL Linux 文件系统而非 `/mnt/c/...`，并进一步定位到 `causal-conv1d` 的上游 `setup.py` 会硬编码多架构 `nvcc` 编译目标，因而其构建耗时不能仅靠 `TORCH_CUDA_ARCH_LIST` 收敛。
 - 任务 16：按当前 `docs/revision_suggestions.tex` 继续完成“可写即改”的 revision 收口：将论文标题、摘要、引言与结论进一步改写为 prototype-study framing，补入主文的 hyperparameter / baseline 细节表，明确 Static Fusion 的固定分组定义与 `quality drop` 仅为 diagnostic proxy；同时在附录中补齐真实复现参数、修复 adaptive threshold 与 EMA 共用 `\lambda` 的符号冲突、把 Hadamard 量化稳定性改写为可验证的峰值坐标 / clipping bound，并补入仅限算法级的 entropy overhead 说明，避免把未测得的 GPU 开销写成既成事实。
 - 任务 17：在当前 `.venv` 中重新确认 Hugging Face Mamba checkpoint 路径可直接用于真实 GPU sanity-check，并新增 `mamba-1.4b` 的官方 benchmark 输出到 `src/outputs/official_hf_benchmark_gpu_14b/`；同时复核 `.venv` 现为 Python 3.11 + `torch 2.11.0+cu128`，并确认 `install_python_packages` 给出的“已安装 `mamba-ssm` / `causal-conv1d`”并未真正落入当前工作区解释器，实际以 `.venv` 内 `pip install` 复查后仍被 `nvcc` 缺失和上游 `mamba-ssm` 构建错误阻断。
+- 任务 18：在 WSL2 中转而复用可用的 `adama-cuda128` CUDA 12.8 环境，确认 `torch 2.11.0+cu128`、`transformers 5.5.0`、`datasets 4.8.4`、`triton 3.6.0` 与 RTX 3070 均可见，并完成 `mamba-1.4b` 官方 benchmark 的真实 WSL2 GPU sanity-check，产出 `src/outputs/official_hf_benchmark_wsl_14b/`。结果显示 NarrativeQA smoke 上 32 token 的平均延迟为 2194.588 ms、吞吐 14.641 tok/s、token-F1 为 0.173913、峰值 RSS 为 1626.7109 MB，WikiText-103 单样本 perplexity 为 525.633179；同时 metadata 继续给出 `fast_path_available=false`、`deployment_grade=false`，说明 WSL2 已能提供真实 Linux GPU fallback 证据，但尚不足以把 checkpoint 结果提升为主文对比表。
 
 ## 未修改或部分修改
 
@@ -34,4 +35,4 @@
 - 【已阻挡】虽然 `.venv` 已切换到 `torch 2.11.0+cu128` 且 GPU benchmark 已能在 RTX 3070 上真实运行，但 `mamba-ssm` / `causal-conv1d` 仍未安装成功，因此官方 HF 路径的 metadata 继续给出 `fast_path_available=false` 与 `deployment_grade=false`。
 - 【已阻挡】当前机器安装的是 CUDA Toolkit 13.2，而可用的 PyTorch wheel 为 `cu128`；在 `--no-build-isolation` 下重装 `mamba-ssm` / `causal-conv1d` 时，构建过程已进入 extension 阶段，但被 `The detected CUDA version (13.2) mismatches the version that was used to compile PyTorch (12.8)` 阻断，同时对应的 Windows 预编译 wheel URL 也返回 404。
 - 【已阻挡】Triton 在当前 Windows 环境中既无法直接 `import triton`，也无法通过 `pip install triton` 获得可用 wheel；因此本机当前无法执行 Triton kernel benchmark，除非切换到支持 Triton 的 Linux/WSL2 CUDA 环境。
-- 【部分缓解】本轮已重新触发 WSL2 CUDA 12.8 环境初始化，确认 Ubuntu/WSL2 可用且 `micromamba create -n corey-cuda128 ... cuda-nvcc=12.8` 能真实启动；但在当前会话内该流程仍停留在长时间的环境创建阶段，尚未推进到 `triton` / `causal-conv1d` / `mamba-ssm` 的安装与 fast-path 验证，因此 WSL 侧闭环仍未完成。
+- 【部分缓解】WSL2 侧已确认存在可用的 `adama-cuda128` Linux CUDA 12.8 环境，并已在其上完成真实 `mamba-1.4b` GPU fallback benchmark；但 `mamba-ssm` 仍缺失，`causal-conv1d` 的源码构建在上游多架构 NVCC 编译阶段长时间卡住，故 fast-path 验证结论依然是不可用，WSL 侧闭环目前只完成到“真实 Linux GPU sanity-check”而非 deployment-grade kernel 路径。
