@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="${REPO_ROOT:-/mnt/c/source/COREY_Transformer}"
+TOOLS_DIR="${TOOLS_DIR:-${HOME}/.corey-wsl-tools}"
+MAMBA_ROOT_PREFIX="${MAMBA_ROOT_PREFIX:-${HOME}/.corey-micromamba}"
+ENV_NAME="${ENV_NAME:-corey-cuda128}"
+REPO_MICROMAMBA_BIN="$REPO_ROOT/.wsl-tools/bin/micromamba"
+MICROMAMBA_BIN="$TOOLS_DIR/bin/micromamba"
+MODES="${MODES:-longbench benchmark}"
+MODELS="${MODELS:-mamba-370m mamba-1.4b mamba-2.8b}"
+PRECISIONS="${PRECISIONS:-fp16}"
+TASKS="${TASKS:-narrativeqa qasper multifieldqa_en gov_report}"
+LM_DATASETS="${LM_DATASETS:-wikitext103 pg19}"
+DATASET_ROOT="${DATASET_ROOT:-$REPO_ROOT/src/data/longbench_subset}"
+DATASET_SOURCE="${DATASET_SOURCE:-local}"
+DATASET_NAME="${DATASET_NAME:-zai-org/LongBench}"
+MAX_SAMPLES="${MAX_SAMPLES:-1}"
+BENCHMARK_TASK="${BENCHMARK_TASK:-narrativeqa}"
+BENCHMARK_MAX_SAMPLES="${BENCHMARK_MAX_SAMPLES:-1}"
+BENCHMARK_MAX_NEW_TOKENS="${BENCHMARK_MAX_NEW_TOKENS:-32}"
+WARMUP_RUNS="${WARMUP_RUNS:-1}"
+BENCHMARK_REPEATS="${BENCHMARK_REPEATS:-5}"
+LM_MAX_SAMPLES="${LM_MAX_SAMPLES:-1}"
+PPL_MAX_SAMPLES="${PPL_MAX_SAMPLES:-1}"
+MAX_LENGTH="${MAX_LENGTH:-8192}"
+DEVICE="${DEVICE:-cuda}"
+DTYPE="${DTYPE:-float16}"
+OUTPUT_DIR="${OUTPUT_DIR:-src/outputs/checkpoint_matrix_wsl}"
+HF_HOME="${HF_HOME:-/mnt/c/Users/mabo1/.cache/huggingface}"
+
+if [[ -x "$REPO_MICROMAMBA_BIN" ]]; then
+  MICROMAMBA_BIN="$REPO_MICROMAMBA_BIN"
+fi
+
+export MAMBA_ROOT_PREFIX
+export HF_HOME
+cd "$REPO_ROOT"
+
+"$MICROMAMBA_BIN" run -n "$ENV_NAME" bash -lc "export PYTHONPATH='$REPO_ROOT'; export HF_HOME='$HF_HOME'; python -m src.experiments.run_checkpoint_matrix \
+  --modes $MODES \
+  --models $MODELS \
+  --precisions $PRECISIONS \
+  --tasks $TASKS \
+  --lm-datasets $LM_DATASETS \
+  --dataset-root '$DATASET_ROOT' \
+  --dataset-source '$DATASET_SOURCE' \
+  --dataset-name '$DATASET_NAME' \
+  --max-samples '$MAX_SAMPLES' \
+  --benchmark-task '$BENCHMARK_TASK' \
+  --benchmark-max-samples '$BENCHMARK_MAX_SAMPLES' \
+  --benchmark-max-new-tokens '$BENCHMARK_MAX_NEW_TOKENS' \
+  --warmup-runs '$WARMUP_RUNS' \
+  --benchmark-repeats '$BENCHMARK_REPEATS' \
+  --eval-perplexity \
+  --ppl-max-samples '$PPL_MAX_SAMPLES' \
+  --lm-max-samples '$LM_MAX_SAMPLES' \
+  --max-length '$MAX_LENGTH' \
+  --device '$DEVICE' \
+  --dtype '$DTYPE' \
+  --disable-entropy-hook \
+  --skip-existing \
+  --output-dir '$OUTPUT_DIR'"
