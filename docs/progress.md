@@ -19,12 +19,14 @@
 - 任务 13：补齐真实官方 checkpoint benchmark 闭环：扩展 `run_longbench_inference.py` 以支持 `max_length` 与关闭 entropy hook，新增 `run_official_mamba_benchmark.py` 做 warmup/repeat/内存记录，并在 `state-spaces/mamba-370m-hf` 上完成一次真实 HF benchmark，产出 `src/outputs/official_hf_benchmark/` 与 `src/outputs/official_hf_benchmark_fastpath/`。同时清理 LaTeX 日志中的 duplicate hyperref destination 与 appendix overfull hbox，使论文编译日志显著收敛。
 - 任务 14：确认本机已切换到可用的 NVIDIA 环境后，将 `.venv` 中的 `torch` 重装为 `2.11.0+cu128`，验证 `torch.cuda.is_available()` 与 RTX 3070 可见，并在 GPU 上完成一次真实官方 HF Mamba benchmark，产出 `src/outputs/official_hf_benchmark_gpu/`。同时把 benchmark metadata 改为显式记录 `fast_path_status`，避免把“GPU 但无官方 fused kernel”的运行误标为 deployment-grade。
 - 任务 15：新增 `docs/wsl2_cuda128_migration.md`、`scripts/wsl_setup_cuda128_env.sh` 与 `scripts/wsl_run_official_benchmark.sh`，把 WSL2 CUDA 12.8 对齐迁移清单和一键 benchmark 命令集落到仓库中；同时确认 micromamba root 必须放在 WSL Linux 文件系统而非 `/mnt/c/...`，并进一步定位到 `causal-conv1d` 的上游 `setup.py` 会硬编码多架构 `nvcc` 编译目标，因而其构建耗时不能仅靠 `TORCH_CUDA_ARCH_LIST` 收敛。
+- 任务 16：按当前 `docs/revision_suggestions.tex` 继续完成“可写即改”的 revision 收口：将论文标题、摘要、引言与结论进一步改写为 prototype-study framing，补入主文的 hyperparameter / baseline 细节表，明确 Static Fusion 的固定分组定义与 `quality drop` 仅为 diagnostic proxy；同时在附录中补齐真实复现参数、修复 adaptive threshold 与 EMA 共用 `\lambda` 的符号冲突、把 Hadamard 量化稳定性改写为可验证的峰值坐标 / clipping bound，并补入仅限算法级的 entropy overhead 说明，避免把未测得的 GPU 开销写成既成事实。
+- 任务 17：在当前 `.venv` 中重新确认 Hugging Face Mamba checkpoint 路径可直接用于真实 GPU sanity-check，并新增 `mamba-1.4b` 的官方 benchmark 输出到 `src/outputs/official_hf_benchmark_gpu_14b/`；同时复核 `.venv` 现为 Python 3.11 + `torch 2.11.0+cu128`，并确认 `install_python_packages` 给出的“已安装 `mamba-ssm` / `causal-conv1d`”并未真正落入当前工作区解释器，实际以 `.venv` 内 `pip install` 复查后仍被 `nvcc` 缺失和上游 `mamba-ssm` 构建错误阻断。
 
 ## 未修改或部分修改
 
-- 【已阻挡】尚未新增真实预训练模型推理代码与 benchmark 脚本。当前仓库只有原型实验管线，缺少可直接运行 Mamba-370M / 1.4B / 2.8B 的完整部署代码。
-- 【已阻挡】尚未补充真实 LongBench、WikiText-103、PG19 的结果表、能耗统计与 checkpoint-level perplexity 结果。原因是对应实验尚未实际执行，不能在论文中伪造数值。
-- 【已阻挡】当前机器的 `ollama` 仅安装了 `llama3:latest`，Ollama 官方模型库检索结果中也未发现现成的 Mamba-1.4B 条目；同时当前 `.venv` 为 Python 3.14，尚未具备 `torch/transformers/autoawq/auto-gptq` 运行栈，因此真实 Mamba-1.4B benchmark 仍需额外模型与环境准备。
+- 【部分缓解】仓库现已具备可直接运行的真实预训练模型推理与 benchmark 脚本，并已在 HF 官方路径上完成 `mamba-370m` 与 `mamba-1.4b` 的 GPU sanity-check；但 `mamba-2.8b`、deployment-grade fast path、以及面向论文主结果的成体系 checkpoint 对比仍未完成。
+- 【部分缓解】现已补入部分真实 WikiText-103 perplexity 与本地 LongBench smoke 结果，但仍缺完整 LongBench、PG19、能耗统计与可进入主文表格的系统性 checkpoint-level 结果。
+- 【已解除】当前 `.venv` 已是 Python 3.11 并具备 `torch/transformers/autoawq/auto-gptq` 运行栈，因此真实 Mamba-1.4B benchmark 的“环境未就绪”问题已解除；剩余阻塞转为 fast-path 扩展、量化兼容性与更完整数据集评测。
 - 【已阻挡】`mlx-community/mamba-1.4b-hf-f32` 是 MLX 模型，不能在当前 Windows `torch/transformers` 路径中直接作为原生权重运行，因此实际实验只能解析到其基座 `state-spaces/mamba-1.4b-hf`。
 - 【已阻挡】GPTQ 路径在当前 `auto-gptq` 上已验证到模型检查阶段，但明确报错 `mamba isn't supported yet`；AWQ 路径在 Windows 上虽然成功安装，但其依赖链仍卡在 `transformers.models.phi3` / kernel extension 兼容问题，因此两条量化路径目前都无法对 Mamba-1.4B 完成真实量化推理。
 - 【已阻挡】PG19 在当前 `datasets` 入口下返回 `Dataset scripts are no longer supported, but found pg19.py`，因此 unified protocol 已支持该数据集的记录与降级，但本机当前环境尚未得到可直接运行的 PG19 HF 入口。
@@ -32,4 +34,4 @@
 - 【已阻挡】虽然 `.venv` 已切换到 `torch 2.11.0+cu128` 且 GPU benchmark 已能在 RTX 3070 上真实运行，但 `mamba-ssm` / `causal-conv1d` 仍未安装成功，因此官方 HF 路径的 metadata 继续给出 `fast_path_available=false` 与 `deployment_grade=false`。
 - 【已阻挡】当前机器安装的是 CUDA Toolkit 13.2，而可用的 PyTorch wheel 为 `cu128`；在 `--no-build-isolation` 下重装 `mamba-ssm` / `causal-conv1d` 时，构建过程已进入 extension 阶段，但被 `The detected CUDA version (13.2) mismatches the version that was used to compile PyTorch (12.8)` 阻断，同时对应的 Windows 预编译 wheel URL 也返回 404。
 - 【已阻挡】Triton 在当前 Windows 环境中既无法直接 `import triton`，也无法通过 `pip install triton` 获得可用 wheel；因此本机当前无法执行 Triton kernel benchmark，除非切换到支持 Triton 的 Linux/WSL2 CUDA 环境。
-- 【部分缓解】WSL2 `adama-cuda128` 环境现已可在 Linux home 目录下稳定创建，并已成功装入 `torch 2.11.0+cu128` 与 `triton 3.6.0`；但 `causal-conv1d` / `mamba-ssm` 仍需等待源码编译完成，其中 `causal-conv1d` 已确认会在 CUDA 12.8 下硬编码编译 `sm_75/80/87/90/100/120` 等多架构目标，因此 WSL 侧 fast-path 闭环的剩余瓶颈已从“环境错配”收敛到“上游扩展编译时间与兼容性”。
+- 【部分缓解】本轮已重新触发 WSL2 CUDA 12.8 环境初始化，确认 Ubuntu/WSL2 可用且 `micromamba create -n corey-cuda128 ... cuda-nvcc=12.8` 能真实启动；但在当前会话内该流程仍停留在长时间的环境创建阶段，尚未推进到 `triton` / `causal-conv1d` / `mamba-ssm` 的安装与 fast-path 验证，因此 WSL 侧闭环仍未完成。
