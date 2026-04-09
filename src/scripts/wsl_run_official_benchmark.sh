@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="/mnt/c/source/ADAMA_Transformer"
-TOOLS_DIR="${HOME}/.adama-wsl-tools"
-MAMBA_ROOT_PREFIX="${HOME}/.adama-micromamba"
-ENV_NAME="adama-cuda128"
+REPO_ROOT="/mnt/c/source/Corey_Transformer"
+TOOLS_DIR="${HOME}/.corey-wsl-tools"
+MAMBA_ROOT_PREFIX="${HOME}/.corey-micromamba"
+ENV_NAME="corey-cuda128"
 REPO_MICROMAMBA_BIN="$REPO_ROOT/.wsl-tools/bin/micromamba"
 MICROMAMBA_BIN="$TOOLS_DIR/bin/micromamba"
 
