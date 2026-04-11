@@ -45,6 +45,18 @@ class FusionGroup:
     def memory_traffic(self) -> float:
         return sum(operator.memory_traffic for operator in self.operators)
 
+    @property
+    def occupancy(self) -> float:
+        return min(operator.occupancy for operator in self.operators)
+
+    @property
+    def register_cost(self) -> int:
+        return sum(operator.register_cost for operator in self.operators)
+
+    @property
+    def shared_memory_cost(self) -> int:
+        return sum(operator.shared_memory_cost for operator in self.operators)
+
 
 def _normalize(value: float, lower: float, upper: float) -> float:
     if upper <= lower:

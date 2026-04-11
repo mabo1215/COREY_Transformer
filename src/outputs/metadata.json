@@ -20,11 +20,27 @@
   "methods": [
     "no_fusion",
     "static_fusion",
-    "entropy_guided"
+    "entropy_guided",
+    "arithmetic_only",
+    "arithmetic_only_matched"
   ],
   "precisions": [
     "fp16",
     "w8a8",
     "w4a8"
-  ]
+  ],
+  "ablations": {
+    "alpha_zero": {
+      "alpha": 0.0,
+      "beta": 0.35,
+      "gamma": 0.2,
+      "description": "Arithmetic-intensity-only boundary selection with the entropy term disabled."
+    },
+    "alpha_zero_matched": {
+      "alpha": 0.0,
+      "beta": 0.35,
+      "gamma": 0.2,
+      "description": "Arithmetic-intensity-only boundary selection with a calibrated tau chosen to match the entropy-guided fusion depth as closely as possible."
+    }
+  }
 }

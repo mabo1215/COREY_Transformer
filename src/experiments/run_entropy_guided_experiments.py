@@ -57,12 +57,36 @@ class ScheduleMetrics:
     quality_drop: float
     average_fusion_depth: float
     p95_group_depth: float
+    average_group_occupancy: float
+    min_group_occupancy: float
+    average_register_cost: float
+    average_shared_memory_cost: float
     entropy_before: float
     entropy_after: float
     entropy_gain: float
     outlier_before: float
     outlier_after: float
     max_projection_error: float
+
+
+@dataclass(frozen=True)
+class ScheduleTraceRow:
+    bucket: str
+    sequence_length: int
+    repeat: int
+    method: str
+    tau: float
+    target_depth: float
+    group_index: int
+    group_depth: int
+    group_occupancy: float
+    group_register_cost: int
+    group_shared_memory_cost: int
+    group_entropy: float
+    group_arithmetic_intensity: float
+    group_memory_traffic: float
+    group_score: float
+    feasible: bool
 
 
 def _parse_args() -> argparse.Namespace:
@@ -140,6 +164,86 @@ def _group_depth_p95(group_depths: list[int]) -> float:
     return float(sorted(group_depths)[percentile_index])
 
 
+def _group_metric_mean(groups, attribute: str) -> float:
+    if not groups:
+        return 0.0
+    return float(mean(getattr(group, attribute) for group in groups))
+
+
+def _group_metric_min(groups, attribute: str) -> float:
+    if not groups:
+        return 0.0
+    return float(min(getattr(group, attribute) for group in groups))
+
+
+def _bucket_name(sequence_length: int) -> str:
+    for bucket_name, lengths in SEQUENCE_BUCKETS.items():
+        if sequence_length in lengths:
+            return bucket_name
+    raise ValueError(f"Unexpected sequence length: {sequence_length}")
+
+
+def _average_depth(groups) -> float:
+    return float(mean(group.depth for group in groups)) if groups else 0.0
+
+
+def _calibrate_arithmetic_only_schedule(chain, resource_model: ResourceModel, target_depth: float, base_tau: float):
+    tau_candidates = [round(value, 2) for value in np.linspace(-0.2, max(base_tau, 0.8), 21)]
+    best_tau = base_tau
+    best_groups = select_fusion_groups(chain, tau=base_tau, resource_model=resource_model, alpha=0.0)
+    best_gap = abs(_average_depth(best_groups) - target_depth)
+
+    for tau in tau_candidates:
+        groups = select_fusion_groups(chain, tau=tau, resource_model=resource_model, alpha=0.0)
+        gap = abs(_average_depth(groups) - target_depth)
+        if gap < best_gap:
+            best_tau = tau
+            best_groups = groups
+            best_gap = gap
+            continue
+        if math.isclose(gap, best_gap, rel_tol=1e-9, abs_tol=1e-9) and abs(tau - base_tau) < abs(best_tau - base_tau):
+            best_tau = tau
+            best_groups = groups
+
+    return best_tau, best_groups
+
+
+def _build_schedule_trace_rows(
+    sequence_length: int,
+    repeat: int,
+    method: str,
+    tau: float,
+    target_depth: float,
+    groups,
+) -> list[dict[str, object]]:
+    bucket_name = _bucket_name(sequence_length)
+    rows: list[dict[str, object]] = []
+    for group_index, group in enumerate(groups):
+        rows.append(
+            asdict(
+                ScheduleTraceRow(
+                    bucket=bucket_name,
+                    sequence_length=sequence_length,
+                    repeat=repeat,
+                    method=method,
+                    tau=round(tau, 4),
+                    target_depth=round(target_depth, 4),
+                    group_index=group_index,
+                    group_depth=group.depth,
+                    group_occupancy=round(group.occupancy, 4),
+                    group_register_cost=group.register_cost,
+                    group_shared_memory_cost=group.shared_memory_cost,
+                    group_entropy=round(group.entropy, 4),
+                    group_arithmetic_intensity=round(group.arithmetic_intensity, 4),
+                    group_memory_traffic=round(group.memory_traffic, 4),
+                    group_score=round(group.score, 4),
+                    feasible=group.feasible,
+                )
+            )
+        )
+    return rows
+
+
 def _estimate_metrics(
     method: str,
     sequence_length: int,
@@ -157,6 +261,10 @@ def _estimate_metrics(
     quantization_penalty = PRECISION_SENSITIVITY[precision]
     group_depths = [group.depth for group in groups]
     average_depth = mean(group_depths)
+    average_occupancy = _group_metric_mean(groups, "occupancy")
+    min_occupancy = _group_metric_min(groups, "occupancy")
+    average_register_cost = _group_metric_mean(groups, "register_cost")
+    average_shared_memory_cost = _group_metric_mean(groups, "shared_memory_cost")
 
     total_latency = 0.0
     total_memory = 0.0
@@ -202,6 +310,10 @@ def _estimate_metrics(
         quality_drop=round(quality_drop, 4),
         average_fusion_depth=round(average_depth, 4),
         p95_group_depth=round(_group_depth_p95(group_depths), 4),
+        average_group_occupancy=round(average_occupancy, 4),
+        min_group_occupancy=round(min_occupancy, 4),
+        average_register_cost=round(average_register_cost, 4),
+        average_shared_memory_cost=round(average_shared_memory_cost, 4),
         entropy_before=round(entropy_before_value, 4),
         entropy_after=round(entropy_after_value, 4),
         entropy_gain=round(entropy_gain_value, 4),
@@ -243,9 +355,116 @@ def _summarize_by_bucket(results: list[ScheduleMetrics]) -> list[dict[str, objec
                         "dram_bytes_per_token": round(mean(result.dram_bytes_per_token for result in bucket_results), 4),
                         "quality_drop": round(mean(result.quality_drop for result in bucket_results), 4),
                         "average_fusion_depth": round(mean(result.average_fusion_depth for result in bucket_results), 4),
+                        "average_group_occupancy": round(mean(result.average_group_occupancy for result in bucket_results), 4),
+                        "min_group_occupancy": round(mean(result.min_group_occupancy for result in bucket_results), 4),
+                        "average_register_cost": round(mean(result.average_register_cost for result in bucket_results), 4),
+                        "average_shared_memory_cost": round(mean(result.average_shared_memory_cost for result in bucket_results), 4),
                         "entropy_gain": round(mean(result.entropy_gain for result in bucket_results), 4),
                     }
                 )
+    return summary_rows
+
+
+def _summarize_occupancy(results: list[ScheduleMetrics]) -> list[dict[str, object]]:
+    occupancy_rows: list[dict[str, object]] = []
+    for bucket_name, lengths in SEQUENCE_BUCKETS.items():
+        for method in ("no_fusion", "static_fusion", "entropy_guided", "arithmetic_only", "arithmetic_only_matched"):
+            bucket_results = [
+                result
+                for result in results
+                if result.sequence_length in lengths and result.precision == "fp16" and result.method == method
+            ]
+            if not bucket_results:
+                continue
+            occupancy_rows.append(
+                {
+                    "bucket": bucket_name,
+                    "method": method,
+                    "average_group_occupancy": round(mean(result.average_group_occupancy for result in bucket_results), 4),
+                    "min_group_occupancy": round(mean(result.min_group_occupancy for result in bucket_results), 4),
+                    "average_fusion_depth": round(mean(result.average_fusion_depth for result in bucket_results), 4),
+                    "average_register_cost": round(mean(result.average_register_cost for result in bucket_results), 4),
+                    "average_shared_memory_cost": round(mean(result.average_shared_memory_cost for result in bucket_results), 4),
+                }
+            )
+    return occupancy_rows
+
+
+def _summarize_alpha_zero_ablation(results: list[ScheduleMetrics]) -> list[dict[str, object]]:
+    ablation_rows: list[dict[str, object]] = []
+    for bucket_name, lengths in SEQUENCE_BUCKETS.items():
+        for precision in PRECISION_SPEEDUP:
+            entropy_guided_rows = [
+                result
+                for result in results
+                if result.sequence_length in lengths and result.precision == precision and result.method == "entropy_guided"
+            ]
+            arithmetic_only_rows = [
+                result
+                for result in results
+                if result.sequence_length in lengths and result.precision == precision and result.method == "arithmetic_only"
+            ]
+            if not entropy_guided_rows or not arithmetic_only_rows:
+                continue
+            entropy_latency = mean(result.latency_ms for result in entropy_guided_rows)
+            arithmetic_latency = mean(result.latency_ms for result in arithmetic_only_rows)
+            ablation_rows.append(
+                {
+                    "bucket": bucket_name,
+                    "precision": precision,
+                    "entropy_guided_latency_ms": round(entropy_latency, 4),
+                    "arithmetic_only_latency_ms": round(arithmetic_latency, 4),
+                    "latency_delta_ms": round(arithmetic_latency - entropy_latency, 4),
+                    "entropy_guided_throughput_tokens_per_s": round(mean(result.throughput_tokens_per_s for result in entropy_guided_rows), 4),
+                    "arithmetic_only_throughput_tokens_per_s": round(mean(result.throughput_tokens_per_s for result in arithmetic_only_rows), 4),
+                    "entropy_guided_quality_drop": round(mean(result.quality_drop for result in entropy_guided_rows), 4),
+                    "arithmetic_only_quality_drop": round(mean(result.quality_drop for result in arithmetic_only_rows), 4),
+                    "entropy_guided_average_depth": round(mean(result.average_fusion_depth for result in entropy_guided_rows), 4),
+                    "arithmetic_only_average_depth": round(mean(result.average_fusion_depth for result in arithmetic_only_rows), 4),
+                    "entropy_guided_average_group_occupancy": round(mean(result.average_group_occupancy for result in entropy_guided_rows), 4),
+                    "arithmetic_only_average_group_occupancy": round(mean(result.average_group_occupancy for result in arithmetic_only_rows), 4),
+                }
+            )
+    return ablation_rows
+
+
+def _summarize_matched_alpha_zero(results: list[ScheduleMetrics], matched_tau_rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    summary_rows: list[dict[str, object]] = []
+    for bucket_name, lengths in SEQUENCE_BUCKETS.items():
+        for precision in PRECISION_SPEEDUP:
+            entropy_rows = [
+                result
+                for result in results
+                if result.sequence_length in lengths and result.precision == precision and result.method == "entropy_guided"
+            ]
+            matched_rows = [
+                result
+                for result in results
+                if result.sequence_length in lengths and result.precision == precision and result.method == "arithmetic_only_matched"
+            ]
+            if not entropy_rows or not matched_rows:
+                continue
+            tau_candidates = [
+                row["matched_tau"]
+                for row in matched_tau_rows
+                if row["bucket"] == bucket_name and row["sequence_length"] in lengths
+            ]
+            summary_rows.append(
+                {
+                    "bucket": bucket_name,
+                    "precision": precision,
+                    "matched_tau_mean": round(mean(tau_candidates), 4) if tau_candidates else "",
+                    "entropy_guided_latency_ms": round(mean(result.latency_ms for result in entropy_rows), 4),
+                    "arithmetic_only_matched_latency_ms": round(mean(result.latency_ms for result in matched_rows), 4),
+                    "latency_delta_ms": round(mean(result.latency_ms for result in matched_rows) - mean(result.latency_ms for result in entropy_rows), 4),
+                    "entropy_guided_quality_drop": round(mean(result.quality_drop for result in entropy_rows), 4),
+                    "arithmetic_only_matched_quality_drop": round(mean(result.quality_drop for result in matched_rows), 4),
+                    "entropy_guided_average_depth": round(mean(result.average_fusion_depth for result in entropy_rows), 4),
+                    "arithmetic_only_matched_average_depth": round(mean(result.average_fusion_depth for result in matched_rows), 4),
+                    "entropy_guided_average_group_occupancy": round(mean(result.average_group_occupancy for result in entropy_rows), 4),
+                    "arithmetic_only_matched_average_group_occupancy": round(mean(result.average_group_occupancy for result in matched_rows), 4),
+                }
+            )
     return summary_rows
 
 
@@ -253,6 +472,8 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
     rng = np.random.default_rng(config.seed)
     results: list[ScheduleMetrics] = []
     validation_rows: list[dict[str, object]] = []
+    schedule_trace_rows: list[dict[str, object]] = []
+    matched_tau_rows: list[dict[str, object]] = []
 
     for sequence_length in [length for bucket in SEQUENCE_BUCKETS.values() for length in bucket]:
         moving_entropy = ExponentialMovingEntropy(decay=0.85, bins=config.bins)
@@ -285,11 +506,57 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
 
             chain = _build_operator_chain(activations, rotated_inputs[:, : config.hidden_dim], sequence_length)
             resource_model = _resource_model(sequence_length)
+            entropy_guided_groups = select_fusion_groups(chain, tau=config.tau, resource_model=resource_model)
+            matched_tau, arithmetic_only_matched_groups = _calibrate_arithmetic_only_schedule(
+                chain,
+                resource_model=resource_model,
+                target_depth=_average_depth(entropy_guided_groups),
+                base_tau=config.tau,
+            )
             schedules = {
                 "no_fusion": build_no_fusion_groups(chain),
                 "static_fusion": build_static_fusion_groups(chain, resource_model=resource_model, group_size=3),
-                "entropy_guided": select_fusion_groups(chain, tau=config.tau, resource_model=resource_model),
+                "entropy_guided": entropy_guided_groups,
+                "arithmetic_only": select_fusion_groups(
+                    chain,
+                    tau=config.tau,
+                    resource_model=resource_model,
+                    alpha=0.0,
+                ),
+                "arithmetic_only_matched": arithmetic_only_matched_groups,
             }
+
+            schedule_taus = {
+                "no_fusion": 0.0,
+                "static_fusion": 0.0,
+                "entropy_guided": config.tau,
+                "arithmetic_only": config.tau,
+                "arithmetic_only_matched": matched_tau,
+            }
+
+            matched_tau_rows.append(
+                {
+                    "bucket": _bucket_name(sequence_length),
+                    "sequence_length": sequence_length,
+                    "repeat": repeat,
+                    "base_tau": round(config.tau, 4),
+                    "matched_tau": round(matched_tau, 4),
+                    "target_depth": round(_average_depth(entropy_guided_groups), 4),
+                    "matched_depth": round(_average_depth(arithmetic_only_matched_groups), 4),
+                }
+            )
+
+            for method, groups in schedules.items():
+                schedule_trace_rows.extend(
+                    _build_schedule_trace_rows(
+                        sequence_length=sequence_length,
+                        repeat=repeat,
+                        method=method,
+                        tau=schedule_taus[method],
+                        target_depth=_average_depth(entropy_guided_groups),
+                        groups=groups,
+                    )
+                )
 
             for precision in PRECISION_SPEEDUP:
                 for method, groups in schedules.items():
@@ -310,21 +577,46 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
 
     detailed_rows = [asdict(result) for result in results]
     summary_rows = _summarize_by_bucket(results)
+    occupancy_rows = _summarize_occupancy(results)
+    alpha_zero_rows = _summarize_alpha_zero_ablation(results)
+    matched_alpha_zero_rows = _summarize_matched_alpha_zero(results, matched_tau_rows)
     _write_csv(output_dir / "detailed_metrics.csv", detailed_rows)
     _write_csv(output_dir / "bucket_summary.csv", summary_rows)
+    _write_csv(output_dir / "occupancy_summary.csv", occupancy_rows)
+    _write_csv(output_dir / "alpha_zero_ablation.csv", alpha_zero_rows)
+    _write_csv(output_dir / "alpha_zero_matched_ablation.csv", matched_alpha_zero_rows)
+    _write_csv(output_dir / "schedule_trace.csv", schedule_trace_rows)
+    _write_csv(output_dir / "alpha_zero_matched_tau.csv", matched_tau_rows)
     _write_csv(output_dir / "hadamard_validation.csv", validation_rows)
 
     metadata = {
         "config": asdict(config),
         "output_dir": str(output_dir),
         "sequence_lengths": [length for bucket in SEQUENCE_BUCKETS.values() for length in bucket],
-        "methods": ["no_fusion", "static_fusion", "entropy_guided"],
+        "methods": ["no_fusion", "static_fusion", "entropy_guided", "arithmetic_only", "arithmetic_only_matched"],
         "precisions": list(PRECISION_SPEEDUP.keys()),
+        "ablations": {
+            "alpha_zero": {
+                "alpha": 0.0,
+                "beta": 0.35,
+                "gamma": 0.20,
+                "description": "Arithmetic-intensity-only boundary selection with the entropy term disabled.",
+            },
+            "alpha_zero_matched": {
+                "alpha": 0.0,
+                "beta": 0.35,
+                "gamma": 0.20,
+                "description": "Arithmetic-intensity-only boundary selection with a calibrated tau chosen to match the entropy-guided fusion depth as closely as possible.",
+            }
+        },
     }
     (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     return {
         "metadata": metadata,
         "summary_rows": summary_rows,
+        "occupancy_rows": occupancy_rows,
+        "alpha_zero_rows": alpha_zero_rows,
+        "matched_alpha_zero_rows": matched_alpha_zero_rows,
         "validation_rows": validation_rows,
     }
 

@@ -19,6 +19,15 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
+def _save_figure(figure: plt.Figure, stem: str) -> Path:
+    PAPER_FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+    jpg_path = PAPER_FIGURES_DIR / f"{stem}.jpg"
+    pdf_path = PAPER_FIGURES_DIR / f"{stem}.pdf"
+    figure.savefig(jpg_path, bbox_inches="tight", dpi=300)
+    figure.savefig(pdf_path, bbox_inches="tight")
+    return jpg_path
+
+
 def generate_entropy_gain_figure() -> Path:
     rows = _read_csv(OUTPUTS_DIR / "hadamard_validation.csv")
     sequence_lengths = [int(row["sequence_length"]) for row in rows]
@@ -29,6 +38,8 @@ def generate_entropy_gain_figure() -> Path:
     axis.plot(sequence_lengths, entropy_before, "o--", color="#b44b3d", label="Before Hadamard")
     axis.plot(sequence_lengths, entropy_after, "s-", color="#2f6c8f", label="After Hadamard")
     axis.set_xscale("log", base=2)
+    axis.set_xticks(sequence_lengths)
+    axis.set_xticklabels([f"$2^{{{length.bit_length() - 1}}}$\n{length}" for length in sequence_lengths])
     axis.set_xlabel("Sequence length")
     axis.set_ylabel("Normalized entropy")
     axis.set_title("Entropy increase after Hadamard reparameterization")
@@ -36,9 +47,7 @@ def generate_entropy_gain_figure() -> Path:
     axis.legend(frameon=False)
     figure.tight_layout()
 
-    PAPER_FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    output_path = PAPER_FIGURES_DIR / "entropy_gain.pdf"
-    figure.savefig(output_path, bbox_inches="tight")
+    output_path = _save_figure(figure, "entropy_gain")
     plt.close(figure)
     return output_path
 
@@ -90,9 +99,7 @@ def generate_performance_summary_figure() -> Path:
     axes[1].legend(frameon=False, loc="upper left")
     figure.tight_layout()
 
-    PAPER_FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    output_path = PAPER_FIGURES_DIR / "performance_summary.pdf"
-    figure.savefig(output_path, bbox_inches="tight")
+    output_path = _save_figure(figure, "performance_summary")
     plt.close(figure)
     return output_path
 
