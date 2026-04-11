@@ -89,6 +89,24 @@ class ScheduleTraceRow:
     feasible: bool
 
 
+@dataclass(frozen=True)
+class TileTraceRow:
+    bucket: str
+    sequence_length: int
+    repeat: int
+    method: str
+    tau: float
+    group_index: int
+    tile_index: int
+    tile_size: int
+    estimated_tile_count: int
+    group_depth: int
+    group_occupancy: float
+    group_entropy: float
+    group_register_cost: int
+    group_shared_memory_cost: int
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run entropy-guided fusion experiments.")
     parser.add_argument("--output-dir", type=Path, default=Path("src/outputs"))
@@ -241,6 +259,48 @@ def _build_schedule_trace_rows(
                 )
             )
         )
+    return rows
+
+
+def _recommend_prototype_tile_size(entropy: float, base_tile: int = 64, max_tile: int = 512) -> int:
+    normalized = min(max(entropy, 0.0), 1.0)
+    suggested = base_tile + normalized * (max_tile - base_tile)
+    return int(round(suggested / 32.0) * 32)
+
+
+def _build_tile_trace_rows(
+    sequence_length: int,
+    repeat: int,
+    method: str,
+    tau: float,
+    groups,
+) -> list[dict[str, object]]:
+    bucket_name = _bucket_name(sequence_length)
+    rows: list[dict[str, object]] = []
+    for group_index, group in enumerate(groups):
+        tile_size = _recommend_prototype_tile_size(group.entropy)
+        estimated_tile_count = max(1, math.ceil(sequence_length / max(tile_size, 1)))
+        for tile_index in range(estimated_tile_count):
+            rows.append(
+                asdict(
+                    TileTraceRow(
+                        bucket=bucket_name,
+                        sequence_length=sequence_length,
+                        repeat=repeat,
+                        method=method,
+                        tau=round(tau, 4),
+                        group_index=group_index,
+                        tile_index=tile_index,
+                        tile_size=tile_size,
+                        estimated_tile_count=estimated_tile_count,
+                        group_depth=group.depth,
+                        group_occupancy=round(group.occupancy, 4),
+                        group_entropy=round(group.entropy, 4),
+                        group_register_cost=group.register_cost,
+                        group_shared_memory_cost=group.shared_memory_cost,
+                    )
+                )
+            )
     return rows
 
 
@@ -473,6 +533,7 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
     results: list[ScheduleMetrics] = []
     validation_rows: list[dict[str, object]] = []
     schedule_trace_rows: list[dict[str, object]] = []
+    tile_trace_rows: list[dict[str, object]] = []
     matched_tau_rows: list[dict[str, object]] = []
 
     for sequence_length in [length for bucket in SEQUENCE_BUCKETS.values() for length in bucket]:
@@ -557,6 +618,15 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
                         groups=groups,
                     )
                 )
+                tile_trace_rows.extend(
+                    _build_tile_trace_rows(
+                        sequence_length=sequence_length,
+                        repeat=repeat,
+                        method=method,
+                        tau=schedule_taus[method],
+                        groups=groups,
+                    )
+                )
 
             for precision in PRECISION_SPEEDUP:
                 for method, groups in schedules.items():
@@ -586,6 +656,7 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
     _write_csv(output_dir / "alpha_zero_ablation.csv", alpha_zero_rows)
     _write_csv(output_dir / "alpha_zero_matched_ablation.csv", matched_alpha_zero_rows)
     _write_csv(output_dir / "schedule_trace.csv", schedule_trace_rows)
+    _write_csv(output_dir / "tile_trace.csv", tile_trace_rows)
     _write_csv(output_dir / "alpha_zero_matched_tau.csv", matched_tau_rows)
     _write_csv(output_dir / "hadamard_validation.csv", validation_rows)
 
@@ -617,6 +688,7 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
         "occupancy_rows": occupancy_rows,
         "alpha_zero_rows": alpha_zero_rows,
         "matched_alpha_zero_rows": matched_alpha_zero_rows,
+        "tile_trace_rows": len(tile_trace_rows),
         "validation_rows": validation_rows,
     }
 

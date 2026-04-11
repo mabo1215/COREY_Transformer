@@ -57,7 +57,7 @@ LM_DATASET_SPECS = {
         "split": "test",
     },
     "pg19": {
-        "dataset_name": "pg19",
+        "dataset_name": "deepmind/pg19",
         "config": None,
         "text_field": "text",
         "split": "test",
@@ -399,7 +399,14 @@ def _load_task_samples(args: argparse.Namespace, task_name: str, split: str, max
         if source == "local":
             raise FileNotFoundError(f"Expected LongBench file at {task_path}")
     if source in {"auto", "hf"}:
-        return _load_hf_task_samples(args, task, max_samples)
+        try:
+            return _load_hf_task_samples(args, task, max_samples)
+        except RuntimeError as exc:
+            task_path = args.dataset_root / task_name / f"{split}.jsonl" if args.dataset_root is not None else None
+            dataset_script_disabled = "Dataset scripts are no longer supported" in str(exc.__cause__ or exc)
+            if dataset_script_disabled and task_path is not None and task_path.exists():
+                return _load_local_task_samples(args.dataset_root, task, split, max_samples)
+            raise
     raise ValueError("No dataset source could be resolved for LongBench loading.")
 
 

@@ -11,14 +11,16 @@ from src.experiments.run_longbench_inference import LM_DATASET_SPECS
 from src.experiments.run_longbench_inference import LONG_BENCH_TASKS
 from src.experiments.run_longbench_inference import run_longbench
 from src.experiments.run_official_mamba_benchmark import run_benchmark
+from src.algorithms.mamba_integration import default_mamba_model_specs
 
 
 def _parse_args() -> argparse.Namespace:
+    model_choices = [spec.name for spec in default_mamba_model_specs()]
     parser = argparse.ArgumentParser(
         description="Run a resumable matrix of LongBench and official benchmark evaluations across Mamba checkpoints."
     )
     parser.add_argument("--modes", nargs="+", choices=["longbench", "benchmark"], default=["longbench", "benchmark"])
-    parser.add_argument("--models", nargs="+", choices=["mamba-370m", "mamba-1.4b", "mamba-2.8b"], default=["mamba-370m", "mamba-1.4b", "mamba-2.8b"])
+    parser.add_argument("--models", nargs="+", choices=model_choices, default=["mamba-370m", "mamba-1.4b", "mamba-2.8b"])
     parser.add_argument("--precisions", nargs="+", choices=["fp16", "fp32", "w8a8", "w4a8"], default=["fp16"])
     parser.add_argument("--tasks", nargs="+", choices=sorted(LONG_BENCH_TASKS.keys()), default=sorted(LONG_BENCH_TASKS.keys()))
     parser.add_argument("--lm-datasets", nargs="+", choices=sorted(LM_DATASET_SPECS.keys()), default=["wikitext103"])

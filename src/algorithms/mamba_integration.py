@@ -262,6 +262,10 @@ class HuggingFaceMambaBackend(MambaBackend):
             model_kwargs[dtype_key] = getattr(torch, "float16")
 
         self.tokenizer = auto_tokenizer.from_pretrained(self.model_spec.model_id, trust_remote_code=True)
+        if getattr(self.tokenizer, "padding_side", None) != "left":
+            self.tokenizer.padding_side = "left"
+        if getattr(self.tokenizer, "pad_token_id", None) is None and getattr(self.tokenizer, "eos_token_id", None) is not None:
+            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
         if quantization_backend in {"awq", "autoawq"}:
             self.model = self._load_awq_model(model_kwargs)
         elif quantization_backend in {"gptq", "autogptq", "auto-gptq"}:
@@ -500,4 +504,7 @@ def default_mamba_model_specs() -> list[ModelSpec]:
         ModelSpec(name="mamba-370m", model_id="state-spaces/mamba-370m-hf"),
         ModelSpec(name="mamba-1.4b", model_id="state-spaces/mamba-1.4b-hf"),
         ModelSpec(name="mamba-2.8b", model_id="state-spaces/mamba-2.8b-hf"),
+        ModelSpec(name="pythia-410m", model_id="EleutherAI/pythia-410m", trust_remote_code=False),
+        ModelSpec(name="pythia-1.4b", model_id="EleutherAI/pythia-1.4b", trust_remote_code=False),
+        ModelSpec(name="pythia-2.8b", model_id="EleutherAI/pythia-2.8b", trust_remote_code=False),
     ]

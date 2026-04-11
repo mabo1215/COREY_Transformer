@@ -22,7 +22,8 @@ DEVICE="${DEVICE:-cuda}"
 DTYPE="${DTYPE:-float16}"
 PRECISION="${PRECISION:-fp16}"
 OUTPUT_DIR="${OUTPUT_DIR:-src/outputs/official_hf_benchmark_wsl}"
-HF_HOME="${HF_HOME:-/mnt/c/Users/mabo1/.cache/huggingface}"
+WINDOWS_USER="${WINDOWS_USER:-$(cmd.exe /c \"echo %USERNAME%\" 2>/dev/null | tr -d '\r')}"
+HF_HOME="${HF_HOME:-/mnt/c/Users/${WINDOWS_USER:-$USER}/.cache/huggingface}"
 
 if [[ -x "$REPO_MICROMAMBA_BIN" ]]; then
   MICROMAMBA_BIN="$REPO_MICROMAMBA_BIN"

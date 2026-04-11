@@ -21,7 +21,8 @@ export MAMBA_ROOT_PREFIX
 export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.6}"
 export CUDAARCHS="${CUDAARCHS:-86}"
 export MAX_JOBS="${MAX_JOBS:-4}"
-export HF_HOME="${HF_HOME:-/mnt/c/Users/mabo1/.cache/huggingface}"
+WINDOWS_USER="${WINDOWS_USER:-$(cmd.exe /c \"echo %USERNAME%\" 2>/dev/null | tr -d '\r')}"
+export HF_HOME="${HF_HOME:-/mnt/c/Users/${WINDOWS_USER:-$USER}/.cache/huggingface}"
 export MAMBA_SRC_REF="${MAMBA_SRC_REF:-v2.3.1}"
 export MAMBA_GENCODE_FLAGS="${MAMBA_GENCODE_FLAGS:--gencode arch=compute_86,code=sm_86}"
 

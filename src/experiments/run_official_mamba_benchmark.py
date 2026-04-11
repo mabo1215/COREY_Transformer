@@ -12,6 +12,7 @@ from typing import Any
 import psutil
 
 from src.algorithms.mamba_integration import GenerationRequest
+from src.algorithms.mamba_integration import default_mamba_model_specs
 from src.algorithms.mamba_integration import official_mamba_fast_path_status
 from src.experiments.run_longbench_inference import (
     LONG_BENCH_TASKS,
@@ -25,10 +26,11 @@ from src.experiments.run_longbench_inference import (
 
 
 def _parse_args() -> argparse.Namespace:
+    model_choices = [spec.name for spec in default_mamba_model_specs()]
     parser = argparse.ArgumentParser(
         description="Run repeated official Hugging Face Mamba benchmark passes and export structured results."
     )
-    parser.add_argument("--model", default="mamba-370m", choices=["mamba-370m", "mamba-1.4b", "mamba-2.8b"])
+    parser.add_argument("--model", default="mamba-370m", choices=model_choices)
     parser.add_argument("--dataset-root", type=Path)
     parser.add_argument("--dataset-source", default="auto", choices=["auto", "local", "hf"])
     parser.add_argument("--dataset-name", default="THUDM/LongBench")
@@ -85,17 +87,29 @@ def _process_rss_mb() -> float:
 def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
     backend = _build_backend(args)
     backend.load()
-    fast_path_status = official_mamba_fast_path_status()
-    fast_path_available = all(
-        fast_path_status.get(key) is True
-        for key in [
-            "selective_scan_fn",
-            "mamba_inner_fn",
-            "selective_state_update",
-            "causal_conv1d_fn",
-            "causal_conv1d_update",
-        ]
-    )
+    is_mamba_model = args.model.startswith("mamba-")
+    if is_mamba_model:
+        fast_path_status: dict[str, Any] = official_mamba_fast_path_status()
+        fast_path_available: bool | None = all(
+            fast_path_status.get(key) is True
+            for key in [
+                "selective_scan_fn",
+                "mamba_inner_fn",
+                "selective_state_update",
+                "causal_conv1d_fn",
+                "causal_conv1d_update",
+            ]
+        )
+    else:
+        fast_path_status = {
+            "selective_scan_fn": None,
+            "mamba_inner_fn": None,
+            "selective_state_update": None,
+            "causal_conv1d_fn": None,
+            "causal_conv1d_update": None,
+            "error": "not_applicable_non_mamba_model",
+        }
+        fast_path_available = None
 
     task = LONG_BENCH_TASKS[args.task]
     samples = _load_task_samples(args, args.task, args.split, args.max_samples)
@@ -167,7 +181,7 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
                 "entropy_after": latest_output.entropy_after if latest_output is not None else None,
                 "suggested_tile_size": latest_output.suggested_tile_size if latest_output is not None else None,
                 "fast_path_available": fast_path_available,
-                "deployment_grade": args.device.startswith("cuda") and fast_path_available,
+                "deployment_grade": args.device.startswith("cuda") and (fast_path_available if is_mamba_model else True),
             }
         )
 
@@ -235,7 +249,7 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
         },
         "fast_path_status": fast_path_status,
         "fast_path_available": fast_path_available,
-        "deployment_grade": args.device.startswith("cuda") and fast_path_available,
+        "deployment_grade": args.device.startswith("cuda") and (fast_path_available if is_mamba_model else True),
     }
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
