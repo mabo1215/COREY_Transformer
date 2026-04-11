@@ -1,6 +1,6 @@
 # 论文进度
 
-最后更新：本轮 revision cycle 已继续推进，并已把已落地完成的 WSL2 checkpoint/main-table 证据项从遗留问题中回收进“已全部修改”；当前遗留问题已收缩到量化、PG19 实跑回填、论文表格回填、prototype runtime trace 与匿名仓库准备。
+最后更新：本轮 revision cycle 已继续推进；PG19、Pythia baseline 与 Triton timing 已进一步回填到 canonical summary 输出和论文正文/附录中，当前未完成项继续收缩到量化、更大覆盖度的 checkpoint 对比、以及 prototype runtime trace 等尚未落地工作。
 
 ## 已全部修改
 
@@ -32,11 +32,13 @@
 - 任务 26：根据用户在 `docs/progress.md` 中回填的决策继续收口当前 revision cycle：将 `run_longbench_inference.py` 的 PG19 语言模型数据入口切换为 `deepmind/pg19`，避免继续依赖已弃用的 `pg19.py` 脚本；把 `src/scripts/wsl_run_checkpoint_matrix.sh` 的下一轮默认配置改为当前四个 LongBench 任务、`mamba-370m` 与 `mamba-1.4b` 两个主模型、每任务 20 样本、HF 数据源 `THUDM/LongBench`、统一 `4096` token 上限以及 `WikiText-103/PG19` 各 20 样本侧评；同时在 `run_entropy_guided_experiments.py` 中新增 `tile_trace.csv`，用 prototype-level surrogate 方式按 group entropy 映射 tile size 并展开成 per-tile trace，便于下一步把用户已批准的“per-tile trace”补进论文。另在 `paper/appendix.tex` 的 Reproducibility Checklist 中补入 `All Triton kernel benchmarks are executed exclusively in the WSL2 CUDA 12.8 environment ...`，与用户确认的实验环境约束保持一致。
 - 任务 27：按用户给定优先级在 WSL2 `adama-cuda128` 环境中直接补齐最低门槛证据。首先，不再依赖会被 `datasets` 拒绝的脚本型 HF LongBench 入口，而是在 `run_longbench_inference.py` 中加入当 `THUDM/LongBench` 触发 `Dataset scripts are no longer supported` 时自动回退到仓库内同源 `src/data/longbench_subset/<task>/test.jsonl` 的逻辑，从而让四任务 20 样本主表跑法可稳定执行。随后分别用 `batch_size=4` 的 `mamba-370m` 与 `batch_size=2` 的 `mamba-1.4b` 在 WSL2 CUDA 12.8 / RTX 3070 上完成 `narrativeqa`、`qasper`、`multifieldqa_en`、`gov_report` 四任务各 20 样本与 WikiText-103 side perplexity 的真实运行，输出位于 `src/outputs/longbench20_wsl_main/`：其中 `mamba-370m` 的四任务平均延迟分别为 1379.30 / 1006.86 / 730.37 / 2420.47 ms，WikiText-103 perplexity 为 809.36；`mamba-1.4b` 的对应延迟分别为 2821.48 / 2135.66 / 1558.29 / 4959.52 ms，WikiText-103 perplexity 为 1128.40。其次，新增对外部 baseline 的实际支持：将模型注册表与 benchmark/matrix 入口扩展到 `EleutherAI/pythia-410m` / `pythia-1.4b` / `pythia-2.8b`，并在同一 WSL2 环境中完成 `pythia-410m` 的四任务 20 样本 baseline，输出位于 `src/outputs/pythia410m_wsl_baseline/`；其四任务延迟为 612.34 / 435.38 / 328.71 / 1121.29 ms，WikiText-103 perplexity 为 5901.47。最后，新增 `src/experiments/run_triton_selective_scan_benchmark.py` 并完成一次真实 `mamba_ssm.ops.selective_scan_interface.selective_scan_fn` wall-clock timing，输出位于 `src/outputs/triton_selective_scan_wsl/`；在 `batch=1, dim=1024, seq_len=4096, d_state=16, fp16, delta_softplus=true` 下，30 次重复的平均延迟为 0.3204 ms，标准差 0.0420 ms，最小/最大延迟为 0.2802 / 0.4604 ms。这使“至少 1 个公平外部 baseline + 1 个真实 Triton selective-scan timing”的最低门槛首次在当前仓库中被实际满足。
 - 任务 28：根据用户已在遗留问题区给出的决策，重新核销当前已完成项并同步更新进度分类。具体而言，`mamba-370m` 与 `mamba-1.4b` 的四任务各 20 样本、`4096` token 上限、`fast_path=true`、并含 `WikiText-103 perplexity / token-F1或ROUGE-L / latency(ms) / tok/s` 的最小主文 checkpoint 证据集，已经由任务 27 的 WSL2 实跑结果实际满足，因此“下一轮先扩当前四任务并增大样本数、仅先做 370M/1.4B、以可进入主文表格的最小证据集为目标”这一组决策已被执行完成；同时，“至少 1 个公平外部 baseline + 1 个真实 Triton selective-scan timing”的最低新增证据门槛也已由 `src/outputs/pythia410m_wsl_baseline/` 与 `src/outputs/triton_selective_scan_wsl/` 满足。基于这些实际产物，遗留问题区不再重复保留这些已落地条目，只保留真正尚未完成的工作。
+- 任务 29：继续推进一个此前仍停留在“入口已切换、但未实际重跑”的遗留项：将 `run_longbench_inference.py` 的 PG19 语言模型侧评加载逻辑扩展为“优先尝试 `deepmind/pg19`，若因 `datasets` 的脚本禁用策略失败，则自动回退到无脚本 parquet 镜像 `mrsndmn/pg19`”。随后在 WSL2 `adama-cuda128` 环境中对 `mamba-370m` 与 `mamba-1.4b` 分别执行新的 PG19 侧评 probe，输出位于 `src/outputs/pg19_wsl_reprobe/`；两者均已成功返回 `status=ok` 的 `lm_summary.csv`，其中 20 样本 PG19 perplexity 分别为 14.682916 与 11.664079。这意味着 PG19 已不再停留在“入口已改、但未重跑”的状态；当前剩余工作仅是决定是否把这一新结果正式并入主文表格或原有汇总输出。
+- 任务 30：继续把已生成的真实证据从“仓库输出”推进到“可引用 manuscript evidence”。首先，将 `src/outputs/pg19_wsl_reprobe/` 中验证通过的 PG19 20 样本 perplexity 结果回填到 `src/outputs/longbench20_wsl_main/` 的 canonical `summary.csv`，使 `mamba-370m` 与 `mamba-1.4b` 的主表汇总不再保留过时的 blocked 行。其次，更新 `paper/main.tex` 与 `paper/appendix.tex` 的 checkpoint 叙述：删除 PG19 不可用的旧表述，改为说明 harness 会自动回退到 `mrsndmn/pg19`；将 Mamba-370M / Mamba-1.4B 的四任务 20 样本结果、Pythia-410M 的公平外部 baseline，以及真实 `selective_scan_fn` Triton timing 回填到正文与附录的 checkpoint-status 段落中，并重新编译论文确认 PDF 成功生成。完成后，PG19 已不再属于“未回填到论文或 canonical summary”的未完成项；相关剩余问题只剩更大覆盖度与真实方法后端对比。
 
 
-## 遗留问题
+## 未修改或部分修改
 
-- 【部分缓解】最小主文 checkpoint 证据集已经具备：`mamba-370m` 与 `mamba-1.4b` 均已完成四任务各 20 样本的 WSL2 fast-path 运行，并输出 `WikiText-103 perplexity / token-F1或ROUGE-L / latency / tok-s`；`mamba-2.8b` 也已有 benchmark-only 证据。当前剩余缺口已从“主文最小证据不足”收缩为“是否继续扩更大样本规模、是否补能耗统计、以及是否把 2.8B 也扩到同规模任务覆盖”。
+- 【部分缓解】最小主文 checkpoint 证据集已经具备，且相关结果现已同步回填到 canonical `summary.csv` 与论文正文/附录：`mamba-370m` 与 `mamba-1.4b` 均已完成四任务各 20 样本的 WSL2 fast-path 运行，并输出 `WikiText-103 perplexity / PG19 perplexity / token-F1或ROUGE-L / latency / tok-s`；`mamba-2.8b` 也已有 benchmark-only 证据。当前剩余缺口已从“主文最小证据不足”进一步收缩为“是否继续扩更大样本规模、是否补能耗统计、以及是否把 2.8B 也扩到同规模任务覆盖”。
 
 - 【已阻挡】GPTQ 路径在当前 `auto-gptq` 上已验证到模型检查阶段，但明确报错 `mamba isn't supported yet`；AWQ 路径在 Windows 上虽然成功安装，但其依赖链仍卡在 `transformers.models.phi3` / kernel extension 兼容问题，因此两条量化路径目前都无法对 Mamba-1.4B 完成真实量化推理。
 	需要你回答/决策：
@@ -46,10 +48,7 @@
 	   A: 允许
 	3. 如果你已有指定的量化目标，请直接填写优先顺序，例如 `先 AWQ，再 GPTQ` 或 `只做 AWQ`。
 	   A: 先 AWQ，再 GPTQ（AWQ 用 AutoAWQ：pip install autoawq，需 CUDA ≥ 11.8 + torch ≥ 2.4，fused modules 仅 Linux 可用，WSL2 满足；GPTQ 待 auto-gptq 上游支持 Mamba 后跟进，当前已知 mamba isn't supported yet，可关注 github.com/state-spaces/mamba/issues 跟踪进展）
-
-- 【部分缓解】PG19 的语言模型侧评入口现已可切换到 `load_dataset('deepmind/pg19', split='test')`，不再受已弃用 `pg19.py` 脚本阻断；但该入口尚未在本轮 WSL2 checkpoint matrix 中完成新的实际重跑与结果回填，因此当前仍未进入主文可用证据集。
-
-- 【部分缓解】“至少 1 个公平外部 baseline + 1 个真实 Triton selective-scan timing”的最低新增证据门槛已经满足，当前剩余缺口已收缩为更高覆盖度的外部 baseline 扩展、将这些结果正式回填到论文表格，以及 Theorem 1 条件的经验验证。
+- 【部分缓解】“至少 1 个公平外部 baseline + 1 个真实 Triton selective-scan timing”的最低新增证据门槛已经满足，且相关结果现已回填到论文正文/附录的 checkpoint 证据段落。当前剩余缺口已收缩为更高覆盖度的外部 baseline 扩展，以及 Theorem 1 条件的经验验证。
 
 - 【部分缓解】WSL2 侧的 `adama-cuda128` Linux CUDA 12.8 环境已稳定承担 authoritative deployment-grade 证据运行，相关 fast-path 与最小四任务主表跑法都已落地；当前这一路线的剩余问题已集中到“是否继续扩更大样本覆盖”和“是否实现真实 static fusion / COREY 对比”，而不再是环境不可用。
 
@@ -61,6 +60,8 @@
 	   A: （已选先补 per-tile trace，暂不适用；若后续回填，优先顺序为：matched-depth latency delta > occupancy/depth/resource-cost 对照）
 	3. 如果先补 per-tile trace，请说明你是否接受这仍然是 prototype-level surrogate，而不是真实 GPU kernel trace。
 	   A: 接受（明确在论文中标注为 prototype-level surrogate；真实 GPU kernel trace 需要 Triton 内核实现，列为 future work）
+
+## 遗留问题
 
 - 【已阻挡】当前仓库尚未准备匿名对外仓库或匿名快照 URL，因此虽然正文和附录已经补足可复现性说明，review 建议中的"anonymous repository link"仍无法在不新增发布工序的前提下完成。
 	需要你提供/决策：

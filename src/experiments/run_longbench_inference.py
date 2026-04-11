@@ -58,6 +58,7 @@ LM_DATASET_SPECS = {
     },
     "pg19": {
         "dataset_name": "deepmind/pg19",
+        "fallback_dataset_names": ["mrsndmn/pg19"],
         "config": None,
         "text_field": "text",
         "split": "test",
@@ -371,13 +372,24 @@ def _load_hf_task_samples(args: argparse.Namespace, task: LongBenchTaskSpec, max
 def _load_lm_samples(args: argparse.Namespace, dataset_key: str) -> list[str]:
     load_dataset = _require_hf_datasets()
     spec = LM_DATASET_SPECS[dataset_key]
-    dataset = load_dataset(
-        spec["dataset_name"],
-        name=spec["config"],
-        split=spec["split"],
-        cache_dir=str(args.cache_dir) if args.cache_dir else None,
-        token=args.hf_token,
-    )
+    dataset_names = [spec["dataset_name"], *spec.get("fallback_dataset_names", [])]
+    dataset = None
+    last_error: Exception | None = None
+    for dataset_name in dataset_names:
+        try:
+            dataset = load_dataset(
+                dataset_name,
+                name=spec["config"],
+                split=spec["split"],
+                cache_dir=str(args.cache_dir) if args.cache_dir else None,
+                token=args.hf_token,
+            )
+            break
+        except Exception as exc:  # pragma: no cover - depends on external dataset availability
+            last_error = exc
+    if dataset is None:
+        raise RuntimeError(f"Unable to load language-model dataset {dataset_key} from any configured source.") from last_error
+
     texts: list[str] = []
     for sample in dataset:
         text = _stringify_value(sample.get(spec["text_field"], "")).strip()
