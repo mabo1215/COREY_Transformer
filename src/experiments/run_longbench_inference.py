@@ -138,6 +138,12 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--lm-datasets", nargs="+", choices=sorted(LM_DATASET_SPECS.keys()), default=[])
     parser.add_argument("--lm-max-samples", type=int, default=0)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--sample-offset",
+        type=int,
+        default=0,
+        help="Skip the first N samples (used for sharded multi-GPU runs).",
+    )
     return parser.parse_args()
 
 
@@ -314,7 +320,13 @@ def _coerce_answer_list(value: Any) -> list[str]:
     return [_stringify_value(value)] if _stringify_value(value) else []
 
 
-def _load_local_task_samples(dataset_root: Path, task: LongBenchTaskSpec, split: str, max_samples: int) -> list[dict[str, object]]:
+def _load_local_task_samples(
+    dataset_root: Path,
+    task: LongBenchTaskSpec,
+    split: str,
+    max_samples: int,
+    sample_offset: int = 0,
+) -> list[dict[str, object]]:
     task_path = dataset_root / task.name / f"{split}.jsonl"
     if not task_path.exists():
         raise FileNotFoundError(f"Expected LongBench file at {task_path}")
@@ -322,7 +334,10 @@ def _load_local_task_samples(dataset_root: Path, task: LongBenchTaskSpec, split:
     samples: list[dict[str, object]] = []
     with task_path.open("r", encoding="utf-8") as handle:
         for index, line in enumerate(handle):
-            if max_samples and index >= max_samples:
+            if index < sample_offset:
+                continue
+            relative_idx = index - sample_offset
+            if max_samples and relative_idx >= max_samples:
                 break
             loaded = json.loads(line)
             samples.append(_normalize_longbench_sample(task, loaded, index))
@@ -357,12 +372,18 @@ def _load_hf_task_samples(args: argparse.Namespace, task: LongBenchTaskSpec, max
     if dataset is None:
         raise RuntimeError(f"Unable to load task {task.name} from any known LongBench dataset id.") from last_error
 
+    sample_offset = getattr(args, "sample_offset", 0) or 0
     samples: list[dict[str, object]] = []
+    eligible = 0
     for index, sample in enumerate(dataset):
         loaded = dict(sample)
         dataset_name = str(loaded.get("dataset", loaded.get("subset", loaded.get("task", "")))).lower()
         if dataset_name and task.name not in dataset_name:
             continue
+        if eligible < sample_offset:
+            eligible += 1
+            continue
+        eligible += 1
         samples.append(_normalize_longbench_sample(task, loaded, index))
         if max_samples and len(samples) >= max_samples:
             break
@@ -404,10 +425,11 @@ def _load_lm_samples(args: argparse.Namespace, dataset_key: str) -> list[str]:
 def _load_task_samples(args: argparse.Namespace, task_name: str, split: str, max_samples: int) -> list[dict[str, object]]:
     task = LONG_BENCH_TASKS[task_name]
     source = args.dataset_source
+    sample_offset = getattr(args, "sample_offset", 0) or 0
     if source in {"auto", "local"} and args.dataset_root is not None:
         task_path = args.dataset_root / task_name / f"{split}.jsonl"
         if task_path.exists():
-            return _load_local_task_samples(args.dataset_root, task, split, max_samples)
+            return _load_local_task_samples(args.dataset_root, task, split, max_samples, sample_offset)
         if source == "local":
             raise FileNotFoundError(f"Expected LongBench file at {task_path}")
     if source in {"auto", "hf"}:
@@ -417,7 +439,7 @@ def _load_task_samples(args: argparse.Namespace, task_name: str, split: str, max
             task_path = args.dataset_root / task_name / f"{split}.jsonl" if args.dataset_root is not None else None
             dataset_script_disabled = "Dataset scripts are no longer supported" in str(exc.__cause__ or exc)
             if dataset_script_disabled and task_path is not None and task_path.exists():
-                return _load_local_task_samples(args.dataset_root, task, split, max_samples)
+                return _load_local_task_samples(args.dataset_root, task, split, max_samples, sample_offset)
             raise
     raise ValueError("No dataset source could be resolved for LongBench loading.")
 
