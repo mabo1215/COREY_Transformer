@@ -13,15 +13,39 @@ INIT_SUBMODULES="${INIT_SUBMODULES:-1}"
 INSTALL_CORE_RUNTIME="${INSTALL_CORE_RUNTIME:-1}"
 BUILD_THIRD_PARTY="${BUILD_THIRD_PARTY:-0}"
 BUILD_QUAMBA_PACKAGE="${BUILD_QUAMBA_PACKAGE:-0}"
-WINDOWS_USER="${WINDOWS_USER:-$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r')}"
-HF_HOME="${HF_HOME:-/mnt/c/Users/${WINDOWS_USER:-$USER}/.cache/huggingface}"
+
+if [[ -n "${WINDOWS_USER:-}" ]]; then
+  DETECTED_WINDOWS_USER="$WINDOWS_USER"
+elif command -v cmd.exe >/dev/null 2>&1; then
+  DETECTED_WINDOWS_USER="$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r')"
+else
+  DETECTED_WINDOWS_USER=""
+fi
+
+if [[ -n "${HF_HOME:-}" ]]; then
+  EFFECTIVE_HF_HOME="$HF_HOME"
+elif [[ -n "$DETECTED_WINDOWS_USER" && -d "/mnt/c/Users/$DETECTED_WINDOWS_USER" ]]; then
+  EFFECTIVE_HF_HOME="/mnt/c/Users/$DETECTED_WINDOWS_USER/.cache/huggingface"
+else
+  EFFECTIVE_HF_HOME="${HOME}/.cache/huggingface"
+fi
+
+WINDOWS_USER="$DETECTED_WINDOWS_USER"
+HF_HOME="$EFFECTIVE_HF_HOME"
 
 mkdir -p "$TOOLS_DIR" "$MAMBA_ROOT_PREFIX"
 
 if [[ -x "$REPO_MICROMAMBA_BIN" ]]; then
   MICROMAMBA_BIN="$REPO_MICROMAMBA_BIN"
 elif [[ ! -x "$MICROMAMBA_BIN" ]]; then
-  curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xj -C "$TOOLS_DIR" bin/micromamba
+  if command -v curl >/dev/null 2>&1; then
+    curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xj -C "$TOOLS_DIR" bin/micromamba
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO- https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xj -C "$TOOLS_DIR" bin/micromamba
+  else
+    printf '[error] neither curl nor wget is available to download micromamba\n' >&2
+    exit 1
+  fi
 fi
 
 export MAMBA_ROOT_PREFIX
