@@ -189,6 +189,13 @@ class HuggingFaceMambaBackend(MambaBackend):
                 f"AWQ loading requires a working autoawq stack; import failed with: {exc}"
             ) from exc
 
+        if "mamba" in self.model_spec.model_id.lower():
+            raise RuntimeError(
+                "AutoAWQ does not currently support Mamba checkpoints in the verified WSL2 stack: "
+                "a direct probe with autoawq 0.2.9 in adama-cuda128 returned `mamba isn't supported yet`. "
+                "Revisit this path only after upstream Mamba support lands."
+            )
+
         quantization = self.runtime_config.quantization
         awq_version = self._package_version("autoawq") or self._package_version("awq")
         if awq_version is None:
@@ -205,6 +212,14 @@ class HuggingFaceMambaBackend(MambaBackend):
         return AutoAWQForCausalLM.from_quantized(self.model_spec.model_id, **load_kwargs)
 
     def _load_gptq_model(self, model_kwargs: dict[str, Any]) -> Any:
+        if "mamba" in self.model_spec.model_id.lower():
+            raise RuntimeError(
+                "GPTQ loading for Mamba is currently unavailable in the verified WSL2 stack. "
+                "auto-gptq 0.7.1 fails against the active transformers API before model loading, "
+                "and upstream Mamba support is not yet available. Revisit this path only after "
+                "pinning a known-compatible GPTQ stack with explicit Mamba support."
+            )
+
         try:
             from auto_gptq import AutoGPTQForCausalLM
         except ImportError as exc:

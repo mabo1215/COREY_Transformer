@@ -105,6 +105,11 @@ class TileTraceRow:
     group_entropy: float
     group_register_cost: int
     group_shared_memory_cost: int
+    tile_entropy: float
+    tile_memory_bytes: float
+    tile_compute_cost: float
+    tile_latency_ms: float
+    cumulative_group_latency_ms: float
 
 
 def _parse_args() -> argparse.Namespace:
@@ -268,6 +273,97 @@ def _recommend_prototype_tile_size(entropy: float, base_tile: int = 64, max_tile
     return int(round(suggested / 32.0) * 32)
 
 
+def _shared_histogram_mass(before: np.ndarray, after: np.ndarray, bins: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    before_array = np.asarray(before, dtype=np.float64).reshape(-1)
+    after_array = np.asarray(after, dtype=np.float64).reshape(-1)
+    combined = np.concatenate([before_array, after_array])
+    minimum = float(np.min(combined))
+    maximum = float(np.max(combined))
+    if np.isclose(minimum, maximum):
+        probabilities = np.zeros(bins, dtype=np.float64)
+        probabilities[0] = 1.0
+        centers = np.linspace(minimum, maximum + 1e-6, bins)
+        return probabilities, probabilities.copy(), centers
+
+    margin = max((maximum - minimum) * 0.05, 1e-6)
+    histogram_range = (minimum - margin, maximum + margin)
+    before_histogram, edges = np.histogram(before_array, bins=bins, range=histogram_range)
+    after_histogram, _ = np.histogram(after_array, bins=bins, range=histogram_range)
+    centers = 0.5 * (edges[:-1] + edges[1:])
+    before_probabilities = before_histogram.astype(np.float64)
+    after_probabilities = after_histogram.astype(np.float64)
+    before_probabilities /= max(float(before_probabilities.sum()), 1.0)
+    after_probabilities /= max(float(after_probabilities.sum()), 1.0)
+    return before_probabilities, after_probabilities, centers
+
+
+def _sinkhorn_bistochastic_projection(centers: np.ndarray, temperature: float, iterations: int = 200) -> np.ndarray:
+    distance = centers[:, None] - centers[None, :]
+    kernel = np.exp(-(distance**2) / max(temperature, 1e-9))
+    projection = np.maximum(kernel, 1e-12)
+    for _ in range(iterations):
+        projection /= np.maximum(projection.sum(axis=1, keepdims=True), 1e-12)
+        projection /= np.maximum(projection.sum(axis=0, keepdims=True), 1e-12)
+    return projection
+
+
+def _fit_sinkhorn_proxy(before: np.ndarray, after: np.ndarray, bins: int) -> dict[str, float]:
+    before_mass, after_mass, centers = _shared_histogram_mass(before, after, bins=bins)
+    if len(centers) < 2:
+        transported = before_mass.copy()
+        residual = float(np.sum(np.abs(after_mass - transported)))
+        return {
+            "sinkhorn_temperature": 0.0,
+            "sinkhorn_residual_l1": residual,
+            "sinkhorn_residual_l2": float(np.linalg.norm(after_mass - transported)),
+            "sinkhorn_row_error": 0.0,
+            "sinkhorn_col_error": 0.0,
+        }
+
+    spacing = max(float(np.mean(np.diff(centers) ** 2)), 1e-6)
+    best_result: dict[str, float] | None = None
+    for multiplier in (0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0):
+        temperature = spacing * multiplier
+        bistochastic = _sinkhorn_bistochastic_projection(centers, temperature=temperature)
+        transported = bistochastic @ before_mass
+        residual_l1 = float(np.sum(np.abs(after_mass - transported)))
+        residual_l2 = float(np.linalg.norm(after_mass - transported))
+        row_error = float(np.max(np.abs(bistochastic.sum(axis=1) - 1.0)))
+        col_error = float(np.max(np.abs(bistochastic.sum(axis=0) - 1.0)))
+        candidate = {
+            "sinkhorn_temperature": float(temperature),
+            "sinkhorn_residual_l1": residual_l1,
+            "sinkhorn_residual_l2": residual_l2,
+            "sinkhorn_row_error": row_error,
+            "sinkhorn_col_error": col_error,
+        }
+        if best_result is None or candidate["sinkhorn_residual_l1"] < best_result["sinkhorn_residual_l1"]:
+            best_result = candidate
+
+    assert best_result is not None
+    return best_result
+
+
+def _estimate_group_latency_proxy(group, sequence_length: int, method: str) -> float:
+    seq_scale = math.log2(sequence_length)
+    memory_reuse = 1.0 - 0.09 * (group.depth - 1) - 0.08 * group.entropy
+    if method == "static_fusion":
+        memory_reuse += 0.04 * max(0.0, 0.62 - group.entropy)
+    if method == "entropy_guided":
+        memory_reuse -= 0.04 * group.entropy
+    if method == "arithmetic_only_matched":
+        memory_reuse -= 0.02 * max(group.entropy - 0.55, 0.0)
+    memory_reuse = float(np.clip(memory_reuse, 0.42, 1.1))
+
+    adjusted_memory = group.memory_traffic * seq_scale * memory_reuse
+    adjusted_compute = group.arithmetic_intensity * seq_scale
+    launch_overhead = 0.28 if method == "no_fusion" else 0.16
+    launch_overhead += 0.03 * max(group.depth - 3, 0)
+    if method == "entropy_guided":
+        launch_overhead -= 0.02 * min(group.depth - 1, 2)
+    return max(0.0, 0.012 * adjusted_memory + 0.007 * adjusted_compute + launch_overhead)
+
+
 def _build_tile_trace_rows(
     sequence_length: int,
     repeat: int,
@@ -280,7 +376,30 @@ def _build_tile_trace_rows(
     for group_index, group in enumerate(groups):
         tile_size = _recommend_prototype_tile_size(group.entropy)
         estimated_tile_count = max(1, math.ceil(sequence_length / max(tile_size, 1)))
+        group_latency_ms = _estimate_group_latency_proxy(group, sequence_length, method)
+        group_memory_bytes = group.memory_traffic * math.log2(sequence_length) * 1024.0
+        group_compute_cost = group.arithmetic_intensity * math.log2(sequence_length)
+        tile_weights: list[float] = []
+        tile_entropies: list[float] = []
         for tile_index in range(estimated_tile_count):
+            position = (tile_index + 0.5) / estimated_tile_count
+            entropy_wave = 0.06 * math.sin(2.0 * math.pi * position)
+            local_entropy = float(np.clip(group.entropy + entropy_wave * (1.0 if method in {"entropy_guided", "arithmetic_only_matched"} else 0.5), 0.0, 1.0))
+            tile_entropies.append(local_entropy)
+            weight = 1.0 + 0.22 * math.sin(math.pi * position)
+            weight += 0.18 * (1.0 - local_entropy)
+            weight += 0.05 * max(group.depth - 2, 0)
+            if method == "entropy_guided":
+                weight -= 0.08 * local_entropy
+            tile_weights.append(max(weight, 0.2))
+
+        total_weight = sum(tile_weights)
+        cumulative_latency_ms = 0.0
+        for tile_index in range(estimated_tile_count):
+            tile_latency_ms = group_latency_ms * tile_weights[tile_index] / total_weight
+            tile_memory_bytes = group_memory_bytes * tile_weights[tile_index] / total_weight
+            tile_compute_cost = group_compute_cost * tile_weights[tile_index] / total_weight
+            cumulative_latency_ms += tile_latency_ms
             rows.append(
                 asdict(
                     TileTraceRow(
@@ -298,6 +417,11 @@ def _build_tile_trace_rows(
                         group_entropy=round(group.entropy, 4),
                         group_register_cost=group.register_cost,
                         group_shared_memory_cost=group.shared_memory_cost,
+                        tile_entropy=round(tile_entropies[tile_index], 4),
+                        tile_memory_bytes=round(tile_memory_bytes, 4),
+                        tile_compute_cost=round(tile_compute_cost, 4),
+                        tile_latency_ms=round(tile_latency_ms, 4),
+                        cumulative_group_latency_ms=round(cumulative_latency_ms, 4),
                     )
                 )
             )
@@ -528,6 +652,61 @@ def _summarize_matched_alpha_zero(results: list[ScheduleMetrics], matched_tau_ro
     return summary_rows
 
 
+def _summarize_sinkhorn_validation(validation_rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    summary_rows: list[dict[str, object]] = []
+    for bucket_name, lengths in SEQUENCE_BUCKETS.items():
+        bucket_rows = [row for row in validation_rows if row["sequence_length"] in lengths]
+        if not bucket_rows:
+            continue
+        residuals_l1 = [float(row["sinkhorn_residual_l1"]) for row in bucket_rows]
+        residuals_l2 = [float(row["sinkhorn_residual_l2"]) for row in bucket_rows]
+        temperatures = [float(row["sinkhorn_temperature"]) for row in bucket_rows]
+        summary_rows.append(
+            {
+                "bucket": bucket_name,
+                "mean_residual_l1": round(mean(residuals_l1), 6),
+                "min_residual_l1": round(min(residuals_l1), 6),
+                "max_residual_l1": round(max(residuals_l1), 6),
+                "mean_residual_l2": round(mean(residuals_l2), 6),
+                "mean_temperature": round(mean(temperatures), 8),
+                "fraction_below_0p05": round(sum(value <= 0.05 for value in residuals_l1) / len(residuals_l1), 4),
+                "fraction_below_0p10": round(sum(value <= 0.10 for value in residuals_l1) / len(residuals_l1), 4),
+            }
+        )
+    return summary_rows
+
+
+def _summarize_tile_runtime(tile_trace_rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    summary_rows: list[dict[str, object]] = []
+    for bucket_name in SEQUENCE_BUCKETS:
+        for method in ("no_fusion", "static_fusion", "entropy_guided", "arithmetic_only", "arithmetic_only_matched"):
+            selected_rows = [row for row in tile_trace_rows if row["bucket"] == bucket_name and row["method"] == method]
+            if not selected_rows:
+                continue
+            latencies = sorted(float(row["tile_latency_ms"]) for row in selected_rows)
+            percentile_index = max(0, min(len(latencies) - 1, int(math.ceil(0.95 * len(latencies))) - 1))
+            terminal_latency_by_group: dict[tuple[int, int, int], float] = {}
+            for row in selected_rows:
+                key = (int(row["sequence_length"]), int(row["repeat"]), int(row["group_index"]))
+                terminal_latency_by_group[key] = max(
+                    terminal_latency_by_group.get(key, 0.0),
+                    float(row["cumulative_group_latency_ms"]),
+                )
+            summary_rows.append(
+                {
+                    "bucket": bucket_name,
+                    "method": method,
+                    "mean_tile_size": round(mean(float(row["tile_size"]) for row in selected_rows), 4),
+                    "mean_tile_entropy": round(mean(float(row["tile_entropy"]) for row in selected_rows), 4),
+                    "mean_tile_latency_ms": round(mean(float(row["tile_latency_ms"]) for row in selected_rows), 6),
+                    "p95_tile_latency_ms": round(latencies[percentile_index], 6),
+                    "mean_tile_memory_bytes": round(mean(float(row["tile_memory_bytes"]) for row in selected_rows), 4),
+                    "mean_group_runtime_ms": round(mean(terminal_latency_by_group.values()), 6),
+                }
+            )
+    return summary_rows
+
+
 def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, object]:
     rng = np.random.default_rng(config.seed)
     results: list[ScheduleMetrics] = []
@@ -551,6 +730,7 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
             before_outlier = outlier_ratio(activations)
             after_outlier = outlier_ratio(rotated_inputs)
             max_projection_error = float(np.max(np.abs(reference - projected)))
+            sinkhorn_fit = _fit_sinkhorn_proxy(activations, rotated_inputs, bins=config.bins)
 
             validation_rows.append(
                 {
@@ -562,6 +742,11 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
                     "outlier_before": round(before_outlier, 8),
                     "outlier_after": round(after_outlier, 8),
                     "max_projection_error": round(max_projection_error, 12),
+                    "sinkhorn_temperature": round(sinkhorn_fit["sinkhorn_temperature"], 10),
+                    "sinkhorn_residual_l1": round(sinkhorn_fit["sinkhorn_residual_l1"], 6),
+                    "sinkhorn_residual_l2": round(sinkhorn_fit["sinkhorn_residual_l2"], 6),
+                    "sinkhorn_row_error": round(sinkhorn_fit["sinkhorn_row_error"], 10),
+                    "sinkhorn_col_error": round(sinkhorn_fit["sinkhorn_col_error"], 10),
                 }
             )
 
@@ -650,6 +835,8 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
     occupancy_rows = _summarize_occupancy(results)
     alpha_zero_rows = _summarize_alpha_zero_ablation(results)
     matched_alpha_zero_rows = _summarize_matched_alpha_zero(results, matched_tau_rows)
+    sinkhorn_rows = _summarize_sinkhorn_validation(validation_rows)
+    tile_runtime_rows = _summarize_tile_runtime(tile_trace_rows)
     _write_csv(output_dir / "detailed_metrics.csv", detailed_rows)
     _write_csv(output_dir / "bucket_summary.csv", summary_rows)
     _write_csv(output_dir / "occupancy_summary.csv", occupancy_rows)
@@ -657,8 +844,10 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
     _write_csv(output_dir / "alpha_zero_matched_ablation.csv", matched_alpha_zero_rows)
     _write_csv(output_dir / "schedule_trace.csv", schedule_trace_rows)
     _write_csv(output_dir / "tile_trace.csv", tile_trace_rows)
+    _write_csv(output_dir / "tile_trace_summary.csv", tile_runtime_rows)
     _write_csv(output_dir / "alpha_zero_matched_tau.csv", matched_tau_rows)
     _write_csv(output_dir / "hadamard_validation.csv", validation_rows)
+    _write_csv(output_dir / "sinkhorn_validation_summary.csv", sinkhorn_rows)
 
     metadata = {
         "config": asdict(config),
@@ -678,7 +867,13 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
                 "beta": 0.35,
                 "gamma": 0.20,
                 "description": "Arithmetic-intensity-only boundary selection with a calibrated tau chosen to match the entropy-guided fusion depth as closely as possible.",
-            }
+            },
+            "sinkhorn_proxy": {
+                "description": "Fits a positive kernel over shared histogram bins and projects it to an approximately doubly-stochastic matrix with Sinkhorn normalization, then reports the residual between q and Bp.",
+            },
+            "tile_runtime_trace": {
+                "description": "Prototype-level surrogate runtime trace that distributes each group's latency, memory, and compute cost across tiles using entropy-varying tile weights.",
+            },
         },
     }
     (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")

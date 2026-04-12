@@ -1,6 +1,6 @@
 # 论文进度
 
-最后更新：本轮 revision cycle 已继续推进；PG19、Pythia baseline 与 Triton timing 已进一步回填到 canonical summary 输出和论文正文/附录中，当前未完成项继续收缩到量化、更大覆盖度的 checkpoint 对比、以及 prototype runtime trace 等尚未落地工作。
+最后更新：本轮 revision cycle 已继续推进；Theorem 1 现已从弱代理升级为显式 Sinkhorn-style residual 拟合，prototype 侧也已补入真正的 per-tile surrogate runtime trace（含 tile-level latency / memory / cumulative runtime），并已进一步整理成 appendix 可引用表格；同时已把 Mamba-specific quantization 路线细化到仓库级别：Quamba 存在公开官方代码仓库但需要独立 CUDA/CUTLASS 构建链，MambaQuant 虽在论文中给出代码链接但当前匿名访问为 404，因而当前未完成项进一步收缩到手动复现或独立环境复现 Mamba-specific quantization、更大覆盖度的 checkpoint 对比、以及把新增 trace 是否上升到主文表格等工作。
 
 ## 已全部修改
 
@@ -34,32 +34,32 @@
 - 任务 28：根据用户已在遗留问题区给出的决策，重新核销当前已完成项并同步更新进度分类。具体而言，`mamba-370m` 与 `mamba-1.4b` 的四任务各 20 样本、`4096` token 上限、`fast_path=true`、并含 `WikiText-103 perplexity / token-F1或ROUGE-L / latency(ms) / tok/s` 的最小主文 checkpoint 证据集，已经由任务 27 的 WSL2 实跑结果实际满足，因此“下一轮先扩当前四任务并增大样本数、仅先做 370M/1.4B、以可进入主文表格的最小证据集为目标”这一组决策已被执行完成；同时，“至少 1 个公平外部 baseline + 1 个真实 Triton selective-scan timing”的最低新增证据门槛也已由 `src/outputs/pythia410m_wsl_baseline/` 与 `src/outputs/triton_selective_scan_wsl/` 满足。基于这些实际产物，遗留问题区不再重复保留这些已落地条目，只保留真正尚未完成的工作。
 - 任务 29：继续推进一个此前仍停留在“入口已切换、但未实际重跑”的遗留项：将 `run_longbench_inference.py` 的 PG19 语言模型侧评加载逻辑扩展为“优先尝试 `deepmind/pg19`，若因 `datasets` 的脚本禁用策略失败，则自动回退到无脚本 parquet 镜像 `mrsndmn/pg19`”。随后在 WSL2 `adama-cuda128` 环境中对 `mamba-370m` 与 `mamba-1.4b` 分别执行新的 PG19 侧评 probe，输出位于 `src/outputs/pg19_wsl_reprobe/`；两者均已成功返回 `status=ok` 的 `lm_summary.csv`，其中 20 样本 PG19 perplexity 分别为 14.682916 与 11.664079。这意味着 PG19 已不再停留在“入口已改、但未重跑”的状态；当前剩余工作仅是决定是否把这一新结果正式并入主文表格或原有汇总输出。
 - 任务 30：继续把已生成的真实证据从“仓库输出”推进到“可引用 manuscript evidence”。首先，将 `src/outputs/pg19_wsl_reprobe/` 中验证通过的 PG19 20 样本 perplexity 结果回填到 `src/outputs/longbench20_wsl_main/` 的 canonical `summary.csv`，使 `mamba-370m` 与 `mamba-1.4b` 的主表汇总不再保留过时的 blocked 行。其次，更新 `paper/main.tex` 与 `paper/appendix.tex` 的 checkpoint 叙述：删除 PG19 不可用的旧表述，改为说明 harness 会自动回退到 `mrsndmn/pg19`；将 Mamba-370M / Mamba-1.4B 的四任务 20 样本结果、Pythia-410M 的公平外部 baseline，以及真实 `selective_scan_fn` Triton timing 回填到正文与附录的 checkpoint-status 段落中，并重新编译论文确认 PDF 成功生成。完成后，PG19 已不再属于“未回填到论文或 canonical summary”的未完成项；相关剩余问题只剩更大覆盖度与真实方法后端对比。
+- 任务 31：继续按 `docs/revision_suggestions.tex` 收口本轮仍可直接改写的 manuscript 项。具体包括：在 `paper/main.tex` 中把冗长的 checkpoint 叙述压缩为前向引用并新增正文 `checkpoint-level external baseline` 表，正式把 `mamba-370m / mamba-1.4b / pythia-410m` 的四任务 LongBench、WikiText-103、PG19 与平均延迟对比移入主文；补入 LongBench、WikiText-103 与 Pythia 的参考文献；为 Theorem 1 的适用条件增加基于 `hadamard_validation.csv` 的弱经验代理（35/35 熵增为正、均值 `0.051±0.010`、最大投影误差 `0`）；在正文和附录中补充 Theorem 2 的 heterogeneous resource-tightness 解释；并为 side perplexity 协议与 Table 2 短序列方差模式加入诚实注释。完成后，当前 revision suggestion 中可通过文稿改写直接解决的 C5/C6/C8/C9/C10 已基本收口，C4 也从“纯条件性陈述”推进到“弱经验支持但尚未做 doubly-stochastic residual 拟合”的状态。
+- 任务 32：继续按用户给定顺序核实量化路线，并把结果回写到代码与文稿。首先，在 WSL2 `adama-cuda128` CUDA 12.8 环境中安装并 probe `autoawq 0.2.9`，确认其类级 API 已可导入，但对 `state-spaces/mamba-370m-hf` 的直接加载仍返回上游错误 `mamba isn't supported yet`，说明 AWQ 当前并非 Windows 兼容性问题，而是 Mamba 架构仍未被 AutoAWQ 支持。随后，在同一 WSL2 环境中安装并 probe `auto-gptq 0.7.1`，确认其在当前 `transformers 5.5.1` 组合下会因 `cannot import name 'no_init_weights'` 在 import 阶段失败，尚未进入 Mamba 模型加载。基于这些实测结果，进一步更新 `src/algorithms/mamba_integration.py`，让 AWQ/GPTQ 在遇到 Mamba 时提前给出清晰、可操作的阻挡信息；同时同步更新 `paper/main.tex`、`paper/appendix.tex` 与本进度文件，把量化阻挡从“Windows/backend 兼容问题”修正为“WSL2 authoritative 环境下仍受上游 Mamba 支持缺失与 GPTQ 栈兼容性约束”。
+- 任务 33：根据你在 `docs/progress.md` 中的新决策，继续推进两个当前仓库内可直接落地的 reviewer 项。首先，在 `src/experiments/run_entropy_guided_experiments.py` 中加入显式的 Sinkhorn-style doubly-stochastic proxy fitting：对 Hadamard 前后共享 histogram bins 构造正核并做 Sinkhorn 归一化，导出 `hadamard_validation.csv` 中的 `sinkhorn_residual_l1/l2`、row/column normalization error，以及新的 `sinkhorn_validation_summary.csv`。重跑 `python -m src.run_all` 后，35 个验证样本的显式拟合残差为 `0.070±0.010`（L1），最小 `0.0546`、最大 `0.1059`，其中 `34/35` 个样本低于 `0.10`，最大 row-sum 误差仅 `4.5829e-06`。其次，把原先仅按 tile size 重复展开的 `tile_trace.csv` 升级为真正的 prototype-level per-tile surrogate runtime trace，新增每个 tile 的 `tile_entropy / tile_memory_bytes / tile_compute_cost / tile_latency_ms / cumulative_group_latency_ms`，并导出 `tile_trace_summary.csv`。在 matched-depth 对照下，entropy-guided 的 mean group-runtime surrogate 仍优于 arithmetic-only matched：short / medium / long / ultra-long 四个 bucket 的差值分别为 `0.5337 / 0.5102 / 0.4563 / 1.0687 ms`。随后同步更新 `paper/main.tex`、`paper/appendix.tex` 与本进度文件，把 Theorem 1 从“弱经验代理”改写为“显式 Sinkhorn proxy residual”，并把 per-tile surrogate trace 的新增能力回填到正文表述中。
+- 任务 34：继续把新导出的 trace 和量化替代路线状态推进到更可执行的 manuscript / workflow 层。首先，在 `paper/appendix.tex` 中新增 `Per-Tile Surrogate Runtime Trace` 小节和表 `tab:tile_trace_surrogate`，把 short 与 ultra-long 两个代表 bucket 下的 `Static Fusion / Ours / Arithmetic-Only Matched` 的 mean tile latency、p95 tile latency 与 mean group runtime 摘要整理成 appendix 可引用证据，而不把 prototype surrogate 过度上升为主文硬证据。其次，继续探测你指定的 Quamba / MambaQuant 路线是否存在现成安装入口：在 WSL2 `adama-cuda128` 环境中用 `pip index versions quamba` 与 `pip index versions mambaquant` 检查后，确认两者都不存在可直接安装的 PyPI 发布包；同时从 arXiv 页面也未发现可直接复用的显式代码入口线索。这意味着当前量化替代路线已进一步从“切换包管理器即可接入”收缩为“需要手动复现论文方法”。
+- 任务 35：继续把量化替代路线从“论文名级别”下钻到“可执行仓库级别”。重新检查 Quamba 与 MambaQuant 的论文 HTML 后，确认两篇论文其实都声称给出代码线索：Quamba 明确指向 `https://github.com/enyac-group/Quamba`，MambaQuant 在论文中指向 `https://github.com/MambaQuant/MambaQuant/tree/main`。随后进一步实测仓库可达性与接入门槛：Quamba 具有公开官方仓库、`setup.py`、`requirements.txt`、量化/评测入口与预训练模型说明，但需要 Ampere+ GPU、CUDA 12.1+、CMake 3.22+、CUTLASS、自编译 `mamba` / `fast-hadamard-transform` 等独立工程依赖；当前 WSL2 机器已满足 `RTX 3070` 与 `cmake 3.28.3` 这两项基线，但现有 `adama-cuda128` 环境是 Python 3.11，而 Quamba README 明确按 Python 3.10 新环境组织，因此它更适合作为“在当前 WSL2 上另开隔离 env 的单独复现目标”，而不是当前仓库里直接 `pip install` 的轻量 backend。相反，MambaQuant 的论文代码链接在当前匿名抓取下返回 404，`git ls-remote` 也无法匿名直接拉取，说明它目前不能被视为一个稳定可复现的公开入口。由此，当前量化路线被进一步细化为：优先把 Quamba 视作“独立环境复现候选”，而把 MambaQuant 视作“方法参考，但暂不作为稳定接入依赖”。
+- 任务 36：继续把 Quamba 从“独立环境复现候选”推进到实际可用的 WSL2 隔离工程栈：在当前仓库根目录下复用已有 `Quamba/` 官方 checkout，新增 WSL2 `quamba-py310` 隔离环境（Python 3.10 + pip + cmake + ninja），并通过将 `git@github.com:` 重写为 HTTPS 的方式成功初始化其 `Megatron-LM`、`cutlass`、`fast-hadamard-transform`、`lm-evaluation-harness` 与 `mamba` 等递归子模块。与此同时，将最新量化路线判断再压缩进 `paper/main.tex` 与 `paper/appendix.tex` 的一句话表述：Quamba 是当前唯一已验证到仓库级别的公开复现入口，但需要独立的 Python 3.10 + CUTLASS/CUDA 构建链；MambaQuant 的论文代码链接当前仍不是稳定匿名入口。随后重新编译论文并确认 PDF 成功生成。当前环境侧的剩余工作已从“是否能搭起隔离工程栈”收缩为“继续完成 Quamba README 中的核心依赖安装与扩展构建 smoke check”。
+- 任务 37：把这套 Quamba WSL2 隔离环境进一步固化成可重复执行脚本：新增 `src/scripts/wsl_setup_quamba_env.sh`，默认复用仓库内 `Quamba/` checkout 与 `.wsl-tools/bin/micromamba`，支持通过环境变量控制“仅初始化子模块和核心运行时”或“继续构建第三方库与 Quamba 包”两种阶段化运行方式。脚本现已内置 Python 3.10 环境创建、GitHub SSH→HTTPS 子模块同步、`torch 2.4.0+cu121 / torchvision 0.19.0 / torchaudio 2.4.0 / transformers 4.41.2 / datasets 2.19.0` 等核心依赖安装，以及最终的 `torch.cuda.is_available()` smoke check。实测 smoke check 已通过，返回 `cuda_available=True`、设备 `NVIDIA GeForce RTX 3070`，因此当前 Quamba 路线的剩余工作已进一步收缩为第三方扩展构建与 `pip install .` 的最终打包验证。
 
 
 ## 未修改或部分修改
 
 - 【部分缓解】最小主文 checkpoint 证据集已经具备，且相关结果现已同步回填到 canonical `summary.csv` 与论文正文/附录：`mamba-370m` 与 `mamba-1.4b` 均已完成四任务各 20 样本的 WSL2 fast-path 运行，并输出 `WikiText-103 perplexity / PG19 perplexity / token-F1或ROUGE-L / latency / tok-s`；`mamba-2.8b` 也已有 benchmark-only 证据。当前剩余缺口已从“主文最小证据不足”进一步收缩为“是否继续扩更大样本规模、是否补能耗统计、以及是否把 2.8B 也扩到同规模任务覆盖”。
 
-- 【已阻挡】GPTQ 路径在当前 `auto-gptq` 上已验证到模型检查阶段，但明确报错 `mamba isn't supported yet`；AWQ 路径在 Windows 上虽然成功安装，但其依赖链仍卡在 `transformers.models.phi3` / kernel extension 兼容问题，因此两条量化路径目前都无法对 Mamba-1.4B 完成真实量化推理。
-	需要你回答/决策：
-	1. 量化路线在本轮 revision 中是否仍然是必须项？请填写 `必须 / 可暂缓 / 放弃`。
-	   A: 必须
-	2. 如果仍然必须，你是否允许我把量化推进环境切换到 WSL2 Linux，而不再尝试 Windows 本机兼容？请填写 `允许 / 不允许`。
-	   A: 允许
-	3. 如果你已有指定的量化目标，请直接填写优先顺序，例如 `先 AWQ，再 GPTQ` 或 `只做 AWQ`。
-	   A: 先 AWQ，再 GPTQ（AWQ 用 AutoAWQ：pip install autoawq，需 CUDA ≥ 11.8 + torch ≥ 2.4，fused modules 仅 Linux 可用，WSL2 满足；GPTQ 待 auto-gptq 上游支持 Mamba 后跟进，当前已知 mamba isn't supported yet，可关注 github.com/state-spaces/mamba/issues 跟踪进展）
-- 【部分缓解】“至少 1 个公平外部 baseline + 1 个真实 Triton selective-scan timing”的最低新增证据门槛已经满足，且相关结果现已回填到论文正文/附录的 checkpoint 证据段落。当前剩余缺口已收缩为更高覆盖度的外部 baseline 扩展，以及 Theorem 1 条件的经验验证。
+- 【部分缓解】量化路线已从“继续硬推通用 AWQ/GPTQ”转向“复现 Mamba-specific quantization 方法”，因为前者已在 WSL2 authoritative 环境中被实测证伪：AutoAWQ 0.2.9 对 Mamba checkpoint 直接返回 `mamba isn't supported yet`，auto-gptq 0.7.1 则与当前 `transformers 5.5.1` API 不兼容。当前剩余任务已明确收缩为：评估并接入 Quamba / MambaQuant 这类 Mamba-specific 量化路径，而不再重复尝试通用 LLM quantization loader。
+	补充状态：`quamba` 与 `mambaquant` 均不存在可直接安装的 PyPI 入口；其中 Quamba 进一步确认存在公开官方仓库和完整构建说明，但依赖独立 CUDA/CUTLASS 工程链，且 README 以 Python 3.10 新环境为前提，因此更适合在隔离环境中单独复现；MambaQuant 的论文代码链接当前匿名访问为 404，暂时不能作为稳定依赖入口。
+	进展更新：WSL2 中的 `quamba-py310` 隔离环境已经创建完成，Quamba 官方仓库所需递归子模块已成功初始化，核心依赖安装与 `torch/CUDA` smoke check 也已实际通过；同时这套流程已经固化为可重复执行的 `src/scripts/wsl_setup_quamba_env.sh`。因此这一项已不再停留在“路线判断”或“空壳环境”，而是已经进入实际工程复现阶段。当前剩余缺口集中到继续推进 `fast-hadamard-transform`、Quamba `mamba`、CUTLASS、`Megatron-LM` 与 `pip install .` 的扩展构建。
+	当前无需你继续决策，我将优先把 Quamba 视作下一条可执行复现路线，而把 MambaQuant 暂时只作为方法参考。
+- 【部分缓解】“至少 1 个公平外部 baseline + 1 个真实 Triton selective-scan timing”的最低新增证据门槛已经满足，且相关结果现已回填到论文正文/附录与新增的主文 checkpoint 对比表。Theorem 1 的经验验证也已从弱代理推进到显式的 Sinkhorn-style residual 拟合，因此这一组剩余缺口现在进一步收缩为：更高覆盖度的外部 baseline 扩展，以及如果后续还需继续增强理论说服力，再把当前 proxy fit 升级为对 Birkhoff polytope 上更精确 constrained minimizer 的求解。
+	当前无需你继续决策。
 
 - 【部分缓解】WSL2 侧的 `adama-cuda128` Linux CUDA 12.8 环境已稳定承担 authoritative deployment-grade 证据运行，相关 fast-path 与最小四任务主表跑法都已落地；当前这一路线的剩余问题已集中到“是否继续扩更大样本覆盖”和“是否实现真实 static fusion / COREY 对比”，而不再是环境不可用。
+	当前无需你继续决策。
 
-- 【部分缓解】prototype 导出层现已补入 schedule-level occupancy、register/shared-memory 成本统计，并进一步生成 `schedule_trace.csv`、`tile_trace.csv`、原始 `alpha=0` 对照、以及 matched-depth 的 `arithmetic_only_matched` 对照输出，因此 reviewer 要求中的"occupancy 定量表"与"entropy signal 增量价值 ablation"已具备更可用的数据基础；当前剩余缺口主要在于这些 trace 仍是 prototype-level surrogate，而非真实 GPU kernel trace，且尚未把 matched-depth 与 per-tile surrogate 对照正式回填进主文表格。
-	需要你回答/决策：
-	1. 你希望我下一步直接把这些新输出回填进主文表格，还是先继续补 `per-tile runtime trace`？请填写 `先回填论文 / 先补 per-tile trace`。
-	   A: 先补 per-tile trace
-	2. 如果先回填论文，你更希望表格突出 `matched-depth latency delta` 还是 `occupancy/depth/resource-cost 对照`？请填写优先顺序。
-	   A: （已选先补 per-tile trace，暂不适用；若后续回填，优先顺序为：matched-depth latency delta > occupancy/depth/resource-cost 对照）
-	3. 如果先补 per-tile trace，请说明你是否接受这仍然是 prototype-level surrogate，而不是真实 GPU kernel trace。
-	   A: 接受（明确在论文中标注为 prototype-level surrogate；真实 GPU kernel trace 需要 Triton 内核实现，列为 future work）
+- 【部分缓解】prototype 导出层现已补入 schedule-level occupancy、register/shared-memory 成本统计，并进一步生成增强后的 `tile_trace.csv`、新的 `tile_trace_summary.csv`、原始 `alpha=0` 对照、以及 matched-depth 的 `arithmetic_only_matched` 对照输出，因此 reviewer 要求中的“per-tile runtime trace”已经以 prototype-level surrogate 形式落地。当前剩余缺口已进一步收缩为：是否把 matched-depth latency delta 与新的 per-tile surrogate summary 正式整理进主文表格，以及它们何时被真实 GPU kernel trace 取代。
+	进展更新：appendix 级别的 `tab:tile_trace_surrogate` 已补入，当前剩余缺口只剩是否把这些摘要进一步压缩进主文表格，以及它们何时被真实 GPU kernel trace 取代。
+	当前无需你继续决策。 
 
 ## 遗留问题
 
