@@ -56,16 +56,18 @@
 
 - 任务 44：继续推进 Quamba 扩展构建链并消除关键阻挡：`src/scripts/wsl_setup_quamba_env.sh` 已补入 `gcc_linux-64=12/gxx_linux-64=12`、`cuda-cccl=12.1`、`cuda-nvcc=12.1`、`cuda-cudart-dev=12.1` 与 `cuda-libraries-dev=12.1` 自动安装；CUDA 构建环境新增 `cccl` include 路径和 `CC/CXX/CUDAHOSTCXX` 指向 env 内编译器。实测后，原先的 `unsupported GNU version`、`thrust/complex.h` 与 `cusparse.h` 阻挡已被消除，当前第三方构建推进到 `fast-hadamard-transform` 轮子编译阶段（后续仍需等待该阶段完成并继续验证 mamba/CUTLASS/Megatron/`pip install .`）。
 
+- 任务 45：针对四个"可继续"条目同步推进可在仓库侧落地的工作。（1）新增 `src/scripts/wsl_run_revision_matrix_4task5_corey_only.sh`，复用现有 `wsl_run_checkpoint_matrix.sh` 基础设施，仅针对缺失的 `policy_corey` 运行三模型循环与最终汇总，避免重跑已完成的 `policy_off/static` 轮次；（2）新增 `src/scripts/wsl_run_quamba_phase2.sh`，设置 `INIT_SUBMODULES=0`、`INSTALL_CORE_RUNTIME=0`、`BUILD_THIRD_PARTY=1`、`BUILD_QUAMBA_PACKAGE=1`，并把 `TORCH_CUDA_ARCH_LIST` 固定为 `sm_86`（RTX 3070 Ampere）、`MAX_JOBS=4`，从任务 44 已解除阻挡的 `fast-hadamard-transform` 阶段继续推进至 `pip install .`；（3）将 `paper/main.tex` 的 `tab:tiling_depth` 扩展为六列，新增 `$\Delta_{\text{matched}}$`（从 prototype surrogate trace 导出的 matched-depth 对照优势，四个 bucket 分别为 $-0.53/-0.51/-0.46/-1.07$\,ms），同步更新 caption 说明该列含义；（4）在 `paper/appendix.tex` 中新增 `sec:policy_comparison_n5` 小节与 `tab:policy_compare_n5` 表框架，以现有 `policy_off`（mamba-2.8b，n=5）和 `policy_static`（mamba-1.4b，n=5）的已知数值预填相应行，`policy_corey` 行标注"pending"等待脚本（1）的实际运行结果。
+
 
 ## 未修改或部分修改（可继续推进）
 
-- 【可继续】Checkpoint 证据已达到最小主文门槛并已回填，但仍可继续扩展：扩大 LongBench 样本规模、补充能耗统计、以及把 `mamba-2.8b` 从 benchmark-only 扩展到同规模四任务覆盖（当前 revision-matrix 仅见 `policy_off` 产物，`policy_static/policy_corey` 同规模目录尚未落地）。
+- 【可继续】Checkpoint 证据已达到最小主文门槛并已回填，但仍可继续扩展：扩大 LongBench 样本规模、补充能耗统计、以及把 `mamba-2.8b` 从 benchmark-only 扩展到同规模四任务覆盖。`revision_matrix_4task5_policy_corey` 目录尚未落地，现有执行脚本为 `src/scripts/wsl_run_revision_matrix_4task5_corey_only.sh`，在 WSL2 `adama-cuda128` 中直接运行即可补齐缺口；完成后需把结果填入 `paper/appendix.tex` 的 `tab:policy_compare_n5` 表并替换 pending 行。
 
-- 【可继续】量化路线已收敛到 Mamba-specific 方案。当前可执行主线是继续推进 Quamba 的扩展构建与打包验证（`fast-hadamard-transform`、Quamba `mamba`、CUTLASS、`Megatron-LM`、`pip install .`）；MambaQuant 暂作为方法参考，等待稳定可访问代码入口。
+- 【可继续】量化路线已收敛到 Mamba-specific 方案。当前可执行主线是继续推进 Quamba 的扩展构建与打包验证，执行脚本为 `src/scripts/wsl_run_quamba_phase2.sh`（设定 `sm_86`、`MAX_JOBS=4`，从 `fast-hadamard-transform` 阶段接续到 `mamba`、CUTLASS、`Megatron-LM`、`pip install .`）；MambaQuant 暂作为方法参考，等待稳定可访问代码入口。
 
-- 【可继续】WSL2 `adama-cuda128` authoritative 环境已稳定可用，后续重点是扩样本覆盖与补齐真实 static fusion / COREY 的 checkpoint-level 对比（优先补齐 `revision_matrix_*_policy_static` 与 `revision_matrix_*_policy_corey`）。
+- 【可继续】WSL2 `adama-cuda128` authoritative 环境已稳定可用，后续重点是扩样本覆盖与补齐真实 static fusion / COREY 的 checkpoint-level 对比（优先补齐 `revision_matrix_4task5_policy_corey`，脚本已就绪；后续升级到 `4task20` 全矩阵）。
 
-- 【可继续】prototype per-tile surrogate trace 已落地且附录表已补齐，后续只剩两项：是否将 matched-depth latency delta 与 tile-trace summary 压缩进主文表格；何时以真实 GPU kernel trace 替代 surrogate。
+- 【可继续】matched-depth latency delta 已压缩入主文 `tab:tiling_depth`（新增 $\Delta_{\text{matched}}$ 列）；tile-trace summary 保留在附录 `tab:tile_trace_surrogate`。剩余唯一未解决项：何时以真实 GPU kernel trace 替代 prototype surrogate——当前无阻挡，等待用户决策时间节点。
 
 ## 遗留问题
 
