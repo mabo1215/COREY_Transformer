@@ -541,6 +541,10 @@ def _write_metadata(path: Path, metadata: dict[str, object]) -> None:
 
 def run_longbench(args: argparse.Namespace) -> dict[str, object]:
     backend = _build_backend(args)
+    if args.disable_entropy_hook:
+        scheduler_policy = "off"
+    else:
+        scheduler_policy = args.scheduler_policy
     prediction_rows: list[PredictionRecord] = []
     summary_rows: list[dict[str, object]] = []
     output_dir = args.output_dir / args.model / args.precision
