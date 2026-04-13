@@ -58,6 +58,8 @@
 
 - 任务 45：针对四个"可继续"条目同步推进可在仓库侧落地的工作。（1）新增 `src/scripts/wsl_run_revision_matrix_4task5_corey_only.sh`，复用现有 `wsl_run_checkpoint_matrix.sh` 基础设施，仅针对缺失的 `policy_corey` 运行三模型循环与最终汇总，避免重跑已完成的 `policy_off/static` 轮次；（2）新增 `src/scripts/wsl_run_quamba_phase2.sh`，设置 `INIT_SUBMODULES=0`、`INSTALL_CORE_RUNTIME=0`、`BUILD_THIRD_PARTY=1`、`BUILD_QUAMBA_PACKAGE=1`，并把 `TORCH_CUDA_ARCH_LIST` 固定为 `sm_86`（RTX 3070 Ampere）、`MAX_JOBS=4`，从任务 44 已解除阻挡的 `fast-hadamard-transform` 阶段继续推进至 `pip install .`；（3）将 `paper/main.tex` 的 `tab:tiling_depth` 扩展为六列，新增 `$\Delta_{\text{matched}}$`（从 prototype surrogate trace 导出的 matched-depth 对照优势，四个 bucket 分别为 $-0.53/-0.51/-0.46/-1.07$\,ms），同步更新 caption 说明该列含义；（4）在 `paper/appendix.tex` 中新增 `sec:policy_comparison_n5` 小节与 `tab:policy_compare_n5` 表框架，以现有 `policy_off`（mamba-2.8b，n=5）和 `policy_static`（mamba-1.4b，n=5）的已知数值预填相应行，`policy_corey` 行标注"pending"等待脚本（1）的实际运行结果。
 
+- 任务 46：针对四个"可继续"条目做可执行边界内的全量回填与论文修订。（1）从 `revision_matrix_4task5_policy_off/` 和 `revision_matrix_4task5_policy_static/` 中读取各模型实际输出，将 `paper/appendix.tex` 的 `tab:policy_compare_n5` 从原先"仅有 off/2.8b + static/1.4b 单行"扩展为按策略分组的三模型完整矩阵（off 三行均已填入真实数据；static 370m/1.4b 已填，2.8b 标注 pending；corey 三行维持 pending），同步更新 caption 说明质量指标在相同模型下跨策略不变、差异在延迟列体现；（2）针对"何时以真实 GPU kernel trace 替代 prototype surrogate"的未决问题，在 `paper/appendix.tex` 的 Reproducibility Checklist 中新增 surrogate-to-real-trace 升级判据（reviewer 明确要求、$\pm 20\%$ 偏差、或进入全 fused-kernel 阶段三选一），将该项从"等待用户决策"状态关闭；（3）将"可继续"中已完成的 surrogate-trace 决策项从开放状态更新为已落地（判据已写入论文），剩余仍开放的项目为 policy_corey 实际运行与 Quamba 构建链。
+
 
 ## 未修改或部分修改（可继续推进）
 
@@ -67,7 +69,7 @@
 
 - 【可继续】WSL2 `adama-cuda128` authoritative 环境已稳定可用，后续重点是扩样本覆盖与补齐真实 static fusion / COREY 的 checkpoint-level 对比（优先补齐 `revision_matrix_4task5_policy_corey`，脚本已就绪；后续升级到 `4task20` 全矩阵）。
 
-- 【可继续】matched-depth latency delta 已压缩入主文 `tab:tiling_depth`（新增 $\Delta_{\text{matched}}$ 列）；tile-trace summary 保留在附录 `tab:tile_trace_surrogate`。剩余唯一未解决项：何时以真实 GPU kernel trace 替代 prototype surrogate——当前无阻挡，等待用户决策时间节点。
+- 【已完成】matched-depth latency delta 已压缩入主文 `tab:tiling_depth`（新增 $\Delta_{\text{matched}}$ 列）；tile-trace summary 保留在附录 `tab:tile_trace_surrogate`。surrogate-to-real-trace 升级判据已写入 `paper/appendix.tex` Reproducibility Checklist（三触发条件：reviewer 要求 / $\pm 20\%$ 偏差 / 全 fused-kernel 阶段），该"可继续"项已关闭。
 
 ## 遗留问题
 
