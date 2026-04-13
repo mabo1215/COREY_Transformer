@@ -66,11 +66,9 @@
 
 ## 未修改或部分修改（可继续推进）
 
-- 【可继续】Checkpoint 证据已达到最小主文门槛并已回填，但仍可继续扩展：扩大 LongBench 样本规模、补充能耗统计、以及把 `mamba-2.8b` 从 benchmark-only 扩展到同规模四任务覆盖。`revision_matrix_4task5_policy_corey` 目录尚未落地，现有执行脚本为 `src/scripts/wsl_run_revision_matrix_4task5_corey_only.sh`，在 WSL2 `adama-cuda128` 中直接运行即可补齐缺口；完成后需把结果填入 `paper/appendix.tex` 的 `tab:policy_compare_n5` 表并替换 pending 行。
+- 【可继续】Checkpoint 证据扩展与 policy 对比补齐。当前状态：`4task5_policy_off` 与 `4task5_policy_static` 已有完整产物；`4task1_wt103_policy_corey` 已有更小规模（n=1）的三策略对比 CSV（含 mamba-1.4b / mamba-2.8b 的 corey/off/static 延迟与能耗）。**仍缺 `4task5_policy_corey`**——执行脚本 `src/scripts/wsl_run_revision_matrix_4task5_corey_only.sh` 已就绪，在 WSL2 `adama-cuda128` 中运行即可；完成后需把结果填入 `paper/appendix.tex` 的 `tab:policy_compare_n5` 表替换 pending 行。后续升级路径：`4task5` 全矩阵闭环 → `4task20` 主文级结果。
 
 - 【可继续】量化路线已收敛到 Mamba-specific 方案。当前可执行主线是继续推进 Quamba 的扩展构建与打包验证，执行脚本为 `src/scripts/wsl_run_quamba_phase2.sh`（设定 `sm_86`、`MAX_JOBS=4`，从 `fast-hadamard-transform` 阶段接续到 `mamba`、CUTLASS、`Megatron-LM`、`pip install .`）；MambaQuant 暂作为方法参考，等待稳定可访问代码入口。
-
-- 【可继续】WSL2 `adama-cuda128` authoritative 环境已稳定可用，后续重点是扩样本覆盖与补齐真实 static fusion / COREY 的 checkpoint-level 对比（优先补齐 `revision_matrix_4task5_policy_corey`，脚本已就绪；后续升级到 `4task20` 全矩阵）。
 
 ## 遗留问题
 
