@@ -60,6 +60,43 @@ run_in_env() {
   "$MICROMAMBA_BIN" run -n "$ENV_NAME" "$@"
 }
 
+configure_cuda_build_env() {
+  local nvcc_path
+  nvcc_path="$(run_in_env bash -lc 'which nvcc || true')"
+  if [[ -z "$nvcc_path" ]]; then
+    return 0
+  fi
+  local cuda_bin
+  local cuda_home
+  cuda_bin="$(dirname "$nvcc_path")"
+  cuda_home="$(dirname "$cuda_bin")"
+
+  export CUDA_HOME="$cuda_home"
+  export PATH="$cuda_bin:$PATH"
+
+  if [[ -d "$cuda_home/targets/x86_64-linux/include" ]]; then
+    export CPATH="$cuda_home/targets/x86_64-linux/include:${CPATH:-}"
+  fi
+  if [[ -d "$cuda_home/targets/x86_64-linux/include/cccl" ]]; then
+    export CPATH="$cuda_home/targets/x86_64-linux/include/cccl:${CPATH:-}"
+  fi
+  if [[ -d "$cuda_home/targets/x86_64-linux/lib" ]]; then
+    export LIBRARY_PATH="$cuda_home/targets/x86_64-linux/lib:${LIBRARY_PATH:-}"
+  fi
+  if [[ -d "$cuda_home/targets/x86_64-linux/lib/stubs" ]]; then
+    export LIBRARY_PATH="$cuda_home/targets/x86_64-linux/lib/stubs:${LIBRARY_PATH:-}"
+  fi
+
+  # Prefer a CUDA-compatible host compiler from the env when available.
+  if [[ -x "$ENV_PREFIX/bin/x86_64-conda-linux-gnu-gcc" ]]; then
+    export CC="$ENV_PREFIX/bin/x86_64-conda-linux-gnu-gcc"
+  fi
+  if [[ -x "$ENV_PREFIX/bin/x86_64-conda-linux-gnu-g++" ]]; then
+    export CXX="$ENV_PREFIX/bin/x86_64-conda-linux-gnu-g++"
+    export CUDAHOSTCXX="$ENV_PREFIX/bin/x86_64-conda-linux-gnu-g++"
+  fi
+}
+
 if [[ ! -d "$ENV_PREFIX" ]]; then
   "$MICROMAMBA_BIN" create -y -n "$ENV_NAME" -c conda-forge python=3.10 pip cmake ninja
 fi
@@ -118,11 +155,14 @@ PY
 fi
 
 if [[ "$BUILD_THIRD_PARTY" == "1" ]]; then
+  "$MICROMAMBA_BIN" install -y -n "$ENV_NAME" -c conda-forge gcc_linux-64=12 gxx_linux-64=12
+  "$MICROMAMBA_BIN" install -y -n "$ENV_NAME" -c nvidia cuda-cccl=12.1 cuda-nvcc=12.1 cuda-cudart-dev=12.1 cuda-libraries-dev=12.1
+  configure_cuda_build_env
   (
     cd "$QUAMBA_DIR"
-    run_in_env env FAST_HADAMARD_TRANSFORM_FORCE_BUILD=TRUE python -m pip install 3rdparty/fast-hadamard-transform
-    run_in_env python -m pip install 3rdparty/lm-evaluation-harness
-    run_in_env env MAMBA_FORCE_BUILD=TRUE python -m pip install 3rdparty/mamba
+    run_in_env env FAST_HADAMARD_TRANSFORM_FORCE_BUILD=TRUE python -m pip install --no-build-isolation 3rdparty/fast-hadamard-transform
+    run_in_env python -m pip install --no-build-isolation 3rdparty/lm-evaluation-harness
+    run_in_env env MAMBA_FORCE_BUILD=TRUE python -m pip install --no-build-isolation 3rdparty/mamba
     run_in_env bash build_cutlass.sh
     run_in_env python -m pip install --no-deps -e 3rdparty/Megatron-LM
   )

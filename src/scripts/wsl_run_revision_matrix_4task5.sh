@@ -48,6 +48,12 @@ for policy in off static corey; do
     echo "[revision-matrix] completed policy=$policy model=$model"
   done
 
+  # Rebuild a full aggregate summary across all models for this policy.
+  export MODELS="mamba-370m mamba-1.4b mamba-2.8b"
+  export EVAL_PERPLEXITY=1
+  echo "[revision-matrix] consolidating policy=$policy aggregate across all models"
+  bash src/scripts/wsl_run_checkpoint_matrix.sh
+
   echo "[revision-matrix] completed policy=$policy"
 done
 

@@ -39,8 +39,25 @@ for policy in off static corey; do
     export DISABLE_ENTROPY_HOOK=0
   fi
   export OUTPUT_DIR="src/outputs/revision_matrix_4task20_wt103_policy_${policy}"
-  echo "[revision-matrix-20] running policy=$policy output=$OUTPUT_DIR"
+
+  for model in mamba-370m mamba-1.4b mamba-2.8b; do
+    export MODELS="$model"
+    if [[ "$model" == "mamba-2.8b" ]]; then
+      export EVAL_PERPLEXITY=0
+    else
+      export EVAL_PERPLEXITY=1
+    fi
+    echo "[revision-matrix-20] running policy=$policy model=$model eval_ppl=$EVAL_PERPLEXITY output=$OUTPUT_DIR"
+    bash src/scripts/wsl_run_checkpoint_matrix.sh
+    echo "[revision-matrix-20] completed policy=$policy model=$model"
+  done
+
+  # Rebuild a full aggregate summary across all models for this policy.
+  export MODELS="mamba-370m mamba-1.4b mamba-2.8b"
+  export EVAL_PERPLEXITY=1
+  echo "[revision-matrix-20] consolidating policy=$policy aggregate across all models"
   bash src/scripts/wsl_run_checkpoint_matrix.sh
+
   echo "[revision-matrix-20] completed policy=$policy"
 done
 

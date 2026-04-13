@@ -54,6 +54,8 @@
 
 - 任务 43：已按“遗留问题”中的用户决策落地执行路径：`src/scripts/wsl_run_checkpoint_matrix.sh` 新增 `EVAL_PERPLEXITY` 环境开关（默认开启），`src/scripts/wsl_run_revision_matrix_4task5.sh` 改为按模型分批执行（`mamba-370m/mamba-1.4b` 保留 LongBench per-sample PPL，`mamba-2.8b` 关闭该项并保留 LM side-eval PPL）；随后已启动 `4task5` 的 `off/static/corey` 全矩阵后台运行，优先收敛中间里程碑表。
 
+- 任务 44：继续推进 Quamba 扩展构建链并消除关键阻挡：`src/scripts/wsl_setup_quamba_env.sh` 已补入 `gcc_linux-64=12/gxx_linux-64=12`、`cuda-cccl=12.1`、`cuda-nvcc=12.1`、`cuda-cudart-dev=12.1` 与 `cuda-libraries-dev=12.1` 自动安装；CUDA 构建环境新增 `cccl` include 路径和 `CC/CXX/CUDAHOSTCXX` 指向 env 内编译器。实测后，原先的 `unsupported GNU version`、`thrust/complex.h` 与 `cusparse.h` 阻挡已被消除，当前第三方构建推进到 `fast-hadamard-transform` 轮子编译阶段（后续仍需等待该阶段完成并继续验证 mamba/CUTLASS/Megatron/`pip install .`）。
+
 
 ## 未修改或部分修改（可继续推进）
 
