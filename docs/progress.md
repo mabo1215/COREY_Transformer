@@ -48,20 +48,42 @@
 
 - 任务 40：继续落实“可继续推进”项中的 checkpoint 侧基础设施：在 `src/experiments/run_official_mamba_benchmark.py` 中新增可选能耗采样链路（`--collect-energy`、`--energy-gpu-index`），并把 `avg_gpu_power_w/energy_j` 写入 `repeats.csv` 与 `summary.csv`，metadata 同步记录采样状态与错误信息；其中采样实现支持 `pynvml` 优先并自动回退 `nvidia-smi`，避免环境缺少 Python NVML 绑定时整条链路失效。随后在 WSL2 `adama-cuda128` 环境完成一次真实 smoke run（`src/outputs/revision_energy_smoke/`），得到非空能耗字段（示例：`avg_gpu_power_w=50.06`、`energy_total_j=35.8043`）。同时，修复 `run_checkpoint_matrix.py` 未透传 scheduler policy 的参数链路，新增 `--scheduler-policy/--static-tile-size/--collect-energy/--energy-gpu-index` 并传递到 longbench/benchmark 子 namespace；更新 `src/scripts/wsl_run_checkpoint_matrix.sh` 默认模型覆盖为 `mamba-370m mamba-1.4b mamba-2.8b`，并开放 `SCHEDULER_POLICY/STATIC_TILE_SIZE/COLLECT_ENERGY/ENERGY_GPU_INDEX` 环境变量，便于继续推进同规模四任务覆盖与真实 static/corey checkpoint-level 对比。
 
+- 任务 41：对“可继续”条目做状态核销并按当前产物重分类：`至少 1 个公平外部 baseline + 1 个真实 Triton selective-scan timing` 已由现有输出稳定满足（`src/outputs/pythia410m_wsl_baseline/`、`src/outputs/triton_selective_scan_wsl/`），因此从“未修改或部分修改（可继续推进）”中移出，不再作为未完成项重复跟踪。
+
+- 任务 42：补充一次“可继续”条目的实时状态复核（截至 2026-04-13）：确认当前 revision-matrix 目录中已存在 `revision_matrix_4task5_policy_off/`、`revision_matrix_4task20_policy_off/` 与 `revision_matrix_4task20_wt103_policy_off/`，但尚未发现同轮 `policy_static/policy_corey` 对应目录产物；据此将后续执行重点保持为“补齐 static/corey 同规模对比 + 继续推进 2.8b 四任务覆盖”，并把需要拍板的执行分支下沉到“遗留问题”。
+
+- 任务 43：已按“遗留问题”中的用户决策落地执行路径：`src/scripts/wsl_run_checkpoint_matrix.sh` 新增 `EVAL_PERPLEXITY` 环境开关（默认开启），`src/scripts/wsl_run_revision_matrix_4task5.sh` 改为按模型分批执行（`mamba-370m/mamba-1.4b` 保留 LongBench per-sample PPL，`mamba-2.8b` 关闭该项并保留 LM side-eval PPL）；随后已启动 `4task5` 的 `off/static/corey` 全矩阵后台运行，优先收敛中间里程碑表。
+
 
 ## 未修改或部分修改（可继续推进）
 
-- 【可继续】Checkpoint 证据已达到最小主文门槛并已回填，但仍可继续扩展：扩大 LongBench 样本规模、补充能耗统计、以及把 `mamba-2.8b` 从 benchmark-only 扩展到同规模四任务覆盖。
+- 【可继续】Checkpoint 证据已达到最小主文门槛并已回填，但仍可继续扩展：扩大 LongBench 样本规模、补充能耗统计、以及把 `mamba-2.8b` 从 benchmark-only 扩展到同规模四任务覆盖（当前 revision-matrix 仅见 `policy_off` 产物，`policy_static/policy_corey` 同规模目录尚未落地）。
 
 - 【可继续】量化路线已收敛到 Mamba-specific 方案。当前可执行主线是继续推进 Quamba 的扩展构建与打包验证（`fast-hadamard-transform`、Quamba `mamba`、CUTLASS、`Megatron-LM`、`pip install .`）；MambaQuant 暂作为方法参考，等待稳定可访问代码入口。
 
-- 【可继续】“至少 1 个公平外部 baseline + 1 个真实 Triton selective-scan timing”已完成，后续可选增强是扩更多外部 baseline 覆盖，并在需要时把当前 Sinkhorn proxy 拟合升级为更精确的 Birkhoff polytope 约束求解。
-
-- 【可继续】WSL2 `adama-cuda128` authoritative 环境已稳定可用，后续重点是扩样本覆盖与补齐真实 static fusion / COREY 的 checkpoint-level 对比。
+- 【可继续】WSL2 `adama-cuda128` authoritative 环境已稳定可用，后续重点是扩样本覆盖与补齐真实 static fusion / COREY 的 checkpoint-level 对比（优先补齐 `revision_matrix_*_policy_static` 与 `revision_matrix_*_policy_corey`）。
 
 - 【可继续】prototype per-tile surrogate trace 已落地且附录表已补齐，后续只剩两项：是否将 matched-depth latency delta 与 tile-trace summary 压缩进主文表格；何时以真实 GPU kernel trace 替代 surrogate。
 
 ## 遗留问题
+
+- 【需你决策】checkpoint 对比推进顺序（避免重复长跑）：
+	1. 你希望先补齐 `4task5` 的 `off/static/corey` 全矩阵，再升级到 `4task20`；还是直接只做 `4task20` 全矩阵？
+	2. 推荐默认：先跑通 `4task5` 全矩阵做快速闭环，再转 `4task20` 做主文级结果。
+
+    A 先补齐 `4task5` 的 `off/static/corey` 全矩阵，再升级到 `4task20`
+
+- 【需你决策】`mamba-2.8b` 的长跑策略（当前瓶颈主要来自 LongBench side perplexity）：
+	1. 你是否允许在 `2.8b` 的 LongBench 阶段关闭 `--eval-perplexity`（仅保留生成指标），并把 PPL 独立到 LM side-eval？
+	2. 推荐默认：`2.8b` LongBench 先关 per-sample PPL 以换取可控 wall-clock，再在 WikiText/PG19 保留 PPL。
+
+    A: `2.8b` LongBench 先关 per-sample PPL 以换取可控 wall-clock，再在 WikiText/PG19 保留 PPL。
+
+- 【需你决策】主文表格节奏：
+	1. 是否先接受一个 `n=5` 的 static/corey 对比表作为中间里程碑（附录或正文临时表），待 `n=20` 完整后再替换？
+	2. 推荐默认：接受 `n=5` 中间表用于锁定趋势，不阻塞后续 `n=20` 主表生成。
+
+    A: 先接受一个 `n=5` 的 static/corey 对比表作为中间里程碑（附录或正文临时表），待 `n=20` 完整后再替换
 
 - 【已阻挡】当前仓库尚未准备匿名对外仓库或匿名快照 URL，因此虽然正文和附录已经补足可复现性说明，review 建议中的"anonymous repository link"仍无法在不新增发布工序的前提下完成。
 	需要你提供/决策：

@@ -32,6 +32,7 @@ STATIC_TILE_SIZE="${STATIC_TILE_SIZE:-256}"
 COLLECT_ENERGY="${COLLECT_ENERGY:-0}"
 ENERGY_GPU_INDEX="${ENERGY_GPU_INDEX:-0}"
 DISABLE_ENTROPY_HOOK="${DISABLE_ENTROPY_HOOK:-0}"
+EVAL_PERPLEXITY="${EVAL_PERPLEXITY:-1}"
 WINDOWS_USER="${WINDOWS_USER:-}"
 if [[ -z "$WINDOWS_USER" ]]; then
   WINDOWS_USER="$USER"
@@ -53,6 +54,9 @@ fi
 if [[ "$DISABLE_ENTROPY_HOOK" == "1" ]]; then
   EXTRA_FLAGS+=" --disable-entropy-hook"
 fi
+if [[ "$EVAL_PERPLEXITY" == "1" ]]; then
+  EXTRA_FLAGS+=" --eval-perplexity"
+fi
 
 "$MICROMAMBA_BIN" run -n "$ENV_NAME" bash -lc "export PYTHONPATH='$REPO_ROOT'; export HF_HOME='$HF_HOME'; python -m src.experiments.run_checkpoint_matrix \
   --modes $MODES \
@@ -69,7 +73,6 @@ fi
   --benchmark-max-new-tokens '$BENCHMARK_MAX_NEW_TOKENS' \
   --warmup-runs '$WARMUP_RUNS' \
   --benchmark-repeats '$BENCHMARK_REPEATS' \
-  --eval-perplexity \
   --ppl-max-samples '$PPL_MAX_SAMPLES' \
   --lm-max-samples '$LM_MAX_SAMPLES' \
   --max-length '$MAX_LENGTH' \
