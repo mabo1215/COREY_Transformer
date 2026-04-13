@@ -3,16 +3,19 @@
 # policy_off and policy_static already have outputs; this fills the gap.
 set -euo pipefail
 
-cd /mnt/c/source/COREY_Transformer
+DEFAULT_REPO_ROOT="/mnt/c/source/Corey_Transformer"
+if [[ ! -d "$DEFAULT_REPO_ROOT" && -d "/mnt/c/source/COREY_Transformer" ]]; then
+  DEFAULT_REPO_ROOT="/mnt/c/source/COREY_Transformer"
+fi
 
-export REPO_ROOT=/mnt/c/source/COREY_Transformer
-export MAMBA_ROOT_PREFIX=/home/mabo1215/.adama-micromamba
-export ENV_NAME=adama-cuda128
+export REPO_ROOT="${REPO_ROOT:-$DEFAULT_REPO_ROOT}"
+cd "$REPO_ROOT"
+
 export MODES="longbench benchmark"
 export TASKS="narrativeqa qasper multifieldqa_en gov_report"
 export LM_DATASETS="wikitext103 pg19"
 export DATASET_SOURCE=local
-export DATASET_ROOT=/mnt/c/source/COREY_Transformer/src/data/longbench_subset
+export DATASET_ROOT="$REPO_ROOT/src/data/longbench_subset"
 export MAX_SAMPLES=5
 export LM_MAX_SAMPLES=5
 export PPL_MAX_SAMPLES=5

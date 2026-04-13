@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="${REPO_ROOT:-/mnt/c/source/COREY_Transformer}"
+DEFAULT_REPO_ROOT="/mnt/c/source/Corey_Transformer"
+if [[ ! -d "$DEFAULT_REPO_ROOT" && -d "/mnt/c/source/COREY_Transformer" ]]; then
+  DEFAULT_REPO_ROOT="/mnt/c/source/COREY_Transformer"
+fi
+
+REPO_ROOT="${REPO_ROOT:-$DEFAULT_REPO_ROOT}"
 TOOLS_DIR="${TOOLS_DIR:-${HOME}/.corey-wsl-tools}"
 MAMBA_ROOT_PREFIX="${MAMBA_ROOT_PREFIX:-${HOME}/.corey-micromamba}"
 ENV_NAME="${ENV_NAME:-corey-cuda128}"

@@ -64,11 +64,13 @@
 
 - 任务 48（状态同步）：matched-depth latency delta 已压缩入主文 `tab:tiling_depth`（新增 $\Delta_{\text{matched}}$ 列）；tile-trace summary 保留在附录 `tab:tile_trace_surrogate`；surrogate-to-real-trace 升级判据已写入 `paper/appendix.tex` Reproducibility Checklist（三触发条件：reviewer 要求 / $\pm 20\%$ 偏差 / 全 fused-kernel 阶段）。此项从"未修改或部分修改"移入"已全部修改"。
 
+- 任务 49：对当前 Windows/WSL 工作区做一次落地复核并修正脚本漂移。复核结果显示：当前仓库中未见 `src/outputs/revision_matrix_4task5_policy_{off,static,corey}/` 目录，`paper/appendix.tex` 的 `tab:policy_compare_n5` 仍保留 `policy_static`/`policy_corey` pending 行；同时本机 WSL 当前用户并非旧脚本中硬编码的 `mabo1215`，且 `wsl_run_checkpoint_matrix.sh`、`wsl_run_revision_matrix_4task5_corey_only.sh`、`wsl_run_quamba_phase2.sh` 已改为优先按当前 `$HOME` 自动探测 `.adama-micromamba` / `.corey-micromamba` 与 `adama-cuda128` / `corey-cuda128`，不再依赖固定用户名路径。由此，这两项“可继续”在当前机器上被重新界定为“脚本入口已修正，但实验产物仍未落盘”。
+
 ## 未修改或部分修改（可继续推进）
 
-- 【可继续】Checkpoint 证据扩展与 policy 对比补齐。当前状态：`4task5_policy_off` 与 `4task5_policy_static` 已有完整产物；`4task1_wt103_policy_corey` 已有更小规模（n=1）的三策略对比 CSV（含 mamba-1.4b / mamba-2.8b 的 corey/off/static 延迟与能耗）。**仍缺 `4task5_policy_corey`**——执行脚本 `src/scripts/wsl_run_revision_matrix_4task5_corey_only.sh` 已就绪，在 WSL2 `adama-cuda128` 中运行即可；完成后需把结果填入 `paper/appendix.tex` 的 `tab:policy_compare_n5` 表替换 pending 行。后续升级路径：`4task5` 全矩阵闭环 → `4task20` 主文级结果。
+- 【可继续】Checkpoint 证据扩展与 policy 对比补齐。当前状态已按本机仓库复核重置：当前工作区未发现 `src/outputs/revision_matrix_4task5_policy_off/`、`src/outputs/revision_matrix_4task5_policy_static/` 或 `src/outputs/revision_matrix_4task5_policy_corey/` 目录，而 `paper/appendix.tex` 的 `tab:policy_compare_n5` 仍保留 `policy_static` 的 Mamba-2.8B 行与三条 `policy_corey` 行为 pending。已完成部分仅包括脚本级准备和较小规模的 `4task1_wt103_policy_corey` 三策略 CSV；**`4task5_policy_corey` 以及当前工作区内可回填的 `4task5_policy_off/static` canonical 产物仍未落盘**。现阶段可直接执行的入口仍是 `src/scripts/wsl_run_revision_matrix_4task5_corey_only.sh`，但需在已实际存在目标 micromamba 环境的 WSL2 Linux GPU 环境中运行；完成后再把结果填入 `paper/appendix.tex` 的 `tab:policy_compare_n5` 替换 pending 行。后续升级路径保持为：`4task5` 全矩阵闭环 → `4task20` 主文级结果。
 
-- 【可继续】量化路线已收敛到 Mamba-specific 方案。当前可执行主线是继续推进 Quamba 的扩展构建与打包验证，执行脚本为 `src/scripts/wsl_run_quamba_phase2.sh`（设定 `sm_86`、`MAX_JOBS=4`，从 `fast-hadamard-transform` 阶段接续到 `mamba`、CUTLASS、`Megatron-LM`、`pip install .`）；MambaQuant 暂作为方法参考，等待稳定可访问代码入口。
+- 【可继续】量化路线已收敛到 Mamba-specific 方案，但在当前工作区/本机 WSL 上仍未完成。复核结果显示：当前仓库根目录未见 `Quamba/` checkout，本机 WSL 当前也未发现 `quamba-py310` 环境，因此 `src/scripts/wsl_run_quamba_phase2.sh` 还不能直接进入 `mamba`、CUTLASS、`Megatron-LM` 与 `pip install .` 阶段。已完成部分是 phase-2 入口脚本本身以及对路径/环境名硬编码的兼容修正；**未完成部分仍是 Quamba checkout、Python 3.10 隔离环境 bootstrap、第三方扩展构建与最终打包验证**。`wsl_run_quamba_phase2.sh` 现已改为允许通过环境变量覆盖 `TORCH_CUDA_ARCH_LIST` 和 micromamba 根路径，因此在补齐 checkout 与环境后可继续执行；MambaQuant 仍仅作为方法参考，等待稳定可访问代码入口。
 
 ## 遗留问题
 

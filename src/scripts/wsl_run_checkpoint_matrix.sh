@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="${REPO_ROOT:-/mnt/c/source/COREY_Transformer}"
+DEFAULT_REPO_ROOT="/mnt/c/source/Corey_Transformer"
+if [[ ! -d "$DEFAULT_REPO_ROOT" && -d "/mnt/c/source/COREY_Transformer" ]]; then
+  DEFAULT_REPO_ROOT="/mnt/c/source/COREY_Transformer"
+fi
+
+REPO_ROOT="${REPO_ROOT:-$DEFAULT_REPO_ROOT}"
 TOOLS_DIR="${TOOLS_DIR:-${HOME}/.corey-wsl-tools}"
-MAMBA_ROOT_PREFIX="${MAMBA_ROOT_PREFIX:-${HOME}/.adama-micromamba}"
-ENV_NAME="${ENV_NAME:-adama-cuda128}"
+MAMBA_ROOT_PREFIX="${MAMBA_ROOT_PREFIX:-}"
+ENV_NAME="${ENV_NAME:-}"
 REPO_MICROMAMBA_BIN="$REPO_ROOT/.wsl-tools/bin/micromamba"
 MICROMAMBA_BIN="$TOOLS_DIR/bin/micromamba"
 MODES="${MODES:-longbench benchmark}"
@@ -38,6 +43,28 @@ if [[ -z "$WINDOWS_USER" ]]; then
   WINDOWS_USER="$USER"
 fi
 HF_HOME="${HF_HOME:-${HOME}/.cache/huggingface}"
+
+if [[ -z "$MAMBA_ROOT_PREFIX" ]]; then
+  for candidate in "${HOME}/.adama-micromamba" "${HOME}/.corey-micromamba"; do
+    if [[ -d "$candidate" ]]; then
+      MAMBA_ROOT_PREFIX="$candidate"
+      break
+    fi
+  done
+fi
+if [[ -z "$MAMBA_ROOT_PREFIX" ]]; then
+  MAMBA_ROOT_PREFIX="${HOME}/.corey-micromamba"
+fi
+
+if [[ -z "$ENV_NAME" ]]; then
+  if [[ -d "$MAMBA_ROOT_PREFIX/envs/adama-cuda128" ]]; then
+    ENV_NAME="adama-cuda128"
+  elif [[ -d "$MAMBA_ROOT_PREFIX/envs/corey-cuda128" ]]; then
+    ENV_NAME="corey-cuda128"
+  else
+    ENV_NAME="corey-cuda128"
+  fi
+fi
 
 if [[ -x "$REPO_MICROMAMBA_BIN" ]]; then
   MICROMAMBA_BIN="$REPO_MICROMAMBA_BIN"
