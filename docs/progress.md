@@ -62,6 +62,7 @@
 
 - 任务 47：将 `tab:hook_micro`（主文 hook 微基准表）从单 GPU/单模型扩展为跨 GPU、跨模型对比。（1）将本地最新代码（`src/experiments/` + `src/algorithms/`）通过 rsync 同步到远端 4×RTX 3090 机器（`mabo1215@10.147.20.176`，`quamba-py310` 环境，torch 2.4.0+cu121）；（2）在远端分别运行 mamba-370m 和 mamba-1.4b 的 baseline（`--disable-entropy-hook`）和 hook-enabled（`--scheduler-policy corey`）各四轮，包括 warmup=1 / repeats=3 的稳定版本；（3）将结果回收到本地 `src/outputs/remote_hook_micro_{baseline,enabled}_v2/` 并通过 `analyze_scheduler_hook_results.py` 汇总；（4）`paper/main.tex` 的 `tab:hook_micro` 从原先一行（RTX 3070 / Mamba-370M）扩展为三行（RTX 3070 / Mamba-370M + RTX 3090 / Mamba-370M + RTX 3090 / Mamba-1.4B），新增 GPU 列，更新 caption 说明两种硬件与实验设置差异，更新下方文段说明 cross-GPU 一致性；新增 `src/scripts/remote_run_hook_micro.sh` 以便后续复现。稳定版结果：Mamba-370M/3090 delta=$-4.02\%$（2675→2568 ms），Mamba-1.4B/3090 delta=$-1.30\%$（2644→2610 ms），与本地 3070 的 $-3.63\%$ 一致地显示 hook 无可测开销。
 
+- 任务 48（状态同步）：matched-depth latency delta 已压缩入主文 `tab:tiling_depth`（新增 $\Delta_{\text{matched}}$ 列）；tile-trace summary 保留在附录 `tab:tile_trace_surrogate`；surrogate-to-real-trace 升级判据已写入 `paper/appendix.tex` Reproducibility Checklist（三触发条件：reviewer 要求 / $\pm 20\%$ 偏差 / 全 fused-kernel 阶段）。此项从"未修改或部分修改"移入"已全部修改"。
 
 ## 未修改或部分修改（可继续推进）
 
@@ -71,27 +72,7 @@
 
 - 【可继续】WSL2 `adama-cuda128` authoritative 环境已稳定可用，后续重点是扩样本覆盖与补齐真实 static fusion / COREY 的 checkpoint-level 对比（优先补齐 `revision_matrix_4task5_policy_corey`，脚本已就绪；后续升级到 `4task20` 全矩阵）。
 
-- 【已完成】matched-depth latency delta 已压缩入主文 `tab:tiling_depth`（新增 $\Delta_{\text{matched}}$ 列）；tile-trace summary 保留在附录 `tab:tile_trace_surrogate`。surrogate-to-real-trace 升级判据已写入 `paper/appendix.tex` Reproducibility Checklist（三触发条件：reviewer 要求 / $\pm 20\%$ 偏差 / 全 fused-kernel 阶段），该"可继续"项已关闭。
-
 ## 遗留问题
-
-- 【需你决策】checkpoint 对比推进顺序（避免重复长跑）：
-	1. 你希望先补齐 `4task5` 的 `off/static/corey` 全矩阵，再升级到 `4task20`；还是直接只做 `4task20` 全矩阵？
-	2. 推荐默认：先跑通 `4task5` 全矩阵做快速闭环，再转 `4task20` 做主文级结果。
-
-    A 先补齐 `4task5` 的 `off/static/corey` 全矩阵，再升级到 `4task20`
-
-- 【需你决策】`mamba-2.8b` 的长跑策略（当前瓶颈主要来自 LongBench side perplexity）：
-	1. 你是否允许在 `2.8b` 的 LongBench 阶段关闭 `--eval-perplexity`（仅保留生成指标），并把 PPL 独立到 LM side-eval？
-	2. 推荐默认：`2.8b` LongBench 先关 per-sample PPL 以换取可控 wall-clock，再在 WikiText/PG19 保留 PPL。
-
-    A: `2.8b` LongBench 先关 per-sample PPL 以换取可控 wall-clock，再在 WikiText/PG19 保留 PPL。
-
-- 【需你决策】主文表格节奏：
-	1. 是否先接受一个 `n=5` 的 static/corey 对比表作为中间里程碑（附录或正文临时表），待 `n=20` 完整后再替换？
-	2. 推荐默认：接受 `n=5` 中间表用于锁定趋势，不阻塞后续 `n=20` 主表生成。
-
-    A: 先接受一个 `n=5` 的 static/corey 对比表作为中间里程碑（附录或正文临时表），待 `n=20` 完整后再替换
 
 - 【已阻挡】当前仓库尚未准备匿名对外仓库或匿名快照 URL，因此虽然正文和附录已经补足可复现性说明，review 建议中的"anonymous repository link"仍无法在不新增发布工序的前提下完成。
 	需要你提供/决策：
