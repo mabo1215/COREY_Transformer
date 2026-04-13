@@ -12,6 +12,15 @@ MAMBA_ROOT_PREFIX="${MAMBA_ROOT_PREFIX:-}"
 ENV_NAME="${ENV_NAME:-}"
 REPO_MICROMAMBA_BIN="$REPO_ROOT/.wsl-tools/bin/micromamba"
 MICROMAMBA_BIN="$TOOLS_DIR/bin/micromamba"
+
+# ==== Remote multi-GPU note ====
+# For production multi-policy comparisons (off/static/corey) or large sample counts,
+# strongly recommend using remote 4-GPU server (mabo1215@10.147.20.176) via:
+#   - src/scripts/remote_run_multigpu_from_env.ps1 (Windows launcher)
+#   - src/outputs/remote_policy_corey_run_final.log (prior execution log)
+# This avoids local mamba-ssm dependency issues and provides 4× GPU parallelism.
+# ================================
+
 MODES="${MODES:-longbench benchmark}"
 MODELS="${MODELS:-mamba-370m mamba-1.4b mamba-2.8b}"
 PRECISIONS="${PRECISIONS:-fp16}"

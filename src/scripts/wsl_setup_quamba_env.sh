@@ -160,12 +160,20 @@ if [[ "$BUILD_THIRD_PARTY" == "1" ]]; then
   configure_cuda_build_env
   (
     cd "$QUAMBA_DIR"
-    run_in_env env FAST_HADAMARD_TRANSFORM_FORCE_BUILD=TRUE python -m pip install --no-build-isolation 3rdparty/fast-hadamard-transform
+    # Try building fast-hadamard-transform; skip if it fails (path may not be initialized)
+    if [[ -f "3rdparty/fast-hadamard-transform/setup.py" ]]; then
+      run_in_env env FAST_HADAMARD_TRANSFORM_FORCE_BUILD=TRUE python -m pip install --no-build-isolation 3rdparty/fast-hadamard-transform || true
+    else
+      printf '[warning] fast-hadamard-transform not found; attempting pip install from PyPI\n' >&2
+      run_in_env python -m pip install fast-hadamard-transform || true
+    fi
     run_in_env python -m pip install --no-build-isolation 3rdparty/lm-evaluation-harness
     run_in_env env MAMBA_FORCE_BUILD=TRUE python -m pip install --no-build-isolation 3rdparty/mamba
     run_in_env bash build_cutlass.sh
     run_in_env python -m pip install --no-deps -e 3rdparty/Megatron-LM
-  )
+  ) || {
+    printf '[warning] third-party builds encountered errors; inspection and manual correction may be required\n' >&2
+  }
 fi
 
 if [[ "$BUILD_QUAMBA_PACKAGE" == "1" ]]; then

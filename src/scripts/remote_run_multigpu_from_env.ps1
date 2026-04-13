@@ -4,9 +4,9 @@ param(
     [string]$Model = 'mamba-370m',
     [int]$MaxSamples = 20,
     [int]$MaxLength = 4096,
-    [string]$GpuIds = '2 3',
+    [string]$GpuIds = '0 1',
     [string]$RemoteRoot = '/home1/mabo1215/COREY_Transformer',
-    [string]$RemoteOutputBase = 'src/outputs/mgpu_longbench_remote',
+    [string]$RemoteOutputBase = 'src/outputs/revision_matrix_4task5_policy_corey_remote',
     [switch]$SkipCodeSync,
     [switch]$SkipDataSync,
     [switch]$SkipPullBack
