@@ -42,24 +42,20 @@
 - 任务 36：继续把 Quamba 从“独立环境复现候选”推进到实际可用的 WSL2 隔离工程栈：在当前仓库根目录下复用已有 `Quamba/` 官方 checkout，新增 WSL2 `quamba-py310` 隔离环境（Python 3.10 + pip + cmake + ninja），并通过将 `git@github.com:` 重写为 HTTPS 的方式成功初始化其 `Megatron-LM`、`cutlass`、`fast-hadamard-transform`、`lm-evaluation-harness` 与 `mamba` 等递归子模块。与此同时，将最新量化路线判断再压缩进 `paper/main.tex` 与 `paper/appendix.tex` 的一句话表述：Quamba 是当前唯一已验证到仓库级别的公开复现入口，但需要独立的 Python 3.10 + CUTLASS/CUDA 构建链；MambaQuant 的论文代码链接当前仍不是稳定匿名入口。随后重新编译论文并确认 PDF 成功生成。当前环境侧的剩余工作已从“是否能搭起隔离工程栈”收缩为“继续完成 Quamba README 中的核心依赖安装与扩展构建 smoke check”。
 - 任务 37：把这套 Quamba WSL2 隔离环境进一步固化成可重复执行脚本：新增 `src/scripts/wsl_setup_quamba_env.sh`，默认复用仓库内 `Quamba/` checkout 与 `.wsl-tools/bin/micromamba`，支持通过环境变量控制“仅初始化子模块和核心运行时”或“继续构建第三方库与 Quamba 包”两种阶段化运行方式。脚本现已内置 Python 3.10 环境创建、GitHub SSH→HTTPS 子模块同步、`torch 2.4.0+cu121 / torchvision 0.19.0 / torchaudio 2.4.0 / transformers 4.41.2 / datasets 2.19.0` 等核心依赖安装，以及最终的 `torch.cuda.is_available()` smoke check。实测 smoke check 已通过，返回 `cuda_available=True`、设备 `NVIDIA GeForce RTX 3070`，因此当前 Quamba 路线的剩余工作已进一步收缩为第三方扩展构建与 `pip install .` 的最终打包验证。
 
+- 任务 38：远端服务器（ubuntu-4card，4× RTX 3090）的多 GPU 闭环已完成并回填到论文。已完成事项包括：远端多卡分片与合并工具链（`--sample-offset`、`merge_sharded_results.py`、`wsl_run_multigpu_longbench.sh`、`remote_setup_and_run_multigpu.sh`）的可用性验证；Mamba-370M 的 g1/g2/g4 实测吞吐与 wall-clock 回填主文 `tab:multigpu_scaling`；Mamba-1.4B 的 g2 merged 四任务指标成功生成并回填主文 `tab:checkpoint_baseline` 与附录 cross-hardware 段；最终论文重新编译通过。
 
-## 未修改或部分修改
 
-- 【部分缓解】最小主文 checkpoint 证据集已经具备，且相关结果现已同步回填到 canonical `summary.csv` 与论文正文/附录：`mamba-370m` 与 `mamba-1.4b` 均已完成四任务各 20 样本的 WSL2 fast-path 运行，并输出 `WikiText-103 perplexity / PG19 perplexity / token-F1或ROUGE-L / latency / tok-s`；`mamba-2.8b` 也已有 benchmark-only 证据。当前剩余缺口已从“主文最小证据不足”进一步收缩为“是否继续扩更大样本规模、是否补能耗统计、以及是否把 2.8B 也扩到同规模任务覆盖”。
+## 未修改或部分修改（可继续推进）
 
-- 【部分缓解】量化路线已从“继续硬推通用 AWQ/GPTQ”转向“复现 Mamba-specific quantization 方法”，因为前者已在 WSL2 authoritative 环境中被实测证伪：AutoAWQ 0.2.9 对 Mamba checkpoint 直接返回 `mamba isn't supported yet`，auto-gptq 0.7.1 则与当前 `transformers 5.5.1` API 不兼容。当前剩余任务已明确收缩为：评估并接入 Quamba / MambaQuant 这类 Mamba-specific 量化路径，而不再重复尝试通用 LLM quantization loader。
-	补充状态：`quamba` 与 `mambaquant` 均不存在可直接安装的 PyPI 入口；其中 Quamba 进一步确认存在公开官方仓库和完整构建说明，但依赖独立 CUDA/CUTLASS 工程链，且 README 以 Python 3.10 新环境为前提，因此更适合在隔离环境中单独复现；MambaQuant 的论文代码链接当前匿名访问为 404，暂时不能作为稳定依赖入口。
-	进展更新：WSL2 中的 `quamba-py310` 隔离环境已经创建完成，Quamba 官方仓库所需递归子模块已成功初始化，核心依赖安装与 `torch/CUDA` smoke check 也已实际通过；同时这套流程已经固化为可重复执行的 `src/scripts/wsl_setup_quamba_env.sh`。因此这一项已不再停留在“路线判断”或“空壳环境”，而是已经进入实际工程复现阶段。当前剩余缺口集中到继续推进 `fast-hadamard-transform`、Quamba `mamba`、CUTLASS、`Megatron-LM` 与 `pip install .` 的扩展构建。
-	当前无需你继续决策，我将优先把 Quamba 视作下一条可执行复现路线，而把 MambaQuant 暂时只作为方法参考。
-- 【部分缓解】“至少 1 个公平外部 baseline + 1 个真实 Triton selective-scan timing”的最低新增证据门槛已经满足，且相关结果现已回填到论文正文/附录与新增的主文 checkpoint 对比表。Theorem 1 的经验验证也已从弱代理推进到显式的 Sinkhorn-style residual 拟合，因此这一组剩余缺口现在进一步收缩为：更高覆盖度的外部 baseline 扩展，以及如果后续还需继续增强理论说服力，再把当前 proxy fit 升级为对 Birkhoff polytope 上更精确 constrained minimizer 的求解。
-	当前无需你继续决策。
+- 【可继续】Checkpoint 证据已达到最小主文门槛并已回填，但仍可继续扩展：扩大 LongBench 样本规模、补充能耗统计、以及把 `mamba-2.8b` 从 benchmark-only 扩展到同规模四任务覆盖。
 
-- 【部分缓解】WSL2 侧的 `adama-cuda128` Linux CUDA 12.8 环境已稳定承担 authoritative deployment-grade 证据运行，相关 fast-path 与最小四任务主表跑法都已落地；当前这一路线的剩余问题已集中到“是否继续扩更大样本覆盖”和“是否实现真实 static fusion / COREY 对比”，而不再是环境不可用。
-	当前无需你继续决策。
+- 【可继续】量化路线已收敛到 Mamba-specific 方案。当前可执行主线是继续推进 Quamba 的扩展构建与打包验证（`fast-hadamard-transform`、Quamba `mamba`、CUTLASS、`Megatron-LM`、`pip install .`）；MambaQuant 暂作为方法参考，等待稳定可访问代码入口。
 
-- 【部分缓解】prototype 导出层现已补入 schedule-level occupancy、register/shared-memory 成本统计，并进一步生成增强后的 `tile_trace.csv`、新的 `tile_trace_summary.csv`、原始 `alpha=0` 对照、以及 matched-depth 的 `arithmetic_only_matched` 对照输出，因此 reviewer 要求中的“per-tile runtime trace”已经以 prototype-level surrogate 形式落地。当前剩余缺口已进一步收缩为：是否把 matched-depth latency delta 与新的 per-tile surrogate summary 正式整理进主文表格，以及它们何时被真实 GPU kernel trace 取代。
-	进展更新：appendix 级别的 `tab:tile_trace_surrogate` 已补入，当前剩余缺口只剩是否把这些摘要进一步压缩进主文表格，以及它们何时被真实 GPU kernel trace 取代。
-	当前无需你继续决策。 
+- 【可继续】“至少 1 个公平外部 baseline + 1 个真实 Triton selective-scan timing”已完成，后续可选增强是扩更多外部 baseline 覆盖，并在需要时把当前 Sinkhorn proxy 拟合升级为更精确的 Birkhoff polytope 约束求解。
+
+- 【可继续】WSL2 `adama-cuda128` authoritative 环境已稳定可用，后续重点是扩样本覆盖与补齐真实 static fusion / COREY 的 checkpoint-level 对比。
+
+- 【可继续】prototype per-tile surrogate trace 已落地且附录表已补齐，后续只剩两项：是否将 matched-depth latency delta 与 tile-trace summary 压缩进主文表格；何时以真实 GPU kernel trace 替代 surrogate。
 
 ## 遗留问题
 
@@ -71,4 +67,3 @@
 	   A: 推荐方式：Anonymous GitHub（anonymous.4open.science）——上传至该平台后自动替换身份信息生成匿名镜像 URL，格式为 anonymous.4open.science/r/[unique-id]/；NeurIPS 2026 要求所有补充材料（含代码链接）必须匿名，zip 快照上传至 OpenReview supplementary（≤100MB）亦合规
 	3. 如果你已经有候选链接或发布路径，请直接贴在这里，后续我可据此同步回填文稿。
 	   A: 暂无候选链接；待决定后填入
-- 任务 38：把远端服务器（ubuntu-4card，4× RTX 3090）上的 Mamba-370M 四任务 20 样本实验结果纳入论文。主要工作：（1）验证远端实验分数与 WSL2+RTX~3070 结果一致（NarrQA 0.0141、Qasper 0.0443、MF-EN 0.000、GovRpt 0.1472），确认跨硬件分数可复现性；（2）在 run_longbench_inference.py 中新增 --sample-offset 参数，实现数据并行分片推理；（3）新增 merge_sharded_results.py、wsl_run_multigpu_longbench.sh、remote_setup_and_run_multigpu.sh 等脚本，支持多卡并行推理和结果合并；（4）更新 paper/main.tex：扩展 tab:checkpoint_baseline 加入 Platform 列和 Remote/RTX 3090 行，新增 \subsection{Multi-GPU Parallel Inference Throughput} 与 tab:multigpu_scaling 展示 2× 线性加速，更新 Checkpoint-Level Validation Status 与 Conclusion 段落；（5）在 paper/appendix.tex 的 sec:appendix_ckpt 节末新增关于跨硬件可复现性和多卡数据并行的两个段落；（6）重新编译论文确认 PDF 成功生成（985 KB）。远端 2 卡并行实验仍在运行中（安装 torch 2.4.0+cu121 需要约 10-15 分钟），完成后将回填实测 wall-clock 到 tab:multigpu_scaling。
