@@ -4,6 +4,7 @@
 set -euo pipefail
 
 export MAMBA_ROOT_PREFIX=/home1/mabo1215/.adama-micromamba
+export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
 MM=/home1/mabo1215/.corey-wsl-tools/bin/micromamba
 REPO=/home1/mabo1215/COREY_Transformer
 
@@ -24,6 +25,7 @@ $MM run -n quamba-py310 pip install --quiet \
     huggingface_hub==0.27.0
 
 echo "=== Smoke check ==="
+echo "=== HF_ENDPOINT=${HF_ENDPOINT} ==="
 $MM run -n quamba-py310 python -c 'import torch, transformers, datasets; print("torch", torch.__version__, "cuda", torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else "no-gpu")'
 
 echo "=== Launching 2-GPU parallel LongBench (GPU 2 & 3) ==="
@@ -43,6 +45,7 @@ for i in 0 1; do
     echo "[mgpu] GPU ${GPU_ID}: shard $i offset=${OFFSET} samples=10 → ${SHARD_DIR}"
     CUDA_VISIBLE_DEVICES=${GPU_ID} \
     MAMBA_ROOT_PREFIX=${MAMBA_ROOT_PREFIX} \
+    HF_ENDPOINT=${HF_ENDPOINT} \
     $MM run -n quamba-py310 \
         python -m src.experiments.run_longbench_inference \
             --model mamba-370m \
@@ -89,6 +92,7 @@ for i in 0 1; do
 done
 
 MAMBA_ROOT_PREFIX=${MAMBA_ROOT_PREFIX} \
+HF_ENDPOINT=${HF_ENDPOINT} \
 $MM run -n quamba-py310 \
     python -m src.experiments.merge_sharded_results \
         --shard-dirs "${SHARD_DIRS[@]}" \

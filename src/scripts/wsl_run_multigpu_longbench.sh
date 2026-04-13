@@ -29,9 +29,29 @@ MAX_SAMPLES="${MAX_SAMPLES:-20}"
 MAX_LENGTH="${MAX_LENGTH:-4096}"
 OUTPUT_BASE="${OUTPUT_BASE:-src/outputs/mgpu_longbench_remote}"
 GPU_IDS="${GPU_IDS:-0 1 2 3}"
+HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-MM="${REPO_ROOT}/.wsl-tools/bin/micromamba"
+
+# Resolve micromamba across local WSL and remote server layouts.
+MM_CANDIDATES=(
+    "${MM:-}"
+    "${REPO_ROOT}/.wsl-tools/bin/micromamba"
+    "/home1/mabo1215/.corey-wsl-tools/bin/micromamba"
+    "/home/mabo1215/.corey-wsl-tools/bin/micromamba"
+    "$(command -v micromamba || true)"
+)
+MM=""
+for cand in "${MM_CANDIDATES[@]}"; do
+    if [[ -n "$cand" && -x "$cand" ]]; then
+        MM="$cand"
+        break
+    fi
+done
+if [[ -z "$MM" ]]; then
+    echo "[mgpu] ERROR: micromamba not found. Set MM=/path/to/micromamba and retry."
+    exit 127
+fi
 
 # Build GPU array
 GPU_ARRAY=($GPU_IDS)
@@ -43,6 +63,9 @@ echo "[mgpu] Total samples: $MAX_SAMPLES  / $NUM_GPUS GPUs"
 echo "[mgpu] Max length   : $MAX_LENGTH"
 echo "[mgpu] Output base  : $OUTPUT_BASE"
 echo "[mgpu] GPU IDs      : ${GPU_ARRAY[*]}"
+echo "[mgpu] Env name     : $ENV_NAME"
+echo "[mgpu] Micromamba   : $MM"
+echo "[mgpu] HF endpoint  : $HF_ENDPOINT"
 
 # Samples per shard (ceiling division)
 SHARD_SIZE=$(( (MAX_SAMPLES + NUM_GPUS - 1) / NUM_GPUS ))
@@ -72,6 +95,7 @@ for i in "${!GPU_ARRAY[@]}"; do
 
     CUDA_VISIBLE_DEVICES="$GPU_ID" \
     MAMBA_ROOT_PREFIX="$MAMBA_ROOT_PREFIX" \
+    HF_ENDPOINT="$HF_ENDPOINT" \
     "$MM" run -n "$ENV_NAME" \
         python -m src.experiments.run_longbench_inference \
             --model "$MODEL" \
@@ -99,6 +123,11 @@ for i in "${!PIDS[@]}"; do
         echo "[mgpu] shard $i (PID $PID) completed OK"
     else
         echo "[mgpu] shard $i (PID $PID) FAILED (exit $?)"
+        LOG_FILE="${OUTPUT_BASE}_shard_${i}_run.log"
+        if [[ -f "$LOG_FILE" ]]; then
+            echo "[mgpu] Last 30 lines of $LOG_FILE"
+            tail -n 30 "$LOG_FILE"
+        fi
         FAILED=$(( FAILED + 1 ))
     fi
 done
@@ -125,6 +154,7 @@ done
 MERGED_DIR="${OUTPUT_BASE}_merged"
 echo "[mgpu] Merging ${#SHARD_DIRS[@]} shards → $MERGED_DIR"
 MAMBA_ROOT_PREFIX="$MAMBA_ROOT_PREFIX" \
+HF_ENDPOINT="$HF_ENDPOINT" \
 "$MM" run -n "$ENV_NAME" \
     python -m src.experiments.merge_sharded_results \
         --shard-dirs "${SHARD_DIRS[@]}" \
@@ -141,5 +171,9 @@ echo ""
 SUMMARY_CSV="${MERGED_DIR}/${MODEL}/fp16/summary.csv"
 if [[ -f "$SUMMARY_CSV" ]]; then
     echo "[mgpu] Merged summary (${SUMMARY_CSV}):"
-    column -t -s',' "$SUMMARY_CSV" | head -20
+    if command -v column >/dev/null 2>&1; then
+        column -t -s',' "$SUMMARY_CSV" | head -20
+    else
+        cat "$SUMMARY_CSV"
+    fi
 fi

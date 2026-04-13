@@ -19,7 +19,7 @@ DATASET_NAME="${DATASET_NAME:-zai-org/LongBench}"
 OUTPUT_DIR="${OUTPUT_DIR:-src/outputs/hf_mamba_longbench_subset_wsl_14b}"
 WINDOWS_USER="${WINDOWS_USER:-$(cmd.exe /c \"echo %USERNAME%\" 2>/dev/null | tr -d '\r')}"
 HF_HOME="${HF_HOME:-/mnt/c/Users/${WINDOWS_USER:-$USER}/.cache/huggingface}"
-ZIP_URL="${LONG_BENCH_ZIP_URL:-https://huggingface.co/datasets/zai-org/LongBench/resolve/main/data.zip}"
+ZIP_URL="${LONG_BENCH_ZIP_URL:-https://hf-mirror.com/datasets/zai-org/LongBench/resolve/main/data.zip}"
 ZIP_CACHE="${ZIP_CACHE:-$REPO_ROOT/src/data/.cache/longbench_data.zip}"
 
 if [[ -x "$REPO_MICROMAMBA_BIN" ]]; then

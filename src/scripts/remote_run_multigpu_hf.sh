@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
 
 cd /home1/mabo1215/COREY_Transformer
 OUT=src/outputs/mgpu_longbench_remote_hf
 
 rm -rf "${OUT}_shard_0" "${OUT}_shard_1" "${OUT}_merged"
 
-CUDA_VISIBLE_DEVICES=2 /home1/mabo1215/.corey-wsl-tools/bin/micromamba run -r /home1/mabo1215/.adama-micromamba -n quamba-py310 \
+CUDA_VISIBLE_DEVICES=2 HF_ENDPOINT="$HF_ENDPOINT" /home1/mabo1215/.corey-wsl-tools/bin/micromamba run -r /home1/mabo1215/.adama-micromamba -n quamba-py310 \
   python -m src.experiments.run_longbench_inference \
   --model mamba-370m \
   --tasks narrativeqa qasper multifieldqa_en gov_report \
@@ -21,7 +22,7 @@ CUDA_VISIBLE_DEVICES=2 /home1/mabo1215/.corey-wsl-tools/bin/micromamba run -r /h
   --output-dir "${OUT}_shard_0" > "${OUT}_shard_0_run.log" 2>&1 &
 PID0=$!
 
-CUDA_VISIBLE_DEVICES=3 /home1/mabo1215/.corey-wsl-tools/bin/micromamba run -r /home1/mabo1215/.adama-micromamba -n quamba-py310 \
+CUDA_VISIBLE_DEVICES=3 HF_ENDPOINT="$HF_ENDPOINT" /home1/mabo1215/.corey-wsl-tools/bin/micromamba run -r /home1/mabo1215/.adama-micromamba -n quamba-py310 \
   python -m src.experiments.run_longbench_inference \
   --model mamba-370m \
   --tasks narrativeqa qasper multifieldqa_en gov_report \
@@ -39,7 +40,7 @@ PID1=$!
 wait "$PID0"
 wait "$PID1"
 
-/home1/mabo1215/.corey-wsl-tools/bin/micromamba run -r /home1/mabo1215/.adama-micromamba -n quamba-py310 \
+HF_ENDPOINT="$HF_ENDPOINT" /home1/mabo1215/.corey-wsl-tools/bin/micromamba run -r /home1/mabo1215/.adama-micromamba -n quamba-py310 \
   python -m src.experiments.merge_sharded_results \
   --shard-dirs "${OUT}_shard_0" "${OUT}_shard_1" \
   --output-dir "${OUT}_merged" \
