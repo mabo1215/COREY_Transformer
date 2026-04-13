@@ -1,6 +1,6 @@
 # 论文进度
 
-最后更新：本轮 revision cycle 已继续推进；Theorem 1 现已从弱代理升级为显式 Sinkhorn-style residual 拟合，prototype 侧也已补入真正的 per-tile surrogate runtime trace（含 tile-level latency / memory / cumulative runtime），并已进一步整理成 appendix 可引用表格；同时已把 Mamba-specific quantization 路线细化到仓库级别：Quamba 存在公开官方代码仓库但需要独立 CUDA/CUTLASS 构建链，MambaQuant 虽在论文中给出代码链接但当前匿名访问为 404，因而当前未完成项进一步收缩到手动复现或独立环境复现 Mamba-specific quantization、更大覆盖度的 checkpoint 对比、以及把新增 trace 是否上升到主文表格等工作。
+最后更新：本轮 revision cycle 已继续推进；主文现已改为“真实 checkpoint / 真实 GPU 证据优先”的叙事，原 Windows CPU prototype latency / throughput / diagnostic proxy 不再充当主结果；同时已在 WSL2 CUDA 12.8 的真实 Mamba-370M 路径上跑通 entropy hook 微基准，得到真实输入 embedding entropy 与 tile recommendation，并把这组结果与新的分析脚本一起回填到论文。这使当前未完成项进一步收缩到：扩展真实 hook/backend 覆盖度、补齐真实 static fusion / COREY backend 对比，以及继续推进独立量化复现环境。
 
 ## 已全部修改
 
@@ -43,6 +43,10 @@
 - 任务 37：把这套 Quamba WSL2 隔离环境进一步固化成可重复执行脚本：新增 `src/scripts/wsl_setup_quamba_env.sh`，默认复用仓库内 `Quamba/` checkout 与 `.wsl-tools/bin/micromamba`，支持通过环境变量控制“仅初始化子模块和核心运行时”或“继续构建第三方库与 Quamba 包”两种阶段化运行方式。脚本现已内置 Python 3.10 环境创建、GitHub SSH→HTTPS 子模块同步、`torch 2.4.0+cu121 / torchvision 0.19.0 / torchaudio 2.4.0 / transformers 4.41.2 / datasets 2.19.0` 等核心依赖安装，以及最终的 `torch.cuda.is_available()` smoke check。实测 smoke check 已通过，返回 `cuda_available=True`、设备 `NVIDIA GeForce RTX 3070`，因此当前 Quamba 路线的剩余工作已进一步收缩为第三方扩展构建与 `pip install .` 的最终打包验证。
 
 - 任务 38：远端服务器（ubuntu-4card，4× RTX 3090）的多 GPU 闭环已完成并回填到论文。已完成事项包括：远端多卡分片与合并工具链（`--sample-offset`、`merge_sharded_results.py`、`wsl_run_multigpu_longbench.sh`、`remote_setup_and_run_multigpu.sh`）的可用性验证；Mamba-370M 的 g1/g2/g4 实测吞吐与 wall-clock 回填主文 `tab:multigpu_scaling`；Mamba-1.4B 的 g2 merged 四任务指标成功生成并回填主文 `tab:checkpoint_baseline` 与附录 cross-hardware 段；最终论文重新编译通过。
+
+- 任务 39：继续针对 `docs/revision_suggestions.tex` 中“全是仿真 / COREY 未接触真实模型 / circular proxy”这组三连 reviewer criticism 做结构性修订。具体完成项包括：在 WSL2 `corey-cuda128` 环境中重新补齐可运行的真实 GPU benchmark 依赖；新增 `src/experiments/analyze_scheduler_hook_results.py`，可对 `hook off/on` 的真实输出直接汇总延迟、分数差、entropy 与 tile 建议；完成一组最小真实 hook 微基准 `src/outputs/revision_hook_micro_{baseline,enabled,analysis}/`，其中 `mamba-370m` 在 512-token NarrativeQA 提示上给出 `entropy_before=4.1809`、`suggested_tile_size=288`，并成功写出可复用对照表；同时重写 `paper/main.tex` 与 `paper/appendix.tex`，把主文结果切换为 real-checkpoint evidence first，新增真实 `Online Scheduler Hook on Real Checkpoints` 表，并把 prototype latency / throughput / diagnostic proxy 明确降级为 appendix-only diagnostics。
+
+- 任务 40：继续落实“可继续推进”项中的 checkpoint 侧基础设施：在 `src/experiments/run_official_mamba_benchmark.py` 中新增可选能耗采样链路（`--collect-energy`、`--energy-gpu-index`），并把 `avg_gpu_power_w/energy_j` 写入 `repeats.csv` 与 `summary.csv`，metadata 同步记录采样状态与错误信息；其中采样实现支持 `pynvml` 优先并自动回退 `nvidia-smi`，避免环境缺少 Python NVML 绑定时整条链路失效。随后在 WSL2 `adama-cuda128` 环境完成一次真实 smoke run（`src/outputs/revision_energy_smoke/`），得到非空能耗字段（示例：`avg_gpu_power_w=50.06`、`energy_total_j=35.8043`）。同时，修复 `run_checkpoint_matrix.py` 未透传 scheduler policy 的参数链路，新增 `--scheduler-policy/--static-tile-size/--collect-energy/--energy-gpu-index` 并传递到 longbench/benchmark 子 namespace；更新 `src/scripts/wsl_run_checkpoint_matrix.sh` 默认模型覆盖为 `mamba-370m mamba-1.4b mamba-2.8b`，并开放 `SCHEDULER_POLICY/STATIC_TILE_SIZE/COLLECT_ENERGY/ENERGY_GPU_INDEX` 环境变量，便于继续推进同规模四任务覆盖与真实 static/corey checkpoint-level 对比。
 
 
 ## 未修改或部分修改（可继续推进）

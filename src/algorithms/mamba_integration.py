@@ -124,6 +124,19 @@ class EntropyGuidedSchedulerHook:
         }
 
 
+class StaticTileSchedulerHook:
+    def __init__(self, tile_size: int = 256) -> None:
+        self.tile_size = tile_size
+
+    def profile_hidden_states(self, hidden_states: Any) -> dict[str, float | int | bool | None]:
+        # Static policy intentionally emits a fixed tile recommendation without entropy computation.
+        return {
+            "entropy": None,
+            "tile_size": int(self.tile_size),
+            "should_fuse": True,
+        }
+
+
 class MambaBackend(ABC):
     @abstractmethod
     def load(self) -> None:
@@ -149,7 +162,7 @@ class HuggingFaceMambaBackend(MambaBackend):
         self,
         model_spec: ModelSpec,
         runtime_config: RuntimeConfig,
-        scheduler_hook: EntropyGuidedSchedulerHook | None = None,
+        scheduler_hook: Any | None = None,
     ) -> None:
         self.model_spec = model_spec
         self.runtime_config = runtime_config
@@ -315,9 +328,13 @@ class HuggingFaceMambaBackend(MambaBackend):
             if self.scheduler_hook is not None:
                 embeddings = self.model.get_input_embeddings()(encoded["input_ids"])
                 profile = self.scheduler_hook.profile_hidden_states(embeddings)
-                entropy_before = float(profile["entropy"])
-                entropy_after = entropy_before
-                tile_size = int(profile["tile_size"])
+                profile_entropy = profile.get("entropy")
+                if profile_entropy is not None:
+                    entropy_before = float(profile_entropy)
+                    entropy_after = entropy_before
+                profile_tile_size = profile.get("tile_size")
+                if profile_tile_size is not None:
+                    tile_size = int(profile_tile_size)
 
             generation_kwargs: dict[str, Any] = {
                 "max_new_tokens": request.max_new_tokens,
@@ -390,8 +407,12 @@ class HuggingFaceMambaBackend(MambaBackend):
                 embeddings = self.model.get_input_embeddings()(encoded["input_ids"])
                 for index in range(embeddings.shape[0]):
                     profile = self.scheduler_hook.profile_hidden_states(embeddings[index : index + 1])
-                    entropy_before_values[index] = float(profile["entropy"])
-                    tile_sizes[index] = int(profile["tile_size"])
+                    profile_entropy = profile.get("entropy")
+                    if profile_entropy is not None:
+                        entropy_before_values[index] = float(profile_entropy)
+                    profile_tile_size = profile.get("tile_size")
+                    if profile_tile_size is not None:
+                        tile_sizes[index] = int(profile_tile_size)
 
             start_time = time.perf_counter()
             generated = self.model.generate(
@@ -450,7 +471,7 @@ class OllamaBackend(MambaBackend):
         self,
         model_spec: ModelSpec,
         runtime_config: RuntimeConfig,
-        scheduler_hook: EntropyGuidedSchedulerHook | None = None,
+        scheduler_hook: Any | None = None,
         host: str = "http://127.0.0.1:11434",
     ) -> None:
         self.model_spec = model_spec

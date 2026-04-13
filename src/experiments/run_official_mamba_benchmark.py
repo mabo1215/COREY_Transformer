@@ -5,6 +5,8 @@ import csv
 import json
 import os
 import platform
+import subprocess
+import time
 from pathlib import Path
 from statistics import mean, pstdev
 from typing import Any
@@ -61,6 +63,10 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--lm-datasets", nargs="+", choices=["wikitext103", "pg19"], default=[])
     parser.add_argument("--lm-max-samples", type=int, default=1)
     parser.add_argument("--disable-entropy-hook", action="store_true")
+    parser.add_argument("--scheduler-policy", choices=["off", "corey", "static"], default="corey")
+    parser.add_argument("--static-tile-size", type=int, default=256)
+    parser.add_argument("--collect-energy", action="store_true")
+    parser.add_argument("--energy-gpu-index", type=int, default=0)
     parser.add_argument("--output-dir", type=Path, default=Path("src/outputs/official_hf_benchmark"))
     return parser.parse_args()
 
@@ -82,6 +88,43 @@ def _write_rows(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def _process_rss_mb() -> float:
     return psutil.Process(os.getpid()).memory_info().rss / (1024.0 * 1024.0)
+
+
+def _read_gpu_power_w(gpu_index: int) -> tuple[float | None, str | None]:
+    pynvml = None
+    try:
+        import pynvml  # type: ignore
+    except Exception:
+        pass
+    if pynvml is not None:
+        try:
+            pynvml.nvmlInit()
+            handle = pynvml.nvmlDeviceGetHandleByIndex(gpu_index)
+            power_mw = pynvml.nvmlDeviceGetPowerUsage(handle)
+            return float(power_mw) / 1000.0, None
+        except Exception:
+            pass
+        finally:
+            try:
+                pynvml.nvmlShutdown()
+            except Exception:
+                pass
+    try:
+        output = subprocess.check_output(
+            [
+                "nvidia-smi",
+                "--query-gpu=power.draw",
+                "--format=csv,noheader,nounits",
+                "--id",
+                str(gpu_index),
+            ],
+            text=True,
+            stderr=subprocess.STDOUT,
+        )
+        first_line = output.strip().splitlines()[0]
+        return float(first_line.strip()), None
+    except Exception as exc:
+        return None, f"nvidia_smi_error:{exc}"
 
 
 def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
@@ -115,6 +158,7 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
     samples = _load_task_samples(args, args.task, args.split, args.max_samples)
     repeated_rows: list[dict[str, Any]] = []
     summary_rows: list[dict[str, Any]] = []
+    energy_errors: set[str] = set()
 
     for sample_index, sample in enumerate(samples):
         prompt = _render_prompt(task, sample)
@@ -134,15 +178,38 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
         throughputs: list[float] = []
         rss_values: list[float] = []
         metric_values: list[float] = []
+        avg_power_values: list[float] = []
+        energy_values: list[float] = []
         latest_output = None
         for repeat_index in range(max(1, args.benchmark_repeats)):
+            power_before_w = None
+            if args.collect_energy and args.device.startswith("cuda"):
+                power_before_w, power_error = _read_gpu_power_w(args.energy_gpu_index)
+                if power_error is not None:
+                    energy_errors.add(power_error)
+            wall_start = time.perf_counter()
             output = backend.generate(request)
+            wall_elapsed_s = time.perf_counter() - wall_start
+            power_after_w = None
+            if args.collect_energy and args.device.startswith("cuda"):
+                power_after_w, power_error = _read_gpu_power_w(args.energy_gpu_index)
+                if power_error is not None:
+                    energy_errors.add(power_error)
+            average_power_w = None
+            energy_j = None
+            if power_before_w is not None and power_after_w is not None:
+                average_power_w = (power_before_w + power_after_w) / 2.0
+                energy_j = average_power_w * wall_elapsed_s
             latest_output = output
             metric_value = _metric_value(task.metric, output.text, reference)
             latencies.append(output.telemetry.latency_ms)
             throughputs.append(output.telemetry.tokens_per_second)
             rss_values.append(_process_rss_mb())
             metric_values.append(metric_value)
+            if average_power_w is not None:
+                avg_power_values.append(average_power_w)
+            if energy_j is not None:
+                energy_values.append(energy_j)
             repeated_rows.append(
                 {
                     "task": args.task,
@@ -155,6 +222,8 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
                     "prompt_tokens": output.telemetry.prompt_tokens,
                     "generated_tokens": output.telemetry.generated_tokens,
                     "rss_mb": round(rss_values[-1], 4),
+                    "avg_gpu_power_w": round(average_power_w, 4) if average_power_w is not None else None,
+                    "energy_j": round(energy_j, 4) if energy_j is not None else None,
                     "entropy_before": output.entropy_before,
                     "entropy_after": output.entropy_after,
                     "suggested_tile_size": output.suggested_tile_size,
@@ -175,6 +244,9 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
                 "tokens_per_second_mean": round(mean(throughputs), 4) if throughputs else None,
                 "tokens_per_second_std": round(pstdev(throughputs), 4) if len(throughputs) > 1 else 0.0,
                 "peak_rss_mb": round(max(rss_values), 4) if rss_values else None,
+                "avg_gpu_power_w": round(mean(avg_power_values), 4) if avg_power_values else None,
+                "energy_mean_j": round(mean(energy_values), 4) if energy_values else None,
+                "energy_total_j": round(sum(energy_values), 4) if energy_values else None,
                 "prompt_tokens": latest_output.telemetry.prompt_tokens if latest_output is not None else None,
                 "generated_tokens": latest_output.telemetry.generated_tokens if latest_output is not None else None,
                 "entropy_before": latest_output.entropy_before if latest_output is not None else None,
@@ -234,6 +306,12 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
         "benchmark_repeats": args.benchmark_repeats,
         "batch_size": args.batch_size,
         "disable_entropy_hook": args.disable_entropy_hook,
+        "scheduler_policy": args.scheduler_policy,
+        "static_tile_size": args.static_tile_size,
+        "collect_energy": args.collect_energy,
+        "energy_gpu_index": args.energy_gpu_index,
+        "energy_telemetry_status": "enabled" if args.collect_energy else "disabled",
+        "energy_telemetry_errors": sorted(energy_errors),
         "dataset_source": args.dataset_source,
         "dataset_name": args.dataset_name,
         "task": args.task,

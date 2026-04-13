@@ -8,7 +8,7 @@ ENV_NAME="${ENV_NAME:-adama-cuda128}"
 REPO_MICROMAMBA_BIN="$REPO_ROOT/.wsl-tools/bin/micromamba"
 MICROMAMBA_BIN="$TOOLS_DIR/bin/micromamba"
 MODES="${MODES:-longbench benchmark}"
-MODELS="${MODELS:-mamba-370m mamba-1.4b}"
+MODELS="${MODELS:-mamba-370m mamba-1.4b mamba-2.8b}"
 PRECISIONS="${PRECISIONS:-fp16}"
 TASKS="${TASKS:-narrativeqa qasper multifieldqa_en gov_report}"
 LM_DATASETS="${LM_DATASETS:-wikitext103 pg19}"
@@ -27,6 +27,11 @@ MAX_LENGTH="${MAX_LENGTH:-4096}"
 DEVICE="${DEVICE:-cuda}"
 DTYPE="${DTYPE:-float16}"
 OUTPUT_DIR="${OUTPUT_DIR:-src/outputs/checkpoint_matrix_wsl}"
+SCHEDULER_POLICY="${SCHEDULER_POLICY:-corey}"
+STATIC_TILE_SIZE="${STATIC_TILE_SIZE:-256}"
+COLLECT_ENERGY="${COLLECT_ENERGY:-0}"
+ENERGY_GPU_INDEX="${ENERGY_GPU_INDEX:-0}"
+DISABLE_ENTROPY_HOOK="${DISABLE_ENTROPY_HOOK:-0}"
 WINDOWS_USER="${WINDOWS_USER:-$(cmd.exe /c \"echo %USERNAME%\" 2>/dev/null | tr -d '\r')}"
 HF_HOME="${HF_HOME:-/mnt/c/Users/${WINDOWS_USER:-$USER}/.cache/huggingface}"
 
@@ -37,6 +42,14 @@ fi
 export MAMBA_ROOT_PREFIX
 export HF_HOME
 cd "$REPO_ROOT"
+
+EXTRA_FLAGS=""
+if [[ "$COLLECT_ENERGY" == "1" ]]; then
+  EXTRA_FLAGS+=" --collect-energy --energy-gpu-index '$ENERGY_GPU_INDEX'"
+fi
+if [[ "$DISABLE_ENTROPY_HOOK" == "1" ]]; then
+  EXTRA_FLAGS+=" --disable-entropy-hook"
+fi
 
 "$MICROMAMBA_BIN" run -n "$ENV_NAME" bash -lc "export PYTHONPATH='$REPO_ROOT'; export HF_HOME='$HF_HOME'; python -m src.experiments.run_checkpoint_matrix \
   --modes $MODES \
@@ -59,6 +72,8 @@ cd "$REPO_ROOT"
   --max-length '$MAX_LENGTH' \
   --device '$DEVICE' \
   --dtype '$DTYPE' \
-  --disable-entropy-hook \
+  --scheduler-policy '$SCHEDULER_POLICY' \
+  --static-tile-size '$STATIC_TILE_SIZE' \
   --skip-existing \
-  --output-dir '$OUTPUT_DIR'"
+  --output-dir '$OUTPUT_DIR' \
+  $EXTRA_FLAGS"

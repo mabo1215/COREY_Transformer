@@ -1,467 +1,358 @@
-% ============================================================
-%  COREY 论文 NeurIPS 2026 模拟评审报告
-%  格式：可直接粘贴到 LaTeX rebuttal/revision letter 中使用
-% ============================================================
+\documentclass[11pt,a4paper]{article}
 
-\documentclass{article}
+% -----------------------------------------------------------------------
+% Packages
+% -----------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
-\usepackage{enumitem}
 \usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{titlesec}
 \usepackage{hyperref}
 \usepackage{parskip}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+\usepackage{mdframed}
 
-% 颜色定义
-\definecolor{critical}{RGB}{180,0,0}
-\definecolor{major}{RGB}{200,100,0}
-\definecolor{minor}{RGB}{0,100,180}
-\definecolor{positive}{RGB}{0,130,60}
+% -----------------------------------------------------------------------
+% Colour palette
+% -----------------------------------------------------------------------
+\definecolor{accept}{RGB}{0,120,0}
+\definecolor{reject}{RGB}{180,0,0}
+\definecolor{weak}{RGB}{180,100,0}
+\definecolor{borderblue}{RGB}{30,80,160}
+\definecolor{lightgray}{RGB}{245,245,245}
+\definecolor{sectionblue}{RGB}{20,60,140}
 
-\newcommand{\critical}[1]{\textcolor{critical}{\textbf{[严重]~}#1}}
-\newcommand{\major}[1]{\textcolor{major}{\textbf{[重要]~}#1}}
-\newcommand{\minor}[1]{\textcolor{minor}{\textbf{[建议]~}#1}}
-\newcommand{\positive}[1]{\textcolor{positive}{\textbf{[优点]~}#1}}
+% -----------------------------------------------------------------------
+% Section formatting
+% -----------------------------------------------------------------------
+\titleformat{\section}[block]{\large\bfseries\color{sectionblue}}{}{0em}{}[\vspace{-0.3em}\rule{\linewidth}{0.6pt}]
+\titleformat{\subsection}[runin]{\bfseries}{}{0em}{}[.\hspace{0.5em}]
 
-\title{%
-  NeurIPS 2026 模拟评审报告\\[4pt]
-  \large COREY: A Prototype Study of Entropy-Guided Operator Fusion\\
-  with Hadamard Reparameterization for Selective State Space Models
+% -----------------------------------------------------------------------
+% Header / footer
+% -----------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\textit{NeurIPS 2026 — Peer Review Report}}
+\rhead{\small\textit{Submission \#XXXX}}
+\cfoot{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% -----------------------------------------------------------------------
+% Score-box environment
+% -----------------------------------------------------------------------
+\newenvironment{scorebox}[1]{%
+  \begin{mdframed}[backgroundcolor=lightgray,linecolor=borderblue,linewidth=1.2pt,
+                   innertopmargin=6pt,innerbottommargin=6pt,
+                   innerleftmargin=10pt,innerrightmargin=10pt]
+  \textbf{\color{sectionblue}#1}\\[4pt]
+}{%
+  \end{mdframed}
 }
-\author{模拟审稿人 R1 $\cdot$ R2 $\cdot$ R3 综合意见}
-\date{April 2026}
 
+% -----------------------------------------------------------------------
+% Document
+% -----------------------------------------------------------------------
 \begin{document}
-\maketitle
 
-% ------------------------------------------------------------
-\section*{总体评分与建议}
-% ------------------------------------------------------------
-
+% ======================== TITLE BLOCK ==================================
 \begin{center}
-\begin{tabular}{lc}
-\toprule
-维度 & 评分（1--10） \\
-\midrule
-贡献新颖性 & 5 \\
-理论严谨性 & 6 \\
-实验充分性 & 3 \\
-写作清晰度 & 6 \\
-可复现性 & 5 \\
-\midrule
-\textbf{综合建议} & \textbf{Reject (3/10)} \\
-\bottomrule
-\end{tabular}
+  {\LARGE\bfseries NeurIPS 2026 — Official Peer Review}\\[6pt]
+  {\large\bfseries Paper Title:}\\[3pt]
+  {\large\itshape COREY: A Prototype Study of Entropy-Guided Operator Fusion\\
+  with Hadamard Reparameterization for Selective State Space Models}\\[10pt]
+  \rule{\linewidth}{1pt}\\[4pt]
+  \begin{tabular}{ll}
+    \textbf{Submission ID:}     & \#XXXX (anonymous submission) \\
+    \textbf{Review Stage:}      & Initial Review \\
+    \textbf{Reviewer ID:}       & R1, R2, R3 (three independent reviewers) \\
+    \textbf{Review Date:}       & April 2026 \\
+  \end{tabular}\\[4pt]
+  \rule{\linewidth}{1pt}
 \end{center}
 
-\noindent\textbf{一句话总结：}
-论文提出了一个将熵引导算子融合与 Hadamard 重参数化结合的框架 COREY，
-理论设计合理，但全部"效率"证据来自 NumPy/PyTorch 层面的模拟调度器，
-而非真实 GPU 内核，与 NeurIPS 系统论文的证据门槛存在根本性差距；
-在满足最低门槛证据（真实 Triton 内核 + 公平外部 baseline 对比）之前，
-建议在后续版本中完善后重新投稿。
+% ======================== SUMMARY SCORES ================================
+\section{Summary Scores}
 
-% ------------------------------------------------------------
-\section*{R1：实验充分性（严重缺陷）}
-% ------------------------------------------------------------
-
-\subsection*{C1：核心效率主张缺乏真实内核证据}
-
-\critical{论文全部 latency/throughput/DRAM 数据来自"Python-level
-timing of the simulated scheduler"（第~5.1~节），
-而非真实 GPU 内核执行。}
-
-NeurIPS 系统方向论文要求的最低证据链为：
-\begin{enumerate}[label=\arabic*.]
-  \item 真实 CUDA/Triton 内核的 wall-clock 计时；
-  \item 与同等规模公平 baseline 的对比（相同硬件、相同数据集）；
-  \item 真实模型权重上的 perplexity 或 downstream task accuracy。
-\end{enumerate}
-本文仅满足第~3~点的部分子集（WSL2 附录中的 4~任务 LongBench，
-每任务仅~20~样本，且 NarrativeQA token-F1 为 0.013--0.019，
-远低于报告正常模型应有水平，提示 prompt 截断或 decode 设置问题）。
-附录中仅有一次 \texttt{selective\_scan\_fn} 的单点 timing
-（0.3204\,ms），既不是完整 COREY 内核，也没有与 No-Fusion 基线
-对比；Table~2 数据是从模拟器导出的，不能用于支持系统性声明。
-
-\medskip
-\textbf{修改建议（必须，否则无法接收）：}
-\begin{itemize}
-  \item 在正文 Table~2 中标注"prototype cost model"，
-        将当前表格重命名为
-        ``\emph{Simulated} FP16 Summary (Prototype Cost Model)''；
-  \item 补充至少一个真实 Triton fused kernel 的
-        end-to-end wall-clock 计时，
-        与 PyTorch eager 基线在相同硬件下对比；
-  \item 将当前 Pythia-410M 外部 baseline 对比结果
-        （已在附录中存在）移入正文，
-        并补充 Mamba-370M vs.\ Pythia-410M
-        在 perplexity 和 latency 两个维度的对比表格。
-\end{itemize}
-
-\subsection*{C2：外部 baseline 规模不匹配}
-
-\major{唯一外部 baseline Pythia-410M 与 Mamba-370M/1.4B/2.8B
-参数量不对等；Pythia-1.4B 和 Pythia-2.8B 的对比数据缺失。}
-
-原始 Mamba 论文（Gu \& Dao, 2023）的 benchmark 脚本
-\texttt{benchmark\_generation\_mamba\_simple.py}
-已原生支持 Mamba 与 Pythia 同规模对比，
-在 WSL2 环境中完全可运行。
-
-\medskip
-\textbf{修改建议：}
-\begin{itemize}
-  \item 补充 Pythia-1.4B（\texttt{EleutherAI/pythia-1.4b}）
-        在相同四任务、20~样本下的 token-F1/ROUGE-L/latency；
-  \item 将对比结果整理为如下表格结构（下方为模板）：
-\end{itemize}
-
-\begin{verbatim}
-% 建议在正文 Section 6.4 后添加：
-\begin{table}[t]
-\centering
-\caption{Checkpoint-level external baseline comparison on
-  four-task LongBench subset (20 samples/task, WSL2 CUDA 12.8,
-  FP16, fast\_path=true). Latency is mean over all tasks.
-  WikiText-103 perplexity uses the test split.}
-\label{tab:checkpoint_baseline}
-\small
-\begin{tabular}{lcccccc}
+\begin{scorebox}{Overall Recommendation Summary}
+\begin{tabular}{lll}
 \toprule
-Model & NarrQA & Qasper & MF-EN & GovRpt
-      & PPL$_{\text{WT103}}$ & Lat.\ (ms) \\
-      & (F1)   & (F1)   & (EM)  & (ROUGE-L)
-      & $\downarrow$         & $\downarrow$ \\
+\textbf{Reviewer} & \textbf{Score (1--10)} & \textbf{Recommendation} \\
 \midrule
-Mamba-370M  & 0.0135 & 0.0350 & 0.000 & 0.1370
-            & 809.36 & -- \\
-Mamba-1.4B  & 0.0191 & 0.0460 & 0.000 & 0.1498
-            & 1128.40 & -- \\
-Pythia-410M & 0.0190 & 0.0392 & 0.000 & 0.1550
-            & 5901.47 & -- \\
+R1 & \textbf{3} & \textcolor{reject}{\textbf{Strong Reject}} \\
+R2 & \textbf{3} & \textcolor{reject}{\textbf{Strong Reject}} \\
+R3 & \textbf{4} & \textcolor{reject}{\textbf{Reject}} \\
+\midrule
+\textbf{Consensus} & \textbf{3.3\,/\,10} & \textcolor{reject}{\textbf{Reject}} \\
+\bottomrule
+\end{tabular}\\[6pt]
+\textit{NeurIPS score rubric: 1--3 = Strong Reject, 4--5 = Reject, 6 = Weak Accept, 7--8 = Accept, 9--10 = Strong Accept.}
+\end{scorebox}
+
+\begin{scorebox}{Dimension Scores (Consensus, 1--5)}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Dimension} & \textbf{Score} & \textbf{Notes} \\
+\midrule
+Originality / Novelty         & 3 & Combination of existing ideas; limited new insight \\
+Technical Correctness          & 3 & Theorems are standard; prototype validity is weak \\
+Significance of Contribution   & 2 & Prototype-only; no real hardware gain demonstrated \\
+Experimental Rigour            & 2 & Synthetic metrics; no real GPU kernel measurements \\
+Clarity of Writing             & 3 & Verbose and self-contradictory in places \\
+Reproducibility                & 3 & Checklist provided but Windows-only prototype \\
 \bottomrule
 \end{tabular}
-\end{table}
-% 注：latency 数值待填入；表格说明中需明确
-% prompt 长度统一为 4096 tokens。
-\end{verbatim}
+\end{scorebox}
 
-\subsection*{C3：WikiText-103/PG19 perplexity 数值异常}
+% ======================== REVIEWER 1 ====================================
+\newpage
+\section{Review 1 (R1) — Score: 3 / 10 — Strong Reject}
 
-\major{Mamba-370M 的 WikiText-103 perplexity 为 809.36，
-Mamba-1.4B 为 1128.40；而同架构在官方论文中报告的
-WikiText-103 perplexity 约为 20--30（token-level）。
-这一差距超过 30 倍，提示评估流程存在严重 bug。}
+\subsection{Summary}
+This paper introduces COREY, a prototype framework that uses histogram-based activation entropy as a runtime scheduling signal to decide operator fusion boundaries and tile sizes for Selective State Space Models (SSMs, specifically the Mamba family). The framework additionally absorbs Hadamard transforms into linear projection weights to smooth heavy-tailed activation distributions. Three theorems are provided: (1) entropy increases under doubly-stochastic histogram mixing, (2) fusion depth is bounded by shared-memory capacity, and (3) Hadamard rotation reduces peak coordinate magnitude. The experimental evaluation is carried out entirely within a NumPy/PyTorch simulator running on a CPU-only Windows 11 workstation, with latency numbers reflecting Python-level timing of a simulated cost model rather than GPU hardware. The authors themselves acknowledge this throughout the paper.
 
-可能原因：
-\begin{enumerate}
-  \item 使用了 word-level 而非 token-level 计算，且未正确折算；
-  \item prompt 截断导致上下文不完整，
-        使 prefix perplexity 偏高；
-  \item 使用了单个超短 segment，
-        无法代表 dataset-level perplexity；
-  \item generate 模式而非 teacher-forcing 模式计算 NLL。
-\end{enumerate}
+\subsection{Strengths}
 
-\textbf{修改建议（必须）：}
-\begin{itemize}
-  \item 在附录 D 中明确说明 perplexity 计算方式：
-        是 token-level NLL 还是 word-level，
-        使用多少 test segments，
-        是否使用 rolling/strided evaluation；
-  \item 修正计算方式后重新报告；若仍显著偏高，
-        需在论文中明确解释与官方数字的差异来源；
-  \item 建议补充以下 LaTeX 脚注：
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Explicit honesty about scope.}
+    The authors are unusually forthright about the limitations of their evaluation. The repeated disclaimers---that latency figures come from a prototype cost model rather than hardware counters, that the diagnostic quality proxy is ``hand-crafted,'' and that checkpoint-level claims are reserved for future work---are appropriate and appreciated.
+
+  \item \textbf{Unified treatment of fusion and quantization.}
+    Connecting operator fusion depth, activation entropy, and quantization stability through a common framework is conceptually appealing. Prior works on FlashAttention~\citep{dao2022flashattention}, SmoothQuant, and Quamba address these concerns separately; the explicit bridge is a valid motivation.
+
+  \item \textbf{Reproducibility checklist.}
+    Appendix~A.7 provides a detailed checklist including hardware specifications, hyperparameter values, random seeds, and sequence-length grid. This level of transparency is commendable for a NeurIPS submission.
 \end{itemize}
 
-\begin{verbatim}
-% 在 Table（checkpoint 对比表）的 caption 或脚注中添加：
-\footnote{WikiText-103 perplexity is computed using
-  teacher-forcing over 20 non-overlapping test segments
-  of 1024 tokens each, with stride equal to the context
-  window. Values substantially above published baselines
-  indicate that our evaluation pipeline uses a different
-  tokenization or segment-selection protocol; a corrected
-  evaluation is provided in the supplementary code.}
-\end{verbatim}
+\subsection{Weaknesses}
 
-% ------------------------------------------------------------
-\section*{R2：理论与方法（重要问题）}
-% ------------------------------------------------------------
+\begin{enumerate}[leftmargin=2em]
 
-\subsection*{C4：Theorem 1 的适用条件验证缺失}
+  \item \textbf{[Critical] All performance results are synthetic.}
+    The central claim of the paper---that COREY ``consistently reduces proxy latency, improves throughput, and lowers DRAM traffic''---is backed exclusively by a Python-level cost model simulated on CPU. The paper uses terms such as ``latency (ms)'' and ``throughput (k tok/s)'' in Table~2, which are standard hardware metrics; yet these numbers are explicitly \emph{not} hardware measurements.
+    The simulator assigns a deterministic cost to each operator group based on hand-chosen parameters ($\alpha, \beta, \gamma$); by construction, the system that scores higher on the fused cost function will appear to win on the derived latency proxy.
+    This creates a circular evaluation: the score $S(\mathcal{R}) = \alpha\tilde{H} + \beta\widetilde{AI} - \gamma\tilde{M}$ directly encodes the designer's prior that high-entropy, high-arithmetic-intensity groups should be cheaper, and the ``measured'' latency is derived from the same cost model.
+    There is no independent validation that would allow the reader to assess whether the prototype cost model correctly predicts real GPU behaviour.
 
-\major{Theorem~1 的结论以``存在一个 doubly-stochastic 矩阵 $B$
-使得 $q = Bp$''为前提，但论文既未经验验证该条件
-在实际 Hadamard 旋转后是否成立，
-也未说明如何检验这一点。}
+  \item \textbf{[Critical] No comparison against COREY's own stated target method.}
+    The paper lacks \emph{any} real-checkpoint run of COREY itself (Section~8, Limitation 5, and Section~6.4 explicitly confirm this). The LongBench results in Table~3 are native-inference reference runs of Mamba and Pythia checkpoints; COREY is never applied to a real model. This means the paper cannot demonstrate whether its fusion scheduler produces correct outputs, whether the fused Hadamard weight absorption introduces numerical errors, or whether the entropy threshold generalises to real activation distributions. A systems paper at NeurIPS 2026 is expected to demonstrate end-to-end operation on at least one realistic workload.
 
-在附录 C.1 中，``Interpretation for COREY''段已正确指出
-``The theorem does not claim that every Hadamard rotation
-induces a doubly-stochastic mixing''，
-但正文 Section~4.1 的 Applicability condition 段
-仅文字声明条件性，没有任何实验数据支撑。
+  \item \textbf{[Major] The three theorems are mathematically correct but trivial or not novel.}
+    \begin{itemize}
+      \item \emph{Theorem~1} (entropy increases under doubly-stochastic mixing) is a direct consequence of the concavity of $-t\log t$ and Jensen's inequality. It is a textbook result in information theory (Schur-concavity of entropy) and offers no new mathematical insight. The applicability condition---that the post-rotation histogram must be representable as a doubly-stochastic mixing of the pre-rotation histogram---is non-trivial, but the paper does not prove that Hadamard rotation satisfies this condition; it only provides an approximate empirical check via Sinkhorn fitting with residuals as large as $0.106$ in $\ell_1$.
+      \item \emph{Theorem~2} (depth bound $F \leq M_{\mathrm{shared}}/C_{\mathrm{tile}}$) is a trivial rearrangement of $F \cdot C_{\mathrm{tile}} \leq M_{\mathrm{shared}}$. The authors acknowledge it is ``deliberately simple.'' This does not warrant theorem status at a top venue.
+      \item \emph{Theorem~3} ($\|z\|_\infty \leq \|x\|_1/\sqrt{d}$) is a direct application of H\"{o}lder's inequality to an orthonormal matrix with entries $\pm 1/\sqrt{d}$. This bound is tight only in the one-outlier case and is known in the Hadamard smoothing literature (e.g., Quamba, MambaQuant). No new theoretical contribution is made.
+    \end{itemize}
 
-\textbf{修改建议：}
+  \item \textbf{[Major] The ``diagnostic proxy'' is self-referential and not validated externally.}
+    Section~5.4 defines the quality-drop diagnostic proxy as a weighted combination of a quantization sensitivity term, an over-fusion penalty, and a Hadamard stabilisation bonus. The paper states this proxy ``encodes the proposed mechanism directly'' and is ``suitable only as an internal scheduler diagnostic.'' By this design, COREY will always score lower on the proxy than Static Fusion, because the proxy was built to reward COREY's design choices. Reporting this metric as evidence of quality improvement is methodologically circular. No perplexity or task-accuracy results from COREY are provided.
 
-\begin{verbatim}
-% 在正文 Section 4.1 Applicability condition 段之后添加：
-\paragraph{Empirical verification of the mixing condition.}
-To assess whether the doubly-stochastic assumption holds
-in practice, we construct an empirical proxy: for each
-sequence length $L$ and precision mode, we fit the
-best-approximating doubly-stochastic matrix
-$\hat{B} = \arg\min_{B \in \mathcal{DS}} \|q - Bp\|_1$
-via Sinkhorn iterations and report the residual
-$\|q - \hat{B}p\|_1$.
-A residual below a tolerance $\delta$ (we use $\delta=0.05$)
-is treated as evidence that the mixing model is
-consistent with the observed histogram shift.
-Across all $L$ values in our prototype, the mean residual
-is $0.031 \pm 0.009$, supporting the applicability of
-Theorem~\ref{thm:entropy} in the heavy-tailed regime
-studied here.
-% 注：以上数值为示意，作者须用真实实验数据替换。
-\end{verbatim}
+  \item \textbf{[Major] The weight vector $(\alpha, \beta, \gamma) = (0.45, 0.35, 0.20)$ is hand-tuned with no ablation.}
+    Section~5.3 states these weights are ``currently hand-tuned prototype defaults'' and that a full three-way grid search is ``future work.'' Given that all performance metrics are derived from the cost model, and the cost model is parameterised by $(\alpha, \beta, \gamma)$, the lack of a systematic search means the reported improvements could be artefacts of a favourable hand-tuning. The $\tau$-sweep (Table~5) is a good step but does not address the three-way sensitivity.
 
-\subsection*{C5：融合评分函数中 $(\alpha,\beta,\gamma)$
-的超参数选取缺乏依据}
+  \item \textbf{[Minor] Table~3 (checkpoint LongBench results) is misleading in context.}
+    The NarrativeQA token-F1 values for Mamba-370M and Mamba-1.4B (0.0135 and 0.0191) are extremely low. Pythia-410M similarly achieves token-F1 of 0.0190 on NarrativeQA. These numbers suggest the evaluation is dominated by tokenisation mismatches or truncation artefacts (20 samples per task, teacher-forcing, truncated segments). Presenting these results alongside infrastructure-validation text without contextualisation risks misleading the reader about the models' actual capabilities.
 
-\minor{权重 $(\alpha,\beta,\gamma)=(0.45,0.35,0.20)$
-和阈值 $\tau=0.52$ 的选取方式未说明。
-是否经过搜索？搜索空间是什么？
-对其他值的敏感性如何超出了已有的 $\tau$ 扫描？}
+  \item \textbf{[Minor] Writing clarity.}
+    The paper contains multiple self-referential qualification chains that reduce readability. For example, the limitations section (Section~8) runs to a single 200-word paragraph listing eight distinct limitations, many of which directly undercut the main-text claims. While honesty is valued, structural clarity suffers. Several key terms ($\tau$, $\tau_0$, raw nats vs.\ normalised entropy) are re-explained in multiple sections, creating redundancy.
 
-\textbf{修改建议：}
+\end{enumerate}
 
-\begin{verbatim}
-% 在 Section 5.3 或 Table 1 的 caption 中添加：
-The weights $(\alpha, \beta, \gamma)$ were selected via
-a coarse grid search over
-$\alpha \in \{0.3, 0.45, 0.6\}$,
-$\beta \in \{0.2, 0.35, 0.5\}$, $\gamma = 1 - \alpha - \beta$,
-minimizing mean latency on the medium sequence-length bucket
-of the prototype while keeping the diagnostic proxy
-below~$0.10$ at W4A8.
-The default $\tau = 0.52$ was chosen as the midpoint of the
-swept range $\{0.45, 0.52, 0.60\}$ that minimized the
-geometric mean of normalized latency and proxy across
-all buckets; a sensitivity analysis is in
-Table~\ref{tab:ablation_tau}.
-\end{verbatim}
+\subsection{Questions for the Authors}
+\begin{enumerate}[leftmargin=2em]
+  \item Can the authors provide any single end-to-end measurement on a real GPU showing that COREY's fusion decisions produce correct outputs compared to unfused inference?
+  \item What is the sensitivity of the reported prototype latency improvements to the hand-tuned $(\alpha, \beta, \gamma)$ values? Would a grid search at even coarse granularity (e.g., 3 values per dimension) change the relative ordering of methods?
+  \item The Sinkhorn-fitted residual reaches 0.106 in $\ell_1$ for some validation instances. At what residual level would the authors consider the doubly-stochastic mixing assumption violated? Is the bound from Theorem~1 still meaningful at this residual level?
+  \item How does the entropy estimator's computational overhead compare to actual fused kernel execution time? The paper claims $O(N+K)$ algorithmic cost but provides no GPU-timed measurement.
+\end{enumerate}
 
-\subsection*{C6：Theorem~2 (fusion depth bound) 过于简单}
+\subsection{Recommendation}
+\textbf{Strong Reject.} The paper presents an interesting idea but evaluates it entirely through a circular, self-constructed cost model without any real GPU kernel measurements or real-model inference results for COREY itself. At NeurIPS 2026, systems contributions require at least one end-to-end hardware measurement. The theoretical contributions are mathematically correct but not novel. I encourage the authors to implement a real Triton kernel, apply COREY to at least one Mamba checkpoint, and resubmit.
 
-\minor{Theorem~2 中 $F \le M_{\text{shared}} / C_{\text{tile}}$
-假设每个算子增加固定的 tile 内存代价 $C_{\text{tile}}$，
-但实际内核中不同算子的内存占用差异极大
-（SSM scan 的 state 积累与 pointwise elementwise 完全不同）。
-该 bound 形式上正确但过于松弛，
-几乎对任何合理实现都是自动满足的。}
+% ======================== REVIEWER 2 ====================================
+\newpage
+\section{Review 2 (R2) — Score: 3 / 10 — Strong Reject}
 
-\textbf{修改建议：}
+\subsection{Summary}
+COREY proposes entropy-guided operator fusion for Mamba-style SSMs, using Hadamard reparameterisation to smooth activations and raise entropy as a precondition for deeper fusion. The paper positions itself as a ``prototype study,'' which is an unusual framing for a NeurIPS systems paper. The core idea is sound in principle, but the evaluation does not provide evidence that the system works in practice.
 
-\begin{verbatim}
-% 在 Section 4.2 的 proof sketch 之后添加一段：
-\paragraph{Tightness.}
-The bound $F \le M_{\text{shared}} / C_{\text{tile}}$
-treats all operators as homogeneous in their tile footprint.
-In practice, SSM selective-scan operators incur
-a per-state accumulation cost proportional to the
-state dimension $N$, while elementwise operators
-contribute only the activation tile itself.
-A tighter bound incorporating operator-type-specific
-footprint $C_i$ is:
-\[
-  \sum_{i=1}^{F} C_i \le M_{\text{shared}},
-\]
-which reduces to Theorem~\ref{thm:depth} when all $C_i = C_{\text{tile}}$.
-We use the heterogeneous form in the scheduler implementation
-(Appendix~\ref{sec:appendix_systems}) and retain the homogeneous
-version in the theorem for clarity of presentation.
-\end{verbatim}
+\subsection{Strengths}
+\begin{itemize}[leftmargin=2em]
+  \item The combination of entropy-based scheduling with Hadamard smoothing is a coherent design philosophy.
+  \item The Sinkhorn proxy for validating the doubly-stochastic assumption is a thoughtful addition.
+  \item The appendix provides unusually detailed reproducibility information.
+\end{itemize}
 
-% ------------------------------------------------------------
-\section*{R3：写作与呈现（建议类）}
-% ------------------------------------------------------------
+\subsection{Weaknesses}
 
-\subsection*{C7：appendix.tex 中 ``Theorem ??'' 引用错误}
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{[Critical] The evaluation is entirely simulation-based with no real hardware validation.}
+    All latency and throughput figures in Tables~2, 6, 7, and 8 are produced by a Python cost model, not a GPU kernel. The paper's own prototype hardware is a CPU-only Windows 11 machine (Intel Core i9-13900K, 64 GB RAM, no GPU involvement in the main experiments). The DRAM bytes/token figures come from the prototype cost model ``rather than direct hardware counters'' (caption, Table~2). A thorough NeurIPS systems paper must demonstrate at minimum one real fused-kernel timing under the proposed method.
 
-\critical{附录 PDF 第~4~页 (appendix.tex 第~112~行) 出现
-\texttt{Full proof of Theorem ??.}，
-说明 \texttt{\textbackslash label\{thm:entropy\}}
-与 appendix 中的 \texttt{\textbackslash ref} 之间存在交叉引用失败。}
+  \item \textbf{[Critical] Conflation of validated and unvalidated claims throughout.}
+    The paper freely mixes two fundamentally different types of evidence: (a) prototype cost-model outputs labeled as ``latency (ms)'' and ``throughput (k tok/s)'', and (b) real GPU timings of \emph{unmodified} Mamba checkpoints in Appendix~D. These are not the same quantity. The abstract claims COREY ``consistently reduces proxy latency'' using the word ``consistently'' in a way that implies robustness, yet every data point supporting this claim is a surrogate.
 
-\textbf{修改方案：}
+  \item \textbf{[Major] The throughput numbers in Table~2 are implausible as GPU metrics.}
+    The ``short'' bucket reports throughput of approximately 28,900--38,300 tokens/s for a sequence-length range of 1k--2k. The ``ultra-long'' bucket (64k) reports 626,900--840,500 tokens/s. The throughput \emph{increases} as the sequence length increases by 64$\times$. This is the opposite of what real GPU memory-bandwidth-bound inference looks like, where throughput per token typically decreases with sequence length due to KV-cache or state growth. This pattern is internally consistent with the prototype's cost model (which assigns per-group costs), but it strongly suggests the simulator does not capture real hardware behaviour.
 
-\begin{verbatim}
-% appendix.tex 中将：
-Full proof of Theorem ??.
+  \item \textbf{[Major] No ablation over the $(\alpha, \beta, \gamma)$ fusion weights.}
+    The three-way weighting of entropy, arithmetic intensity, and memory traffic is the central engineering choice in COREY. The paper reports only a $\tau$-sweep and a degenerate $\alpha=0$ matched-depth baseline, but never systematically evaluates $(\alpha, \beta, \gamma)$. Without this ablation, it is impossible to determine whether entropy (vs.\ arithmetic intensity alone) is actually the signal responsible for the observed improvements.
 
-% 替换为：
-Full proof of Theorem~\ref{thm:entropy}
-(Entropy Increase Under Doubly-Stochastic Histogram Mixing).
-\end{verbatim}
+  \item \textbf{[Major] The improvement margins over Static Fusion are modest and potentially within noise.}
+    Table~2 shows COREY achieving a 7.9\% latency reduction over Static Fusion in the short bucket ($42.61 \rightarrow 39.26$\,ms) and 10.6\% in the ultra-long bucket ($87.22 \rightarrow 77.97$\,ms). The short-bucket standard deviations are 3.52 and 3.81\,ms respectively, meaning the gap ($\approx$3.35\,ms) is only slightly larger than one standard deviation of each method. For a CPU-timed Python simulation with 5 repeated runs, these margins cannot be treated as statistically reliable evidence of real hardware improvement.
 
-确认 \texttt{appendix.tex} 是通过 \texttt{\textbackslash input\{appendix\}}
-嵌入 \texttt{main.tex} 中编译，而非单独编译（单独编译时
-跨文件 \texttt{\textbackslash ref} 无法解析）。
+  \item \textbf{[Minor] The multi-GPU section (Section~6.5, Table~4) is irrelevant to COREY.}
+    The data-parallel throughput experiment simply launches independent inference processes on different GPUs. This is a standard evaluation practice with no connection to COREY's fusion strategy. Including it as a results section implies COREY enables multi-GPU scaling, which is not the case; the scaling comes from embarrassingly parallel sample processing.
 
-\subsection*{C8：Section 5.5 与附录 D 存在信息重叠}
+  \item \textbf{[Minor] Ambiguous equation numbering in the appendix.}
+    The appendix uses equation numbers (1)--(2) that duplicate the main text. Algorithm~1 in the appendix is numbered independently of Algorithm~1 in the main text. Table~1 in the appendix (standalone version) does not match the numbering in the combined document (Table~9 in the full PDF). These are formatting issues but signal incomplete integration of appendix material.
 
-\minor{正文 Section~5.5 用整段文字描述了附录 D 中的数据
-（20 samples/task, Pythia-410M baseline, Triton timing），
-而这些细节本应仅在附录呈现，正文仅做简短前向引用。
-当前写法使主文超出页面密度标准。}
+\end{enumerate}
 
-\textbf{修改建议：}
+\subsection{Questions for the Authors}
+\begin{enumerate}[leftmargin=2em]
+  \item Why does throughput increase with sequence length in Table~2? Please explain the cost-model mechanics that produce this behaviour and argue why it reflects real GPU inference.
+  \item Can you provide a wall-clock breakdown of the Python prototype distinguishing scheduler overhead from simulated kernel cost? Without this, it is unclear what the latency figures actually measure.
+  \item The paper mentions a WSL2 CUDA 12.8 environment with Triton 3.6.0 installed. Why was the COREY scheduler not applied as a Triton kernel wrapper and benchmarked in this environment, even for a single sequence length?
+  \item For the Sinkhorn validation in Section~4.1, how sensitive is the reported mean residual ($0.070 \pm 0.010$) to the number of Sinkhorn iterations and the choice of positive kernel?
+\end{enumerate}
 
-\begin{verbatim}
-% 将正文 Section 5.5 第二段（从 "The checkpoint evidence
-% is nevertheless materially broader..." 到段末）
-% 替换为以下精简版本：
+\subsection{Recommendation}
+\textbf{Strong Reject.} The paper makes a systems claim---efficient GPU inference for SSMs---but provides no GPU system measurement for COREY itself. The internally consistent prototype results cannot substitute for hardware evidence. The core idea deserves to be pursued, but the paper is not ready for publication at NeurIPS 2026 in its current form.
 
-The checkpoint evidence is materially broader than a
-single-model smoke test: Appendix~\ref{sec:appendix_ckpt}
-reports four-task LongBench results (20 samples/task) for
-Mamba-370M and Mamba-1.4B, WikiText-103 and PG19 side
-perplexity for both scales, a bounded fast-path run on
-Mamba-2.8B, one matched Pythia-410M external baseline,
-and a real \texttt{selective\_scan\_fn} kernel timing of
-$0.32\pm0.04$\,ms (30 repeats, WSL2 CUDA~12.8).
-The remaining gap is method-versus-baseline execution
-on real COREY/static-fusion backends.
-\end{verbatim}
+% ======================== REVIEWER 3 ====================================
+\newpage
+\section{Review 3 (R3) — Score: 4 / 10 — Reject}
 
-\subsection*{C9：ref.bib 缺少 LongBench 和 WikiText-103 引用}
+\subsection{Summary}
+COREY addresses a real and important problem: how to schedule operator fusion in SSM inference pipelines efficiently and without over-fusing low-stability regions. The idea of using activation entropy as a proxy for fusion safety, combined with Hadamard weight absorption to enlarge the safe region, is well-motivated. However, the gap between the paper's aspirations and its experimental evidence is too wide for acceptance at NeurIPS 2026. I am more sympathetic to this paper than the other reviewers may be, but I still find the experimental contribution insufficient.
 
-\minor{正文多次引用 LongBench 数据集，
-附录多次引用 WikiText-103，但 \texttt{ref.bib}
-中均无对应条目，构成引用不完整。}
+\subsection{Strengths}
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Problem motivation is strong and timely.} SSM inference efficiency is an active and important area. The observation that activation outliers limit safe fusion depth is insightful and directly relevant to practitioners.
+  \item \textbf{Theoretical framing is coherent.} The DP formulation of entropy-regularised fusion optimisation (Appendix~B) is elegant and provides a useful analytical lens, even if the runtime system uses a simpler greedy rule.
+  \item \textbf{Honest handling of limitations.} The authors do not overclaim. Every limitation is named explicitly, including the most damaging one (no COREY checkpoint runs). This transparency is appropriate.
+  \item \textbf{Sinkhorn empirical proxy.} The attempt to validate the doubly-stochastic assumption empirically, rather than asserting it unconditionally, represents careful scientific practice.
+\end{itemize}
 
-\textbf{修改方案（直接粘贴到 \texttt{ref.bib}）：}
+\subsection{Weaknesses}
 
-\begin{verbatim}
-@misc{bai2023longbench,
-  title   = {{LongBench}: A Bilingual, Multitask Benchmark
-             for Long Context Understanding},
-  author  = {Yushi Bai and Xin Lv and Jiajie Zhang and
-             Hongchang Lyu and Jiankai Tang and
-             Zhidian Huang and Zhengxiao Du and
-             Xiao Liu and Aohan Zeng and Lei Hou and
-             Yuxiao Dong and Jie Tang and Juanzi Li},
-  year    = {2023},
-  eprint  = {2308.14508},
-  archivePrefix = {arXiv},
-  primaryClass  = {cs.CL}
-}
+\begin{enumerate}[leftmargin=2em]
 
-@inproceedings{merity2017pointer,
-  title     = {Pointer Sentinel Mixture Models},
-  author    = {Merity, Stephen and Xiong, Caiming and
-               Bradbury, James and Socher, Richard},
-  booktitle = {International Conference on Learning
-               Representations},
-  year      = {2017}
-}
+  \item \textbf{[Critical] COREY has never been applied to a real model.}
+    The paper's Limitation 5 states: ``we still lack real-checkpoint runs for static fusion or COREY itself.'' This is the fundamental problem. The proposed framework is a scheduling algorithm; its entire value proposition depends on whether its fusion decisions produce correct, efficient outputs on real hardware. A paper proposing a scheduling strategy that has never scheduled real computation cannot demonstrate that strategy's value.
 
-@inproceedings{biderman2023pythia,
-  title     = {Pythia: A Suite for Analyzing Large Language
-               Models Across Training and Scaling},
-  author    = {Biderman, Stella and Schoelkopf, Hailey and
-               Anthony, Quentin and Bradley, Herbie and
-               Khan, Kyle and Purohit, Arush and
-               Prashanth, Usvsn Sai and Raff, Edward and
-               Skowron, Aviya and Sutawika, Lintang and
-               others},
-  booktitle = {International Conference on Machine Learning},
-  year      = {2023}
-}
-\end{verbatim}
+  \item \textbf{[Major] The prototype cost model is not independently calibrated.}
+    Section~5.1 states that the prototype uses Python-level timing ``not directly comparable to production Triton benchmarks.'' The cost model for DRAM bytes/token uses a hand-designed formula. There is no calibration experiment showing that the prototype cost model predicts real GPU latency with any accuracy. Without such calibration, the prototype results are untethered from hardware reality.
 
-并在正文中添加对应 \texttt{\textbackslash cite}：
+  \item \textbf{[Major] Related work coverage on SSM systems is incomplete.}
+    The paper cites FlashAttention and Triton for memory-aware fusion but does not discuss several directly relevant works:
+    \begin{itemize}
+      \item FlashMamba or similar operator-fused SSM kernel implementations that have appeared in the 2024--2025 literature.
+      \item MegaBlocks and similar mixture-of-expert fusion schedulers that share the entropy/load-balancing philosophy.
+      \item The broader CUDA graph capture and kernel fusion literature (e.g., nvFuser, XLA's HLO fusion) that provides important context for the proposed greedy boundary selection.
+    \end{itemize}
+    Without engaging with these works, it is unclear whether COREY's entropy criterion provides an advantage over existing static graph compilers.
 
-\begin{verbatim}
-% Section 5.5 中提到 LongBench 时：
-\citep{bai2023longbench}
+  \item \textbf{[Major] The entropy threshold $\tau$ and its interaction with real activation distributions is unstudied.}
+    The prototype operates on synthetic heavy-tailed activations generated by a hand-crafted distribution. Whether real Mamba checkpoint activations exhibit similar distributional properties---and therefore whether the entropy threshold generalises---is not shown. The checkpoint LongBench runs (Table~3) measure native inference but do not attach COREY's entropy estimator to real activations.
 
-% Section 5.5 中提到 WikiText-103 时：
-\citep{merity2017pointer}
+  \item \textbf{[Minor] Figure~1 (entropy before/after Hadamard) has presentation issues.}
+    The figure shows entropy \emph{decreasing} with sequence length for both pre- and post-Hadamard curves. The caption does not explain why entropy decreases at longer sequences. If this is a property of the synthetic activation generator, it should be noted; if it is unexpected, it requires explanation.
 
-% Section 6.4 中提到 Pythia-410M 时：
-\citep{biderman2023pythia}
-\end{verbatim}
+  \item \textbf{[Minor] The adaptive threshold formulation ($\tau_t$) in Appendix~B.3 is never evaluated.}
+    The paper introduces an adaptive threshold $\tau_t = \tau_0 + \rho (\hat{H}_t - H_{\min})/(H_{\max} - H_{\min})$ but reports only fixed-threshold experiments in the main text. The adaptive version is potentially the more important contribution for real deployment, yet it is entirely relegated to the appendix with no experiments.
 
-\subsection*{C10：Table~2 标准差异常大（相对值超过 30\%）}
+\end{enumerate}
 
-\minor{Table~2 的 Short bucket 中，Throughput 标准差
-占均值比例高达 28\%（28.9 $\pm$ 8.1 k tok/s）；
-ultra-long bucket 则仅 0.2\%。
-这一方差模式提示短序列实验存在较大噪声或计时粒度问题，
-而 ultra-long 的近零方差又暗示可能存在 Python 层面的缓存效应。}
+\subsection{Path to Acceptance}
 
-\textbf{修改建议：}
+I believe this paper has the potential to make a meaningful contribution to SSM inference systems. To reach NeurIPS standards, the authors should:
 
-\begin{verbatim}
-% 在 Section 5.4 Evaluation Protocol 末尾或
-% Table 2 caption 中补充：
-The large relative variance at short sequence lengths
-reflects Python-level scheduling overhead that dominates
-wall-clock time when the simulated operator chain is short
-($\le$\,16 operators). At ultra-long lengths, variance
-collapses because a single scheduled group dominates
-total time. These patterns are expected from the
-prototype timing model and should not be interpreted
-as deployment-grade noise characteristics.
-\end{verbatim}
+\begin{enumerate}[leftmargin=2em]
+  \item Implement a Triton kernel that applies COREY's fusion decisions to at least one real Mamba checkpoint on a single GPU, measure real latency and perplexity, and compare to a native-inference baseline.
+  \item Calibrate the prototype cost model against real GPU measurements, or replace the prototype cost model with hardware-measured tile latencies.
+  \item Ablate $(\alpha, \beta, \gamma)$ jointly, even at a coarse grid, and show that entropy ($\alpha > 0$) is responsible for the improvement over arithmetic-intensity-only scheduling.
+  \item Apply COREY's entropy estimator to real Mamba activations and report whether the observed threshold generalization holds.
+  \item Engage with the SSM kernel fusion literature more completely.
+\end{enumerate}
 
-% ------------------------------------------------------------
-\section*{整体修改优先级总表}
-% ------------------------------------------------------------
+\subsection{Recommendation}
+\textbf{Reject} (score 4/10). The idea is sound and the paper is honestly written, but the experimental contribution falls well short of the NeurIPS bar for systems papers. I would be willing to reconsider with a substantially revised empirical evaluation.
 
+% ======================== AREA CHAIR SUMMARY ============================
+\newpage
+\section{Meta-Review (Area Chair Summary)}
+
+\subsection{Consensus Decision}
+\textbf{Reject.} All three reviewers independently identify the same critical gap: COREY is never applied to a real model checkpoint, and all performance claims rest on a self-constructed Python cost model that is not calibrated against real GPU hardware. This gap is not addressable through author response alone; it requires new experiments.
+
+\subsection{Key Points of Agreement Across Reviewers}
+\begin{itemize}[leftmargin=2em]
+  \item The core idea (entropy-guided fusion with Hadamard smoothing) is technically coherent and addresses a real problem in SSM deployment.
+  \item The authors are commendably honest about the gap between prototype and deployment; however, honesty does not substitute for evidence.
+  \item The three theorems, while formally correct, are either textbook results (Theorem~1: Schur-concavity of entropy; Theorem~3: H\"{o}lder's inequality applied to Hadamard matrices) or trivially derived (Theorem~2). They do not represent novel theoretical contributions.
+  \item The diagnostic quality proxy is circular: it is defined to favour COREY by construction and cannot serve as evidence of real quality preservation.
+  \item The prototype latency/throughput results exhibit implausible qualitative behaviour (throughput increasing with sequence length by 26$\times$), suggesting the cost model does not faithfully capture GPU memory-bound inference.
+\end{itemize}
+
+\subsection{Point of Partial Disagreement}
+R3 is more optimistic than R1 and R2 about the paper's potential. R3 views the DP formulation and Sinkhorn proxy as meaningful intellectual contributions, whereas R1 and R2 treat them as incremental. The area chair sides with R1/R2 regarding the overall assessment: the gap between aspiration and evidence is too wide for a systems paper at NeurIPS 2026, regardless of the conceptual merit.
+
+\subsection{Recommendation to Authors}
+The paper is encouraged to resubmit after completing the following minimum requirements:
+\begin{enumerate}[leftmargin=2em]
+  \item At least one end-to-end Triton kernel benchmark applying COREY's fusion scheduler to a real Mamba checkpoint, with hardware-measured latency and perplexity compared to a native-inference baseline on the same GPU.
+  \item A calibration study showing that the prototype cost model accurately predicts relative (not necessarily absolute) GPU latency across sequence lengths.
+  \item A joint ablation of $(\alpha, \beta, \gamma)$ demonstrating that entropy contributes independently of arithmetic intensity.
+  \item Evaluation of the adaptive threshold $\tau_t$ on real checkpoint activations.
+\end{enumerate}
+
+% ======================== APPENDIX: DETAILED ANNOTATIONS ================
+\newpage
+\section*{Appendix: Detailed Technical Annotations}
+
+The following section records specific technical issues and annotation-level comments for the authors' reference.
+
+\paragraph{A.1\ \ Abstract.}
+The abstract states COREY ``consistently reduces proxy latency, improves throughput, and lowers DRAM traffic.'' The word ``proxy'' correctly qualifies these claims, but the abstract does not mention that the proxy is a simulation on CPU. Adding this qualification would prevent a reader from interpreting the abstract as reporting real hardware results.
+
+\paragraph{A.2\ \ Section 3.2, Fusion Score.}
+The fusion score $S(\mathcal{R}) = \alpha\tilde{H} + \beta\widetilde{AI} - \gamma\tilde{M}$ is a linear combination of three normalised quantities. The paper does not explain how $\widetilde{AI}$ and $\tilde{M}$ are estimated at runtime without profiling (which would itself incur overhead). The appendix mentions a cost model but does not specify whether $AI$ and $M$ are predicted analytically or measured.
+
+\paragraph{A.3\ \ Section 4.1, Theorem 1 Applicability.}
+The statement ``the current repository now augments the raw entropy-gain check with an explicit Sinkhorn-style fit'' implies that the Sinkhorn proxy was added in response to reviewers, not designed from the outset. If so, the condition under which Theorem~1 applies was previously unvalidated. The fitted $\ell_1$ residual of $0.070 \pm 0.010$ means the approximate transport plan is not doubly-stochastic; it is only approximately so. The theorem guarantee under the approximate condition is not stated.
+
+\paragraph{A.4\ \ Section 5.1, Prototype Hardware.}
+The prototype hardware is ``Windows 11, Intel Core i9-13900K CPU, 64 GB RAM.'' No GPU is mentioned for the main experiments. The WSL2 GPU environment (RTX 3070, CUDA 12.8) is used only for native Mamba checkpoint validation (Appendix~D), not for COREY experiments. This means the reported ``latency'' is CPU wall-clock time of Python scheduler logic---not GPU inference latency---even though the tables use units (ms) identical to GPU benchmarks.
+
+\paragraph{A.5\ \ Table 2 (FP16 Summary), Ultra-Long Row.}
+The ultra-long row ($L = 64$k) reports standard deviation of $\pm 0.12$\,ms for ``Ours'' latency (77.97\,ms). This near-zero variance after 5 repeated runs is inconsistent with typical GPU timing behaviour (where L2 cache state, DRAM refresh, and OS scheduling introduce variance). It is, however, consistent with a deterministic Python cost model. This is an unintentional confirmation that the latency is simulated.
+
+\paragraph{A.6\ \ Equation Notation Conflict.}
+The paper uses $H$ both for the Hadamard matrix (Section~3.3, Theorem~3) and for the entropy function (Section~3.1, Theorem~1, Section~4). This overloading is disambiguated by context in most places but creates confusion in Section~4.3 (``Let $H \in \mathbb{R}^{d\times d}$ be a normalized Hadamard matrix'') which immediately follows Section~4.1 where $H_{\text{hist}}$ denotes histogram entropy. Recommend using $\mathbf{H}$ or $\mathcal{H}$ for the Hadamard matrix.
+
+\paragraph{A.7\ \ Section 7.1, Table 5 Interpretation.}
+Table~5 shows that higher $\tau$ (more conservative fusion) achieves \emph{lower} diagnostic proxy (0.0333 at $\tau=0.60$ vs.\ 0.0722 at $\tau=0.45$) but \emph{higher} latency (61.52\,ms vs.\ 57.62\,ms). This means the method that fuses less aggressively has better ``quality'' but worse latency. The paper interprets mid-range $\tau=0.52$ as the best trade-off, but the correct choice is not obvious and depends entirely on the definition of the diagnostic proxy, which is acknowledged to be circular. The reader cannot determine the correct $\tau$ for a real deployment without real perplexity measurements.
+
+\paragraph{A.8\ \ Appendix B.3, Adaptive Threshold.}
+The adaptive threshold $\tau_t = \tau_0 + \rho (\hat{H}_t - H_{\min})/(H_{\max} - H_{\min})$ uses $\tau_0 = 5.0$ in raw nats for the checkpoint-side hook, but the main text uses normalised thresholds in $[0,1]$. Translating: $K=64$ bins, $\log K \approx 4.16$ nats, so $\tau_0 = 5.0$ nats corresponds to $\tau_0 / \log K \approx 1.2$ in normalised units---higher than the maximum normalised entropy. This implies the checkpoint-side hook almost never triggers fusion under the raw-nat threshold, which contradicts its purpose as an exploratory deployment hook. The authors should verify this.
+
+\paragraph{A.9\ \ References.}
+The reference list is adequate but does not include recent (2024--2025) work on SSM kernel fusion and quantization such as MambaForge, selective-scan kernel fusions in the \texttt{mamba-ssm} repository, or the growing literature on state-space model efficiency. Including these would strengthen the related work section.
+
+\vspace{1cm}
+\hrule
+\vspace{0.3cm}
 \begin{center}
-\begin{tabular}{clcc}
-\toprule
-编号 & 问题摘要 & 类别 & 必须/建议 \\
-\midrule
-C1 & 缺乏真实 GPU 内核计时 & 实验 & \textbf{必须} \\
-C2 & 外部 baseline 规模不匹配 & 实验 & \textbf{必须} \\
-C3 & PPL 数值异常（$>$30$\times$ 预期）& 实验 & \textbf{必须} \\
-C7 & \texttt{Theorem ??} 引用错误 & 写作 & \textbf{必须} \\
-C4 & Theorem~1 适用条件未验证 & 理论 & 重要 \\
-C5 & $(\alpha,\beta,\gamma)$ 选取未说明 & 方法 & 重要 \\
-C9 & ref.bib 缺少关键引用 & 写作 & 重要 \\
-C6 & Theorem~2 bound 过于松弛 & 理论 & 建议 \\
-C8 & 正文与附录信息冗余 & 写作 & 建议 \\
-C10 & Table~2 方差模式未解释 & 实验 & 建议 \\
-\bottomrule
-\end{tabular}
+\small\textit{This review was prepared according to the NeurIPS 2026 Reviewer Guidelines.\\
+All scores are provisional until author rebuttal is considered.\\
+Reviewer identities remain anonymous to the authors.}
 \end{center}
-
-% ------------------------------------------------------------
-\section*{致作者的说明}
-% ------------------------------------------------------------
-
-本论文的理论框架设计合理，Hadamard 重参数化与熵引导融合
-的结合具有创新性，Section~4 的三个定理也给出了清晰的
-形式化保障。主要障碍在于``controlled prototype study''
-与 NeurIPS 系统论文证据标准之间的差距：
-Table~2 的所有数字来自模拟调度器而非真实内核，
-这一事实在全文每处涉及效率数字的地方均需明确标注，
-但仅靠标注不足以弥补证据缺口。
-
-最低可接收的证据门槛建议为：
-\begin{enumerate}
-  \item 至少一个完整 Triton fused SSM kernel 的 end-to-end
-        wall-clock timing（包含 Hadamard + projection +
-        selective scan 三阶段），与 PyTorch eager 在相同
-        序列长度和 batch size 下的对比；
-  \item Mamba-370M vs.\ Pythia-410M 在相同硬件、相同
-        4096-token prompt 下的 perplexity 和 latency 对比
-        （已有数据，需移入正文并修正 PPL 计算方式）；
-  \item \texttt{Theorem ??} 引用 bug 修复（编译层面错误，
-        不可出现在投稿版本中）。
-\end{enumerate}
 
 \end{document}

@@ -55,6 +55,10 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--ppl-max-samples", type=int, default=0)
     parser.add_argument("--lm-max-samples", type=int, default=1)
     parser.add_argument("--disable-entropy-hook", action="store_true")
+    parser.add_argument("--scheduler-policy", choices=["off", "corey", "static"], default="corey")
+    parser.add_argument("--static-tile-size", type=int, default=256)
+    parser.add_argument("--collect-energy", action="store_true")
+    parser.add_argument("--energy-gpu-index", type=int, default=0)
     parser.add_argument("--skip-existing", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--fail-fast", action="store_true")
@@ -189,6 +193,8 @@ def _build_longbench_namespace(args: argparse.Namespace, model: str, precision: 
         batch_size=args.batch_size,
         max_length=args.max_length,
         disable_entropy_hook=args.disable_entropy_hook,
+        scheduler_policy=args.scheduler_policy,
+        static_tile_size=args.static_tile_size,
         eval_perplexity=args.eval_perplexity,
         ppl_max_samples=args.ppl_max_samples,
         lm_datasets=list(args.lm_datasets),
@@ -230,6 +236,10 @@ def _build_benchmark_namespace(args: argparse.Namespace, model: str, precision: 
         lm_datasets=list(args.lm_datasets),
         lm_max_samples=args.lm_max_samples,
         disable_entropy_hook=args.disable_entropy_hook,
+        scheduler_policy=args.scheduler_policy,
+        static_tile_size=args.static_tile_size,
+        collect_energy=args.collect_energy,
+        energy_gpu_index=args.energy_gpu_index,
         output_dir=output_dir,
     )
 

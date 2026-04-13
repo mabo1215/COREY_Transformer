@@ -17,6 +17,7 @@ from src.algorithms.mamba_integration import (
     OllamaBackend,
     QuantizationConfig,
     RuntimeConfig,
+    StaticTileSchedulerHook,
     default_mamba_model_specs,
 )
 
@@ -133,6 +134,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--max-length", type=int, default=32768)
     parser.add_argument("--disable-entropy-hook", action="store_true")
+    parser.add_argument("--scheduler-policy", choices=["off", "corey", "static"], default="corey")
+    parser.add_argument("--static-tile-size", type=int, default=256)
     parser.add_argument("--eval-perplexity", action="store_true")
     parser.add_argument("--ppl-max-samples", type=int, default=0)
     parser.add_argument("--lm-datasets", nargs="+", choices=sorted(LM_DATASET_SPECS.keys()), default=[])
@@ -481,7 +484,16 @@ def _build_backend(args: argparse.Namespace):
         dtype=args.dtype,
         max_length=args.max_length,
     )
-    scheduler_hook = None if args.disable_entropy_hook else EntropyGuidedSchedulerHook(entropy_threshold=5.0)
+    if args.disable_entropy_hook:
+        scheduler_policy = "off"
+    else:
+        scheduler_policy = args.scheduler_policy
+    if scheduler_policy == "off":
+        scheduler_hook = None
+    elif scheduler_policy == "static":
+        scheduler_hook = StaticTileSchedulerHook(tile_size=args.static_tile_size)
+    else:
+        scheduler_hook = EntropyGuidedSchedulerHook(entropy_threshold=5.0)
     if args.backend == "ollama":
         return OllamaBackend(
             model_spec=model_spec,
@@ -551,6 +563,8 @@ def run_longbench(args: argparse.Namespace) -> dict[str, object]:
         "batch_size": args.batch_size,
         "max_length": args.max_length,
         "disable_entropy_hook": args.disable_entropy_hook,
+        "scheduler_policy": scheduler_policy,
+        "static_tile_size": args.static_tile_size,
         "eval_perplexity": args.eval_perplexity,
         "ppl_max_samples": args.ppl_max_samples,
         "lm_datasets": args.lm_datasets,
