@@ -60,6 +60,8 @@
 
 - 任务 46：针对四个"可继续"条目做可执行边界内的全量回填与论文修订。（1）从 `revision_matrix_4task5_policy_off/` 和 `revision_matrix_4task5_policy_static/` 中读取各模型实际输出，将 `paper/appendix.tex` 的 `tab:policy_compare_n5` 从原先"仅有 off/2.8b + static/1.4b 单行"扩展为按策略分组的三模型完整矩阵（off 三行均已填入真实数据；static 370m/1.4b 已填，2.8b 标注 pending；corey 三行维持 pending），同步更新 caption 说明质量指标在相同模型下跨策略不变、差异在延迟列体现；（2）针对"何时以真实 GPU kernel trace 替代 prototype surrogate"的未决问题，在 `paper/appendix.tex` 的 Reproducibility Checklist 中新增 surrogate-to-real-trace 升级判据（reviewer 明确要求、$\pm 20\%$ 偏差、或进入全 fused-kernel 阶段三选一），将该项从"等待用户决策"状态关闭；（3）将"可继续"中已完成的 surrogate-trace 决策项从开放状态更新为已落地（判据已写入论文），剩余仍开放的项目为 policy_corey 实际运行与 Quamba 构建链。
 
+- 任务 47：将 `tab:hook_micro`（主文 hook 微基准表）从单 GPU/单模型扩展为跨 GPU、跨模型对比。（1）将本地最新代码（`src/experiments/` + `src/algorithms/`）通过 rsync 同步到远端 4×RTX 3090 机器（`mabo1215@10.147.20.176`，`quamba-py310` 环境，torch 2.4.0+cu121）；（2）在远端分别运行 mamba-370m 和 mamba-1.4b 的 baseline（`--disable-entropy-hook`）和 hook-enabled（`--scheduler-policy corey`）各四轮，包括 warmup=1 / repeats=3 的稳定版本；（3）将结果回收到本地 `src/outputs/remote_hook_micro_{baseline,enabled}_v2/` 并通过 `analyze_scheduler_hook_results.py` 汇总；（4）`paper/main.tex` 的 `tab:hook_micro` 从原先一行（RTX 3070 / Mamba-370M）扩展为三行（RTX 3070 / Mamba-370M + RTX 3090 / Mamba-370M + RTX 3090 / Mamba-1.4B），新增 GPU 列，更新 caption 说明两种硬件与实验设置差异，更新下方文段说明 cross-GPU 一致性；新增 `src/scripts/remote_run_hook_micro.sh` 以便后续复现。稳定版结果：Mamba-370M/3090 delta=$-4.02\%$（2675→2568 ms），Mamba-1.4B/3090 delta=$-1.30\%$（2644→2610 ms），与本地 3070 的 $-3.63\%$ 一致地显示 hook 无可测开销。
+
 
 ## 未修改或部分修改（可继续推进）
 
