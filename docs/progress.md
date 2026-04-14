@@ -69,33 +69,30 @@
 ## 未修改或部分修改（可继续推进）
 
 
-- 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）**继续推进中（2026-04-14 巡检后更新）**。已确认 `corey-cuda128` 环境中的 `einops` 依赖可正常导入（版本 `0.8.2`），并通过独立重跑入口 `src/scripts/wsl_run_policy_corey_rerun.sh` 生成新汇总：`src/outputs/revision_matrix_4task5_policy_corey_rerun/aggregate_summary.csv`（`aggregate_rows=18`，`status_counts.ok=4`）。
-	推进状态：旧目录 `src/outputs/revision_matrix_4task5_policy_corey/aggregate_summary.csv` 的 `einops` 报错已被绕开，新目录已成功产出可读结果。
-	(1) **Mamba-1.4B policy_corey**：已有官方 benchmark 基准值 2743.71 ms（已回填论文）；本轮 rerun 同任务出现 293962.30 ms 异常高延迟（同目录 benchmark 行）。
-	推进状态：已有“可信旧值+异常新值”双证据，当前保留论文中的 2744 ms，不用异常值覆盖，后续可选复测一次 repeats>=3 做稳定化确认。
+- 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）**2026-04-14 遗留问题已批复，继续推进**。已确认 `corey-cuda128` 环境中的 `einops` 依赖可正常导入（版本 `0.8.2`），并通过独立重跑入口 `src/scripts/wsl_run_policy_corey_rerun.sh` 生成新汇总：`src/outputs/revision_matrix_4task5_policy_corey_rerun/aggregate_summary.csv`（`aggregate_rows=18`，`status_counts.ok=4`）。
+	推进状态：旧目录 `src/outputs/revision_matrix_4task5_policy_corey_rerun/aggregate_summary.csv` 的 `einops` 报错已被绕开，新目录已成功产出可读结果。
+	(1) **Mamba-1.4B policy_corey**：遗留问题回答：Q1=**用新值覆盖**，Q2=**同意复测 repeats>=3**。已新建 `src/scripts/wsl_run_1.4b_benchmark_retest.sh`（warmup=2，repeats=3，benchmark-only），待 `corey-cuda128` 环境还原后自动执行。注：环境已因 Quamba build v6 误跑 corey-cuda128 被降级至 torch 2.4+cu121；已启动 `src/scripts/wsl_restore_corey_env.sh` 恢复 torch 2.11+cu128 并重建 mamba-ssm，同步写入 `src/outputs/corey_env_restore.log`。
+	推进状态：恢复中；待 restore 完成后立即重跑 retest → 得到稳定值后写入论文。
 	(2) **Mamba-370M policy_corey**：本轮 rerun 已补齐 LongBench + benchmark + LM 侧评（benchmark 延迟 10065.91 ms，WikiText-103 555.97，PG19 17.20）。
-	推进状态：从“仅部分 LongBench”推进到“有完整 rerun 汇总可引用”，可用于替换原估计值 4950 ms（建议回填前再做一次短复测校验波动）。
+	推进状态：可用，待 1.4B 确定后一并写入主文对比表。
 	(3) **Mamba-2.8B policy_corey**：本轮仍未执行。
 	推进状态：保持 pending；当前自动推进范围仍是 370M + 1.4B，未扩展到 2.8B。
 
-- 任务 51：量化路线 Quamba 构建**从“脚本可跑”推进到“编译链已进入 nvcc 实编译”阶段（2026-04-14 巡检后更新）**。本轮对 `src/scripts/wsl_fix_quamba_build.sh` 继续自动推进了三项修复：（1）`fast-hadamard-transform` 改为 `--no-build-isolation`，消除 `ModuleNotFoundError: No module named 'torch'`；（2）补入 `setuptools<82` 约束，避免与 `torch 2.11.0+cu128` 冲突；（3）补入 `--no-deps`，避免重复拉取超大依赖。并在环境侧安装 `cuda-libraries-dev=12.8` / `cuda-cudart-dev=12.8` / `cuda-nvcc=12.8`，清除此前 `cusparse.h` 缺失阻挡。
-	推进状态：`quamba_fix_build_v6.log` 显示 Step 1（`fast-hadamard-transform`）已成功完成 wheel 构建与安装，已越过“子模块缺失/torch缺失/cusparse缺失”三重阻挡。
-	推进状态：流程已自动前进到 Step 2（`lm-evaluation-harness` 安装），当前终端仍在运行；尚未完成 Step 3-7（mamba/CUTLASS/Megatron/`pip install .`/smoke test），因此本任务暂不转入“已全部修改”。
+- 任务 51：量化路线 Quamba 构建**从"脚本可跑"推进到"全链路修复中"（2026-04-14 遗留问题后续）**。
+	根因复核：Quamba build v6 误用 `ENV_NAME=corey-cuda128` 导致两项损坏：（a）torch 降级至 2.4+cu121（Megatron-LM 重跑 requirements.txt 含 `torch==2.4.0`），（b）mamba-ssm 被替换为 CUDA 12.1 编译版本。已修复 `src/scripts/wsl_fix_quamba_build.sh`：
+	  - Step 1：新增幂等性检查（已安装则跳过），并在安装前 upgrade `huggingface_hub>=0.27.0` 防止 `kernels` 包的 import 阻断
+	  - Step 5：Megatron-LM requirements.txt 重跑时自动排除 `torch/torchvision/torchaudio` 行，防止降级
+	  - Step 6：新增 `--no-build-isolation --no-deps`（与 Step 1 对齐）
+	现已改为正确目标 `ENV_NAME=quamba-py310`（Python 3.10.12、torch 2.11.0+cu128、CUDA available=True）运行 v8：
+	推进状态：v8 已启动（terminal 869b5ab4），正在编译 Step 1（fast-hadamard-transform wheel in quamba-py310）。
+	推进状态：`corey-cuda128` 环境已同步启动 `wsl_restore_corey_env.sh` 恢复（terminal 89da9cc5），以恢复主实验路径。
 
 ## 遗留问题
 
 - 【阻塞】匿名对外仓库/快照 URL 尚未确定，导致 reviewer 建议中的 `anonymous repository link` 仍无法闭环。
-	需要你提供/决策：
-	1. 你是否计划为这篇稿件准备匿名仓库或匿名快照？请填写 `计划 / 不计划 / 暂不决定`。
-	   A: 暂不决定
-	2. 如果计划，请直接在这里填写你希望采用的方式，例如 `匿名 GitHub 仓库 / zip 快照 / OpenReview supplementary`。
-	   A: 推荐方式：Anonymous GitHub（anonymous.4open.science）——上传至该平台后自动替换身份信息生成匿名镜像 URL，格式为 anonymous.4open.science/r/[unique-id]/；NeurIPS 2026 要求所有补充材料（含代码链接）必须匿名，zip 快照上传至 OpenReview supplementary（≤100MB）亦合规
-	3. 如果你已经有候选链接或发布路径，请直接贴在这里，后续我可据此同步回填文稿。
-	   A: 暂无候选链接；待决定后填入
+	推荐方式（已确认）：Anonymous GitHub（anonymous.4open.science）自动生成匿名镜像 URL；或 zip 快照上传至 OpenReview supplementary（≤100MB）亦合规。
+	状态：**待用户行动**（上传仓库并填入链接）；机器侧已无阻塞。
 
-- 【待决策】任务 50 的 `mamba-1.4b` rerun benchmark 出现 293962.30 ms 异常高延迟（与已回填论文的 2743.71 ms 显著不一致）。
-	需要你提供/决策：
-	1. 论文是否继续沿用已验证旧值 2743.71 ms 作为 `policy_corey` 的 1.4B latency？
-	   A: （请填写：沿用旧值 / 用新值覆盖 / 再复测后决定）
-	2. 是否同意追加一次最小复测（`repeats>=3`）仅用于确认 1.4B benchmark 稳定值？
-	   A: （请填写：同意 / 不同意）
+- 【进行中】任务 50 mamba-1.4b policy_corey benchmark 稳定值：用户答 **用新值覆盖** + **同意复测 repeats>=3**。
+	执行路径：(1) `wsl_restore_corey_env.sh` 恢复 torch 2.11+cu128（**当前运行中**）→ (2) 完成后启动 `wsl_run_1.4b_benchmark_retest.sh`（warmup=2，repeats=3）→ (3) 读取稳定值写入 paper。
+	状态：**Step 1/3 下载 torch 进行中**；Step 2/3 需人工二次触发本轮 Session（或下轮 bodhi 巡检时自动接续）。

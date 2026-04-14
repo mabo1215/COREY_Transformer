@@ -95,18 +95,26 @@ echo -e "${GREEN}✓${NC} fast-hadamard-transform ready"
 # Step 1: Install fast-hadamard-transform with force build
 echo ""
 echo -e "${YELLOW}[Step 1]${NC} Installing fast-hadamard-transform..."
-# Must set FORCE_BUILD to trigger compilation for all variants (12N, 40N)
-export FAST_HADAMARD_TRANSFORM_FORCE_BUILD=TRUE
-# Keep setuptools compatible with torch and avoid isolated build env without torch.
-$MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install --no-cache-dir "setuptools<82"
-$MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install \
-    --no-cache-dir \
-    --no-build-isolation \
-    --no-deps \
-    --force-reinstall \
-    -v \
-    "3rdparty/fast-hadamard-transform"
-echo -e "${GREEN}✓${NC} fast-hadamard-transform installed"
+# Skip if already successfully installed (idempotency for re-runs).
+if $MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -c "import fast_hadamard_transform" 2>/dev/null; then
+    echo -e "${GREEN}✓${NC} fast-hadamard-transform already installed, skipping"
+else
+    # Must set FORCE_BUILD to trigger compilation for all variants (12N, 40N)
+    export FAST_HADAMARD_TRANSFORM_FORCE_BUILD=TRUE
+    # Keep setuptools compatible with torch and avoid isolated build env without torch.
+    $MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install --no-cache-dir "setuptools<82"
+    # Upgrade huggingface_hub first so the 'kernels' package from lm-evaluation-harness
+    # (if already installed) does not cause ModuleNotFoundError on huggingface_hub.dataclasses.
+    $MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install --no-cache-dir "huggingface_hub>=0.27.0" || true
+    $MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install \
+        --no-cache-dir \
+        --no-build-isolation \
+        --no-deps \
+        --force-reinstall \
+        -v \
+        "3rdparty/fast-hadamard-transform"
+    echo -e "${GREEN}✓${NC} fast-hadamard-transform installed"
+fi
 
 # Step 2: Install lm-evaluation-harness
 echo ""
@@ -116,6 +124,12 @@ $MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install \
     -v \
     "3rdparty/lm-evaluation-harness"
 echo -e "${GREEN}✓${NC} lm-evaluation-harness installed"
+# Fix: lm-evaluation-harness may install 'kernels' which requires huggingface_hub>=0.27.0
+# Upgrade now to avoid import failures in subsequent build steps that use --no-build-isolation.
+$MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install --no-cache-dir "huggingface_hub>=0.27.0" || true
+# Pin kernels<0.13 so it does not require huggingface_hub.dataclasses (added in 0.13.0).
+$MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install --no-cache-dir "kernels<0.13" 2>/dev/null || \
+    $MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip uninstall -y kernels 2>/dev/null || true
 
 # Step 3: Install mamba with force build
 echo ""
@@ -148,12 +162,14 @@ echo -e "${YELLOW}[Step 5]${NC} Installing Megatron-LM..."
 $MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install \
     --no-cache-dir \
     -e "3rdparty/Megatron-LM"
-# Re-apply requirements.txt due to Megatron forcing pytorch 2.6.0+cu124
-echo -e "${YELLOW}⚠${NC} Re-applying requirements.txt after Megatron install..."
-$MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install \
+# Re-apply requirements.txt EXCLUDING torch/torchvision/torchaudio lines because:
+# Quamba's requirements.txt pins torch==2.4.0 which would downgrade our torch 2.11+cu128.
+echo -e "${YELLOW}⚠${NC} Re-applying requirements.txt (torch lines excluded) after Megatron install..."
+grep -vEi '^torch(vision|audio)?[[:space:]]*==' requirements.txt | \
+    $MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install \
     --no-cache-dir \
-    -r requirements.txt
-echo -e "${GREEN}✓${NC} Megatron-LM installed and requirements re-applied"
+    -r /dev/stdin || true
+echo -e "${GREEN}✓${NC} Megatron-LM installed and requirements re-applied (torch excluded)"
 
 # Step 6: Install Quamba package
 echo ""
@@ -161,8 +177,12 @@ echo -e "${YELLOW}[Step 6]${NC} Installing Quamba package itself..."
 cd "$REPO_ROOT/Quamba"
 export TORCH_CUDA_ARCH_LIST="$TORCH_CUDA_ARCH"
 export MAX_JOBS="$MAX_JOBS"
+# Use --no-build-isolation so the build subprocess sees the already-installed torch/causal_conv1d.
+# Use --no-deps to avoid pulling down a fresh torch download.
 $MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install \
     --no-cache-dir \
+    --no-build-isolation \
+    --no-deps \
     --force-reinstall \
     -v \
     .
