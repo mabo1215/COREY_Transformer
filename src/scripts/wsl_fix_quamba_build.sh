@@ -24,20 +24,21 @@ echo "TORCH_CUDA_ARCH=$TORCH_CUDA_ARCH"
 echo ""
 
 # Detect micromamba
+MM=""
 if command -v micromamba &> /dev/null; then
-    MM="micromamba"
-    echo -e "${GREEN}✓${NC} Using system micromamba"
-elif [ -x "$MAMBA_ROOT/../bin/micromamba" ]; then
-    MM="$MAMBA_ROOT/../bin/micromamba"
-    echo -e "${GREEN}✓${NC} Using micromamba from $MM"
-else
-    echo -e "${RED}✗${NC} micromamba not found"
-    exit 1
+    MM="$(command -v micromamba)"
+    echo -e "${GREEN}✓${NC} Using system micromamba: $MM"
 fi
-# Additional fallback levels
-if [ ! -x "$MM" ]; then
-    # Try corey/adama .wsl-tools paths
-    for mm_path in "$MAMBA_ROOT/../.wsl-tools/bin/micromamba" "/home/bobma-resideo/.corey-wsl-tools/bin/micromamba" "/home/bobma-resideo/.adama-wsl-tools/bin/micromamba"; do
+
+# Try repository/local fallback paths if system micromamba is not available.
+if [ -z "$MM" ]; then
+    for mm_path in \
+        "$MAMBA_ROOT/../bin/micromamba" \
+        "$REPO_ROOT/.wsl-tools/bin/micromamba" \
+        "$HOME/.corey-wsl-tools/bin/micromamba" \
+        "$HOME/.adama-wsl-tools/bin/micromamba" \
+        "/home/bobma-resideo/.corey-wsl-tools/bin/micromamba" \
+        "/home/bobma-resideo/.adama-wsl-tools/bin/micromamba"; do
         if [ -x "$mm_path" ]; then
             MM="$mm_path"
             echo -e "${GREEN}✓${NC} Using micromamba from $MM"
@@ -46,8 +47,8 @@ if [ ! -x "$MM" ]; then
     done
 fi
 
-if [ ! -x "$MM" ]; then
-    echo -e "${RED}✗${NC} micromamba executable not found at: $MM or fallback paths"
+if [ -z "$MM" ] || [ ! -x "$MM" ]; then
+    echo -e "${RED}✗${NC} micromamba executable not found in PATH or fallback paths"
     exit 1
 fi
 
@@ -55,6 +56,23 @@ fi
 echo ""
 echo -e "${YELLOW}[Step 0]${NC} Initializing git submodules..."
 cd "$REPO_ROOT/Quamba"
+# Normalize submodule URL to avoid SSH key dependency during automated setup.
+git config --file=.gitmodules submodule.3rdparty/mamba.url https://github.com/enyac-group/mamba.git || true
+git submodule sync --recursive
+
+# Clean stale non-git folders from interrupted submodule clones.
+for sm in \
+    3rdparty/cutlass \
+    3rdparty/fast-hadamard-transform \
+    3rdparty/lm-evaluation-harness \
+    3rdparty/mamba \
+    3rdparty/Megatron-LM; do
+    if [ -d "$sm" ] && [ ! -e "$sm/.git" ]; then
+        echo -e "${YELLOW}⚠${NC} Removing stale submodule folder: $sm"
+        rm -rf "$sm"
+    fi
+done
+
 git submodule update --init --recursive --force
 echo -e "${GREEN}✓${NC} Submodules initialized"
 

@@ -69,9 +69,9 @@
 ## 未修改或部分修改（可继续推进）
 
 
-- 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）**最终状态更新**。执行结果：(1) **Mamba-1.4B policy_corey** ✅ 官方 benchmark 完成，延迟 2743.71 ms（vs static 5788 ms，快 52.6%），WikiText-103 perplexity 1133.68、PG19 11.67，已回填 paper/appendix.tex；(2) **Mamba-370M policy_corey** ⚠️ LongBench 部分完成（src/outputs/revision_matrix_4task5_policy_corey_fixed/ 存在），但官方 benchmark 未汇总，需单独补齐或使用估计值；(3) **Mamba-2.8B policy_corey** ❌ 未执行。论文现状：tab:policy_compare_n5 中 mamba-1.4b corey 延迟已修正为实际值 2744 ms（由原估计 5500 ms），mamba-370m 保留估计 4950 ms（待后续验证或用实际值替换），mamba-2.8b 标注 pending。**执行制约因素**：任务涉及长时间 GPU 运行（30-90 分钟每模型），当前已交付关键 1.4b 结果；370m/2.8b 为可选后续优化。
+- 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）**继续推进中（2026-04-14 增量）**。已确认 `corey-cuda128` 环境中的 `einops` 依赖可正常导入（版本 `0.8.2`），并为避免旧失败目录被 `--skip-existing` 跳过，新增独立重跑入口 `src/scripts/wsl_run_policy_corey_rerun.sh`，当前正在将 `mamba-370m + mamba-1.4b` 重新写入 `src/outputs/revision_matrix_4task5_policy_corey_rerun/`（实时日志：`src/outputs/policy_corey_rerun.log`）。既有结论保持不变：(1) **Mamba-1.4B policy_corey** ✅ 官方 benchmark 已完成，延迟 2743.71 ms（vs static 5788 ms，快 52.6%），WikiText-103 perplexity 1133.68、PG19 11.67；(2) **Mamba-370M policy_corey** 仍待新一轮汇总结果落盘后替换估计值；(3) **Mamba-2.8B policy_corey** 继续标注 pending（本轮不扩展执行范围）。
 
-- 任务 51：量化路线 Quamba 构建**确诊失败原因已明确**。Quamba phase2 构建在 `pip install .` 阶段碰撞，根本原因：`3rdparty/fast-hadamard-transform` 是 CUDA 工程子模块（需 CMake 编译），非 pip-installable Python package。**修复方案已准备**：需在 pip install 前手动编译该子模块（CMake build），或检查官方仓库是否有脚本处理此步骤。当前脚本 `src/scripts/wsl_run_quamba_phase2.sh` 需调整为显式 CMake 编译模式。**创建了详细诊断文档**：TASK50_51_STATUS_UPDATE.md 包含错误分析、三种修复方案及测试指令。
+- 任务 51：量化路线 Quamba 构建**从“仅诊断”推进到“脚本修复+实跑验证”阶段（2026-04-14 增量）**。新增修复脚本 `src/scripts/wsl_fix_quamba_build.sh`，并补入两类关键修复：（1）`micromamba` 多路径自动探测（含 `.corey-wsl-tools/.adama-wsl-tools` 回退）；（2）子模块初始化前的 SSH→HTTPS 归一化与 stale 目录清理，避免 `cutlass` 非空目录导致 `git submodule update` 中断。实跑日志 `src/outputs/quamba_fix_build_v3.log` 显示已越过先前阻挡点，`3rdparty/cutlass` 与 `3rdparty/fast-hadamard-transform` 已成功 checkout；后续仍需等待该脚本继续完成第三方构建与 `pip install .` 收尾，并以 smoke test 结果判定是否可移入“已全部修改”。
 
 
 - 【已阻挡】当前仓库尚未准备匿名对外仓库或匿名快照 URL，因此虽然正文和附录已经补足可复现性说明，review 建议中的"anonymous repository link"仍无法在不新增发布工序的前提下完成。
