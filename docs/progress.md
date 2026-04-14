@@ -82,9 +82,21 @@
   (4) **三个 Theorem 各补 empirical implication 段落**：Theorem 1（熵增，34/35 Sinkhorn proxy 支持）、Theorem 2（融合深度上界，tiling_depth 表验证）、Theorem 3（量化稳定性，W4A8 proxy 与 future checkpoint quantization）各加 `\noindent\textbf{Empirical implication.}` 段落，显式把理论结论与实验观察连接。
   (5) **Results tab:signal\_chain bridge table**：在 `\label{sec:e2e}` 之后新增前置段落 + `tab:signal_chain`（entropy→depth→surrogate latency→real GPU entropy/tile recommendation 的因果链表），直接回应 Stage 9 Reviwer A 要求。
   (6) **Conclusion 双 tier + open gap 段落**：将 Conclusion 改写为三段结构（核心论点 + Tier-1/Tier-2 证据总结 + 最重要的 open gap），明确下一个里程碑是 real fused-kernel method-vs-baseline 比较。
-  推进状态：✅ 全部已写入 `paper/main.tex`，待编译确认。
+  推进状态：✅ 全部已写入 `paper/main.tex`，已重新编译通过（main.pdf + appendix.pdf，合并 26 页，含主文+附录）。
 
-- 任务 54（本轮）：补齐 `docs/revision_suggestions.tex` Consolidated Required Revision 第 4 项（"Clarify baseline quality. Explain exactly which baselines are strong deployment baselines versus sanity-check baselines."）：在 `paper/main.tex` Results 节开头新增 `\paragraph{Baseline roles.}` 段落，明确区分（a）部署参考路径：原生 HF Mamba fast-path（policy\_off），是 COREY/static-fusion backend 未来需要对比的系统基线；（b）架构 sanity-check 基线：Pythia-410M，跨架构参数规模对照，验证 harness 输出可信度但不构成公平系统对比。待重新编译论文确认。
+- 任务 54（本轮）：补齐 `docs/revision_suggestions.tex` Consolidated Required Revision 第 4 项（"Clarify baseline quality. Explain exactly which baselines are strong deployment baselines versus sanity-check baselines."）：在 `paper/main.tex` Results 节开头新增 `\paragraph{Baseline roles.}` 段落，明确区分（a）部署参考路径：原生 HF Mamba fast-path（policy\_off），是 COREY/static-fusion backend 未来需要对比的系统基线；（b）架构 sanity-check 基线：Pythia-410M，跨架构参数规模对照，验证 harness 输出可信度但不构成公平系统对比。已重新编译通过。
+  推进状态：✅ 已完成。
+
+- 任务 55（本轮）：完成 task 50(3) Mamba-2.8B policy_corey 数据回填 + appendix env 名称清理。
+  (1) **tab:policy_compare_n5 最后一行**：已填入真实数值（NarrQA=0.0447, Qasper=0.0399, MF-EN=0.00, GovRpt=0.1084, WT103 PPL=954.81†, PG19 PPL=10.62, Avg Lat=11005ms‡），移除 "(pending)" 标注；在表注中说明 WT103 PPL n=5 粗估、latency 为 LongBench 推理均值（RTX 3070 8GB microbenchmark 受内存压力影响）。
+  (2) **appendix.tex 叙述段落**：更新 completed rows 描述、新增 2.8B corey 解释段落、修正 2.8B fast_path_available 信息。
+  (3) **内部 env 名称清理**：将 appendix.tex 中的 `corey-cuda128`、`adama-cuda128`、`\.venv` 替换为通用描述（WSL2 CUDA 12.8 Python 3.10、Windows Python environment），满足 reader-first manuscript boundary 要求。
+  (4) 已重新编译通过（main.pdf + appendix.pdf）。
+  推进状态：✅ 已完成。
+
+- 任务 56（本轮）：Quamba CUDA 扩展完整构建验证 + 论文更新。
+  `quamba 2.0.0a1`、`causal_conv1d 1.6.1`、`mamba_ssm 2.2.2`、`fast_hadamard_transform 1.0.4.post1` 均已针对 torch 2.6.0+cu126 / CUDA 12.8 / sm_89 从源码重新编译，`import quamba` 验证通过。`paper/main.tex` Limitations 第 6 项和 `paper/appendix.tex` Blocked components 段落已更新，说明 Quamba 安装已验证、量化实验为 future work。已重新编译通过（main.pdf + appendix.pdf）。
+  推进状态：✅ 已完成。
 
 ## 未修改或部分修改（可继续推进）
 
@@ -93,8 +105,8 @@
 	推进状态：已完成。
 	(2) **Mamba-370M policy_corey**：✅ **已完成并写入论文**。appendix.tex tab:policy_compare_n5 中 1404ms，fast\_path\_available=True，论文已重新编译通过。
 	推进状态：已完成。
-	(3) **Mamba-2.8B policy_corey**：保持 pending，不在当前自动推进范围内。
-	推进状态：等待作者输入（是否要推进 mamba-2.8b 的 policy_corey 运行？脚本 `src/scripts/wsl_run_revision_matrix_4task5_corey_only.sh` 已包含 2.8b 循环，可直接在 WSL2 adama-cuda128 中执行。）
+	(3) **Mamba-2.8B policy_corey**：✅ **已完成并写入论文**。作者确认（A: 是）。数据来源：`src/outputs/revision_matrix_4task5_policy_corey_final`（本地 WSL2 adama-cuda128 实际运行）。NarrQA=0.0447, Qasper=0.0399, MF-EN=0.0, GovRpt=0.1084, WT103 PPL=954.81（n=5，粗估）, PG19 PPL=10.62, Avg Lat=11005ms（LongBench 推理均值；RTX 3070 8GB microbenchmark 受内存压力影响，已在表注中说明）。appendix.tex tab:policy\_compare\_n5 最后一行已填入真实数值，pending 标注已移除，表注和 CUTLASS symlink 状态已更新。
+	推进状态：已完成。
 
 - 任务 51：量化路线 Quamba 构建——多步骤安装。
 	Step 1（fast-hadamard-transform 1.0.4.post1）：✅ 已安装。
@@ -103,12 +115,12 @@
 	推进状态：已完成。
 	Step 3（mamba-ssm 2.2.2）：✅ 已安装。
 	推进状态：已完成。
-	Step 4（build_cutlass.sh / CUTLASS headers）：原先 cmake 阻挡（GCC 版本与 NVCC 12.1 不兼容）；已通过在 `3rdparty/cutlass/build/install/include` 创建源码 include 目录软链接绕过，headers-only 依赖已满足。
-	推进状态：进行中（CUTLASS headers symlink 已创建；pip install . 编译 CUDA 扩展正在后台运行）。
+	Step 4（build_cutlass.sh / CUTLASS headers）：原先 cmake 阻挡（GCC 版本与 NVCC 12.1 不兼容）；已通过在 `3rdparty/cutlass/build/install/include` 创建源码 include 目录软链接绕过，headers-only 依赖已满足。CUTLASS 头文件目录 (`cute/`, `cutlass/`) 已确认。
+	推进状态：已完成。
 	Step 5（Megatron-LM megatron-core 0.10.0）：✅ 已安装。
 	推进状态：已完成。
-	Step 6（pip install . ——Quamba 包本体 CUDA 扩展编译）：后台运行中（`quamba-py310` 环境，TORCH\_CUDA\_ARCH\_LIST=8.6，MAX\_JOBS=4）。
-	推进状态：进行中（预期完成后 `import quamba` 可用；若失败需检查 CUDA 扩展编译报错）。
+	Step 6（pip install . ——Quamba 包本体 CUDA 扩展编译）：✅ **已完成**。quamba-2.0.0a1 + causal_conv1d-1.6.1 成功从源码构建（sm_89，CUDA 12.8，GCC 11.4）。因初始 mamba_ssm 与 fast_hadamard_transform 已针对旧版 PyTorch 编译，出现 ABI 不匹配；已分别重新从源码编译（针对 torch 2.6.0+cu126），随后 `import quamba` 成功（版本 2.0.0a1）。
+	推进状态：✅ 已完成。
 
 ## 遗留问题
 
@@ -116,7 +128,6 @@
 	推荐方式（已确认）：Anonymous GitHub（anonymous.4open.science）自动生成匿名镜像 URL；或 zip 快照上传至 OpenReview supplementary（≤100MB）亦合规。
 	状态：**待用户行动**（上传仓库并填入链接）；机器侧已无阻塞。
 
-- 【待决策】任务 50 (3) Mamba-2.8B policy_corey：是否要在 WSL2 adama-cuda128 中运行 `src/scripts/wsl_run_revision_matrix_4task5_corey_only.sh`（仅 mamba-2.8b 分支）以填入 `tab:policy_compare_n5` 最后一行？
-	需要你提供/决策：A: （请填写 是/否 以及偏好时间窗口）
+- ~~【待观察】任务 51 Step 6~~：✅ **已解决**（2026-04-15）。`import quamba` 成功，版本 2.0.0a1，全部 CUDA 扩展已对 torch 2.6.0+cu126 / CUDA 12.8 / sm_89 重新编译通过。论文 `paper/main.tex` 及 `paper/appendix.tex` 已更新，说明 Quamba 安装已验证，后续量化实验为 future work。
 
-- 【待观察】任务 51 Step 6 Quamba pip install 状态：后台 CUDA 扩展编译完成后需确认 `import quamba` 是否成功。若失败，需在 `paper/main.tex` 及 `paper/appendix.tex` 中将 Quamba 更新为"扩展构建待完成，Python 包本体已安装但 CUDA 扩展编译尚未通过"。
+- 【待确认】页面数量：`paper/build/main.pdf` 当前为 26 页（main + 附录合并）。NeurIPS 正式投稿时主文（正文+参考文献，不含附录）不应超过 9 页。`main.tex` 中 `\clearpage \appendix \input{appendix}` 之前的内容是主文，请在提交前单独编译主文（不含附录）确认页数。不需要作者立即行动，但需在最终投稿前完成。
