@@ -71,8 +71,8 @@
 
 - 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）**2026-04-14 遗留问题已批复，继续推进**。已确认 `corey-cuda128` 环境中的 `einops` 依赖可正常导入（版本 `0.8.2`），并通过独立重跑入口 `src/scripts/wsl_run_policy_corey_rerun.sh` 生成新汇总：`src/outputs/revision_matrix_4task5_policy_corey_rerun/aggregate_summary.csv`（`aggregate_rows=18`，`status_counts.ok=4`）。
 	推进状态：旧目录 `src/outputs/revision_matrix_4task5_policy_corey_rerun/aggregate_summary.csv` 的 `einops` 报错已被绕开，新目录已成功产出可读结果。
-	(1) **Mamba-1.4B policy_corey**：遗留问题回答：Q1=**用新值覆盖**，Q2=**同意复测 repeats>=3**。已新建 `src/scripts/wsl_run_1.4b_benchmark_retest.sh`（warmup=2，repeats=3，benchmark-only），待 `corey-cuda128` 环境还原后自动执行。注：环境已因 Quamba build v6 误跑 corey-cuda128 被降级至 torch 2.4+cu121；已启动 `src/scripts/wsl_restore_corey_env.sh` 恢复 torch 2.11+cu128 并重建 mamba-ssm，同步写入 `src/outputs/corey_env_restore.log`。
-	推进状态：恢复中；待 restore 完成后立即重跑 retest → 得到稳定值后写入论文。
+	(1) **Mamba-1.4B policy_corey**：**✓ 已完成复测并写入论文**。stable benchmark latency = **2353.78ms**（三次重复 2353.86 / 2381.27 / 2326.22ms，σ=22.5ms）。旧值 2744ms 已用新值 2354ms 覆盖（paper/appendix.tex tab:policy_compare_n5，同步输出 src/outputs/revision_matrix_1.4b_benchmark_retest/）。注：corey-cuda128 环境已通过卸载 kernels 0.13.0 + torch restore 恢复正常（torch 2.11.0+cu128 + mamba_ssm 2.2.2 selective_scan ok）。
+	推进状态：✅ 完成。
 	(2) **Mamba-370M policy_corey**：本轮 rerun 已补齐 LongBench + benchmark + LM 侧评（benchmark 延迟 10065.91 ms，WikiText-103 555.97，PG19 17.20）。
 	推进状态：可用，待 1.4B 确定后一并写入主文对比表。
 	(3) **Mamba-2.8B policy_corey**：本轮仍未执行。
@@ -85,7 +85,7 @@
 	  - Step 6：新增 `--no-build-isolation --no-deps`（与 Step 1 对齐）
 	现已改为正确目标 `ENV_NAME=quamba-py310`（Python 3.10.12、torch 2.11.0+cu128、CUDA available=True）运行 v8：
 	推进状态：v8 已启动（terminal 869b5ab4），正在编译 Step 1（fast-hadamard-transform wheel in quamba-py310）。
-	推进状态：`corey-cuda128` 环境已同步启动 `wsl_restore_corey_env.sh` 恢复（terminal 89da9cc5），以恢复主实验路径。
+	推进状态：`corey-cuda128` 环境已通过卸载 `kernels` + 重装 torch 2.11+cu128 恢复完毕。Quamba build v10 已使用正确 `quamba-py310` 环境（加装 Python 3.10.20 至 conda env，解决了 pyconfig.h 缺失与 torch 用户级安装冲突），Step 1（fast-hadamard-transform）✅ 已完成，Step 2（lm-evaluation-harness）⏳ 安装中（v10 terminal a5cd1f08）。
 
 ## 遗留问题
 
@@ -93,6 +93,4 @@
 	推荐方式（已确认）：Anonymous GitHub（anonymous.4open.science）自动生成匿名镜像 URL；或 zip 快照上传至 OpenReview supplementary（≤100MB）亦合规。
 	状态：**待用户行动**（上传仓库并填入链接）；机器侧已无阻塞。
 
-- 【进行中】任务 50 mamba-1.4b policy_corey benchmark 稳定值：用户答 **用新值覆盖** + **同意复测 repeats>=3**。
-	执行路径：(1) `wsl_restore_corey_env.sh` 恢复 torch 2.11+cu128（**当前运行中**）→ (2) 完成后启动 `wsl_run_1.4b_benchmark_retest.sh`（warmup=2，repeats=3）→ (3) 读取稳定值写入 paper。
-	状态：**Step 1/3 下载 torch 进行中**；Step 2/3 需人工二次触发本轮 Session（或下轮 bodhi 巡检时自动接续）。
+- ~~【已完成】任务 50 mamba-1.4b policy_corey benchmark 稳定值~~ → **✅ 已完成并写入论文**。stable value = 2354ms，已取代旧值 2744ms，写入 paper/appendix.tex tab:policy_compare_n5。
