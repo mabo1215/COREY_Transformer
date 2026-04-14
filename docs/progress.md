@@ -98,29 +98,19 @@
   `quamba 2.0.0a1`、`causal_conv1d 1.6.1`、`mamba_ssm 2.2.2`、`fast_hadamard_transform 1.0.4.post1` 均已针对 torch 2.6.0+cu126 / CUDA 12.8 / sm_89 从源码重新编译，`import quamba` 验证通过。`paper/main.tex` Limitations 第 6 项和 `paper/appendix.tex` Blocked components 段落已更新，说明 Quamba 安装已验证、量化实验为 future work。已重新编译通过（main.pdf + appendix.pdf）。
   推进状态：✅ 已完成。
 
+- 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 全部三个模型）。
+	(1) **Mamba-1.4B policy_corey**：stable benchmark latency = 2354ms，写入 appendix.tex tab:policy_compare_n5。
+	(2) **Mamba-370M policy_corey**：benchmark latency = 1404ms，fast\_path\_available=True。
+	(3) **Mamba-2.8B policy_corey**：NarrQA=0.0447, Qasper=0.0399, MF-EN=0.0, GovRpt=0.1084, WT103 PPL=954.81（n=5，粗估）, PG19 PPL=10.62, Avg Lat=11005ms（LongBench 推理均值）。appendix.tex tab:policy\_compare\_n5 最后一行已填入真实数值，pending 标注已移除。
+	推进状态：✅ 已完成。
+
+- 任务 51：量化路线 Quamba 构建——完整六步安装。
+	全部依赖（fast-hadamard-transform 1.0.4.post1、lm-evaluation-harness 0.4.2、mamba-ssm 2.2.2、CUTLASS headers、megatron-core 0.10.0）均已安装。Quamba 包本体（quamba 2.0.0a1 + causal_conv1d 1.6.1）从源码构建成功（sm_89，CUDA 12.8，GCC 11.4）；mamba_ssm 和 fast_hadamard_transform 因初始 ABI 不匹配，已针对 torch 2.6.0+cu126 重新从源码编译，`import quamba` 验证通过。
+	推进状态：✅ 已完成。
+
 ## 未修改或部分修改（可继续推进）
 
-- 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）。
-	(1) **Mamba-1.4B policy_corey**：**✅ 已完成并写入论文**。stable benchmark latency = 2354ms，写入 appendix.tex tab:policy_compare_n5。
-	推进状态：已完成。
-	(2) **Mamba-370M policy_corey**：✅ **已完成并写入论文**。appendix.tex tab:policy_compare_n5 中 1404ms，fast\_path\_available=True，论文已重新编译通过。
-	推进状态：已完成。
-	(3) **Mamba-2.8B policy_corey**：✅ **已完成并写入论文**。作者确认（A: 是）。数据来源：`src/outputs/revision_matrix_4task5_policy_corey_final`（本地 WSL2 adama-cuda128 实际运行）。NarrQA=0.0447, Qasper=0.0399, MF-EN=0.0, GovRpt=0.1084, WT103 PPL=954.81（n=5，粗估）, PG19 PPL=10.62, Avg Lat=11005ms（LongBench 推理均值；RTX 3070 8GB microbenchmark 受内存压力影响，已在表注中说明）。appendix.tex tab:policy\_compare\_n5 最后一行已填入真实数值，pending 标注已移除，表注和 CUTLASS symlink 状态已更新。
-	推进状态：已完成。
-
-- 任务 51：量化路线 Quamba 构建——多步骤安装。
-	Step 1（fast-hadamard-transform 1.0.4.post1）：✅ 已安装。
-	推进状态：已完成。
-	Step 2（lm-evaluation-harness 0.4.2）：✅ 已安装。
-	推进状态：已完成。
-	Step 3（mamba-ssm 2.2.2）：✅ 已安装。
-	推进状态：已完成。
-	Step 4（build_cutlass.sh / CUTLASS headers）：原先 cmake 阻挡（GCC 版本与 NVCC 12.1 不兼容）；已通过在 `3rdparty/cutlass/build/install/include` 创建源码 include 目录软链接绕过，headers-only 依赖已满足。CUTLASS 头文件目录 (`cute/`, `cutlass/`) 已确认。
-	推进状态：已完成。
-	Step 5（Megatron-LM megatron-core 0.10.0）：✅ 已安装。
-	推进状态：已完成。
-	Step 6（pip install . ——Quamba 包本体 CUDA 扩展编译）：✅ **已完成**。quamba-2.0.0a1 + causal_conv1d-1.6.1 成功从源码构建（sm_89，CUDA 12.8，GCC 11.4）。因初始 mamba_ssm 与 fast_hadamard_transform 已针对旧版 PyTorch 编译，出现 ABI 不匹配；已分别重新从源码编译（针对 torch 2.6.0+cu126），随后 `import quamba` 成功（版本 2.0.0a1）。
-	推进状态：✅ 已完成。
+当前无待推进项。
 
 ## 遗留问题
 
@@ -128,6 +118,4 @@
 	推荐方式（已确认）：Anonymous GitHub（anonymous.4open.science）自动生成匿名镜像 URL；或 zip 快照上传至 OpenReview supplementary（≤100MB）亦合规。
 	状态：**待用户行动**（上传仓库并填入链接）；机器侧已无阻塞。
 
-- ~~【待观察】任务 51 Step 6~~：✅ **已解决**（2026-04-15）。`import quamba` 成功，版本 2.0.0a1，全部 CUDA 扩展已对 torch 2.6.0+cu126 / CUDA 12.8 / sm_89 重新编译通过。论文 `paper/main.tex` 及 `paper/appendix.tex` 已更新，说明 Quamba 安装已验证，后续量化实验为 future work。
-
-- 【待确认】页面数量：`paper/build/main.pdf` 当前为 26 页（main + 附录合并）。NeurIPS 正式投稿时主文（正文+参考文献，不含附录）不应超过 9 页。`main.tex` 中 `\clearpage \appendix \input{appendix}` 之前的内容是主文，请在提交前单独编译主文（不含附录）确认页数。不需要作者立即行动，但需在最终投稿前完成。
+- 【待确认】页面数量：`paper/build/main.pdf` 当前为 26 页（main + 附录合并）。NeurIPS 正式投稿时主文（正文+参考文献，不含附录）不应超过 9 页。`main.tex` 中 `\clearpage \appendix \input{appendix}` 之前的内容是主文，请在提交前单独编译主文（不含附录）确认页数。
