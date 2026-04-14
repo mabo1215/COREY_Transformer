@@ -64,33 +64,28 @@
 
 - 任务 48（状态同步）：matched-depth latency delta 已压缩入主文 `tab:tiling_depth`（新增 $\Delta_{\text{matched}}$ 列）；tile-trace summary 保留在附录 `tab:tile_trace_surrogate`；surrogate-to-real-trace 升级判据已写入 `paper/appendix.tex` Reproducibility Checklist（三触发条件：reviewer 要求 / $\pm 20\%$ 偏差 / 全 fused-kernel 阶段）。此项从"未修改或部分修改"移入"已全部修改"。
 
-- 任务 49：对当前 Windows/WSL 工作区做一次落地复核并修正脚本漂移。复核结果显示：当前仓库中未见 `src/outputs/revision_matrix_4task5_policy_{off,static,corey}/` 目录，`paper/appendix.tex` 的 `tab:policy_compare_n5` 仍保留 `policy_static`/`policy_corey` pending 行；同时本机 WSL 当前用户并非旧脚本中硬编码的 `mabo1215`，且 `wsl_run_checkpoint_matrix.sh`、`wsl_run_revision_matrix_4task5_corey_only.sh`、`wsl_run_quamba_phase2.sh` 已改为优先按当前 `$HOME` 自动探测 `.adama-micromamba` / `.corey-micromamba` 与 `adama-cuda128` / `corey-cuda128`，不再依赖固定用户名路径。由此，这两项“可继续”在当前机器上被重新界定为“脚本入口已修正，但实验产物仍未落盘”。
+- 任务 49：对当前 Windows/WSL 工作区做一次落地复核并修正脚本漂移。复核结果显示：当前仓库中未见 `src/outputs/revision_matrix_4task5_policy_{off,static,corey}/` 目录，`paper/appendix.tex` 的 `tab:policy_compare_n5` 仍保留 `policy_static`/`policy_corey` pending 行；同时本机 WSL 当前用户并非旧脚本中硬编码的 `mabo1215`，且 `wsl_run_checkpoint_matrix.sh`、`wsl_run_revision_matrix_4task5_corey_only.sh`、`wsl_run_quamba_phase2.sh` 已改为优先按当前 `$HOME` 自动探测 `.adama-micromamba` / `.corey-micromamba` 与 `adama-cuda128` / `corey-cuda128`，不再依赖固定用户名路径。由此，这两项”可继续”在当前机器上被重新界定为”脚本入口已修正，但实验产物仍未落盘”。
+
+- 任务 52（本轮）：按 `docs/revision_suggestions.tex` 继续完成可直接落地的 manuscript-side 收口，涵盖六项 reviewer annotation 修复与一项新的 prototype 实验：
+  (1) **H 符号冲突（A.6）**：将 Hadamard 矩阵符号从 `H` 改为 `\mathbf{H}`（main.tex Sec 3.2 / Theorem 3 + appendix.tex Quantization Stability Bound），消除与熵记号 `\widehat{H}` 的混淆。
+  (2) **τ₀ raw-nats 说明（A.8）**：在 main.tex（第 249 行附近）和 appendix.tex（adaptive threshold 段）中补充说明：K=64 时最大熵 ≈ 4.16 nats，τ₀=5.0 有意设于理论上界之上，使 hook 作为被动监控层而非主动调度闸。
+  (3) **Table 3（checkpoint LongBench）caption 补注（R1 Minor 6）**：在 `tab:checkpoint_baseline` caption 中加入说明——低 token-F1/ROUGE-L 反映 20-sample 微评与截断最大长度，用于验证 harness 正确性，而非模型能力。
+  (4) **Related work 扩展（R3 Major 3）**：在 Operator fusion 段末尾补充 nvFuser（NVIDIA Fuser）、XLA HLO fusion 与 MegaBlocks 三项参考文献；对应 BibTeX 已追加到 `paper/ref.bib`。
+  (5) **Limitations 结构化（R1 Minor 7）**：将原先 200 字单段落的 8 项限制改写为 `\begin{enumerate}` 加粗标签格式，保持内容不变。
+  (6) **AI/M 运行时估算说明（A.2）**：在 fusion score 方程附近加一句：`\widetilde{AI}` 和 `\tilde{M}` 均由算子类型与 tile 几何解析计算，不需要 profiling 开销。
+  (7) **Coarse (α,β,γ) 网格消融（R2/R3 核心要求）**：在 `src/experiments/run_entropy_guided_experiments.py` 中新增 `_run_grid_ablation` / `_summarize_grid_ablation`，对 α∈{0,0.45,0.90}、β∈{0,0.35,0.70}、γ=0.20 共 9 组参数在同一 synthetic 链路上运行，导出 `src/outputs/grid_ablation.csv` 与 `grid_ablation_summary.csv`；在 `paper/main.tex` 中新增 `sec:grid_ablation` 小节（Table `tab:grid_ablation`，4 个代表点），并在 `paper/appendix.tex` 中新增完整 9 格网格表（`tab:full_grid_ablation`，`sec:full_grid_ablation`）。关键发现：default (α=0.45,β=0.35) 在 short/ultra-long bucket 均取得最低 surrogate latency（39.26/77.97 ms）；arithmetic-only 即使将 β 翻倍至 0.70 仍达不到相同深度与延迟；entropy-only (α=0.45,β=0) 几乎不触发融合（depth≈1.08）；表明 entropy 信号在控制 β 后仍有独立增量价值。论文重新编译通过（main.pdf + appendix_only.pdf）。
 
 ## 未修改或部分修改（可继续推进）
 
+- 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）**2026-04-14 遗留问题已批复，继续推进**。
+	(1) **Mamba-1.4B policy_corey**：**✅ 已完成并写入论文**。stable benchmark latency = 2354ms，写入 appendix.tex tab:policy_compare_n5。
+	(2) **Mamba-370M policy_corey**：LongBench + benchmark（10065.91 ms）+ LM 侧评已产出，但 10066ms 为单次重复，已在 appendix.tex 中标注”should be confirmed with repeat-stabilized run before final publication”。**待完成**：在 WSL2 corey-cuda128 环境执行多次重复稳定版，以确认或修正 10066ms 基准值。
+	(3) **Mamba-2.8B policy_corey**：保持 pending，不在当前自动推进范围内。
 
-- 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）**2026-04-14 遗留问题已批复，继续推进**。已确认 `corey-cuda128` 环境中的 `einops` 依赖可正常导入（版本 `0.8.2`），并通过独立重跑入口 `src/scripts/wsl_run_policy_corey_rerun.sh` 生成新汇总：`src/outputs/revision_matrix_4task5_policy_corey_rerun/aggregate_summary.csv`（`aggregate_rows=18`，`status_counts.ok=4`）。
-	推进状态：旧目录 `src/outputs/revision_matrix_4task5_policy_corey_rerun/aggregate_summary.csv` 的 `einops` 报错已被绕开，新目录已成功产出可读结果。
-	(1) **Mamba-1.4B policy_corey**：**✓ 已完成复测并写入论文**。stable benchmark latency = **2353.78ms**（三次重复 2353.86 / 2381.27 / 2326.22ms，σ=22.5ms）。旧值 2744ms 已用新值 2354ms 覆盖（paper/appendix.tex tab:policy_compare_n5，同步输出 src/outputs/revision_matrix_1.4b_benchmark_retest/）。注：corey-cuda128 环境已通过卸载 kernels 0.13.0 + torch restore 恢复正常（torch 2.11.0+cu128 + mamba_ssm 2.2.2 selective_scan ok）。
-	推进状态：✅ 完成。
-	(2) **Mamba-370M policy_corey**：本轮 rerun 已补齐 LongBench + benchmark + LM 侧评（benchmark 延迟 10065.91 ms，WikiText-103 555.97，PG19 17.20）。
-	推进状态：可用，待 1.4B 确定后一并写入主文对比表。
-	(3) **Mamba-2.8B policy_corey**：本轮仍未执行。
-	推进状态：保持 pending；当前自动推进范围仍是 370M + 1.4B，未扩展到 2.8B。
-
-- 任务 51：量化路线 Quamba 构建**从"脚本可跑"推进到"全链路修复中"（2026-04-14 遗留问题后续）**。
-	根因复核：Quamba build v6 误用 `ENV_NAME=corey-cuda128` 导致两项损坏：（a）torch 降级至 2.4+cu121（Megatron-LM 重跑 requirements.txt 含 `torch==2.4.0`），（b）mamba-ssm 被替换为 CUDA 12.1 编译版本。已修复 `src/scripts/wsl_fix_quamba_build.sh`：
-	  - Step 1：新增幂等性检查（已安装则跳过），并在安装前 upgrade `huggingface_hub>=0.27.0` 防止 `kernels` 包的 import 阻断
-	  - Step 5：Megatron-LM requirements.txt 重跑时自动排除 `torch/torchvision/torchaudio` 行，防止降级
-	  - Step 6：新增 `--no-build-isolation --no-deps`（与 Step 1 对齐）
-	现已改为正确目标 `ENV_NAME=quamba-py310`（Python 3.10.12、torch 2.11.0+cu128、CUDA available=True）运行 v8：
-	推进状态：v8 已启动（terminal 869b5ab4），正在编译 Step 1（fast-hadamard-transform wheel in quamba-py310）。
-	推进状态：`corey-cuda128` 环境已通过卸载 `kernels` + 重装 torch 2.11+cu128 恢复完毕。Quamba build v10 已使用正确 `quamba-py310` 环境（加装 Python 3.10.20 至 conda env，解决了 pyconfig.h 缺失与 torch 用户级安装冲突），Step 1（fast-hadamard-transform）✅ 已完成，Step 2（lm-evaluation-harness）⏳ 安装中（v10 terminal a5cd1f08）。
+- 任务 51：量化路线 Quamba 构建——Step 1（fast-hadamard-transform）✅ 已完成，Step 2（lm-evaluation-harness）上次状态为安装中（v10 terminal a5cd1f08）；当前状态未知，需在 WSL2 quamba-py310 环境确认并继续 Step 3–6。
 
 ## 遗留问题
 
 - 【阻塞】匿名对外仓库/快照 URL 尚未确定，导致 reviewer 建议中的 `anonymous repository link` 仍无法闭环。
 	推荐方式（已确认）：Anonymous GitHub（anonymous.4open.science）自动生成匿名镜像 URL；或 zip 快照上传至 OpenReview supplementary（≤100MB）亦合规。
 	状态：**待用户行动**（上传仓库并填入链接）；机器侧已无阻塞。
-
-- ~~【已完成】任务 50 mamba-1.4b policy_corey benchmark 稳定值~~ → **✅ 已完成并写入论文**。stable value = 2354ms，已取代旧值 2744ms，写入 paper/appendix.tex tab:policy_compare_n5。

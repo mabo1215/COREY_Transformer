@@ -707,6 +707,100 @@ def _summarize_tile_runtime(tile_trace_rows: list[dict[str, object]]) -> list[di
     return summary_rows
 
 
+COARSE_GRID: list[tuple[float, float, float]] = [
+    # (alpha, beta, gamma) — gamma fixed at 0.20 throughout
+    (0.00, 0.00, 0.20),  # memory-only
+    (0.00, 0.35, 0.20),  # arithmetic-only (default beta)
+    (0.00, 0.70, 0.20),  # arithmetic-heavy
+    (0.45, 0.00, 0.20),  # entropy-only (default alpha)
+    (0.45, 0.35, 0.20),  # default (entropy + arithmetic)
+    (0.45, 0.70, 0.20),  # entropy + arithmetic-heavy
+    (0.90, 0.00, 0.20),  # entropy-heavy only
+    (0.90, 0.35, 0.20),  # entropy-heavy + arithmetic
+    (0.90, 0.70, 0.20),  # entropy-heavy + arithmetic-heavy
+]
+
+
+def _run_grid_ablation(
+    chain: list,
+    resource_model: "ResourceModel",
+    tau: float,
+    entropy_before: float,
+    entropy_after: float,
+    entropy_gain_val: float,
+    outlier_before: float,
+    outlier_after: float,
+    max_proj_error: float,
+    sequence_length: int,
+    bucket: str,
+    repeat: int,
+) -> list[dict[str, object]]:
+    """Run a coarse (alpha, beta, gamma) grid and return per-cell FP16 metrics."""
+    rows: list[dict[str, object]] = []
+    for alpha, beta, gamma in COARSE_GRID:
+        groups = select_fusion_groups(
+            chain,
+            tau=tau,
+            resource_model=resource_model,
+            alpha=alpha,
+            beta=beta,
+            gamma=gamma,
+        )
+        metrics = _estimate_metrics(
+            method="entropy_guided",
+            sequence_length=sequence_length,
+            precision="fp16",
+            groups=groups,
+            entropy_before_value=entropy_before,
+            entropy_after_value=entropy_after,
+            entropy_gain_value=entropy_gain_val,
+            outlier_before_value=outlier_before,
+            outlier_after_value=outlier_after,
+            max_projection_error=max_proj_error,
+        )
+        rows.append(
+            {
+                "alpha": alpha,
+                "beta": beta,
+                "gamma": gamma,
+                "bucket": bucket,
+                "sequence_length": sequence_length,
+                "repeat": repeat,
+                "latency_ms": metrics.latency_ms,
+                "throughput_tokens_per_s": metrics.throughput_tokens_per_s,
+                "average_fusion_depth": metrics.average_fusion_depth,
+                "average_group_occupancy": metrics.average_group_occupancy,
+            }
+        )
+    return rows
+
+
+def _summarize_grid_ablation(grid_rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Aggregate grid ablation rows to bucket-level means."""
+    from collections import defaultdict
+
+    groups: dict[tuple, list[dict]] = defaultdict(list)
+    for row in grid_rows:
+        key = (row["alpha"], row["beta"], row["gamma"], row["bucket"])
+        groups[key].append(row)
+
+    summary: list[dict[str, object]] = []
+    for (alpha, beta, gamma, bucket), rows in sorted(groups.items()):
+        summary.append(
+            {
+                "alpha": alpha,
+                "beta": beta,
+                "gamma": gamma,
+                "bucket": bucket,
+                "mean_latency_ms": round(mean(float(r["latency_ms"]) for r in rows), 4),
+                "mean_throughput_tokens_per_s": round(mean(float(r["throughput_tokens_per_s"]) for r in rows), 4),
+                "mean_fusion_depth": round(mean(float(r["average_fusion_depth"]) for r in rows), 4),
+                "mean_occupancy": round(mean(float(r["average_group_occupancy"]) for r in rows), 4),
+            }
+        )
+    return summary
+
+
 def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, object]:
     rng = np.random.default_rng(config.seed)
     results: list[ScheduleMetrics] = []
@@ -714,6 +808,7 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
     schedule_trace_rows: list[dict[str, object]] = []
     tile_trace_rows: list[dict[str, object]] = []
     matched_tau_rows: list[dict[str, object]] = []
+    grid_ablation_rows: list[dict[str, object]] = []
 
     for sequence_length in [length for bucket in SEQUENCE_BUCKETS.values() for length in bucket]:
         moving_entropy = ExponentialMovingEntropy(decay=0.85, bins=config.bins)
@@ -752,6 +847,24 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
 
             chain = _build_operator_chain(activations, rotated_inputs[:, : config.hidden_dim], sequence_length)
             resource_model = _resource_model(sequence_length)
+
+            grid_ablation_rows.extend(
+                _run_grid_ablation(
+                    chain=chain,
+                    resource_model=resource_model,
+                    tau=config.tau,
+                    entropy_before=before_entropy,
+                    entropy_after=after_entropy,
+                    entropy_gain_val=gain,
+                    outlier_before=before_outlier,
+                    outlier_after=after_outlier,
+                    max_proj_error=max_projection_error,
+                    sequence_length=sequence_length,
+                    bucket=_bucket_name(sequence_length),
+                    repeat=repeat,
+                )
+            )
+
             entropy_guided_groups = select_fusion_groups(chain, tau=config.tau, resource_model=resource_model)
             matched_tau, arithmetic_only_matched_groups = _calibrate_arithmetic_only_schedule(
                 chain,
@@ -848,6 +961,9 @@ def run_experiments(config: ExperimentConfig, output_dir: Path) -> dict[str, obj
     _write_csv(output_dir / "alpha_zero_matched_tau.csv", matched_tau_rows)
     _write_csv(output_dir / "hadamard_validation.csv", validation_rows)
     _write_csv(output_dir / "sinkhorn_validation_summary.csv", sinkhorn_rows)
+    grid_ablation_summary_rows = _summarize_grid_ablation(grid_ablation_rows)
+    _write_csv(output_dir / "grid_ablation.csv", grid_ablation_rows)
+    _write_csv(output_dir / "grid_ablation_summary.csv", grid_ablation_summary_rows)
 
     metadata = {
         "config": asdict(config),
