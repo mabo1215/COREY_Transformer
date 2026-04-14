@@ -79,7 +79,7 @@
 
 - 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）**2026-04-14 遗留问题已批复，继续推进**。
 	(1) **Mamba-1.4B policy_corey**：**✅ 已完成并写入论文**。stable benchmark latency = 2354ms，写入 appendix.tex tab:policy_compare_n5。
-	(2) **Mamba-370M policy_corey**：LongBench + benchmark（10065.91 ms）+ LM 侧评已产出，但 10066ms 为单次重复，已在 appendix.tex 中标注”should be confirmed with repeat-stabilized run before final publication”。**待完成**：在 WSL2 corey-cuda128 环境执行多次重复稳定版，以确认或修正 10066ms 基准值。
+	(2) **Mamba-370M policy_corey**：✅ **已完成并写入论文**。在 WSL2 adama-cuda128 环境（official mamba_ssm fast path，warmup=2, repeats=3）完成稳定基准复测：三次 timing 分别为 1393.1 / 1415.5 / 1403.0 ms（σ=9.2 ms，fast_path_available=True）。appendix.tex tab:policy_compare_n5 中原 10066ms 错误值（来源为无 fast path 的单次运行）已替换为 1404ms，周边说明段落已同步更新，论文已重新编译通过。
 	(3) **Mamba-2.8B policy_corey**：保持 pending，不在当前自动推进范围内。
 
 - 任务 51：量化路线 Quamba 构建——Step 1（fast-hadamard-transform）✅ 已完成，Step 2（lm-evaluation-harness）上次状态为安装中（v10 terminal a5cd1f08）；当前状态未知，需在 WSL2 quamba-py310 环境确认并继续 Step 3–6。
