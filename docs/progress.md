@@ -84,17 +84,39 @@
   (6) **Conclusion 双 tier + open gap 段落**：将 Conclusion 改写为三段结构（核心论点 + Tier-1/Tier-2 证据总结 + 最重要的 open gap），明确下一个里程碑是 real fused-kernel method-vs-baseline 比较。
   推进状态：✅ 全部已写入 `paper/main.tex`，待编译确认。
 
+- 任务 54（本轮）：补齐 `docs/revision_suggestions.tex` Consolidated Required Revision 第 4 项（"Clarify baseline quality. Explain exactly which baselines are strong deployment baselines versus sanity-check baselines."）：在 `paper/main.tex` Results 节开头新增 `\paragraph{Baseline roles.}` 段落，明确区分（a）部署参考路径：原生 HF Mamba fast-path（policy\_off），是 COREY/static-fusion backend 未来需要对比的系统基线；（b）架构 sanity-check 基线：Pythia-410M，跨架构参数规模对照，验证 harness 输出可信度但不构成公平系统对比。待重新编译论文确认。
+
 ## 未修改或部分修改（可继续推进）
 
-- 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）**2026-04-14 遗留问题已批复，继续推进**。
+- 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）。
 	(1) **Mamba-1.4B policy_corey**：**✅ 已完成并写入论文**。stable benchmark latency = 2354ms，写入 appendix.tex tab:policy_compare_n5。
-	(2) **Mamba-370M policy_corey**：✅ **已完成并写入论文**。在 WSL2 adama-cuda128 环境（official mamba_ssm fast path，warmup=2, repeats=3）完成稳定基准复测：三次 timing 分别为 1393.1 / 1415.5 / 1403.0 ms（σ=9.2 ms，fast_path_available=True）。appendix.tex tab:policy_compare_n5 中原 10066ms 错误值（来源为无 fast path 的单次运行）已替换为 1404ms，周边说明段落已同步更新，论文已重新编译通过。
+	推进状态：已完成。
+	(2) **Mamba-370M policy_corey**：✅ **已完成并写入论文**。appendix.tex tab:policy_compare_n5 中 1404ms，fast\_path\_available=True，论文已重新编译通过。
+	推进状态：已完成。
 	(3) **Mamba-2.8B policy_corey**：保持 pending，不在当前自动推进范围内。
+	推进状态：等待作者输入（是否要推进 mamba-2.8b 的 policy_corey 运行？脚本 `src/scripts/wsl_run_revision_matrix_4task5_corey_only.sh` 已包含 2.8b 循环，可直接在 WSL2 adama-cuda128 中执行。）
 
-- 任务 51：量化路线 Quamba 构建——Step 1（fast-hadamard-transform）✅ 已完成，Step 2（lm-evaluation-harness）上次状态为安装中（v10 terminal a5cd1f08）；当前状态未知，需在 WSL2 quamba-py310 环境确认并继续 Step 3–6。
+- 任务 51：量化路线 Quamba 构建——多步骤安装。
+	Step 1（fast-hadamard-transform 1.0.4.post1）：✅ 已安装。
+	推进状态：已完成。
+	Step 2（lm-evaluation-harness 0.4.2）：✅ 已安装。
+	推进状态：已完成。
+	Step 3（mamba-ssm 2.2.2）：✅ 已安装。
+	推进状态：已完成。
+	Step 4（build_cutlass.sh / CUTLASS headers）：原先 cmake 阻挡（GCC 版本与 NVCC 12.1 不兼容）；已通过在 `3rdparty/cutlass/build/install/include` 创建源码 include 目录软链接绕过，headers-only 依赖已满足。
+	推进状态：进行中（CUTLASS headers symlink 已创建；pip install . 编译 CUDA 扩展正在后台运行）。
+	Step 5（Megatron-LM megatron-core 0.10.0）：✅ 已安装。
+	推进状态：已完成。
+	Step 6（pip install . ——Quamba 包本体 CUDA 扩展编译）：后台运行中（`quamba-py310` 环境，TORCH\_CUDA\_ARCH\_LIST=8.6，MAX\_JOBS=4）。
+	推进状态：进行中（预期完成后 `import quamba` 可用；若失败需检查 CUDA 扩展编译报错）。
 
 ## 遗留问题
 
 - 【阻塞】匿名对外仓库/快照 URL 尚未确定，导致 reviewer 建议中的 `anonymous repository link` 仍无法闭环。
 	推荐方式（已确认）：Anonymous GitHub（anonymous.4open.science）自动生成匿名镜像 URL；或 zip 快照上传至 OpenReview supplementary（≤100MB）亦合规。
 	状态：**待用户行动**（上传仓库并填入链接）；机器侧已无阻塞。
+
+- 【待决策】任务 50 (3) Mamba-2.8B policy_corey：是否要在 WSL2 adama-cuda128 中运行 `src/scripts/wsl_run_revision_matrix_4task5_corey_only.sh`（仅 mamba-2.8b 分支）以填入 `tab:policy_compare_n5` 最后一行？
+	需要你提供/决策：A: （请填写 是/否 以及偏好时间窗口）
+
+- 【待观察】任务 51 Step 6 Quamba pip install 状态：后台 CUDA 扩展编译完成后需确认 `import quamba` 是否成功。若失败，需在 `paper/main.tex` 及 `paper/appendix.tex` 中将 Quamba 更新为"扩展构建待完成，Python 包本体已安装但 CUDA 扩展编译尚未通过"。
