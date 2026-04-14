@@ -75,6 +75,15 @@
   (6) **AI/M 运行时估算说明（A.2）**：在 fusion score 方程附近加一句：`\widetilde{AI}` 和 `\tilde{M}` 均由算子类型与 tile 几何解析计算，不需要 profiling 开销。
   (7) **Coarse (α,β,γ) 网格消融（R2/R3 核心要求）**：在 `src/experiments/run_entropy_guided_experiments.py` 中新增 `_run_grid_ablation` / `_summarize_grid_ablation`，对 α∈{0,0.45,0.90}、β∈{0,0.35,0.70}、γ=0.20 共 9 组参数在同一 synthetic 链路上运行，导出 `src/outputs/grid_ablation.csv` 与 `grid_ablation_summary.csv`；在 `paper/main.tex` 中新增 `sec:grid_ablation` 小节（Table `tab:grid_ablation`，4 个代表点），并在 `paper/appendix.tex` 中新增完整 9 格网格表（`tab:full_grid_ablation`，`sec:full_grid_ablation`）。关键发现：default (α=0.45,β=0.35) 在 short/ultra-long bucket 均取得最低 surrogate latency（39.26/77.97 ms）；arithmetic-only 即使将 β 翻倍至 0.70 仍达不到相同深度与延迟；entropy-only (α=0.45,β=0) 几乎不触发融合（depth≈1.08）；表明 entropy 信号在控制 β 后仍有独立增量价值。论文重新编译通过（main.pdf + appendix_only.pdf）。
 
+- 任务 53（本轮）：按 Stage 9 评审意见（`docs/revision_suggestions.tex`）完成 Stage 10 主文修订，涵盖七项结构性改写：
+  (1) **Abstract 双 tier 改写**：将摘要末尾从"prototype-only"改写为明确的"两层证据"结构，分别陈述 Tier-1 prototype surrogate 与 Tier-2 real-checkpoint GPU 的证据范围。
+  (2) **Intro Scope of claims 段落**：在引言 COREY 介绍段落后新增 `\paragraph{Scope of claims.}` 四条 itemize，明确列出 Mechanism / Prototype evidence / Real-checkpoint feasibility / Not claimed 四项。
+  (3) **Contributions (4) 更新**：将 (4) 改写为"两个 evidence tier"表述（Tier-1 prototype + Tier-2 real-checkpoint GPU feasibility checks）。
+  (4) **三个 Theorem 各补 empirical implication 段落**：Theorem 1（熵增，34/35 Sinkhorn proxy 支持）、Theorem 2（融合深度上界，tiling_depth 表验证）、Theorem 3（量化稳定性，W4A8 proxy 与 future checkpoint quantization）各加 `\noindent\textbf{Empirical implication.}` 段落，显式把理论结论与实验观察连接。
+  (5) **Results tab:signal\_chain bridge table**：在 `\label{sec:e2e}` 之后新增前置段落 + `tab:signal_chain`（entropy→depth→surrogate latency→real GPU entropy/tile recommendation 的因果链表），直接回应 Stage 9 Reviwer A 要求。
+  (6) **Conclusion 双 tier + open gap 段落**：将 Conclusion 改写为三段结构（核心论点 + Tier-1/Tier-2 证据总结 + 最重要的 open gap），明确下一个里程碑是 real fused-kernel method-vs-baseline 比较。
+  推进状态：✅ 全部已写入 `paper/main.tex`，待编译确认。
+
 ## 未修改或部分修改（可继续推进）
 
 - 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）**2026-04-14 遗留问题已批复，继续推进**。
