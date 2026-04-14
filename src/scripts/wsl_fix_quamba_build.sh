@@ -97,8 +97,12 @@ echo ""
 echo -e "${YELLOW}[Step 1]${NC} Installing fast-hadamard-transform..."
 # Must set FORCE_BUILD to trigger compilation for all variants (12N, 40N)
 export FAST_HADAMARD_TRANSFORM_FORCE_BUILD=TRUE
+# Keep setuptools compatible with torch and avoid isolated build env without torch.
+$MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install --no-cache-dir "setuptools<82"
 $MM run -r "$MAMBA_ROOT" -n "$ENV_NAME" python -m pip install \
     --no-cache-dir \
+    --no-build-isolation \
+    --no-deps \
     --force-reinstall \
     -v \
     "3rdparty/fast-hadamard-transform"

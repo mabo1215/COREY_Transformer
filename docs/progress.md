@@ -69,12 +69,22 @@
 ## 未修改或部分修改（可继续推进）
 
 
-- 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）**继续推进中（2026-04-14 增量）**。已确认 `corey-cuda128` 环境中的 `einops` 依赖可正常导入（版本 `0.8.2`），并为避免旧失败目录被 `--skip-existing` 跳过，新增独立重跑入口 `src/scripts/wsl_run_policy_corey_rerun.sh`，当前正在将 `mamba-370m + mamba-1.4b` 重新写入 `src/outputs/revision_matrix_4task5_policy_corey_rerun/`（实时日志：`src/outputs/policy_corey_rerun.log`）。既有结论保持不变：(1) **Mamba-1.4B policy_corey** ✅ 官方 benchmark 已完成，延迟 2743.71 ms（vs static 5788 ms，快 52.6%），WikiText-103 perplexity 1133.68、PG19 11.67；(2) **Mamba-370M policy_corey** 仍待新一轮汇总结果落盘后替换估计值；(3) **Mamba-2.8B policy_corey** 继续标注 pending（本轮不扩展执行范围）。
+- 任务 50：Checkpoint 证据扩展与 policy 对比补齐（Policy_corey 最终阶段）**继续推进中（2026-04-14 巡检后更新）**。已确认 `corey-cuda128` 环境中的 `einops` 依赖可正常导入（版本 `0.8.2`），并通过独立重跑入口 `src/scripts/wsl_run_policy_corey_rerun.sh` 生成新汇总：`src/outputs/revision_matrix_4task5_policy_corey_rerun/aggregate_summary.csv`（`aggregate_rows=18`，`status_counts.ok=4`）。
+	推进状态：旧目录 `src/outputs/revision_matrix_4task5_policy_corey/aggregate_summary.csv` 的 `einops` 报错已被绕开，新目录已成功产出可读结果。
+	(1) **Mamba-1.4B policy_corey**：已有官方 benchmark 基准值 2743.71 ms（已回填论文）；本轮 rerun 同任务出现 293962.30 ms 异常高延迟（同目录 benchmark 行）。
+	推进状态：已有“可信旧值+异常新值”双证据，当前保留论文中的 2744 ms，不用异常值覆盖，后续可选复测一次 repeats>=3 做稳定化确认。
+	(2) **Mamba-370M policy_corey**：本轮 rerun 已补齐 LongBench + benchmark + LM 侧评（benchmark 延迟 10065.91 ms，WikiText-103 555.97，PG19 17.20）。
+	推进状态：从“仅部分 LongBench”推进到“有完整 rerun 汇总可引用”，可用于替换原估计值 4950 ms（建议回填前再做一次短复测校验波动）。
+	(3) **Mamba-2.8B policy_corey**：本轮仍未执行。
+	推进状态：保持 pending；当前自动推进范围仍是 370M + 1.4B，未扩展到 2.8B。
 
-- 任务 51：量化路线 Quamba 构建**从“仅诊断”推进到“脚本修复+实跑验证”阶段（2026-04-14 增量）**。新增修复脚本 `src/scripts/wsl_fix_quamba_build.sh`，并补入两类关键修复：（1）`micromamba` 多路径自动探测（含 `.corey-wsl-tools/.adama-wsl-tools` 回退）；（2）子模块初始化前的 SSH→HTTPS 归一化与 stale 目录清理，避免 `cutlass` 非空目录导致 `git submodule update` 中断。实跑日志 `src/outputs/quamba_fix_build_v3.log` 显示已越过先前阻挡点，`3rdparty/cutlass` 与 `3rdparty/fast-hadamard-transform` 已成功 checkout；后续仍需等待该脚本继续完成第三方构建与 `pip install .` 收尾，并以 smoke test 结果判定是否可移入“已全部修改”。
+- 任务 51：量化路线 Quamba 构建**从“脚本可跑”推进到“编译链已进入 nvcc 实编译”阶段（2026-04-14 巡检后更新）**。本轮对 `src/scripts/wsl_fix_quamba_build.sh` 继续自动推进了三项修复：（1）`fast-hadamard-transform` 改为 `--no-build-isolation`，消除 `ModuleNotFoundError: No module named 'torch'`；（2）补入 `setuptools<82` 约束，避免与 `torch 2.11.0+cu128` 冲突；（3）补入 `--no-deps`，避免重复拉取超大依赖。并在环境侧安装 `cuda-libraries-dev=12.8` / `cuda-cudart-dev=12.8` / `cuda-nvcc=12.8`，清除此前 `cusparse.h` 缺失阻挡。
+	推进状态：`quamba_fix_build_v6.log` 显示 Step 1（`fast-hadamard-transform`）已成功完成 wheel 构建与安装，已越过“子模块缺失/torch缺失/cusparse缺失”三重阻挡。
+	推进状态：流程已自动前进到 Step 2（`lm-evaluation-harness` 安装），当前终端仍在运行；尚未完成 Step 3-7（mamba/CUTLASS/Megatron/`pip install .`/smoke test），因此本任务暂不转入“已全部修改”。
 
+## 遗留问题
 
-- 【已阻挡】当前仓库尚未准备匿名对外仓库或匿名快照 URL，因此虽然正文和附录已经补足可复现性说明，review 建议中的"anonymous repository link"仍无法在不新增发布工序的前提下完成。
+- 【阻塞】匿名对外仓库/快照 URL 尚未确定，导致 reviewer 建议中的 `anonymous repository link` 仍无法闭环。
 	需要你提供/决策：
 	1. 你是否计划为这篇稿件准备匿名仓库或匿名快照？请填写 `计划 / 不计划 / 暂不决定`。
 	   A: 暂不决定
@@ -82,3 +92,10 @@
 	   A: 推荐方式：Anonymous GitHub（anonymous.4open.science）——上传至该平台后自动替换身份信息生成匿名镜像 URL，格式为 anonymous.4open.science/r/[unique-id]/；NeurIPS 2026 要求所有补充材料（含代码链接）必须匿名，zip 快照上传至 OpenReview supplementary（≤100MB）亦合规
 	3. 如果你已经有候选链接或发布路径，请直接贴在这里，后续我可据此同步回填文稿。
 	   A: 暂无候选链接；待决定后填入
+
+- 【待决策】任务 50 的 `mamba-1.4b` rerun benchmark 出现 293962.30 ms 异常高延迟（与已回填论文的 2743.71 ms 显著不一致）。
+	需要你提供/决策：
+	1. 论文是否继续沿用已验证旧值 2743.71 ms 作为 `policy_corey` 的 1.4B latency？
+	   A: （请填写：沿用旧值 / 用新值覆盖 / 再复测后决定）
+	2. 是否同意追加一次最小复测（`repeats>=3`）仅用于确认 1.4B benchmark 稳定值？
+	   A: （请填写：同意 / 不同意）
