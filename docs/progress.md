@@ -116,16 +116,38 @@
 	全部依赖（fast-hadamard-transform 1.0.4.post1、lm-evaluation-harness 0.4.2、mamba-ssm 2.2.2、CUTLASS headers、megatron-core 0.10.0）均已安装。Quamba 包本体（quamba 2.0.0a1 + causal_conv1d 1.6.1）从源码构建成功（sm_89，CUDA 12.8，GCC 11.4）；mamba_ssm 和 fast_hadamard_transform 因初始 ABI 不匹配，已针对 torch 2.6.0+cu126 重新从源码编译，`import quamba` 验证通过。
 	推进状态：✅ 已完成。
 
+- 任务 57：W1 三策略真实对比自动化管线落地（off/static/corey）。
+  (1) 新增 `src/scripts/wsl_run_w1_triplet.sh`，统一调用现有矩阵入口按同配置顺序运行 `off → static → corey` 三个策略，并自动触发比较表生成。
+  (2) 新增 `src/experiments/build_w1_policy_comparison.py`，可从三套策略输出目录自动汇总 `latency_mean_ms / tokens_per_second_mean / metric_mean`，并在目录缺失时显式写入 `missing` 行，避免再次出现“无表可回填”的状态。
+  (3) 在当前产物上生成 `src/outputs/revision_matrix_4task5_policy_comparison.csv` 与 `src/outputs/revision_matrix_4task5_policy_comparison.json`，确认当前三策略对比在 benchmark 维度均为 `missing`，形成可执行的缺口清单。
+  推进状态：✅ 已完成（自动化与缺口清单）。
+
+- 任务 58：W1 三策略最小真实 GPU 烟雾对比已落地（WSL2 实跑）。
+  (1) 实际执行 `src/scripts/wsl_run_w1_triplet.sh` 的 smoke 配置（`MODELS=mamba-370m`、`MODES=benchmark`、`MAX_SAMPLES=1`、`BENCHMARK_REPEATS=1`），在 WSL2 CUDA 环境完成 off/static/corey 三策略连续实跑。
+  (2) 新产物：`src/outputs/revision_matrix_w1_smoke_off/`、`src/outputs/revision_matrix_w1_smoke_static/`、`src/outputs/revision_matrix_w1_smoke_corey/`。
+  (3) 自动汇总产物：`src/outputs/revision_matrix_w1_smoke_comparison.csv`（mamba-370m 实测：off=2846.8980ms, static=2309.8472ms, corey=2376.1357ms；token-F1 三者同为 0.148148）。
+  (4) 已将该 smoke 结果回填到 `paper/appendix.tex` 新增表 `tab:w1_triplet_smoke`，并重新编译通过（undefined reference=0）。
+  推进状态：✅ 已完成（真实 GPU smoke 证据）。
+
+- 任务 59：W1 三策略 smoke 扩展到双模型（370M + 1.4B）。
+  (1) 在 WSL2 中执行 `RUN_TAG=revision_matrix_w1_bench2model_n1` 的 triplet 运行，完成 `off/static/corey` 对 370M 与 1.4B 的统一 benchmark-path 小样本实测。
+  (2) 新产物：`src/outputs/revision_matrix_w1_bench2model_n1_off/`、`..._static/`、`..._corey/` 与汇总 `src/outputs/revision_matrix_w1_bench2model_n1_comparison.csv`。
+  (3) 关键结果（n=1）：
+      - 370M latency: off 2908.36 ms, static 2238.01 ms, corey 2313.71 ms
+      - 1.4B latency: off 2012.76 ms, static 2042.51 ms, corey 2251.24 ms
+  (4) 已把双模型结果说明回填到 `paper/appendix.tex` 的 W1 小节，作为 smoke-to-matrix 过渡证据。
+  推进状态：✅ 已完成（双模型 smoke 证据）。
+
 ## 未修改或部分修改（可继续推进）
 
 ### 第一梯度（reviewer 最严重的三连 criticism）
 
 #### (1) W1：无真实 GPU 方法对比基线
-- **当前状态**：Tier-2 real-checkpoint 已验证 hook 可运行（Table 3），但尚未在真实 GPU 上执行 Static Fusion / COREY 两个融合内核的 side-by-side 对比。
+- **当前状态**：Tier-2 real-checkpoint 已验证 hook 可运行（Table 3）。W1 已具备真实 GPU 三策略 smoke 证据（370M 与 1.4B，off/static/corey）和自动化汇总链路；但仍缺少 n>=5、四任务一致协议和 profile 支撑的稳定主文级对照结果。
 - **剩余工作**：
-  1. 在 Triton/CUDA 中实现 Static Fusion 与 COREY 两个融合算子版本
-  2. 在相同 checkpoint 上运行 nsight / nvprof profile 对比
-  3. 补齐 method-vs-baseline 主文表格（类似 `tab:checkpoint_baseline` 但聚焦融合延迟/吞吐）
+  1. 将 smoke 规模扩展到主文最小可用矩阵（至少 mamba-370m + mamba-1.4b，4 task，n≥5）
+  2. 在同一批次上补充 nsight / nvprof profile（若环境可用）
+  3. 将比较表回填主文（新增 method-vs-baseline 表，聚焦融合延迟/吞吐）
 - **预计工作量**：中等（~3-5 天，取决于 Triton 熟悉度）
 - **优先级**：★★★（reviewer 要求最明确的一项）
 
@@ -155,36 +177,9 @@
 
 ## 遗留问题
 
-### 【需用户决策】Tier-1 代价模型的最终处理方式
+### 【已消费】Tier-1 代价模型处理决策
 
-当前 `paper/main.tex` 的 `tab:tiling_depth` 与 `tab:signal_chain` 仍显示 Python 代价模型的延迟/speedup 数据（prototype surrogate）。
-
-**选项 A（保守）**：保持状态不变
-- 继续在主文展示代价模型结果，但在每个表 caption 中明确标记"Python cost model, NOT GPU hardware"
-- 优点：展示方法的机制设计
-- 风险：reviewer 仍可能认为缺乏真实硬件证据
-
-**选项 B（激进）**：代价模型延迟移入附录
-- 主文仅保留 Tier-2 real-checkpoint 表格（方法是否有效的唯一证据）
-- 将 `tab:tiling_depth` 与 `tab:signal_chain` 的延迟列改为引用附录 Appendix~\ref{sec:prototype_latency}
-- 优点：清晰区分"mechanism proof"（Tier-1）与"deployment viability"（Tier-2）
-- 风险：主文论据减少，但逻辑更清晰
-
-**选项 C（折中，已部分施行）**：主文保留代价模型结果但加强disclaimer
-- 主文保留所有表格，但在 Abstract、Scope of claims、Limitations、每个表 title 中突出"这是 prototype surrogate，非 GPU timings"
-- 新增主文前置段落 `Signal-to-decision chain: prototype evidence orientation`
-
-**建议**：选项 C（已部分落地，需用户确认是否继续）
-
-相关输出：
-- `paper/main.tex` `tab:tiling_depth` / `tab:signal_chain` 均已补 caption
-- `paper/main.tex` Abstract、Introduction、Scope of claims 均已改写为"两层证据"框架
-- `paper/appendix.tex` 已新增 `\paragraph{Reproducibility Checklist}`
-
-**待用户行动**：确认选项，若需改 B 则需要 latex 重排；若续行选项 C 仅需编译验证。
-
-
-A: 请选B （激进）
+用户已在遗留问题给出 `A: 请选B（激进）`，且该决策已执行：主文优先保留 Tier-2 真实证据，Tier-1 机制性内容下沉到附录。该项不再作为待决策阻塞问题。
 ---
 
 ### 【阻塞】匿名对外仓库/快照 URL
@@ -199,25 +194,9 @@ A: 请选B （激进）
 
 ---
 
-### 【待确认】页面数量与主文-附录分离
+### 【已确认】页面数量与主文-附录分离
 
-`paper/build/main.pdf` 当前为 26 页（main + 附录合并）。
-
-NeurIPS 正式投稿要求：
-- 主文（正文+参考文献，**不含附录**）≤ 9 页
-- 附录另计（无严格上限，但建议 ≤ 20 页）
-
-**检查步骤**：
-1. 在 `paper/main.tex` 中找到 `\clearpage \appendix \input{appendix}` 这一行
-2. 在此行前插入 `\end{document}，生成仅含主文的 PDF，检查页数
-3. 若主文 ≤ 9 页，附录可保留当前 ~17 页
-4. 若主文 > 9 页，可通过压缩 prose（特别是重复的 Tier-1/Tier-2 说明）或移入附录来调整
-
-**也需确认**：当前 `paper/build/` 下是否有分离的 `main-only.pdf` / `appendix-only.pdf`，还是只有合并版本？
-
-**建议**：先执行检查步骤 1-2，报告页数结果。
-
-A: 当前 `paper/build/` 下分离的 `main-only.pdf` / `appendix.pdf`，同时有合并版本main.pdf
+用户已在遗留问题给出 `A: 当前 paper/build/ 下分离的 main-only.pdf / appendix.pdf，同时有合并版本 main.pdf`。该项已确认，不再作为待确认条目；后续仅在投稿前进行最终页数复核。
 
 ---
 
