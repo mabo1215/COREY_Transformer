@@ -139,6 +139,14 @@
 - 任务 61：W2 真实激活 Sinkhorn proxy 验证——完整闭环。在 WSL2 adama-cuda128（RTX 3070 / CUDA 12.8）运行 `run_real_activation_sinkhorn.py`，对 mamba-370m 层 0–3 × 20 样本共 80 对进行验证。**关键发现（负向）**：entropy_gain 全部为负（mean = −1.30±0.47 nats，0/80 为正），Sinkhorn L1 = 1.689±0.037（远高于合成数据的 0.070±0.010）。说明 Theorem 1 熵增性质在合成重尾数据中成立，但对真实 Mamba in_proj 激活（近似正态分布）不成立。负向发现已诚实写入论文：Theorem 1 Remark 新增两情景对比数值、Empirical implication 明确限定合成情景并报告真实趋势、Introduction 第 82 行限定语境、Conclusion 说明熵增为分布依赖。论文重新编译通过（main.pdf undefined reference = 0）。
   推进状态：✅ 已完成（真实激活验证，负向发现，已诚实回填论文）。
 
+- 任务 62（2026-04-16）：对照 `docs/revision_suggestions.tex` 中剩余未完全落地的四个 reviewer 条目完成最终收口：
+  (1) **C2 / Suggested Revision — Static-256 oracle 行**：在 `paper/main.tex` 的 `tab:w1_chunked_scan` 中新增 `Static-256†` 行（RTX 3070: ≈1.10 ms，RTX 3090: ≈1.36 ms），标注与 COREY 分析等价（相同 chunk=256、相同 16 次 Triton kernel 调用），并在 caption footnote 和正文段落中明确说明：3.24× 加速来自 chunk 大小选择（256 vs 64），entropy 的价值在于运行时自动选出最优 chunk，无需人工调参。
+  (2) **M3 — Algorithm 1 补输入参数**：将 `\Require` 从 `Operator chain C, threshold τ, resource model Ω` 更新为 `Operator chain C, scoring weights (α,β,γ), threshold τ, resource model Ω`，使 Algorithm 1 与正文 Eq.~(3) 的 score 定义一致。
+  (3) **M4 — Theorem 3 D=Θ(d) caveat 进主文**：在 main text Theorem 3 proof sketch 末尾补充：当输入含 D=Θ(d) 个相当幅值的 outlier 时，bound 可松弛 O(√d)；该 bound 最有效于 sparse-outlier（D≪d）情形。
+  (4) **M5 — Pythia bib 作者修正**：将 `ref.bib` 中 `biderman2023pythia` 的 "Khan, Kyle" 更正为 "McDonell, Kyle"，移除不存在于原论文的 "Purohit, Arush"，补入 Muennighoff/Purchia/Wang/Weinbach 等正确作者。
+  论文重新编译通过（build/main.pdf，0 undefined references）。
+  推进状态：✅ 已完成。
+
 - 2026-04-15 补充进展：W1 关键实验指标补全已启动。
   (1) 已更新 `src/experiments/run_w1_triton_triplet.py`，新增 `tokens_per_second`、`estimated_hbm_bytes/gb/gib`、`estimated_hbm_bandwidth_gbps` 输出，并加入 `--policy {all,off,static,corey}` 单策略运行入口，便于后续做 Nsight 单策略 profile。
   (2) 已在本机 WSL2 `corey-cuda128` 环境复跑 `run_w1_triton_triplet.py`，新产物位于 `src/outputs/w1_triton_triplet_rtx4050/`。`seq_len=4096, dim=1024, fp16` 下：off = `362.1603 ms`, `11309.9 tok/s`, `1.115685 GB`；static = `3.4171 ms`, `1.1987e6 tok/s`, `0.042205 GB`；corey = `1.1279 ms`, `3.6315e6 tok/s`, `0.029426 GB`，COREY 相对 static 仍为 `3.03x`。
@@ -187,7 +195,7 @@
 
 ## 未修改或部分修改（可继续推进）
 
-> ✅ 所有 revision_suggestions.tex 可行项已落地。`nsight kernel profile 补充` 于 2026-04-16 完成（torch.profiler 替代 ncu，因 ncu 需要 root/perf 权限无法在 BatchMode SSH 下启用；torch.profiler CUDA event 计时数据等效且已被论文采用）。当前无剩余可自动推进项。
+> ✅ 所有 revision_suggestions.tex 可行项已落地。`nsight kernel profile 补充` 于 2026-04-16 完成（torch.profiler 替代 ncu，因 ncu 需要 root/perf 权限无法在 BatchMode SSH 下启用；torch.profiler CUDA event 计时数据等效且已被论文采用）。2026-04-16 本轮额外收口四项（见任务 62）：Static-256 oracle 行加入 tab:w1_chunked_scan、Algorithm 1 补 (α,β,γ) 输入参数、Theorem 3 加 D=Θ(d) caveat、Pythia bib 修正作者名。当前无剩余可自动推进项。
 
 ---
 
