@@ -183,6 +183,8 @@
 
 **待用户行动**：确认选项，若需改 B 则需要 latex 重排；若续行选项 C 仅需编译验证。
 
+
+A: 请选B （激进）
 ---
 
 ### 【阻塞】匿名对外仓库/快照 URL
@@ -215,6 +217,8 @@ NeurIPS 正式投稿要求：
 
 **建议**：先执行检查步骤 1-2，报告页数结果。
 
+A: 当前 `paper/build/` 下分离的 `main-only.pdf` / `appendix.pdf`，同时有合并版本main.pdf
+
 ---
 
 ## 📊 当前完成度统计
@@ -223,32 +227,19 @@ NeurIPS 正式投稿要求：
 
 | 缺陷 | 问题 | 现状 | 优先级 |
 |------|------|------|--------|
-| W1 | 无真实 GPU method-vs-baseline 对比 | ⏳ 已框架化，未执行融合内核 | ★★★ |
-| W2 | Theorem 1 条件难验证 | ✅ Sinkhorn proxy 补齐（合成数据） | ★★ |
-| W3 | 代价模型数据未验证 | ⚠️ 需决策：保留主文 vs 移附录 | ★★ |
 | W4 | 超参数感度分析 | ✅ 完整 9 格网格已补齐 | ✅ |
 | W5 | LongBench 低分 | ✅ 已澄清为 harness correctness check | ✅ |
-
-### 次要问题（w1-w5）与 Fix 1-10
-
-| 编号 | 内容 | 状态 |
 |------|------|------|
 | w1 | Broken cross-references | ✅ 全部修复 |
-| w2 | 结构冗余 | ✅ Tier-1/2 说明已精简 |
-| w3 | RTX 3090 延迟异常 | ✅ 已标注存储路径与内存压力 |
 | w4 | 负延迟 delta | ✅ 已加 disclaimer（测量噪声） |
 | w5 | Multi-GPU 无关性 | ✅ 已新增 note box |
 | Fix 1-10 | 所有可直接复制的 LaTeX 改动 | ✅ 全部已写入主文/附录 |
 
----
-
-## 🎯 推荐的后续投稿策略
 
 ### 方案 1：当前状态投稿（prototype-study 定位）
 - **时间**：立即（~2-3 天编译确认）
 - **策略**：强化 Tier-2 real-checkpoint 证据，将 Tier-1 proxy 作为 mechanism explanation
 - **预期反馈**：可能收到"方法框架佳，但完整 fused-kernel 对比缺失"（会被接受为 workshop / 二阶段条件接收）
-
 ### 方案 2：补齐 real fused-kernel 对比后投稿（full systems paper）
 - **时间**：~2-3 周（Triton kernel 实现 + GPU profiling）
 - **策略**：添加 Static Fusion / COREY 两个融合内核的 nsight profile 对比
@@ -257,3 +248,9 @@ NeurIPS 正式投稿要求：
 **我的建议**：根据投稿截止日期选择方案
 - 若距离截止 < 1 周 → 方案 1（已可投，定位为 prototype paper）
 - 若距离截止 > 1 周 → 方案 2（额外工作但 impact 显著提升）
+
+A： NeurIPS 2026  阶段	日期	说明
+Abstract 提交截止	2026-05-04 (AoE)	必须先提交摘要
+Full Paper 提交截止	2026-05-06 (AoE)	包括全部补充材料
+
+所以方案2 
