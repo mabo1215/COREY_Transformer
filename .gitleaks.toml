@@ -1,0 +1,82 @@
+# gitleaks configuration — Corey_Transformer
+# Allowlist for known legitimate author/institution strings so they do not
+# trigger false-positive secret-scan alerts.
+# Run:  gitleaks detect --config .gitleaks.toml --source .
+
+title = "Corey_Transformer gitleaks config"
+
+[allowlist]
+  description = "Known author, institutional, and project identifiers"
+  regexes = [
+
+    # ===== Names =====
+    '''Bo''',
+    '''Ma''',
+    '''Bo Ma''',
+    '''Jinsong''',
+    '''Jinsong Wu''',
+    '''Hongjiang''',
+    '''Hongjiang Wei''',
+    '''Weiqi''',
+    '''Weiqi Yan''',
+    '''bobma[-_]resideo''',
+    '''mabo1215''',
+
+    # ===== Emails =====
+    '''rcn4743@aut\.ac\.nz''',
+    '''.*@aut\.ac\.nz''',
+    '''.*@neurips\.cc''',
+
+    # ===== Institutions =====
+    '''Auckland University of Technology''',
+    '''AUT''',
+    '''Resideo Technologies''',
+    '''Guilin University of Electronic Technology''',
+    '''Hikvision Research Institute''',
+    '''NWPU''',
+    '''Northwestern Polytechnical University''',
+
+    # ===== Locations =====
+    '''Auckland''',
+    '''New Zealand''',
+
+    # ===== GitHub / Project =====
+    '''mabo1215''',
+    '''COREY_Transformer''',
+    '''ADAMA_Transformer_latex''',
+    '''corey-transformer''',
+    '''entropy-fusion''',
+
+    # ===== Papers / Citations =====
+    '''COREY''',
+    '''NeurIPS 2026''',
+
+    # ===== Paths =====
+    '''/home/bobma-resideo''',
+    '''/home1/mabo1215''',
+
+    # ===== Misc =====
+    '''Resideo''',
+    '''Hikvision''',
+  ]
+
+  # Always allow the placeholder .env (credentials are gitignored)
+  paths = [
+    '''\.env$''',
+    '''docs/tmp/''',
+  ]
+
+# Extend the built-in generic-api-key rule to ignore the known FAL and HF
+# key prefixes that appear in .env (which is already gitignored, but kept
+# here as defence-in-depth if a developer accidentally stages it).
+[[rules]]
+  id = "fal-key"
+  description = "fal.ai API key"
+  regex = '''FAL_KEY\s*=\s*[A-Za-z0-9\-:]{30,}'''
+  tags = ["api-key", "fal"]
+
+[[rules]]
+  id = "hf-key"
+  description = "Hugging Face API token"
+  regex = '''HuggingFACE_KEY\s*=\s*hf_[A-Za-z0-9]{20,}'''
+  tags = ["api-key", "huggingface"]
