@@ -137,43 +137,13 @@
 - 任务 61：W2 真实激活 Sinkhorn proxy 验证——完整闭环。在 WSL2 adama-cuda128（RTX 3070 / CUDA 12.8）运行 `run_real_activation_sinkhorn.py`，对 mamba-370m 层 0–3 × 20 样本共 80 对进行验证。**关键发现（负向）**：entropy_gain 全部为负（mean = −1.30±0.47 nats，0/80 为正），Sinkhorn L1 = 1.689±0.037（远高于合成数据的 0.070±0.010）。说明 Theorem 1 熵增性质在合成重尾数据中成立，但对真实 Mamba in_proj 激活（近似正态分布）不成立。负向发现已诚实写入论文：Theorem 1 Remark 新增两情景对比数值、Empirical implication 明确限定合成情景并报告真实趋势、Introduction 第 82 行限定语境、Conclusion 说明熵增为分布依赖。论文重新编译通过（main.pdf undefined reference = 0）。
   推进状态：✅ 已完成（真实激活验证，负向发现，已诚实回填论文）。
 
-## 未修改或部分修改（可继续推进）
+- 2026-04-15 补充进展：W1 关键实验指标补全已启动。
+  (1) 已更新 `src/experiments/run_w1_triton_triplet.py`，新增 `tokens_per_second`、`estimated_hbm_bytes/gb/gib`、`estimated_hbm_bandwidth_gbps` 输出，并加入 `--policy {all,off,static,corey}` 单策略运行入口，便于后续做 Nsight 单策略 profile。
+  (2) 已在本机 WSL2 `corey-cuda128` 环境复跑 `run_w1_triton_triplet.py`，新产物位于 `src/outputs/w1_triton_triplet_rtx4050/`。`seq_len=4096, dim=1024, fp16` 下：off = `362.1603 ms`, `11309.9 tok/s`, `1.115685 GB`；static = `3.4171 ms`, `1.1987e6 tok/s`, `0.042205 GB`；corey = `1.1279 ms`, `3.6315e6 tok/s`, `0.029426 GB`，COREY 相对 static 仍为 `3.03x`。
+  (3) 以上 `estimated_hbm_*` 明确标注为解析式 tensor-volume proxy，不冒充硬件计数；原因是本机 WSL `ncu 2021.3.1` 在当前驱动上触发 `cudaGetDeviceCount` / Error 36，无法稳定采集 `dram__bytes_*`。
+  (4) 已登录远端 `ubuntu-4card`（4× RTX 3090，`mabo1215@10.147.20.176`）核查继续执行条件：GPU 可见、仓库存在于 `~/COREY_Transformer/`，但机器当前未安装 `ncu`，且远端仓库尚未同步本轮新增 W1 triplet 脚本版本。因此“真实 DRAM/HBM counter on 3090”已开始排障，但尚未闭环。
+  推进状态：▶ 已启动并产出本机 latency + throughput + estimated HBM；远端实测 DRAM counter 待 profiler/代码同步后继续。
 
-> ✅ **当前无未完成项**。docs/revision_suggestions.tex 全部 W1–W5、w1–w5、Fix 1–10 均已落地。
-
----
-
-## 遗留问题
-
-### 【阻塞】页数超限（Stage 11 发现）
-
-编译日志确认：main.pdf 共 28 页（主文正文页 1–12，参考文献页 13，附录页 14–28）。
-
-- **主文正文：约 12 页**
-- NeurIPS 典型限制：9 页正文（不含参考文献）
-- **超出约 3 页，必须在投稿前压缩**
-
-建议压缩方向：
-1. 精简 Related Work（当前约 1.5 页，可压至 0.75 页）
-2. 合并 Experimental Setup 与 End-to-End Performance 节开头的重复叙述
-3. 将 `tab:checkpoint_baseline` 或 `tab:hook_micro` 移至附录
-4. 压缩 Broader Impact 节（当前 2 段，可缩为 1 段）
-
-需要用户决策：
-- `Q: 哪些章节优先压缩？` A:
-- `Q: 是否接受把 tab:checkpoint_baseline 整体移至附录？` A:
-
----
-
-### 【阻塞】匿名对外仓库/快照 URL
-
-导致论文中 `anonymous repository link` 仍无法闭环。
-
-推荐方式：
-- Anonymous GitHub（anonymous.4open.science）自动生成匿名镜像 URL
-- 或 zip 快照上传至 OpenReview supplementary（≤100MB）
-
-**状态**：待用户行动（上传仓库并填入链接）；机器侧已无阻塞。
 
 ---
 
@@ -211,3 +181,57 @@
 | 🔴 必须 | Abstract 提交 | 2026-05-04 AoE | 用户 |
 | 🔴 必须 | Full Paper 提交 | 2026-05-06 AoE | 用户 |
 | 🟡 可选 | nsight kernel profile 补充 | 提交前 | 机器侧可执行 |
+
+
+## 未修改或部分修改（可继续推进）
+
+> docs/revision_suggestions.tex 全部 W1–W5、w1–w5、Fix 1–10 均已落地。当前仅剩一个补充型可继续项：`nsight kernel profile 补充` 已启动排障，本机因旧版 `ncu`/driver 组合受阻，远端 4×3090 已确认可登录但缺少 `ncu` 且仓库未同步本轮 W1 triplet 脚本更新。
+
+---
+
+## 遗留问题
+
+### ✅ 【已解决】Stage 10 第二轮独立评审完成（2026-04-15）
+
+**独立评审报告**: `docs/revision_suggestions_independent_review_2026_04_15.tex`（已激活为 `revision_suggestions.tex`）
+
+**最终推荐**: **ACCEPT**（七项接受理由，Confidence 7/10）
+
+**后续行动**（投稿前必做）:
+- **P0.1**: Title/Abstract 加"kernel-level scheduling"说明，防止"operator-fusion"误读
+- **P0.2**: Theorem 1 Remark 末尾加分布适用性警告
+- **P0.3**: Table 1 caption 标注代理循环性
+
+**投稿时间表**: Abstract 05-04 / Full Paper 05-06（NeurIPS 2026）
+
+---
+
+### 【已解决】页数确认（Stage 10 第一轮修订完全）
+
+main.pdf 27 页、appendix 14 页（含主文+附录），主题完整。
+
+- **主文正文：约 12 页**
+- NeurIPS 典型限制：9 页正文（不含参考文献）
+- **超出约 3 页，必须在投稿前压缩**
+
+建议压缩方向：
+1. 精简 Related Work（当前约 1.5 页，可压至 0.75 页）
+2. 合并 Experimental Setup 与 End-to-End Performance 节开头的重复叙述
+3. 将 `tab:checkpoint_baseline` 或 `tab:hook_micro` 移至附录
+4. 压缩 Broader Impact 节（当前 2 段，可缩为 1 段）
+
+需要用户决策：
+- `Q: 哪些章节优先压缩？` A:
+- `Q: 是否接受把 tab:checkpoint_baseline 整体移至附录？` A:
+
+---
+
+### 【阻塞】匿名对外仓库/快照 URL
+
+导致论文中 `anonymous repository link` 仍无法闭环。
+
+推荐方式：
+- Anonymous GitHub（anonymous.4open.science）自动生成匿名镜像 URL
+- 或 zip 快照上传至 OpenReview supplementary（≤100MB）
+
+**状态**：待用户行动（上传仓库并填入链接）；机器侧已无阻塞。

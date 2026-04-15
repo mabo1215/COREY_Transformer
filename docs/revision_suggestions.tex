@@ -1,475 +1,485 @@
-% ============================================================
-% COREY 论文 LaTeX 修改建议（NeurIPS Reviewer 风格）
-% 所有 patch 均可直接复制替换对应位置
-% ============================================================
+Overall Review (NeurIPS-level)
 
+Paper: COREY: Entropy-Guided Operator Fusion with Hadamard Reparameterization
+Area: Systems / Efficient SSM / Kernel Optimization
+Overall Score (estimated):
 
-% ============================================================
-% PATCH 1：重写 Contributions 段（必须）
-% 位置：main.tex，\paragraph{Contributions.} 整段
-% 原因：当前 contribution 表述过于模糊，reviewer 无法判断
-%       哪些是理论贡献、哪些是系统贡献、哪些是实验贡献
-% ============================================================
+Borderline Reject → Weak Reject（当前版本）
 
-% ------- 替换前 -------
-% Contributions. (1) We introduce an entropy-driven criterion ...
-% (2) We design a fused Hadamard layer ...
-% (3) We connect entropy gain with outlier suppression ...
-% (4) We validate ...
+如果你补齐关键实验，有机会到：
 
-% ------- 替换后（直接复制）-------
+Weak Accept
+
+1️⃣ Summary（Reviewer标准总结）
+
+This paper proposes COREY, a prototype framework for entropy-guided operator fusion in selective state-space models (SSMs), combined with Hadamard-based reparameterization to mitigate activation outliers.
+
+The key idea is to:
+
+Use histogram entropy as a runtime signal to guide fusion boundaries.
+Integrate Hadamard transforms into linear projections to smooth heavy-tailed activations.
+Demonstrate feasibility via:
+Tier-1: synthetic cost-model simulation
+Tier-2: real checkpoint entropy hook validation
+
+The work aims to bridge:
+
+activation distribution shaping
+memory-aware scheduling
+kernel fusion feasibility
+
+However, the current implementation does not yet provide end-to-end fused-kernel deployment comparisons, which significantly limits empirical validation.
+
+2️⃣ Strengths（优点）
+
+这些是真正 reviewer 会认可的部分。
+
+⭐ Strength 1 — Interesting systems signal design
+
+Entropy as a scheduling signal is:
+
+conceptually clean
+runtime-friendly
+potentially adaptive to prompt distributions
+
+Score function:
+
+𝑆
+(
+𝑅
+)
+=
+𝛼
+𝐻
+~
+(
+𝑅
+)
++
+𝛽
+𝐴
+𝐼
+~
+(
+𝑅
+)
+−
+𝛾
+𝑀
+~
+(
+𝑅
+)
+S(R)=α
+H
+~
+(R)+β
+AI
+~
+(R)−γ
+M
+~
+(R)
+
+is well-motivated and hardware-aware.
+
+这点是：
+
+真正 novel 的核心
+
+不是 trivial tweak。
+
+⭐ Strength 2 — Hadamard absorption is elegant
+
+Embedding:
+
+𝑊
+′
+=
+𝑊
+𝐻
+⊤
+W
+′
+=WH
+⊤
+
+is mathematically correct and deployment-friendly.
+
+Good property:
+
+preserves functional equivalence
+reduces peak activation magnitude
+
+Theorem 3 provides useful quantitative bounds.
+
+这是理论上最 solid 的部分。
+
+⭐ Strength 3 — Honest scope definition
+
+非常少见但非常加分：
+
+你明确写了：
+
+Not claimed: end-to-end speedup on real fused kernels.
+
+这在 NeurIPS 是：
+
+非常专业的写法
+
+不会因为 overclaim 被 reviewer 打爆。
+
+3️⃣ Major Weaknesses（真正致命问题）
+
+这些是决定 accept/reject 的核心
+
+我会非常直接。
+
+❌ Major Issue 1 — Missing real fused kernel comparison
+
+这是最大问题
+
+不是小问题。
+
+你目前：
+
+✔ 有 entropy hook
+✔ 有 chunk scheduling demo
+❌ 没有真实 fused COREY kernel vs baseline
+
+而你自己也承认：
+
+A full method-versus-baseline comparison remains future work.
+
+对于 NeurIPS systems paper：
+
+这几乎是：
+
+致命缺陷
+
+Reviewer真实想法：
+
+If the fusion method is not actually deployed, how do we know it works?
+
+❌ Major Issue 2 — Entropy theorem not valid on real activations
+
+这是非常严重的理论问题
+
+你写了：
+
+entropy decreases in all 80 real cases.
+
+这意味着：
+
+你的核心理论：
+
+只在 synthetic heavy-tail 成立
+
+而不是：
+
+真实模型
+
+这在 reviewer 眼里属于：
+
+⚠️ theory–practice mismatch
+
+❌ Major Issue 3 — Chunk scheduling ≠ operator fusion
+
+你的 Table 3：
+
+实际上是：
+
+chunk size scheduling
+
+不是：
+
+operator fusion
+
+这两个完全不同。
+
+Reviewer会写：
+
+The experiment demonstrates batching efficiency, not fusion efficiency.
+
+这个 criticism 很常见。
+
+❌ Major Issue 4 — Hyperparameter tuning weak
+
+你写：
+
+weights are hand-tuned prototype defaults
+
+这在 NeurIPS：
+
+是个明显扣分点。
+
+必须：
+
+grid search / ablation。
+
+4️⃣ Minor Weaknesses（可修复问题）
+
+这些不是致命，但 reviewer 会写。
+
+⚠️ Terminology confusion
+
+Entropy sometimes refers to:
+
+histogram entropy
+normalized entropy
+raw entropy
+
+但切换不够清晰。
+
+会造成阅读负担。
+
+⚠️ Over-long theory section
+
+Section 4：
+
+太长
+太 technical
+
+但：
+
+贡献不直接支撑实验。
+
+Reviewer通常会说：
+
+Theoretical section is unnecessarily verbose.
+
+⚠️ Figures insufficient
+
+缺：
+
+pipeline diagram
+fusion example visualization
+
+NeurIPS reviewer 非常依赖图。
+
+5️⃣ Estimated NeurIPS Scores
+
+真实预估：
+
+Category	Score
+Novelty	7/10
+Technical Depth	7.5/10
+Empirical Validation	4/10
+Clarity	6/10
+Overall	Weak Reject
+
+如果补：
+
+real fused kernel
+
+会变：
+
+Weak Accept
+
+6️⃣ 可直接复制的 LaTeX 修改建议（最重要）
+
+下面是真正可复制的 patch-style 修改。
+
+全部是 reviewer 会强烈建议的。
+
+🔧 Patch 1 — Rewrite Contributions Section（必须）
+
+当前问题：
+
+太 vague。
+
+需要：
+
+明确 claim type
+
+直接替换：
+
 \paragraph{Contributions.}
-This paper makes the following concrete contributions,
-each at a clearly defined scope:
+This paper makes the following concrete contributions:
 
 \begin{itemize}
 
-\item \textbf{Entropy-guided fusion metric (systems design).}
-We introduce a runtime scheduling score
-$S(\mathcal{R}) = \alpha\widetilde{H}(\mathcal{R})
-  + \beta\widetilde{AI}(\mathcal{R})
-  - \gamma\widetilde{M}(\mathcal{R})$
-that integrates normalized activation entropy, arithmetic
-intensity, and memory-traffic estimates into a unified
-fusion-boundary criterion.
-Unlike static kernel graphs or heuristic depth limits,
-this signal adapts to prompt-dependent activation
-statistics at inference time.
+\item \textbf{Entropy-guided fusion metric.}
+We introduce a runtime scheduling score that integrates
+activation entropy, arithmetic intensity, and memory
+traffic into a unified fusion boundary criterion.
+Unlike static fusion heuristics, this metric adapts
+to prompt-dependent activation statistics.
 
-\item \textbf{Fused Hadamard reparameterization (algorithm).}
-We show that a normalized Hadamard matrix can be absorbed
-into adjacent linear projections ($W' = WH^\top$) while
-preserving exact functional equivalence.
-Theorem~\ref{thm:quant} provides a quantitative
-$\sqrt{d}$-factor bound on peak-coordinate contraction,
-directly relevant to clipping-limited low-bit execution.
+\item \textbf{Hadamard-based fusion-compatible reparameterization.}
+We show that normalized Hadamard transforms can be
+absorbed into linear projections while preserving
+functional equivalence. We further provide theoretical
+bounds on peak-coordinate contraction under rotation.
 
-\item \textbf{Two-tier evaluation methodology (empirical).}
-We design a prototype-to-checkpoint validation pipeline
-that separates (i) a deterministic cost-model study
-isolating entropy and scheduling signals (Tier~1) from
-(ii) real-GPU feasibility measurements on public
-Mamba-370M and Mamba-1.4B checkpoints (Tier~2).
-This separation prevents prototype assumptions from
-contaminating deployment-facing claims.
+\item \textbf{Prototype-to-checkpoint validation pipeline.}
+We design a two-tier evaluation methodology that
+separates controlled scheduling diagnostics from
+real-checkpoint feasibility measurements.
 
-\item \textbf{Distribution-gap characterization (empirical observation).}
-We demonstrate that the entropy-increase property of
-Theorem~\ref{thm:entropy} holds in the synthetic
-heavy-tailed regime (34/35 instances, Sinkhorn $\ell_1$
-residual $0.070\pm0.010$) but does \emph{not} transfer
-to real Mamba in\_proj activations (entropy decreases
-in all 80 real (layer, sample) pairs,
-$\ell_1$ residual $1.689\pm0.037$).
-This gap is reported not as a failure but as an
-actionable finding for future distribution-aware
-scheduling design.
+\item \textbf{Empirical observation on real SSM activations.}
+We demonstrate that entropy behavior differs
+significantly between synthetic heavy-tailed
+distributions and real Mamba activations,
+highlighting the importance of distribution-aware
+scheduler validation.
 
 \end{itemize}
 
+这会：
 
-% ============================================================
-% PATCH 2：将三个定理改为正式 amsthm 环境（强烈建议）
-% 位置：main.tex preamble（\begin{document} 之前）和 Section 4
-% 原因：用 \paragraph 声明定理不符合 NeurIPS 规范，
-%       reviewer 看到会直接扣分
-% ============================================================
+明显提高 reviewer perception。
 
-% ------- 在 preamble 中添加（\begin{document} 之前）-------
-\usepackage{amsthm}
-\newtheorem{theorem}{Theorem}[section]
-\newtheorem{remark}[theorem]{Remark}
-\newtheorem{corollary}[theorem]{Corollary}
+🔧 Patch 2 — Add Missing Limitation Section（强烈建议）
 
-% ------- Section 4.1 替换前 -------
-% \paragraph{Theorem 1 (Entropy Increase ...)}
+Reviewer喜欢：
 
-% ------- Section 4.1 替换后 -------
-\begin{theorem}[Entropy Increase Under Doubly-Stochastic
-Histogram Mixing]
-\label{thm:entropy}
-Let $p \in \Delta^m$ be the empirical histogram mass
-vector of activations before rotation, and let
-$q \in \Delta^m$ be the histogram mass vector after
-rotation using the same fixed bins.
-If there exists a doubly-stochastic matrix
-$B \in \mathbb{R}^{m \times m}$ such that $q = Bp$,
-then $H_{\mathrm{hist}}(q) \ge H_{\mathrm{hist}}(p)$.
-If $B$ is not a permutation and $p$ is non-uniform,
-the inequality is strict.
-\end{theorem}
+explicit limitations
 
-\begin{remark}[Conditional applicability]
-\label{rem:conditional}
-Theorem~\ref{thm:entropy} is conditional: it requires
-the post-rotation histogram to be representable as a
-doubly-stochastic mixing of the pre-rotation histogram
-over the same fixed bins.
-In the synthetic heavy-tailed prototype regime
-(35~instances), this condition holds with Sinkhorn
-$\ell_1$ residual $0.070 \pm 0.010$~(34/35 below~0.10).
-In real Mamba checkpoint activations
-(mamba-370m, layers~0--3, 80~(layer,sample) pairs),
-entropy \emph{decreases} in all cases
-(mean gain $-1.30 \pm 0.47$ nats,
-$\ell_1$ residual $1.689 \pm 0.037$),
-indicating that the doubly-stochastic condition does
-not hold for near-Gaussian in\_proj outputs.
-The theorem therefore motivates using the entropy
-signal in the synthetic calibration regime, not as
-an unconditional guarantee on real checkpoints.
-\end{remark}
+新增：
 
-% ------- Section 4.2 替换前 -------
-% \paragraph{Theorem 2 (Shared-Memory Depth Bound).}
+\section{Limitations}
 
-% ------- Section 4.2 替换后 -------
-\begin{theorem}[Shared-Memory Depth Bound]
-\label{thm:depth}
-Let $M_{\mathrm{shared}}$ denote the available shared
-memory per thread block, and let $C_{\mathrm{tile}}$
-denote the incremental memory footprint contributed by
-each additional fused operator under a fixed tile shape.
-Then the fusion depth $F$ must satisfy
-\[
-  F \;\le\; \frac{M_{\mathrm{shared}}}{C_{\mathrm{tile}}}.
-\]
-In practice, the prototype scheduler tracks
-per-operator costs $C_i$ and enforces
-$\sum_{i=1}^{F} C_i \le M_{\mathrm{shared}}$;
-the homogeneous form above exposes the first-order
-depth limit transparently.
-\end{theorem}
+The current work focuses on feasibility and mechanism
+validation rather than full deployment-grade execution.
 
-% ------- Section 4.3 替换前 -------
-% \paragraph{Theorem 3 (Variance Preservation ...)}
+Specifically:
 
-% ------- Section 4.3 替换后 -------
-\begin{theorem}[Variance Preservation with Reduced
-Coordinate Extremes]
-\label{thm:quant}
-Let $H \in \mathbb{R}^{d \times d}$ be a normalized
-Hadamard matrix and let $z = Hx$.
-Then total variance is preserved,
-$\|z\|_2 = \|x\|_2$,
-and the peak coordinate obeys
-\[
-  \|z\|_\infty \;\le\; \frac{\|x\|_1}{\sqrt{d}}.
-\]
-Consequently, for any clipping threshold $T > 0$,
-\[
-  \Pr\!\bigl(\|z\|_\infty > T\bigr)
-  \;\le\;
-  \Pr\!\Bigl(\|x\|_1 > T\sqrt{d}\Bigr).
-\]
-In the one-outlier regime $x = M e_r$,
-the peak magnitude is reduced from $M$ to exactly
-$M/\!\sqrt{d}$.
-\end{theorem}
+\begin{itemize}
 
+\item The proposed entropy-guided fusion policy
+has not yet been integrated into a fully fused
+operator-level CUDA kernel. Current results
+evaluate scheduling behavior and chunk-level
+execution rather than complete kernel fusion.
 
-% ============================================================
-% PATCH 3：在 Section 5.3 末尾添加超参数说明（必须）
-% 位置：main.tex，\subsection{Quantization and Kernel
-%        Configuration} 末尾
-% 原因：reviewer 必问 hand-tuned 问题；
-%       目前说明分散，需集中交代
-% ============================================================
+\item The theoretical entropy-increase property
+holds primarily under synthetic heavy-tailed
+activation distributions. Real pretrained
+Mamba activations exhibit entropy contraction
+under Hadamard rotation, which limits the
+generality of the theoretical motivation.
 
-% ------- 在该小节末尾追加 -------
-\paragraph{Hyperparameter status.}
-The fusion weights $(\alpha,\beta,\gamma) =
-(0.45, 0.35, 0.20)$ and default threshold
-$\tau = 0.52$ are hand-tuned prototype defaults
-rather than the result of a systematic search.
-The present revision supports them with
-(i)~a $\tau$-sweep over $\{0.45, 0.52, 0.60\}$,
-(ii)~a coarse $3\times3$ grid over
-$\alpha \in \{0, 0.45, 0.90\}$ and
-$\beta \in \{0, 0.35, 0.70\}$ with $\gamma$
-fixed at~0.20 (Table~\ref{tab:ablation_alpha_beta}),
-and (iii)~matched-depth arithmetic-only ablations that
-isolate the entropy term's contribution.
-A full joint search over $(\alpha,\beta,\gamma)$ remains
-future work.
-The key finding from the coarse grid is that neither
-entropy alone ($\alpha=0.45,\beta=0$, depth~$\approx1.1$)
-nor arithmetic intensity alone ($\alpha=0,\beta=0.70$,
-depth~$2.33$) achieves the fusion depth or latency
-reduction of the combined default
-($\alpha=0.45,\beta=0.35$, depth~$3.15$--$3.50$),
-confirming that the entropy term provides independent
-discriminative power.
+\item Hyperparameter weights
+$(\alpha,\beta,\gamma)$ are manually selected.
+A full hyperparameter search remains future work.
 
+\end{itemize}
 
-% ============================================================
-% PATCH 4：补充 ablation 总结表（审稿人必问）
-% 位置：main.tex Section 7（Ablation Studies）开头
-% 原因：ablation 结论目前只在附录，主文缺汇总；
-%       reviewer 不应该翻附录才能看到核心消融结果
-% ============================================================
+这可以：
 
-% ------- 替换前 -------
-% All five prototype ablation studies ... are reported in
-% Appendix A.9.
+极大减少 reviewer hostility
 
-% ------- 替换后 -------
-Table~\ref{tab:ablation_summary} summarises the key
-findings across the five prototype ablation axes.
-Full per-bucket traces are in Appendix~A.9; all values
-are Tier-1 surrogate timings from the deterministic
-Python cost model and should not be read as GPU hardware
-measurements.
+🔧 Patch 3 — Add Ablation Table Template（非常关键）
+
+你现在缺：
+
+systematic ablation。
+
+建议：
+
+加入：
 
 \begin{table}[t]
 \centering
-\caption{%
-  Ablation summary across five axes (FP16 prototype,
-  ultra-long bucket unless noted).
-  All latency values are Tier-1 surrogate timings.
-  ``Depth'' is mean fusion group depth.
-  Lower latency and lower diagnostic proxy are better.}
-\label{tab:ablation_summary}
-\begin{tabular}{llccc}
+\caption{Ablation of fusion score components.}
+\begin{tabular}{lccc}
 \toprule
-Axis & Configuration
-  & Depth & Latency (ms)$\downarrow$
-  & Diag.\ Proxy$\downarrow$ \\
+Configuration & Latency (ms) & Depth & Entropy Gain \\
 \midrule
-\multirow{4}{*}{Score weights}
-  & No signal ($\alpha{=}\beta{=}0$)
-    & 1.00 & 100.94 & -- \\
-  & Arith.-only ($\alpha{=}0,\beta{=}0.70$)
-    & 2.33 & 83.79  & -- \\
-  & Entropy-only ($\alpha{=}0.45,\beta{=}0$)
-    & 1.08 & 99.07  & -- \\
-  & \textbf{Default} ($\alpha{=}0.45,\beta{=}0.35$)
-    & \textbf{3.50} & \textbf{77.97} & \textbf{0.000} \\
-\midrule
-\multirow{3}{*}{Threshold $\tau$ (W4A8)}
-  & Low (0.45)   & 3.38 & 57.62 & 0.0722 \\
-  & Medium (0.52)& 3.14 & 58.83 & 0.0595 \\
-  & High (0.60)  & 2.54 & 61.52 & 0.0333 \\
-\midrule
-\multirow{2}{*}{Tiling policy}
-  & Static       & 2.33 & 87.22 & --     \\
-  & Entropy-guided & 3.50 & 77.97 & --   \\
-\midrule
-\multirow{3}{*}{Bit width}
-  & FP16 (Ours)  & 3.50 & 77.97  & 0.000 \\
-  & W8A8 (Ours)  & 3.50 & 77.10  & 0.017 \\
-  & W4A8 (Ours)  & 3.50 & 76.50  & 0.087 \\
-\midrule
-\multirow{2}{*}{Sequence length}
-  & Short (1k--2k):  Ours vs Static & -- & -- & $1.087\times$ \\
-  & Ultra-long (64k): Ours vs Static & -- & -- & $1.119\times$ \\
+Full Score ($\alpha,\beta,\gamma$) & 1.10 & 3.50 & 0.18 \\
+No Entropy ($\alpha=0$) & 1.42 & 2.70 & 0.00 \\
+No AI ($\beta=0$) & 1.31 & 3.10 & 0.15 \\
+No Memory ($\gamma=0$) & 1.27 & 3.60 & 0.19 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+Reviewer 一定会问这个
 
-% ============================================================
-% PATCH 5：软化 Table 3 的表述（非常重要）
-% 位置：main.tex Section 6.4，Table 3 caption 及正文
-% 原因：chunk scheduling ≠ operator fusion；
-%       reviewer 100% 会质疑这一点
-% ============================================================
+🔧 Patch 4 — Fix Theorem Interpretation（非常重要）
 
-% ------- Table 3 caption 替换前 -------
-% Real-GPU three-policy chunked selective-scan comparison ...
+你现在理论表达：
 
-% ------- Table 3 caption 替换后 -------
-\caption{%
-  Real-GPU chunked selective-scan scheduling comparison
-  (RTX~3070 / CUDA~12.8 / WSL2,
-  dim=1024, d\_state=16, FP16, seq\_len=4096,
-  $n$=30 repeats after 5~warmup).
-  \textbf{Scope note:} this experiment demonstrates
-  kernel-level scheduling differences through
-  \emph{chunk-size selection}, which is the practical
-  realization of fusion depth at the
-  selective\_scan\_fn granularity---not an
-  end-to-end operator-fusion comparison across
-  arbitrary SSM operator chains.
-  Chunk size is the number of timesteps per
-  \texttt{selective\_scan\_fn} call; larger chunks
-  mean fewer kernel launches and better HBM coalescing.
-  COREY selects chunk size from activation entropy
-  ($H = 4.60$ nats $\to$ chunk~$=256$);
-  Static uses a fixed value of 64;
-  No-Fusion uses a pure Python timestep loop
-  (no fused Triton call, models maximum
-  kernel-fragmentation overhead).
-  The entropy measurement for COREY requires a
-  one-time Python histogram pass (164~ms here);
-  in a compiled deployment this cost amortises over
-  batches and would be replaced by a lightweight
-  CUDA histogram.}
+太强。
 
-% ------- Section 6.4 正文中 "364.9× lower latency" 之后追加 -------
-\noindent\textit{Scope clarification.}
-We emphasise that Table~\ref{tab:chunked_scan}
-measures \emph{chunk-size scheduling} within a single
-operator type (\texttt{selective\_scan\_fn}),
-not operator fusion across heterogeneous SSM layers.
-The 3.24$\times$ gain over static-size scheduling
-reflects fewer Triton kernel launches and improved
-HBM coalescing rather than reduced intermediate-tensor
-materialisation across operator boundaries.
-End-to-end operator fusion across the full SSM
-forward pass (projection, scan, elementwise updates)
-on real checkpoints remains future work, as stated in
-the scope-of-claims in Section~\ref{sec:scope}.
+必须 soften。
 
+替换：
 
-% ============================================================
-% PATCH 6：在 Limitations 中补充 proxy circularity（必须）
-% 位置：main.tex Section 8，条目 4 之后
-% 原因：reviewer 一定会质疑 quality-drop proxy 是循环定义；
-%       现有 Limitations 只简略提及，需要更明确的表述
-% ============================================================
+This theorem establishes that entropy
+will increase after Hadamard rotation.
 
-% ------- 在 Limitations 第 4 条之后插入 -------
-\item \textbf{Proxy circularity.}
-The low-bit diagnostic proxy penalises
-over-fusion in low-entropy regions and awards
-a stabilisation bonus proportional to entropy
-gain---both of which are the same signals used
-to construct COREY's scheduling criterion.
-This circularity means the proxy \emph{cannot}
-serve as independent evidence that COREY improves
-quantization quality; it is suitable only as an
-internal scheduler diagnostic.
-Real perplexity or downstream task accuracy on
-quantized checkpoints is required to substantiate
-any quality claim, and remains future work.
+改为：
 
-\item \textbf{Chunk scheduling vs.\ operator fusion.}
-The kernel-level comparison in Table~\ref{tab:chunked_scan}
-demonstrates entropy-guided \emph{chunk-size selection}
-within a single operator, not multi-operator fusion.
-A reviewer reading this table as evidence of the
-paper's main operator-fusion claim would be misled;
-the distinction is stated in Section~\ref{sec:scope}
-and repeated in Table~\ref{tab:chunked_scan}'s caption,
-but practitioners should verify the fusion scope
-before applying COREY to heterogeneous operator chains.
+This theorem establishes that entropy
+can increase after Hadamard rotation
+under specific histogram-mixing
+conditions.
 
+这一步：
 
-% ============================================================
-% PATCH 7：LongBench 分数异常的说明段（审稿人会质疑）
-% 位置：main.tex Section 6.6 或 Table 5 caption 末尾
-% 原因：WikiText-103 PPL=809 远高于公开 Mamba-370M
-%       结果（约 15），reviewer 会认为实验有误
-% ============================================================
+非常关键。
 
-% ------- 在 Table 5 caption 末尾追加 -------
-\textbf{Perplexity note.}
-WikiText-103 and PG19 values (e.g., PPL=809 for
-Mamba-370M) substantially exceed published
-single-pass leaderboard numbers because the
-repository harness applies teacher forcing
-independently to at most 20 truncated segments
-without rolling or strided evaluation across the
-full test set.
-These figures are therefore within-repository
-comparators under a fixed protocol, \emph{not}
-comparable to officially reported perplexity values.
-MultifieldQA-EN exact-match scores are zero across
-all models because 32-token greedy decoding
-consistently produces answers that do not match
-gold reference strings under strict exact-match
-evaluation; this is expected behaviour for
-open-ended generation and does not indicate a
-prompt or harness defect.
+否则 reviewer 会质疑 correctness。
 
+🔧 Patch 5 — Add Missing System Diagram（强烈建议）
 
-% ============================================================
-% PATCH 8：Abstract 末尾添加 scope qualifier（强烈建议）
-% 位置：main.tex \begin{abstract} ... \end{abstract}
-% 原因：当前 abstract 读起来像有真实 GPU speedup，
-%       但正文说是 prototype；需要一句话对齐期望
-% ============================================================
+必须加入：
 
-% ------- 在 abstract 最后一句之前插入 -------
-% 原最后一句：
-% "A full method-versus-baseline comparison on real fused
-%  kernels remains future work."
-%
-% 替换整个 abstract 最后两句为：
-
-Tier-1 results are mechanism diagnostics from a
-deterministic Python cost model, not GPU hardware
-measurements.
-Tier-2 results confirm that the entropy hook runs
-on real GPU activations (RTX~3070/3090) without
-measurable overhead or quality regression, and that
-entropy-guided chunk-size selection achieves
-$3.24\times$ lower latency than static-size scheduling
-on the real \texttt{selective\_scan\_fn} Triton kernel.
-A full end-to-end method-versus-baseline comparison
-on real fused kernels across all SSM operator types
-remains future work.
-
-
-% ============================================================
-% PATCH 9：在 Related Work 添加两段缺失引用（建议）
-% 位置：main.tex Section 2，\paragraph{Operator fusion} 末尾
-% 原因：缺少对 FlashDecoding 和 compiler-level auto-fusion
-%       工作的引用，reviewer 会认为 related work 不完整
-% ============================================================
-
-% ------- 追加到 \paragraph{Operator fusion and
-%          memory-aware scheduling.} 末尾 -------
-FlashDecoding~\citep{dao2023flashdecoding} further
-extends IO-aware tiling to the multi-query decoding
-regime, demonstrating that fine-grained memory
-scheduling produces measurable wall-clock gains at the
-kernel level; COREY pursues the same philosophy but
-uses activation entropy rather than arithmetic
-intensity as the primary scheduling signal.
-Compiler-level fusion frameworks such as
-nvFuser~\citep{nvfuser2022} and XLA's HLO
-fusion~\citep{xla2019} pursue graph-level
-materialisation reduction for general tensor
-workloads; our runtime entropy signal complements
-these static approaches by adapting to prompt-dependent
-distributional shifts that a static graph cannot
-anticipate.
-
-
-% ============================================================
-% PATCH 10：ref.bib 追加 FlashDecoding 条目
-% 位置：ref.bib 末尾
-% ============================================================
-
-@misc{dao2023flashdecoding,
-  title   = {{Flash-Decoding} for Long-Context Inference},
-  author  = {Dao, Tri and Haziza, Daniel and Massa,
-             Francisco and Szlam, Artur},
-  year    = {2023},
-  url     = {https://crfm.stanford.edu/2023/10/12/flashdecoding.html}
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{corey_pipeline.pdf}
+\caption{
+Overview of the COREY execution pipeline.
+Activation tensors are first rotated
+using Hadamard reparameterization,
+followed by entropy estimation,
+fusion boundary selection,
+and tile assignment.
 }
+\end{figure}
 
+没有 pipeline 图：
 
-% ============================================================
-% 修改优先级汇总（供参考，不需要放入论文）
-% ============================================================
-%
-%  P0（投稿前必须完成）
-%  - PATCH 1：重写 Contributions
-%  - PATCH 5：软化 Table 3 表述（chunk ≠ fusion）
-%  - PATCH 6：补充 proxy circularity limitation
-%  - PATCH 8：Abstract scope qualifier
-%
-%  P1（强烈建议，影响接受概率）
-%  - PATCH 2：定理改为 amsthm 环境
-%  - PATCH 3：超参数状态说明集中化
-%  - PATCH 4：Ablation 汇总表移入主文
-%  - PATCH 7：LongBench PPL 异常说明
-%
-%  P2（建议，影响 reviewer 好感度）
-%  - PATCH 9：Related Work 补充引用
-%  - PATCH 10：ref.bib 补充 FlashDecoding
-%
-% ============================================================
+NeurIPS reviewer 会烦。
+
+7️⃣ 最关键的真实建议（不是 LaTeX）
+
+如果你想：
+
+NeurIPS 真接受
+
+必须补：
+
+⭐ 必做实验（最关键）
+
+至少实现：
+
+COREY fused kernel
+vs
+Static fusion kernel
+vs
+Native Mamba
+
+测：
+
+latency
+HBM traffic
+throughput
+
+否则：
+
+90% reject
+
+最终结论
+
+当前论文：
+
+技术上有深度
+思路新颖
+理论不弱
+
+但：
+
+实验仍然是最大短板
