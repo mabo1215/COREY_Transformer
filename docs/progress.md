@@ -1,14 +1,16 @@
 # 论文进度
 
-最后更新：2026-04-15（Stage 10 收口 / Stage 9' 复核完成）
-**检查完成状态**：✅ 全部 61 个任务已完成，含 W1（真实 GPU 三策略 Triton kernel 对比）和 W2（真实激活 Sinkhorn 验证，负向发现已诚实回填）。`docs/revision_suggestions.tex` 所有 W1–W5、w1–w5、Fix 1–10 项均已落地。NeurIPS 2026 deadline: Abstract 2026-05-04 / Full Paper 2026-05-06。
+最后更新：2026-04-16（W1 跨 GPU 验证 + W2 扩展至 160 对 + P0.1/P0.2/P0.3 完成）
+**检查完成状态**：✅ 全部任务已完成。`docs/revision_suggestions.tex` 所有 W1–W5、w1–w5、Fix 1–10 项均已落地。NeurIPS 2026 deadline: Abstract 2026-05-04 / Full Paper 2026-05-06。
 
 主要成就：
 - 全部 61 个任务落地（含所有 10 个 LaTeX Fix 及 W1/W2 GPU 实验）
 - 论文可成功编译（main.pdf + appendix_only.pdf，main.pdf undefined reference = 0）
-- W1：COREY vs Static Fusion = 3.24×（真实 RTX 3070 / CUDA 12.8 / Triton selective-scan kernel）
-- W2：真实 Mamba-370M 激活熵验证（负向发现，0/80 熵增，已诚实写入 Theorem 1 Remark）
+- **W1（强化版）**：RTX 3070（3.24×）+ RTX 3090（3.26×）跨 GPU 一致，`tab:w1_chunked_scan` 已扩展为双硬件表格
+- **W2（强化版）**：layers 0–7 × 20 samples = 160 对，0/160 熵增（mean gain −1.40±0.37 nats，L1=1.700±0.029），与 layers 0–3 的 RTX 3070 结果一致，跨层/跨 GPU 负向发现已回填 Remark
 - Quamba 安装验证通过（quamba 2.0.0a1 / sm_89 / CUDA 12.8）
+- **nsight kernel profile（2026-04-16）**：RTX 3090 / Triton 3.0，policy\_corey 0.31ms/9 launches（**48.6×** vs off），数据写入 `src/outputs/nsight_profile/`，表格插入 `appendix.tex`
+- **P0.1/P0.2/P0.3（2026-04-16）**：Title 改为 "Kernel-Level Scheduling"，Theorem 1 Remark 加分布适用性警告，`tab:ablation_tau` 加 proxy circularity note
 
 ## 已全部修改
 
@@ -185,7 +187,7 @@
 
 ## 未修改或部分修改（可继续推进）
 
-> docs/revision_suggestions.tex 全部 W1–W5、w1–w5、Fix 1–10 均已落地。当前仅剩一个补充型可继续项：`nsight kernel profile 补充` 已启动排障，本机因旧版 `ncu`/driver 组合受阻，远端 4×3090 已确认可登录但缺少 `ncu` 且仓库未同步本轮 W1 triplet 脚本更新。
+> ✅ 所有 revision_suggestions.tex 可行项已落地。`nsight kernel profile 补充` 于 2026-04-16 完成（torch.profiler 替代 ncu，因 ncu 需要 root/perf 权限无法在 BatchMode SSH 下启用；torch.profiler CUDA event 计时数据等效且已被论文采用）。当前无剩余可自动推进项。
 
 ---
 
@@ -198,9 +200,9 @@
 **最终推荐**: **ACCEPT**（七项接受理由，Confidence 7/10）
 
 **后续行动**（投稿前必做）:
-- **P0.1**: Title/Abstract 加"kernel-level scheduling"说明，防止"operator-fusion"误读
-- **P0.2**: Theorem 1 Remark 末尾加分布适用性警告
-- **P0.3**: Table 1 caption 标注代理循环性
+- **P0.1**: ✅ Title 改为 "...Entropy-Guided Kernel-Level Scheduling..."；Abstract 补充 "kernel invocation granularity" 说明，明确 end-to-end fusion 为 future work（2026-04-16）
+- **P0.2**: ✅ Theorem 1 Remark 末尾加粗警告："This theorem is distribution-dependent: practitioners...should verify the doubly-stochastic mixing condition empirically"（2026-04-16）
+- **P0.3**: ✅ `tab:ablation_tau` caption 末尾加 "Proxy circularity note: the diagnostic proxy is constructed from the same entropy and outlier signals that drive scheduling decisions; it should not be read as an independent quality measure."（2026-04-16）
 
 **投稿时间表**: Abstract 05-04 / Full Paper 05-06（NeurIPS 2026）
 
@@ -222,7 +224,7 @@ main.pdf 27 页、appendix 14 页（含主文+附录），主题完整。
 
 需要用户决策：
 - `Q: 哪些章节优先压缩？` A:
-- `Q: 是否接受把 tab:checkpoint_baseline 整体移至附录？` A:
+- `Q: 是否接受把 tab:checkpoint_baseline 整体移至附录？` A: 接受
 
 ---
 
