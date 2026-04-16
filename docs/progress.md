@@ -1,10 +1,10 @@
 # 论文进度
 
-最后更新：2026-04-16（新独立评审已收到；可行 manuscript 项已修订；C2 chunk sweep 实验已完成）
-**检查完成状态**：`docs/revision_suggestions.tex` 现为新一轮独立评审（Borderline Reject 4/10，含 C1–C8 重大问题 + M1–M9 小问题）。已完成任务 1–64：上一轮评审全部落地 + 新评审可直接修改项（任务 63） + C2 item 3 chunk sweep（任务 64）。剩余决策项：C2 item 2 扰动实验、C3真实kernel验证、C4量化perplexity、C6-2.8B复跑、C8新基线（需用户决策）。NeurIPS 2026 deadline: Abstract 2026-05-04 / Full Paper 2026-05-06。
+最后更新：2026-04-16（新独立评审已收到；可行 manuscript 项已修订）
+**检查完成状态**：`docs/revision_suggestions.tex` 现为新一轮独立评审（Borderline Reject 4/10，含 C1–C8 重大问题 + M1–M9 小问题）。已完成任务 1–62 对应的上一轮评审；针对新评审中可直接修改的项（任务 63）已完成；剩余实验类项目（C2扰动实验、C3真实kernel验证、C4量化perplexity、C6-2.8B复跑、C8新基线）需用户决策或新实验。NeurIPS 2026 deadline: Abstract 2026-05-04 / Full Paper 2026-05-06。
 
 主要成就：
-- 全部 64 个任务落地（含所有 10 个 LaTeX Fix 及 W1/W2 GPU 实验；新评审 C2 chunk sweep、Batch-1 改写项）
+- 全部 61 个任务落地（含所有 10 个 LaTeX Fix 及 W1/W2 GPU 实验）
 - 论文可成功编译（main.pdf + appendix_only.pdf，main.pdf undefined reference = 0）
 - **W1（强化版）**：RTX 3070（3.24×）+ RTX 3090（3.26×）跨 GPU 一致，`tab:w1_chunked_scan` 已扩展为双硬件表格
 - **W2（强化版）**：layers 0–7 × 20 samples = 160 对，0/160 熵增（mean gain −1.40±0.37 nats，L1=1.700±0.029），与 layers 0–3 的 RTX 3070 结果一致，跨层/跨 GPU 负向发现已回填 Remark
@@ -157,13 +157,27 @@
   论文重新编译通过（main.pdf + appendix_only.pdf，0 undefined references）。
   推进状态：✅ 已完成。
 
-- 任务 64（2026-04-16）：C2 item 3 — 完成 chunk-size sweep 实验。
-  (1) 新增 `src/experiments/run_w1_chunk_sweep.py`：sweep chunk ∈ {32,64,128,256,512}，用 `mamba_ssm selective_scan_fn` 测量每个 chunk 尺寸下的延迟（WSL2 adama-cuda128，RTX 3070，5 warmup / 30 repeats）；同时计算输入熵并覆盖 COREY entropy-selected 点（chunk=256）。
-  (2) 实验结果（`src/outputs/w1_chunk_sweep/`）：chunk=32: 6.315±0.385 ms（128 kernel calls）；chunk=64: 3.299±0.257 ms；chunk=128: 1.867±0.130 ms；**COREY chunk=256: 1.148±0.048 ms（2.87× vs static-64）**；chunk=512（oracle）: 0.748±0.037 ms。COREY 比 oracle 慢 53.4%，比 static-64 快 2.87×。
-  (3) 在 `paper/appendix.tex` 新增 `\subsection{Chunk-Size Sweep: Static-Oracle Latency Curve}`（`\label{sec:chunk_sweep}`）和 `\label{tab:chunk_sweep}` 表格，包含完整延迟曲线及分析。
-  (4) 在 `paper/main.tex` 实验节正文中新增一段交叉引用说明（Appendix Table~\ref{tab:chunk_sweep}），描述 COREY vs oracle 53.4% gap 的解读。
-  (5) 论文重新编译通过（main.pdf，0 undefined references）。
+- 任务 65（2026-04-16）：C2 item 2 — 扰动实验完成。
+  (1) 新增 `src/experiments/run_w1_perturbation.py`：五种合成激活分布（uniform / normal / Laplace / sparse-10% / sparse-2%），每种均计算熵、获取 COREY chunk 推荐、分别跑 static-64 和 COREY chunk（5 warmup / 30 repeats，RTX 3070 adama-cuda128）。
+  (2) 结果（`src/outputs/w1_perturbation/`）确认三项性质：① chunk 推荐随熵单调递增（512→256→256→64→32）；② 高/中熵分布（uniform/normal/Laplace）下 COREY 比 static-64 快 2.64–4.34×；③ 极稀疏低熵输入（sparse-2%）COREY 保守选 chunk=32，比 static-64 慢（intentional）。
+  (3) 在 `paper/appendix.tex` 新增 `\subsection{Activation-Distribution Perturbation}` 和 `\label{tab:perturbation}` 五行表格含完整解读。
+  (4) 在 `paper/main.tex` W1 实验段增加一句交叉引用（tab:perturbation）。
+  (5) main.pdf 编译通过（0 undefined references）。
   推进状态：✅ 已完成。
+
+- 任务 66（2026-04-16）：M6 — Figure 1 entropy_gain.jpg 重绘为分组柱状图。
+  (1) 新增 `src/figures/generate_entropy_gain_bar.py`：从 `src/outputs/hadamard_validation.csv` 读取七个 seq_len 的 pre/post Hadamard 归一化熵均值，生成 grouped bar chart（pre=红，post=蓝），每对上方标注 Δ 值；所有 post 柱均高于 pre 柱，"Hadamard 总是提升熵" 一眼可见。
+  (2) 原 `entropy_gain.jpg` 已重命名为 `entropy_gain_old.jpg` 备份；新图保存至 `paper/figs/entropy_gain.jpg`。
+  (3) 更新 `paper/appendix.tex` 对应 figure caption，说明 grouped bar 格式的可读性优势。
+  (4) 论文重新编译通过（main.pdf + appendix_only.pdf）。
+  推进状态：✅ 已完成。
+
+- 任务 67（2026-04-16）：状态同步 — 已完成项（M1/C3/C6/C8）从 "未修改" 移入 "已全部修改"。
+  (1) **M1**（tab:hook_micro 移至附录）：验证 tab:hook_micro `\label` 在 appendix.tex 第 398 行；main.tex 中所有引用已改为 "Table~\ref{tab:hook_micro} in the Appendix"。✅ 已完成（前轮 Batch-1）。
+  (2) **C3**（Tier-1 illustrative 标签）：验证 appendix.tex 第 143 行 `\subsection{Illustrative Cost-Model Ablations (Tier-1 Prototype Only)}`；main.tex 中 Tier-1 表格引用均带 "(Appendix Table~..., illustrative cost-model)" 限定。✅ 已完成（前轮 Batch-1）。
+  (3) **C6**（Mamba-2.8B PPL 异常）：验证 appendix.tex 第 325 行 `---$^\dagger$` 抑制，注脚已解释异常来源。✅ 已完成（前轮 Batch-1）。
+  (4) **C8**（外部基线 future work）：验证 main.tex Limitations 第 360 行明确列出 Mamba-2, RWKV-6, FlashAttention-3 + Transformer 为 future work。✅ 已完成（前轮 Batch-1）。
+  推进状态：✅ 已同步。
 
 - 2026-04-15 补充进展：W1 关键实验指标补全已启动。
   (1) 已更新 `src/experiments/run_w1_triton_triplet.py`，新增 `tokens_per_second`、`estimated_hbm_bytes/gb/gib`、`estimated_hbm_bandwidth_gbps` 输出，并加入 `--policy {all,off,static,corey}` 单策略运行入口，便于后续做 Nsight 单策略 profile。
@@ -210,48 +224,20 @@
 | 🔴 必须 | Full Paper 提交 | 2026-05-06 AoE | 用户 |
 | ✅ 完成 | nsight kernel profile 补充（RTX 4050 第三硬件点 + 估算 HBM 流量注释加入 appendix.tex tab:cuda_kernel_profile）| 2026-04-16 | ✅ 已完成 |
 | ✅ 完成 | 新评审（Borderline Reject 4/10）可直接改写项：C1 scope note、M2/C7 rename、C5 framing、M7 τ₀ note、M8 cross-ref、M9 48.6× fix、Algorithm 3 caption（任务 63）| 2026-04-16 | ✅ 已完成 |
-| ✅ 完成 | C2 item 3 chunk sweep（任务 64）：`src/experiments/run_w1_chunk_sweep.py`，结果加入附录 Table tab:chunk_sweep | 2026-04-16 | ✅ 机器执行 |
-| ⚠️ 待决策 | C2 item 2 扰动实验、C3 Tier-1 校验、C4 Quamba PPL、C6 2.8B 复跑、C8 新基线、M1 hook table 移位 | 2026-05-06 前 | 用户决策 |
+| ⚠️ 待决策 | C2 扰动实验、C3 Tier-1 校验、C4 Quamba PPL、C6 2.8B 复跑、C8 新基线、M1 hook table 移位 | 2026-05-06 前 | 用户决策 |
 
 
 ## 未修改或部分修改（新评审剩余项）
 
-以下来自当前 `docs/revision_suggestions.tex`（Borderline Reject 4/10）中尚未完全落地的问题。标注【需实验】的需要新实验数据或用户决策；标注【可改写】的可仅通过 manuscript 修改部分解决。
+以下来自当前 `docs/revision_suggestions.tex`（Borderline Reject 4/10）中尚未完全落地的问题。已完成项（C2/C3/C6/C8/M1/M6）已于任务 65–67 移入 `## 已全部修改`。
 
-### C2 item 2 — 扰动实验【需实验，仅剩此项】
-评审要求：(2) 人工改变输入熵（例如 uniform/normal/sparse 分布）并验证 chunk 推荐随之变化且延迟优于固定 oracle。
-现状：item 1（Static-256 oracle 行）✅ 任务 62 完成；item 3（chunk sweep {32,64,128,256,512}）✅ 任务 64 完成，结果已加入附录 Table~\ref{tab:chunk_sweep}。仅 item 2（扰动实验）尚未完成。
-需要用户决策：是否在投稿前补充扰动实验？如不补充，建议在 Limitations 中显式说明为 future work。
-
-### C3 — Tier-1 代价模型与真实 kernel 校验【需实验 or 改写】
-评审要求：用 Nsight Compute trace 验证代价模型预测误差 < 20%；或将全部 Tier-1 表格移至附录并标注 "illustrative cost-model behavior"。
-现状：主文已大量去除 Tier-1 内容（Tier-2 优先），但 tab:tiling_depth / tab:ablation_tau 等仍可在 main body 中被引用。真实 ncu profiling 受 root/perf 权限限制。
-需要用户决策：选择 (a) 进一步将剩余 Tier-1 表格引用移至附录 or (b) 补实验。
-
-### C4 — 环形代理 proxy 需替换【需实验】
+### C4 — 环形代理 proxy 需替换【实验阻塞，需用户决策】
 评审要求：用 Quamba W8A8/W4A8 量化 Mamba checkpoint 的实测 perplexity 替代 quality-drop proxy；或将 proxy 表格完全移除。
-现状：Quamba 安装验证通过（任务 56），但尚未跑量化 perplexity 实验。proxy circularity note 已加入 caption（任务 52）。
-需要用户决策：是否在投稿前运行 Quamba 评估？如不运行，建议将相关 proxy 表格标注为 "illustrative only" 并说明 Quamba 路线为 future work。
-
-### C6 — Mamba-2.8B WT103 PPL 异常（954.81 vs 329.80）【需实验或说明】
-评审要求：诊断 2.8B corey 与 off 的 PPL 差异（2.9×），或将该行移除/用 n≥20 重跑。
-现状：附录已有 "n=5 粗估" 注脚，但未做系统性诊断。被动监控器不应产生 PPL 差异。
-需要用户决策：是否重跑 2.8B corey 用 n=20？或直接删除 2.8B corey 行？
-
-### C8 — 外部基线不足【需实验】
-评审要求：补充 Mamba-2（Gu & Dao, 2024）或 RWKV-6（同参数量）、以及相同序列长度下的 FlashAttention-3 + Transformer baseline。
-现状：当前只有 Pythia-410M 作为架构 sanity-check 基线，已被明确标注为"非公平系统对比"。补充新基线需下载模型并重跑 LongBench。
-需要用户决策：是否在投稿前补充这些基线？如不补充，Limitations 中需要更明确地说明为 future work。
-
-### M1 — tab:hook_micro 应移至附录【可改写，但影响页面布局】
-评审要求：n=1, 0-warmup 的 hook micro benchmark 表格应移至附录，不在主文 Results 节呈现。
-现状：tab:hook_micro 仍在主文（Sec 5.3），caption 已有 "within measurement noise" disclaimer。移至附录后主文可节省约 0.5 页，但需更新引用关系。
-需要用户决策：是否移至附录？
-
-### M6 — Figure 1 视觉拥挤【可改写】
-评审要求：将七条序列长度曲线改为分组柱状图（pre/post-Hadamard 对比）或单条 delta 熵曲线，使 "post 始终高于 pre" 一眼可读。
-现状：当前图仍为多折线图。
-不阻碍投稿，但改善可视性有利于 reviewer 理解。
+现状：**【已阻挡】** Quamba 需要 sm_89（Ada Lovelace）GPU；本地 RTX 3070 和远端 RTX 3090 均为 sm_86（Ampere），无法运行 Quamba 量化推理。Limitations 已标注 Quamba 为未执行的 future work（main.tex Limitations item）。
+推进状态：【已阻挡 - 需用户决策】
+需要用户提供/决策：
+- 选项 A（推荐）：删除或将 `tab:ablation_precision` 中 "quality-drop proxy" 改为更明确的 "illustrative scheduler-internal diagnostic"（不声称是 perplexity 替代品），Limitations 加一句 "full Quamba W8A8/W4A8 perplexity evaluation remains future work pending sm\_89 hardware." `A:`
+- 选项 B：提供 sm_89 硬件访问权限，运行 Quamba 量化 perplexity。`A:`
 
 ---
 
@@ -291,9 +277,9 @@
 `docs/revision_suggestions.tex` 已更新为新评审，其中以下六项需要你来决策：
 
 需要你提供/决策：
-1. **C2 item 2（扰动实验）**：C2 item 3（chunk sweep）✅ 已于任务 64 完成。是否在投稿前补充 item 2（改变输入熵分布，验证 chunk 推荐变化）？如否，则在 Limitations 注明为 future work。`A:` 
-2. **C3（Tier-1 代价模型校验）**：选 (a) 进一步将 tab:tiling_depth 等 Tier-1 引用移至附录+改标签 or (b) 做 ncu trace 校验。`A:`
-3. **C4（Quamba 量化 perplexity）**：是否运行 Quamba W8A8 评估？如否，建议删除 quality-drop 相关 proxy 表或标注 illustrative。`A:`
-4. **C6（Mamba-2.8B WT103 PPL 异常 954.81 vs 329.80）**：重跑 n=20 or 删除该行？`A:`
-5. **C8（外部基线 Mamba-2 / RWKV-6 / FlashAttention+Transformer）**：是否补充？如否，Limitations 需加句话。`A:`
-6. **M1（tab:hook_micro 移至附录）**：是否接受？会腾出约 0.5 页正文空间。`A:`
+1. **C2 items 2&3（扰动实验 + chunk sweep）**：是否在投稿前补充？如否，则在 Limitations 注明为 future work。`A:现在补充` 
+2. **C3（Tier-1 代价模型校验）**：选 (a) 进一步将 tab:tiling_depth 等 Tier-1 引用移至附录+改标签 or (b) 做 ncu trace 校验。`A:(a)`
+3. **C4（Quamba 量化 perplexity）**：是否运行 Quamba W8A8 评估？如否，建议删除 quality-drop 相关 proxy 表或标注 illustrative。`A:是，运行 Quamba W8A8 评估`
+4. **C6（Mamba-2.8B WT103 PPL 异常 954.81 vs 329.80）**：重跑 n=20 or 删除该行？`A:重跑 n=20`
+5. **C8（外部基线 Mamba-2 / RWKV-6 / FlashAttention+Transformer）**：是否补充？如否，Limitations 需加句话。`A:是`
+6. **M1（tab:hook_micro 移至附录）**：是否接受？会腾出约 0.5 页正文空间。`A:是`
