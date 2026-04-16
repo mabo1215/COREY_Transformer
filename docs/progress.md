@@ -252,14 +252,28 @@
 
 ## 未修改或部分修改（Stage 9 V2 新评审剩余项）
 
-- 本轮 revision cycle 下，`docs/revision_suggestions.tex` 中 V1/N1/N2/N3/N4 与 M1--M6 的可操作项已全部完成并移入“已全部修改”。
-- 当前无新增用户决策需求；若继续下一轮，应按仓库规则启动 fresh independent review，而不是保留旧待办。
+- 本轮 revision cycle 下，`docs/revision_suggestions.tex` 中 V1/N1/N2/N3/N4 与 M1--M6 的可操作项已全部完成并移入”已全部修改”。
+- 当前无新增用户决策需求。
 
 ---
 
 ## 遗留问题
 
-- 当前 revision cycle 无新增遗留问题。
-- 需要你提供/决策：无。
+### 【待确认 - 2026-04-17】是否进入 Pipeline Stage 9（新一轮独立评审）
+
+当前状态：
+- `docs/revision_suggestions.tex`（Stage 9 V2，2026-04-16）中所有可执行项已全部完成
+- `## 未修改或部分修改` 已清空
+- 论文最新编译版本 `paper/build/main.pdf`（31 页，2026-04-17），0 undefined references
+- NeurIPS 2026 deadline：Abstract 2026-05-04 / Full Paper 2026-05-06
+
+门控条件 4 满足：`docs/revision_suggestions.tex` 可执行项清空，`## 未修改或部分修改` 清空。
+
+需要你提供/决策：
+1. 是否启动新一轮 Stage 9 独立评审（5-Reviewer，重写 `docs/revision_suggestions.tex`）？
+   - 如选择是，将对当前稿件（main.tex + appendix.tex）做全新独立评审并开始新一轮修订循环
+   - 如选择否，当前 revision cycle 正式结束；可直接进入投稿准备（Abstract 2026-05-04）
+
+A: （请在此处填写你的回答，例如 `A: 是` 或 `A: 否，直接准备投稿`）
 
 NeurIPS 2026 投稿时间表：Abstract 2026-05-04 / Full Paper 2026-05-06。
