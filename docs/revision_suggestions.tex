@@ -1,476 +1,214 @@
-% =============================================================
-% NeurIPS 2026 — Stage 9 Independent Review: COREY
-% Fresh 5-Reviewer Panel (EIC + R1 + R2 + R3 + DA)
-% Conducted after prior review cycle (C1--C8, M1--M9) fully addressed.
-% Generated: 2026-04-16 | Pipeline Stage 9
-% =============================================================
-
-\documentclass[11pt]{article}
-\usepackage[margin=1in]{geometry}
-\usepackage{amsmath,amssymb}
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
 \usepackage{enumitem}
 \usepackage{xcolor}
-\usepackage{tcolorbox}
 \usepackage{hyperref}
+\usepackage{url}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
 
-\newtcolorbox{majorbox}{colback=red!5!white,colframe=red!60!black,
-  title=\textbf{Major Issue}, fonttitle=\bfseries}
-\newtcolorbox{minorbox}{colback=yellow!5!white,colframe=orange!60!black,
-  title=\textbf{Minor Issue}, fonttitle=\bfseries}
-\newtcolorbox{venuecompbox}{colback=purple!5!white,colframe=purple!60!black,
-  title=\textbf{Venue Compliance — MUST FIX}, fonttitle=\bfseries}
-\newtcolorbox{suggestbox}{colback=blue!5!white,colframe=blue!60!black,
-  title=\textbf{Suggested Revision}, fonttitle=\bfseries}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
 
-% STAGE: 9 (independent review) — all items from this file
-% RULES: agents/pipeline/academic-paper-reviewer.md
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{NeurIPS 2026 Review}
+\lhead{COREY: Entropy-Guided Kernel-Level Scheduling}
+\rfoot{\thepage}
 
-\title{NeurIPS 2026 Stage~9 Review: COREY\\
-  Entropy-Guided Kernel-Level Scheduling and\\
-  Hadamard Reparameterization for Selective SSMs}
-\author{5-Reviewer Panel: EIC + R1 + R2 + R3 + DA}
-\date{2026-04-16}
+\titleformat{\section}{\normalfont\Large\bfseries\color{blue!60!black}}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{blue!50!black}}{\thesubsection}{1em}{}
+
+\newtcolorbox{reviewbox}[1]{colback=gray!5,colframe=blue!40!black,title=#1,fonttitle=\bfseries}
+\newtcolorbox{strengthbox}{colback=green!5,colframe=green!50!black,title=\textbf{Strengths},fonttitle=\bfseries}
+\newtcolorbox{weaknessbox}{colback=red!5,colframe=red!50!black,title=\textbf{Weaknesses},fonttitle=\bfseries}
+\newtcolorbox{suggestbox}{colback=yellow!10,colframe=orange!70!black,title=\textbf{Suggested Revisions},fonttitle=\bfseries}
+
+\title{\textbf{NeurIPS 2026 Peer Review} \\ \vspace{0.3em}
+\large Paper: COREY: A Prototype Study of Entropy-Guided Kernel-Level Scheduling for Mamba-1.x SSMs}
+\author{Reviewer Report}
+\date{\today}
 
 \begin{document}
+
 \maketitle
 
-\section*{Summary of Recommendation}
+\vspace{-1.5em}
 
-\textbf{Major Revision (Aggregate Score: 63/100).}
-This is a fresh independent review conducted after the prior reviewer
-cycle (issues C1--C8, M1--M9) has been fully addressed.  The reviewers
-acknowledge substantial progress: the paper now provides genuine
-two-tier GPU evidence (Tier-1 cost-model diagnostics in appendix;
-Tier-2 real Triton kernel benchmark in main text), a correctly included
-Static-256 oracle, honest disclosure of Theorem~1's falsification on
-real checkpoints, and removal of the ``no quality regression'' tautology.
+\begin{reviewbox}{Overall Recommendation}
+\textbf{Score: 4 -- Borderline reject} \\
+\textbf{Confidence: 4 -- Confident but not absolutely certain} \\
+\textbf{Soundness: 2 (fair)} \quad \textbf{Presentation: 3 (good)} \quad \textbf{Contribution: 2 (fair)}
 
-\textbf{Four issues block acceptance at NeurIPS 2026 in the current form:}
-\begin{enumerate}
-  \item The NeurIPS~2026 mandatory checklist is absent from the submission.
-  \item The practical value of entropy guidance over static tuning is
-        asserted but not demonstrated: no experiment shows that entropy
-        varies enough across real inference workloads to require runtime
-        measurement rather than one-time profiling.
-  \item The Hadamard reparameterization layer is theoretically motivated
-        but has zero measured experimental results.
-  \item The theoretical motivation for entropy-guided scheduling is
-        internally inconsistent after Theorem~1's falsification, and the
-        two entropy signals (input entropy for scheduling vs.\ entropy
-        gain from Hadamard) are conflated in the paper narrative.
+\medskip
+\textbf{Summary.} This paper proposes COREY, a prototype framework for kernel-level scheduling of Mamba-1.x selective SSMs using activation entropy (estimated via fixed-width histograms) as a runtime signal. The authors commendably separate their evidence into two tiers (Tier~1: a deterministic Python cost model; Tier~2: real-GPU checkpoint feasibility on Mamba-370M/1.4B) and report $3.24$--$3.26\times$ kernel-level latency reductions on RTX~3070/3090. However, the novelty and experimental depth fall short of NeurIPS standards: (i)~the ``entropy-guided'' selection collapses to a single bucket on all 80 real LongBench prompts, making COREY operationally equivalent to one-time static tuning; (ii)~static chunk sizes are demonstrably equal or superior in many regimes (Static-512 is 53.4\% faster than COREY on the standard-normal benchmark); (iii)~the Hadamard entropy-growth theorem is falsified on 160/160 real checkpoint pairs by the authors' own measurements; (iv)~systems-level comparisons to Mamba-2, FlashAttention-3, or well-tuned Transformers are absent.
+\end{reviewbox}
+
+\section{Paper Summary}
+
+The submission introduces \textbf{COREY}, a scheduling framework that uses runtime input-activation entropy (estimated via fixed-width histograms) to select chunk sizes and fusion-boundary placement for Mamba-1.x selective-scan kernels. The claimed contributions are:
+
+\begin{enumerate}[leftmargin=2em]
+    \item An entropy-driven criterion for dynamic chunk-size selection (Signal~A).
+    \item A two-tier evaluation: (Tier~1) a deterministic Python cost model; (Tier~2) a real-GPU feasibility hook on Mamba-370M and Mamba-1.4B checkpoints across RTX~3070 (WSL2/CUDA~12.8) and RTX~3090 (Linux/CUDA~12.1).
+    \item A prospective Hadamard reparameterization analysis (Signal~B) with three theorems: entropy growth under doubly-stochastic mixing, a fusion-depth bound, and a $\sqrt{d}$ peak-coordinate reduction bound.
+    \item Table~1 showing $3.24$--$3.26\times$ latency reduction of COREY (chunk=256) over a Static-64 baseline on the real \texttt{selective\_scan\_fn} Triton kernel.
 \end{enumerate}
 
-All four issues are addressable.  The fundamental contribution---runtime
-entropy-guided chunk-size selection that automates per-model
-tuning---is genuine and would benefit the community if the evidence for
-its practical utility is strengthened.
+The authors explicitly disclaim: end-to-end speedup of a full fused COREY kernel, checkpoint perplexity improvement, checkpoint-level validation of Hadamard reparameterization, and deployment-grade quantization results.
 
----
+\section{Detailed Evaluation}
 
-\section*{Reviewer Scores}
+\subsection{Novelty and Significance}
+
+\begin{weaknessbox}
+\textbf{W1. The contribution collapses into static tuning on real workloads.} The paper's own real-workload evidence (Appendix Table~13) shows that across 80 LongBench prompts, raw hook entropy is $4.02 \pm 0.09$ nats (p5/p95 = 3.87/4.14), and \emph{100\% of prompts map to the same chunk bucket (256)}. The authors acknowledge this in the abstract (lines~20--23) and Section~8 (Limitation~4), but the consequence is fatal to the headline claim: if every real prompt receives the same chunk size, then COREY is \emph{operationally indistinguishable} from a one-time static sweep. The ``oracle'' column Static-256$^\dagger$ in Table~1 has identical latency ($1.10$/$1.36$~ms) to COREY by the authors' own admission. The reviewer therefore cannot credit the $3.24\times$ speedup as an entropy-guided result; it is a \emph{chunk-size} result that a single offline sweep (Appendix Table~14) would discover in minutes.
+
+\textbf{W2. The real kernel-level speedup has a trivial explanation.} Comparing Static-64 with Static-512 in Appendix Table~14 shows a $4.41\times$ speedup (vs.\ COREY's $2.87\times$) purely from amortizing Python kernel-dispatch overhead. COREY lands \emph{53.4\% slower} than the exhaustive-sweep oracle on the standard-normal regime that dominates real prompts. The paper's core narrative -- that entropy guides the scheduler to the ``right'' chunk size -- is therefore empirically undercut: entropy points to chunk=256, but the actual latency-optimal choice for this workload is chunk=512.
+
+\textbf{W3. Hadamard Theorem~1 is falsified on real checkpoints.} Remark~1 reports that on Mamba-370M activations, entropy \emph{decreases} in \textbf{160/160} evaluated (layer, sample) pairs (mean $-1.40 \pm 0.37$ nats), with Sinkhorn $\ell_1$ residual $1.700 \pm 0.029$, far above the validation threshold. The authors honestly flag this, but Section~4.1 and the schematic in Figure~2 still prominently feature ``Entropy Growth: $H(q) \geq H(p)$.'' Theorem~3 ($\sqrt{d}$ peak reduction) survives, but the entire motivation for Signal~B evaporates on the target architecture. A NeurIPS paper should not devote Section~3.3, Theorem~1, Figure~1, and Appendix~C.1 to a mechanism that does not hold on deployed models.
+
+\textbf{W4. Signal~A and Signal~B are insufficiently separated.} Despite the disclaimer in Section~1, the theoretical analysis (Section~4.1) and visualization (Figure~1) remain Hadamard-centric, while the only validated system contribution uses Signal~A. The paper tries to have it both ways, weakening the narrative.
+\end{weaknessbox}
+
+\subsection{Technical Soundness}
+
+\begin{weaknessbox}
+\textbf{W5. Threshold $\tau_0 = 5.0$ nats exceeds $\log K \approx 4.16$ nats for K=64.} Section~5.2 admits this makes the hook ``a passive monitor that never gates any prototype scheduler decision.'' If the hook cannot fire, then \emph{every result in the paper labeled as entropy-guided is actually a passive-observer configuration}, and the NLP score identity (Sections~6.1 and~6.4) is tautological. The authors should either (a) set $\tau_0 = +\infty$ and drop the pretense, or (b) report results under a threshold that actually triggers scheduling changes.
+
+\textbf{W6. Theorem~2 is trivial.} The statement $F \leq M_{\text{shared}}/C_{\text{tile}}$ is a direct rearrangement of the assumption $F \cdot C_{\text{tile}} \leq M_{\text{shared}}$. Calling this a theorem inflates apparent theoretical density without contributing insight. The paper admits in the ``Tightness'' paragraph that the actual scheduler uses the heterogeneous form $\sum C_i \leq M_{\text{shared}}$; the homogeneous form is retained only because it ``communicates the depth limit cleanly'' (Appendix~C.2). This should be removed or demoted to a Lemma/Remark.
+
+\textbf{W7. The diagnostic proxy is circular.} Section~5.2 constructs a ``quality-drop proxy'' from entropy, an over-fusion penalty, and a Hadamard bonus, then uses it to rank the entropy-guided scheduler against baselines (Table~9). The paper flags this in Limitation~5 but still reports the numbers in the main ablation discussion (Section~7, ``21.6--22.7\% latency reduction''). This is a self-fulfilling measurement. Real perplexity or task-accuracy numbers should replace the proxy in all headline tables.
+
+\textbf{W8. Tier-1 cost-model variance is nearly zero.} Appendix~A.5 admits that the ``$\pm 0.12$~ms'' standard deviation arises because the ``prototype cost model is a deterministic Python function of the operator chain.'' Then why report 5 repeated runs with mean $\pm$ std? This is misleading formatting; repeated runs of a deterministic function cannot inform uncertainty.
+
+\textbf{W9. Signal~A's informal justification (Section~3.4, lines 139--145) is hand-wavy.} The claim that medium-to-high entropy implies ``per-chunk state updates\dots remain comparatively homogeneous'' is not derived from first principles and is not empirically validated in isolation. Since Theorem~1 fails on real checkpoints, this informal justification is the sole remaining theoretical support for Signal~A.
+\end{weaknessbox}
+
+\subsection{Experimental Rigor}
+
+\begin{weaknessbox}
+\textbf{W10. Missing systems baselines.} Section~8 (Open Gap~6) correctly identifies the absence of Mamba-2, RWKV-6, and FlashAttention-3/Transformer comparisons at matched parameter counts. Without these, one cannot assess whether COREY's $3.24\times$ speedup over Static-64 translates to any advantage over a well-tuned existing system. The single Pythia-410M ``architectural sanity-check'' (Table~18) is explicitly not a fair baseline.
+
+\textbf{W11. LongBench coverage is narrow.} 4 tasks $\times$ 20 samples = 80 total prompts is a small subset of LongBench (which has $\sim$21 tasks). MultifieldQA-EN exact-match is 0.000 for \emph{every} model (Table~18) -- the harness is not measuring anything discriminative on that task. The paper keeps it ``as a harness-completeness diagnostic'' (Section~6.4), but a reviewer cannot ignore that one of four tasks provides no signal.
+
+\textbf{W12. Single-sample hook microbenchmark.} Table~16 uses $n=1$ with zero warmup on RTX~3070 ($n=1$, 3 repeats, 1 warmup on RTX~3090). Latency deltas of $-3.63\%$ and $-4.02\%$ (negative!) are flagged as ``within measurement noise,'' which is correct -- but the paper still appeals to ``no measurable latency overhead'' throughout (abstract, Section~6.1, conclusion). A single-sample feasibility check cannot establish a negative-overhead claim.
+
+\textbf{W13. Table~17 (kernel profile) uses a synthetic Triton kernel, not mamba\_ssm.} The $37$--$49\times$ speedup vs.\ \texttt{policy\_off} is a Python-dispatch artifact explicitly noted by the authors. Reporting such figures prominently in an appendix table risks being misread; the ``policy\_off'' Python-loop baseline is not a fair ``no-fusion GPU baseline'' and should arguably not appear in the table at all.
+
+\textbf{W14. Table~11 anomaly suppression.} Mamba-2.8B \texttt{policy\_corey} WT103 PPL was suppressed because $n=5$ gave $954.81$ vs.\ the $n=20$ baseline $329.80$. For a passive hook, they must be identical, so the discrepancy signals harness instability or a seeding bug. This should be resolved before publication, not footnoted.
+
+\textbf{W15. WikiText-103 perplexities are implausibly high.} Pythia-410M reports PPL $=5901.47$ on WikiText-103 (Table~18). Published Pythia-410M on WikiText-103 is $\sim$20--25. Mamba-1.4B reports $1128.40$ where expected is $\sim$15--20. Appendix~D acknowledges that the harness uses independent truncated segments rather than rolling/strided evaluation and warns against cross-paper comparison, but these numbers are \emph{so} far from baseline that they suggest the perplexity computation itself is miscalibrated (possibly concatenation boundary effects, BOS handling, or segment length).
+\end{weaknessbox}
+
+\subsection{Presentation and Writing}
+
+\begin{strengthbox}
+\textbf{S1. Unusually honest scope delineation.} The Tier-1/Tier-2 split, the explicit ``Not claimed'' bullet (lines~58--60), and the Signal~A vs.\ Signal~B separation are admirable and exceed the transparency of most submissions. Section~8's limitation list is comprehensive and self-critical.
+
+\textbf{S2. Real-checkpoint experiments on public models.} Running Mamba-370M and Mamba-1.4B on two independent hardware stacks (WSL2/RTX~3070/CUDA~12.8 and native Linux/RTX~3090/CUDA~12.1) with cross-platform score agreement (Table~18) is solid engineering.
+
+\textbf{S3. Anonymized code release.} The \url{anonymous.4open.science} link is provided, and Appendix~A.18 documents reproducibility details (hardware, software, hyperparameters, and seeds).
+
+\textbf{S4. Theorem~3 ($\sqrt{d}$ peak reduction) is correct and cleanly proved.} The scope caveat about the $D = \Theta(d)$ regime is appropriately included.
+\end{strengthbox}
+
+\begin{weaknessbox}
+\textbf{W16. Title-vs-content mismatch.} The title promises ``Kernel-Level Scheduling for Mamba-1.x SSMs,'' but no fused kernel is implemented. Table~1's comparison is between chunk sizes on the \emph{existing} mamba\_ssm Triton kernel. A more accurate title would be ``Runtime Chunk-Size Selection via Activation Entropy'' or similar.
+
+\textbf{W17. Algorithm~3 is labeled ``prospective design target; not implemented.''} Including unimplemented pseudocode in a submission is unusual; it should either be moved to a ``Future Work'' appendix or removed entirely.
+
+\textbf{W18. Figure~2 oversells the framework.} The ``Intelligence Layer'' and ``Execution \& Hardware Mapping'' panels depict components that do not exist: the fused Triton kernel path, the automatic hardware constraint check, and the entropy-driven fusion scheduler are all prototype/prospective.
+
+\textbf{W19. Redundant and overlong appendix.} The appendix is 19~pages vs.\ an 11-page main paper. Many tables (A.11, A.12, A.14, A.15, A.17) duplicate information. Consolidate.
+
+\textbf{W20. Incomplete related-work coverage.} The paper cites Mamba-2 (Gu and Dao, 2024) and SSD but makes no empirical comparison, even though the scheduler design could plausibly extend to SSD. Closely related scheduling works (e.g., FlexAttention, CUDA Graph capture, torch.compile fusion passes) are not mentioned.
+\end{weaknessbox}
+
+\subsection{Reproducibility}
+
+\begin{strengthbox}
+The reproducibility checklist (Appendix~A.18) is thorough; hardware, software, hyperparameters, and seed values are reported. Anonymized code is provided.
+\end{strengthbox}
+
+\begin{weaknessbox}
+\textbf{W21. Table~11's ``pending'' cells.} Mamba-2.8B \texttt{policy\_static} is listed as ``pending -- next WSL2 policy\_static run.'' A NeurIPS submission should not contain pending experimental cells. Complete the matrix or remove the row.
+
+\textbf{W22. Environment fragmentation.} The paper reports results on (i) Windows~11 + Python~3.11 + PyTorch~2.3 (prototype), (ii) WSL2 + CUDA~12.8 + PyTorch~2.11 + Triton~3.6 (main), and (iii) native Linux + CUDA~12.1 + PyTorch~2.4 (RTX~3090). The PyTorch~2.11 version number should be verified (likely a typo for 2.1.1 or 2.3.1); no such public release exists at the time of submission.
+\end{weaknessbox}
+
+\section{Questions for the Authors}
+
+\begin{enumerate}[leftmargin=2em]
+    \item Given that 100\% of 80 real prompts map to chunk=256, what empirical workload (if any) would exhibit inter-prompt entropy variation large enough to justify runtime selection over an offline sweep? Can you demonstrate such a workload?
+    \item Why is COREY's chunk=256 preferable to the latency-optimal Static-512 under standard-normal activations (Appendix Table~14 shows 53.4\% slowdown)? How does your entropy-to-chunk mapping avoid this suboptimality?
+    \item Why retain Theorem~1 and Figure~1 in the main paper when the doubly-stochastic mixing condition is falsified on \emph{all} 160 real checkpoint pairs? Would the paper be stronger with this content moved entirely to a ``prospective extension'' appendix?
+    \item Please explain the Mamba-2.8B \texttt{policy\_corey} vs.\ \texttt{policy\_off} WT103 PPL discrepancy ($954.81$ vs.\ $329.80$) for a \emph{passive} hook. This should be impossible; what bug or harness issue produced it?
+    \item Why are reported WikiText-103 perplexities (Pythia-410M: 5901; Mamba-1.4B: 1128) orders of magnitude higher than published values? What is the segment-boundary / BOS-token protocol?
+    \item Could you justify keeping $\tau_0 = 5.0$~nats $> \log 64 \approx 4.16$~nats rather than $\tau_0 = +\infty$, given that the hook cannot fire in either case?
+    \item Table~1 Static-256$^\dagger$ column: you state this is ``analytically equivalent to COREY.'' If so, what operational advantage does entropy selection provide over simply hardcoding chunk=256 for Mamba-1.x on this hardware?
+    \item Have you measured the wall-clock cost of histogram construction and entropy estimation on the forward pass? Appendix~A.1 gives $O(N+K)$ as an algorithmic characterization but not a measured overhead percentage at realistic sequence lengths.
+\end{enumerate}
+
+\section{Suggested Revisions}
+
+\begin{suggestbox}
+\textbf{Major revisions required:}
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Retitle and refocus.} Remove ``Kernel-Level'' from the title unless a fused kernel is implemented and benchmarked; retitle to emphasize \emph{runtime chunk-size selection}.
+    \item \textbf{Demote Hadamard content to a clearly-labeled prospective appendix.} Theorem~1, Figure~1, Section~3.3, and Section~4.1 should move to an appendix ``Prospective Low-Bit Extension'' with no footprint in the main paper beyond a single paragraph.
+    \item \textbf{Add at least one heterogeneous-entropy workload.} Demonstrate a realistic task where entropy varies enough across prompts to trigger different chunk selections; without this, the runtime-selection claim is unsupported.
+    \item \textbf{Add a proper systems baseline.} At minimum, compare against Mamba-2 SSD or a well-tuned FlashAttention-3 Transformer of comparable parameter count, on the same hardware, at the same sequence lengths.
+    \item \textbf{Replace the diagnostic proxy.} Substitute real perplexity or task accuracy in all ablation tables; relegate the proxy to a single supplementary diagnostic.
+    \item \textbf{Resolve the WT103 PPL anomaly} and recompute perplexities with a standard rolling/strided protocol (stride $\leq 512$).
+    \item \textbf{Remove Theorem~2} or demote it to a one-line Lemma; it is a rearrangement of its own assumption.
+    \item \textbf{Complete or remove all ``pending'' cells} in Table~11.
+    \item \textbf{Set $\tau_0 = +\infty$} in the checkpoint hook (or report results with a firing threshold and show they differ from the passive baseline).
+    \item \textbf{Consolidate the 19-page appendix} by $\sim$40\%; merge duplicated ablation tables.
+\end{enumerate}
+
+\textbf{Minor revisions:}
+\begin{itemize}[leftmargin=1.5em]
+    \item Remove Algorithm~3 (``prospective design target'') from the main paper.
+    \item Redraw Figure~2 to depict only validated components.
+    \item Add a ``no-op hook'' row to Table~1 to separate entropy-measurement cost from the chunk-selection effect.
+    \item Verify the PyTorch version string (``2.11.0'' is likely a typo).
+    \item Cite FlexAttention (Dong et al., 2024) and recent SSM fusion work.
+    \item Fix the Section~8 ``Open experimental gaps'' numbering (restarts at~5 rather than continuing from~5).
+    \item Report a measured end-to-end overhead percentage for the entropy hook at realistic sequence lengths, not only at $L=512$.
+    \item Clarify in the caption of Table~1 that Static-256$^\dagger$ and COREY are analytically equivalent (already stated in text but worth foregrounding).
+\end{itemize}
+\end{suggestbox}
+
+\section{Final Assessment}
+
+\begin{reviewbox}{Decision Rationale}
+The paper demonstrates exceptional intellectual honesty: the authors explicitly separate validated from speculative claims, openly report that their own empirical evidence weakens the headline contribution (100\% prompt bucketing; Theorem~1 falsification on real checkpoints), and resist overclaiming. This is genuinely admirable and exceeds typical submission standards.
+
+However, NeurIPS acceptance requires a \emph{validated, novel, and significant} contribution -- not merely an honestly-reported one. The core mechanism (entropy-guided chunk selection) collapses to static chunk tuning on every measured real workload. The theoretical centerpiece (Theorem~1 / Hadamard entropy growth) does not hold on the target architecture. The $3.24\times$ real-hardware speedup is attributable to chunk size, not to entropy. Systems baselines (Mamba-2, FlashAttention-3) are absent.
+
+I recommend \textbf{borderline reject} with a strong recommendation to resubmit after (a)~broadening the workload distribution to demonstrate genuine runtime-adaptive advantage, (b)~removing or fully appendicizing the falsified Hadamard analysis, (c)~adding proper systems baselines, and (d)~fixing the perplexity-computation and Table-11 issues. With these revisions, the paper could be a solid acceptance at a systems venue (MLSys, ASPLOS) or a strong NeurIPS resubmission.
+
+\textbf{Ethical considerations:} No major ethical issues. Section~9 (Broader Impact) reasonably discusses dual-use concerns of efficiency improvements. The AI-use disclosure in the checklist is candid.
+
+\textbf{Post-rebuttal position:} I would raise my score to \textbf{5 (marginally below acceptance)} if the authors (i)~demonstrate at least one workload with genuine inter-prompt entropy diversity that produces different chunk selections and measurable latency differences, (ii)~fix the WT103 PPL calibration, and (iii)~add a Mamba-2 or FlashAttention-3 comparison at matched scale. I would raise to \textbf{6 (weak accept)} if in addition the Hadamard content is fully appendicized and Theorem~2 is removed.
+\end{reviewbox}
+
+\vspace{1em}
 
 \begin{center}
-\begin{tabular}{lcccccc}
-\toprule
-Reviewer & Novelty & Methodology & Experiments & Clarity & Significance & Weighted \\
-\midrule
-EIC        & 60 & 65 & 62 & 72 & 58 & 63 \\
-R1 (Methodology) & 62 & 67 & 65 & 70 & 60 & 66 \\
-R2 (Domain) & 62 & 63 & 63 & 68 & 58 & 63 \\
-R3 (Perspective) & 58 & 62 & 60 & 68 & 56 & 61 \\
-DA & --- & --- & --- & --- & --- & CRITICAL \\
-\bottomrule
-\end{tabular}
+\rule{0.6\textwidth}{0.4pt}\\[0.5em]
+\textit{End of Review}
 \end{center}
-
-\noindent\textbf{Consensus:} CONSENSUS-3 on the four primary issues
-above.  DA found two CRITICAL issues; per Iron Rule, the editorial
-decision cannot be Accept.
-
----
-
-\section{Venue Compliance}
-
-% STAGE: 10 (revision) — checklist addition
-% RULES: academic-paper/agents/draft_writer_agent.md
-
-\begin{venuecompbox}
-\textbf{[V1] NeurIPS 2026 Mandatory Checklist is absent.}
-
-NeurIPS~2026 requires a completed checklist section covering at minimum:
-Claims, Limitations, Theory, Experiments, Compute, Code, Data, Broader
-Impact, and AI use disclosure.  The submitted main.tex does not include
-this section.  This is a hard venue requirement; the submission cannot
-be accepted without it.
-
-\textbf{Required action:} Add the NeurIPS~2026 checklist immediately
-before or after the References section.  Address each item with at
-least a one-sentence answer.  Tick every sub-item honestly; do not
-claim items that are not satisfied.
-\end{venuecompbox}
-
-\begin{minorbox}
-\textbf{[V2] Page-count verification.}
-
-The main body uses \texttt{neurips\_2026.sty} and appears near the
-9-page NeurIPS~2026 limit.  Confirm compiled PDF is $\leq 9$ pages
-(references and appendix do not count).  Add a comment in
-\texttt{main.tex} noting the current compiled page count.
-\end{minorbox}
-
----
-
-\section{Major Issues}
-
-% STAGE: 10 (revision)
-% RULES: academic-paper/agents/argument_builder_agent.md
-
-\begin{majorbox}
-\textbf{[N1] Entropy variance across real inference workloads is
-uncharacterized. (EIC, R1, DA --- CONSENSUS-3 / DA-CRITICAL)}
-
-\textbf{Problem.}
-Table~1 (\texttt{tab:signal\_chain\_tier2}) contains a single entropy
-observation: $H = 4.18$~nats for a 512-token NarrativeQA prompt on
-Mamba-370M, yielding tile recommendation 288.  The value 4.18~nats is
-near the theoretical maximum for $K = 64$ bins ($\log 64 \approx
-4.16$~nats), indicating near-maximum-uniform activations.  The paper's
-practical contribution is ``automatic chunk-size selection without
-manual oracle tuning per model or sequence length.''  However:
-\begin{itemize}[leftmargin=*]
-  \item One observation is insufficient to characterize whether entropy
-        varies across prompts, tasks, sequence lengths, or model sizes.
-  \item If real-world inference consistently yields near-maximum entropy
-        (as this single data point suggests), a fixed large static chunk
-        (e.g., chunk~$=512$ or chunk~$=256$) achieves the same
-        performance without any runtime measurement.
-  \item No experiment shows a scenario where entropy falls below a
-        threshold and COREY correctly reduces chunk size, preventing
-        a quality or performance problem.
-\end{itemize}
-
-\textbf{Required action.}
-Report entropy distribution statistics across at least 50 real-inference
-prompts drawn from at least two LongBench tasks (e.g., NarrativeQA and
-Qasper) for Mamba-370M.  Report mean, standard deviation, and p5/p95
-percentiles.  Show what fraction of prompts falls in each
-chunk-recommendation bucket (32, 64, 128, 256, 512).  If the
-distribution is highly concentrated near maximum entropy, revise the
-contribution claim to be more specific about the regime where dynamic
-selection is beneficial.  If entropy shows meaningful variation, present
-a case where the adaptive behavior of COREY leads to better performance
-than a single fixed large chunk.
-\end{majorbox}
-
-\begin{majorbox}
-\textbf{[N2] Hadamard reparameterization has zero measured experimental
-results. (EIC, R3 --- CONSENSUS-2)}
-
-\textbf{Problem.}
-The Hadamard layer (Section~3.2, Theorem~3) is the second major
-contribution of the paper.  The forward computation absorbs
-$W' = W\mathbf{H}^\top$ and operates in the rotated basis.
-Theorem~3 proves a $\sqrt{d}$ peak-coordinate reduction, directly
-relevant to clipping-limited quantization.  However:
-\begin{itemize}[leftmargin=*]
-  \item The Tier-2 entropy hook is \emph{passive}: it observes
-        activations but does not apply Hadamard to the forward
-        computation.
-  \item No experiment measures perplexity with versus without the
-        Hadamard layer.
-  \item No quantization experiment (W8A8/W4A8) is reported anywhere.
-  \item ``Empirical implication'' for Theorem~3 (Section~4.3) explicitly
-        defers the analogous effect to future work.
-\end{itemize}
-The Hadamard contribution is theoretically present but experimentally
-absent.  A NeurIPS systems paper is expected to validate its
-contributions experimentally.
-
-\textbf{Required action (Option A --- preferred).}
-Implement the offline weight absorption ($W' = W\mathbf{H}^\top$,
-a one-time O($d^2$) operation at model load time) for Mamba-370M.  Run
-inference with this forward-modifying variant and report perplexity
-(WikiText-103 or PG19, 20+ samples) vs.\ the unmodified baseline.  Even
-a null result (identical perplexity) would be informative and is
-sufficient to confirm functional equivalence.
-
-\textbf{Required action (Option B --- if Option A is blocked).}
-Remove the Hadamard layer as a claimed contribution; retain Theorem~3
-as a theoretical property and note it as a design target for future
-work.  Revise the title and abstract to reflect that the current system
-contribution is chunk-size scheduling only.
-\end{majorbox}
-
-\begin{majorbox}
-\textbf{[N3] The two entropy signals are conflated, creating a
-misleading theoretical narrative after Theorem~1's falsification.
-(R2, DA --- CONSENSUS-2 / DA-CRITICAL)}
-
-\textbf{Problem.}
-The paper uses two distinct entropy signals:
-\begin{itemize}[leftmargin=*]
-  \item \textbf{Signal A (scheduling):} The entropy of \emph{input}
-        activations $\widetilde{H}(\text{input})$, used by COREY's
-        online hook to select chunk size.
-  \item \textbf{Signal B (Hadamard motivation):} The entropy
-        \emph{gain} after Hadamard rotation
-        $\Delta H = H(\mathbf{H}z) - H(z)$, motivated by Theorem~1.
-\end{itemize}
-These are different quantities with different empirical behavior:
-\begin{itemize}[leftmargin=*]
-  \item Signal A (input entropy) is near maximum on real checkpoints
-        ($H \approx 4.18$~nats from Table~1).
-  \item Signal B (entropy gain) is \emph{negative} on real checkpoints
-        (mean $-1.40 \pm 0.37$~nats from Remark~1).
-\end{itemize}
-The paper correctly discloses this in Remark~1, but the narrative in
-Sections~1, 3, and 4 still tells a unified story: Hadamard increases
-entropy~$\rightarrow$ enables deeper fusion~$\rightarrow$ COREY
-measures entropy and fuses aggressively.  After Theorem~1's
-falsification, this unified story is misleading for real-checkpoint
-applications.
-
-\textbf{Required action.}
-Add an explicit paragraph (or subsection) that names Signal~A and
-Signal~B as separate, explains that Signal~A is what COREY uses in
-practice, explains that Theorem~1 concerns Signal~B and is empirically
-limited to the synthetic prototype regime, and provides an independent
-(informal or formal) justification for why high Signal~A (high input
-entropy) predicts safe large chunk sizes.  The justification for
-Signal~A may be straightforward (uniform activations mean predictable
-memory access patterns, reducing the risk of register spill from
-uneven data) but it should be stated explicitly and not derived via
-Theorem~1.
-\end{majorbox}
-
-\begin{majorbox}
-\textbf{[N4] COREY selects chunk~$=256$ for near-maximum entropy; the
-oracle is chunk~$=512$ (53.4\% faster). The conservative selection
-is unjustified for the tested uniform-random activations. (R1, DA ---
-CONSENSUS-2)}
-
-\textbf{Problem.}
-Appendix Table~\texttt{tab:chunk\_sweep} shows chunk~$=512$ is 53.4\%
-faster than chunk~$=256$ for the benchmark configuration.  COREY selects
-chunk~$=256$ for $H \approx 4.18$~nats (near-maximum entropy ---
-maximally uniform activations).  The paper justifies this as ``conservative
-selection to avoid numerical error over the recurrent state when
-activations are non-uniform.''  However:
-\begin{itemize}[leftmargin=*]
-  \item The tested activations are uniformly random (not non-uniform).
-  \item Near-maximum entropy is precisely the regime where the paper's
-        own reasoning suggests chunk~$=512$ is safe.
-  \item No experiment demonstrates numerical error at chunk~$=512$ for
-        any tested configuration.
-\end{itemize}
-This means COREY's formula does not select the optimal chunk for the
-tested configuration, and the reason (``avoid numerical error on
-non-uniform activations'') does not apply to the uniform-random test
-case.
-
-\textbf{Required action (Option A --- preferred).}
-Revise the chunk-size selection formula to select chunk~$=512$ for
-near-maximum entropy inputs, or add a resource constraint (register
-pressure, shared-memory limit) that explains why chunk~$=512$ is
-infeasible for the tested configuration.  Show the revised COREY result
-in Table~2.
-
-\textbf{Required action (Option B).}
-Provide an experiment showing that chunk~$=512$ causes measurable
-numerical error (e.g., increased perplexity, NaN states) for some
-activation regime, and show that COREY's entropy estimate correctly
-predicts which regime requires smaller chunks.
-\end{majorbox}
-
----
-
-\section{Minor Issues}
-
-% STAGE: 10 (revision)
-% RULES: academic-paper/agents/draft_writer_agent.md
-
-\begin{minorbox}
-\textbf{[M1] Table~1 is a single data row and does not justify a formal
-table. (DA, EIC)}
-
-\texttt{tab:signal\_chain\_tier2} has one data row:
-``Default (policy\_corey): 4.18 nats, Tile rec.\ 288.''  A single
-observation requires at most an inline statement, not a formal table.
-Replace with a sentence in the text, and use the table slot for the
-entropy distribution data requested in N1.
-\end{minorbox}
-
-\begin{minorbox}
-\textbf{[M2] ``No-Fusion'' latency baseline (403--502~ms) measures
-Python dispatch overhead, not hardware compute limits. (DA, R1)}
-
-The $364\text{--}365\times$ speedup vs.\ No-Fusion is correctly labeled
-in the caption as ``Python dispatch overhead,'' but appears in the first
-row of the headline results table.  Readers scanning Table~2 will focus
-on this number.  Either:
-\begin{itemize}[leftmargin=*]
-  \item Move No-Fusion to a footnote or separate table; or
-  \item Replace No-Fusion with a \emph{single-chunk Triton call per
-        timestep} (chunk~$=1$, implemented as a Triton call with
-        batch~$=1$) to provide a fair hardware-level unfused baseline.
-\end{itemize}
-\end{minorbox}
-
-\begin{minorbox}
-\textbf{[M3] Scope the title and abstract to Mamba-1.x rather than
-generic ``Selective State Space Models.'' (R2)}
-
-The paper evaluates exclusively on Mamba-1.x checkpoints
-(\texttt{state-spaces/mamba-370m-hf}, 1.4b, 2.8b).  Mamba-2's SSD
-scan has fundamentally different hardware characteristics.  Using
-``Selective State Space Models'' in the title implies broader coverage.
-Revise to ``Mamba Selective Scan Kernels'' or ``Mamba-Family SSMs'' to
-avoid misleading readers about scope.
-\end{minorbox}
-
-\begin{minorbox}
-\textbf{[M4] Add a paragraph comparing runtime entropy guidance to
-one-time profiling calibration. (DA)}
-
-A practitioner could run a 30-second chunk-size sweep (as in
-Appendix~\texttt{tab:chunk\_sweep}) to find the optimal static chunk
-without any inference overhead.  The paper does not compare this
-alternative.  Add a ``Comparison with static profiling'' paragraph in
-Section~6 or the Limitations, explaining the trade-offs: runtime entropy
-guidance requires no separate profiling pass (good for deployment
-diversity across models/hardware/prompts) but adds per-forward-pass
-measurement overhead (currently negligible per Table~3).  State clearly
-in which scenarios runtime measurement is preferable to static
-calibration.
-\end{minorbox}
-
-\begin{minorbox}
-\textbf{[M5] LongBench task scores with exact-match~$= 0$ for all
-models should be removed from or clarified in the main text. (R2)}
-
-Table~3 (Appendix) reports ``MF-EN exact-match is zero across all
-models due to strict exact-match evaluation on 32-token generation.''
-These scores confirm harness execution but do not characterize model
-quality.  Remove these columns from the main-text description or add
-an explicit note that the zero scores are an evaluation-configuration
-artifact unrelated to model capability.
-\end{minorbox}
-
-\begin{minorbox}
-\textbf{[M6] Entropy EMA convergence time is uncharacterized. (R3)}
-
-With EMA decay $\lambda = 0.85$, the running estimate requires
-approximately $1/(1-\lambda) = 6.7$ steps to reflect recent
-activations.  For short prompts (e.g., 8-token inputs), the estimate
-may be dominated by initialization.  Add a note in the appendix
-describing the convergence behavior and any minimum prompt length
-required for a stable recommendation.
-\end{minorbox}
-
----
-
-\section{Suggested Revisions for Camera-Ready}
-
-\begin{suggestbox}
-\textbf{[S1] Entropy variance experiment.}
-
-For the key experiment requested in N1, the following minimal design
-suffices:
-\begin{enumerate}[leftmargin=*]
-  \item Run Mamba-370M on 50 prompts from each of NarrativeQA and
-        Qasper (standard LongBench subsets).
-  \item Log the entropy hook value ($H$~nats) at the first \texttt{in\_proj}
-        output of layer 0 for each prompt.
-  \item Report the distribution: histogram, mean, std, p5/p95.
-  \item Annotate the chunk-size thresholds on the histogram.
-  \item If the distribution shows variance spanning multiple threshold
-        buckets, present one example where entropy correctly triggered
-        a smaller chunk and compare latency/accuracy to a fixed
-        large-chunk baseline.
-\end{enumerate}
-\end{suggestbox}
-
-\begin{suggestbox}
-\textbf{[S2] Forward-modifying Hadamard proof-of-concept.}
-
-A minimal Hadamard experiment:
-\begin{enumerate}[leftmargin=*]
-  \item Compute $W' = W\mathbf{H}^\top$ offline for the
-        \texttt{in\_proj} layer of Mamba-370M.
-  \item Run WikiText-103 perplexity (20 samples) with the
-        modified weight and the original weight.
-  \item Report whether perplexity is preserved (expected: yes, by
-        functional equivalence), and whether generation outputs match
-        exactly.
-\end{enumerate}
-This experiment is low-cost (only one weight matrix to modify per layer)
-and would definitively validate functional equivalence, turning
-Theorem~3 from a theoretical claim into a verified implementation
-property.
-\end{suggestbox}
-
-\begin{suggestbox}
-\textbf{[S3] Reframe Table~2 to lead with COREY's key value.}
-
-Rewrite the headline result sentence to explicitly state:
-\begin{quote}
-``COREY's value is in selecting chunk~$=256$ automatically from the
-measured activation entropy ($H = 4.18$~nats), matching the
-performance of Static-256 without manual per-model or per-workload
-profiling.  On configurations where entropy correctly predicts
-suboptimal chunk sizes, COREY adapts while a fixed static baseline
-cannot.''
-\end{quote}
-Then add the entropy distribution evidence (N1/S1) to substantiate the
-second sentence.
-\end{suggestbox}
-
-\begin{suggestbox}
-\textbf{[S4] Separate contribution claims clearly.}
-
-Revise Section~1 (Contributions) to list three clearly separate
-contributions:
-\begin{enumerate}[leftmargin=*]
-  \item \textbf{Chunk-size scheduling:} An entropy-driven runtime policy
-        for selecting selective-scan chunk size, validated with real GPU
-        kernel timing.
-  \item \textbf{Hadamard layer design:} A fused Hadamard
-        reparameterization that preserves functional equivalence while
-        redistributing activation energy; theoretically validated
-        (Theorem~3); forward-modifying experiment in preparation.
-  \item \textbf{Entropy--fusion co-design theory:} Formal analysis
-        connecting entropy gain, fusion depth bounds, and quantization
-        stability, with explicit scope conditions for the synthetic
-        prototype regime vs.\ real checkpoints.
-\end{enumerate}
-This separation makes it clear which contribution has full experimental
-support (1), which is at the proof-of-concept stage (2), and which is
-theoretical (3).
-\end{suggestbox}
-
----
-
-\section*{Recommendation Rationale}
-
-COREY addresses a real problem in SSM inference efficiency and the
-authors have demonstrated genuine scientific integrity through multiple
-revision cycles.  The core scheduling idea is sound and the Tier-2
-evidence is legitimate.  The gap between the current state and NeurIPS
-acceptance is the missing evidence that (a) entropy varies in practice
-across real workloads, and (b) this variation makes static tuning
-inadequate.  Both gaps are closable with modest additional
-experimentation.
-
-The paper would benefit most from:
-\begin{enumerate}[leftmargin=*]
-  \item An entropy distribution plot across real prompts (N1/S1).
-  \item A forward-modifying Hadamard proof of concept (N2/S2).
-  \item Cleaner narrative separation of the two entropy signals (N3).
-  \item Addition of the NeurIPS 2026 checklist (V1).
-\end{enumerate}
-
-With these additions, the paper presents a coherent and novel
-contribution at the intersection of activation statistics and memory
-system scheduling for SSM inference, suitable for NeurIPS 2026.
 
 \end{document}

@@ -202,6 +202,10 @@
   (6) **构建验证**：重新编译 `paper/main.pdf` 与 `paper/appendix.pdf` 成功；当前主 PDF 为 31 页，附录单独编译版为 18 页。MiKTeX 缺少 perl 导致 latexmk 不可用，但已自动回退到 pdflatex/bibtex 流程并构建成功。
   推进状态：✅ 已完成。
 
+- 任务 71（2026-04-17）：投稿前质量巡检与最终修复。
+  修复 `paper/appendix.tex` `tab:perturbation` 表头过宽（overfull hbox 25.6pt），将列标题缩短为 `$H$ (nats) / Chunk / Calls / Latency (ms) / Speedup`，同步更新 caption 措辞。重新编译验证：`paper/build/main.pdf` 31 页，0 overfull hbox，0 undefined references。
+  推进状态：✅ 已完成。
+
 - 任务 70（2026-04-17）：根据 `docs/review_reports/` 再做一轮 scope 与实现边界收紧。
   (1) **R2 / R1 scope 收紧**：`paper/main.tex` 标题由 “Mamba-Family SSMs” 进一步收束为 “Mamba-1.x SSMs”，并在摘要与引言前段明确说明当前实证范围仅覆盖 Mamba-1.x，Mamba-2 SSD scan 因硬件特性不同而暂不外推。
   (2) **R1-M3 实现边界澄清**：将若干仍偏“fusion”口径的主文措辞改为更保守的 “scheduling / grouping / scheduling boundary”，避免读者把 Tier-2 结果误读为已验证的一般算子融合系统。
@@ -277,5 +281,11 @@
 A: 否，直接准备投稿
 
 **【已解决 - 2026-04-17】** 用户决定不启动新一轮 Stage 9 评审。当前 revision cycle 正式结束。
+
+**最终论文状态（2026-04-17）**：
+- `paper/build/main.pdf`：31 页（含附录），0 overfull hbox，0 undefined references
+- 匿名模式（`\usepackage{template/neurips_2026}`，anonymous author block）
+- NeurIPS 2026 Checklist 完整（9 项 `\answerYes{}`）
+- 匿名 repo URL：`anonymous.4open.science/r/COREY_Transformer-B0C5/`
 
 NeurIPS 2026 投稿时间表：Abstract 2026-05-04 / Full Paper 2026-05-06。
