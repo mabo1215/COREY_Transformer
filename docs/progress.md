@@ -1,10 +1,10 @@
 # 论文进度
 
-最后更新：2026-04-16（正文压缩至约 9 页——完成）
-**检查完成状态**：✅ 全部任务已完成。`docs/revision_suggestions.tex` 所有 W1–W5、w1–w5、Fix 1–10 项均已落地。NeurIPS 2026 deadline: Abstract 2026-05-04 / Full Paper 2026-05-06。
+最后更新：2026-04-16（新独立评审已收到；可行 manuscript 项已修订；C2 chunk sweep 实验已完成）
+**检查完成状态**：`docs/revision_suggestions.tex` 现为新一轮独立评审（Borderline Reject 4/10，含 C1–C8 重大问题 + M1–M9 小问题）。已完成任务 1–64：上一轮评审全部落地 + 新评审可直接修改项（任务 63） + C2 item 3 chunk sweep（任务 64）。剩余决策项：C2 item 2 扰动实验、C3真实kernel验证、C4量化perplexity、C6-2.8B复跑、C8新基线（需用户决策）。NeurIPS 2026 deadline: Abstract 2026-05-04 / Full Paper 2026-05-06。
 
 主要成就：
-- 全部 61 个任务落地（含所有 10 个 LaTeX Fix 及 W1/W2 GPU 实验）
+- 全部 64 个任务落地（含所有 10 个 LaTeX Fix 及 W1/W2 GPU 实验；新评审 C2 chunk sweep、Batch-1 改写项）
 - 论文可成功编译（main.pdf + appendix_only.pdf，main.pdf undefined reference = 0）
 - **W1（强化版）**：RTX 3070（3.24×）+ RTX 3090（3.26×）跨 GPU 一致，`tab:w1_chunked_scan` 已扩展为双硬件表格
 - **W2（强化版）**：layers 0–7 × 20 samples = 160 对，0/160 熵增（mean gain −1.40±0.37 nats，L1=1.700±0.029），与 layers 0–3 的 RTX 3070 结果一致，跨层/跨 GPU 负向发现已回填 Remark
@@ -147,6 +147,24 @@
   论文重新编译通过（build/main.pdf，0 undefined references）。
   推进状态：✅ 已完成。
 
+- 任务 63（2026-04-16）：针对新独立评审（docs/revision_suggestions.tex，Borderline Reject 4/10）完成可直接落地的 manuscript 收口六项：
+  (1) **C1 Suggested Revision**：在 Theorem 1 statement 与 proof sketch 之间新增粗体 scope note，明确"此定理在真实 Mamba checkpoint 激活（160/160 对熵值下降）上被实验推翻，仅适用于合成重尾原型标定机制"。
+  (2) **M2 + C7**：将 Experimental Setup 中的 baseline 列表条目从 "Entropy-Guided Fusion (Ours)" 改为 "Entropy-Guided Chunk Selection (COREY)"，明确说明 COREY 是现有 Triton kernel 的调度器，不引入新 fused kernel。同时在附录 Algorithm 3（Triton Fused SSM Kernel）caption 中加注 "(prospective design target; not implemented or measured in this submission)"。
+  (3) **C5**：将 abstract、Scope of claims 与 Conclusion 中的 "without measurable overhead or quality regression" 改写为"adds no measurable latency overhead; NLP scores are identical to the unhooked baseline by construction, not by measurement"，避免把被动监控器的构造属性误读为实验发现。
+  (4) **M7**：在 Scheduler Configuration 的 τ₀=5.0 nats 说明后补充"equivalently, setting τ₀=+∞ would be equivalent and may be less confusing to readers who notice the above-maximum value"。
+  (5) **M9**：在 appendix tab:cuda_kernel_profile 的 48.6× 行加 `$^\ddagger$` 注脚，说明 policy_off 是 Python per-timestep dispatch loop（非公平 GPU unfused 基线），$37$–$49\times$ 加速反映 loop dispatch 消除，而非 kernel 算术节省。
+  (6) **M8**：在主文 tab:w1_chunked_scan caption 末尾加 cross-reference 说明：附录 tab:cuda_kernel_profile 使用不同 kernel（合成轻量扫描）与不同硬件，两表不可直接对比列。
+  论文重新编译通过（main.pdf + appendix_only.pdf，0 undefined references）。
+  推进状态：✅ 已完成。
+
+- 任务 64（2026-04-16）：C2 item 3 — 完成 chunk-size sweep 实验。
+  (1) 新增 `src/experiments/run_w1_chunk_sweep.py`：sweep chunk ∈ {32,64,128,256,512}，用 `mamba_ssm selective_scan_fn` 测量每个 chunk 尺寸下的延迟（WSL2 adama-cuda128，RTX 3070，5 warmup / 30 repeats）；同时计算输入熵并覆盖 COREY entropy-selected 点（chunk=256）。
+  (2) 实验结果（`src/outputs/w1_chunk_sweep/`）：chunk=32: 6.315±0.385 ms（128 kernel calls）；chunk=64: 3.299±0.257 ms；chunk=128: 1.867±0.130 ms；**COREY chunk=256: 1.148±0.048 ms（2.87× vs static-64）**；chunk=512（oracle）: 0.748±0.037 ms。COREY 比 oracle 慢 53.4%，比 static-64 快 2.87×。
+  (3) 在 `paper/appendix.tex` 新增 `\subsection{Chunk-Size Sweep: Static-Oracle Latency Curve}`（`\label{sec:chunk_sweep}`）和 `\label{tab:chunk_sweep}` 表格，包含完整延迟曲线及分析。
+  (4) 在 `paper/main.tex` 实验节正文中新增一段交叉引用说明（Appendix Table~\ref{tab:chunk_sweep}），描述 COREY vs oracle 53.4% gap 的解读。
+  (5) 论文重新编译通过（main.pdf，0 undefined references）。
+  推进状态：✅ 已完成。
+
 - 2026-04-15 补充进展：W1 关键实验指标补全已启动。
   (1) 已更新 `src/experiments/run_w1_triton_triplet.py`，新增 `tokens_per_second`、`estimated_hbm_bytes/gb/gib`、`estimated_hbm_bandwidth_gbps` 输出，并加入 `--policy {all,off,static,corey}` 单策略运行入口，便于后续做 Nsight 单策略 profile。
   (2) 已在本机 WSL2 `corey-cuda128` 环境复跑 `run_w1_triton_triplet.py`，新产物位于 `src/outputs/w1_triton_triplet_rtx4050/`。`seq_len=4096, dim=1024, fp16` 下：off = `362.1603 ms`, `11309.9 tok/s`, `1.115685 GB`；static = `3.4171 ms`, `1.1987e6 tok/s`, `0.042205 GB`；corey = `1.1279 ms`, `3.6315e6 tok/s`, `0.029426 GB`，COREY 相对 static 仍为 `3.03x`。
@@ -157,7 +175,7 @@
 
 ---
 
-## 📊 当前完成度统计（2026-04-15 Stage 10 收口）
+## 📊 当前完成度统计（2026-04-16 新评审收口）
 
 | 缺陷 | 问题 | 现状 |
 |------|------|------|
@@ -191,11 +209,49 @@
 | 🔴 必须 | Abstract 提交 | 2026-05-04 AoE | 用户 |
 | 🔴 必须 | Full Paper 提交 | 2026-05-06 AoE | 用户 |
 | ✅ 完成 | nsight kernel profile 补充（RTX 4050 第三硬件点 + 估算 HBM 流量注释加入 appendix.tex tab:cuda_kernel_profile）| 2026-04-16 | ✅ 已完成 |
+| ✅ 完成 | 新评审（Borderline Reject 4/10）可直接改写项：C1 scope note、M2/C7 rename、C5 framing、M7 τ₀ note、M8 cross-ref、M9 48.6× fix、Algorithm 3 caption（任务 63）| 2026-04-16 | ✅ 已完成 |
+| ✅ 完成 | C2 item 3 chunk sweep（任务 64）：`src/experiments/run_w1_chunk_sweep.py`，结果加入附录 Table tab:chunk_sweep | 2026-04-16 | ✅ 机器执行 |
+| ⚠️ 待决策 | C2 item 2 扰动实验、C3 Tier-1 校验、C4 Quamba PPL、C6 2.8B 复跑、C8 新基线、M1 hook table 移位 | 2026-05-06 前 | 用户决策 |
 
 
-## 未修改或部分修改（可继续推进）
+## 未修改或部分修改（新评审剩余项）
 
-> ✅ 所有 revision_suggestions.tex 可行项已落地。`nsight kernel profile 补充` 于 2026-04-16 完成（torch.profiler 替代 ncu，因 ncu 需要 root/perf 权限无法在 BatchMode SSH 下启用；torch.profiler CUDA event 计时数据等效且已被论文采用）。2026-04-16 本轮额外收口四项（见任务 62）：Static-256 oracle 行加入 tab:w1_chunked_scan、Algorithm 1 补 (α,β,γ) 输入参数、Theorem 3 加 D=Θ(d) caveat、Pythia bib 修正作者名。当前无剩余可自动推进项。
+以下来自当前 `docs/revision_suggestions.tex`（Borderline Reject 4/10）中尚未完全落地的问题。标注【需实验】的需要新实验数据或用户决策；标注【可改写】的可仅通过 manuscript 修改部分解决。
+
+### C2 item 2 — 扰动实验【需实验，仅剩此项】
+评审要求：(2) 人工改变输入熵（例如 uniform/normal/sparse 分布）并验证 chunk 推荐随之变化且延迟优于固定 oracle。
+现状：item 1（Static-256 oracle 行）✅ 任务 62 完成；item 3（chunk sweep {32,64,128,256,512}）✅ 任务 64 完成，结果已加入附录 Table~\ref{tab:chunk_sweep}。仅 item 2（扰动实验）尚未完成。
+需要用户决策：是否在投稿前补充扰动实验？如不补充，建议在 Limitations 中显式说明为 future work。
+
+### C3 — Tier-1 代价模型与真实 kernel 校验【需实验 or 改写】
+评审要求：用 Nsight Compute trace 验证代价模型预测误差 < 20%；或将全部 Tier-1 表格移至附录并标注 "illustrative cost-model behavior"。
+现状：主文已大量去除 Tier-1 内容（Tier-2 优先），但 tab:tiling_depth / tab:ablation_tau 等仍可在 main body 中被引用。真实 ncu profiling 受 root/perf 权限限制。
+需要用户决策：选择 (a) 进一步将剩余 Tier-1 表格引用移至附录 or (b) 补实验。
+
+### C4 — 环形代理 proxy 需替换【需实验】
+评审要求：用 Quamba W8A8/W4A8 量化 Mamba checkpoint 的实测 perplexity 替代 quality-drop proxy；或将 proxy 表格完全移除。
+现状：Quamba 安装验证通过（任务 56），但尚未跑量化 perplexity 实验。proxy circularity note 已加入 caption（任务 52）。
+需要用户决策：是否在投稿前运行 Quamba 评估？如不运行，建议将相关 proxy 表格标注为 "illustrative only" 并说明 Quamba 路线为 future work。
+
+### C6 — Mamba-2.8B WT103 PPL 异常（954.81 vs 329.80）【需实验或说明】
+评审要求：诊断 2.8B corey 与 off 的 PPL 差异（2.9×），或将该行移除/用 n≥20 重跑。
+现状：附录已有 "n=5 粗估" 注脚，但未做系统性诊断。被动监控器不应产生 PPL 差异。
+需要用户决策：是否重跑 2.8B corey 用 n=20？或直接删除 2.8B corey 行？
+
+### C8 — 外部基线不足【需实验】
+评审要求：补充 Mamba-2（Gu & Dao, 2024）或 RWKV-6（同参数量）、以及相同序列长度下的 FlashAttention-3 + Transformer baseline。
+现状：当前只有 Pythia-410M 作为架构 sanity-check 基线，已被明确标注为"非公平系统对比"。补充新基线需下载模型并重跑 LongBench。
+需要用户决策：是否在投稿前补充这些基线？如不补充，Limitations 中需要更明确地说明为 future work。
+
+### M1 — tab:hook_micro 应移至附录【可改写，但影响页面布局】
+评审要求：n=1, 0-warmup 的 hook micro benchmark 表格应移至附录，不在主文 Results 节呈现。
+现状：tab:hook_micro 仍在主文（Sec 5.3），caption 已有 "within measurement noise" disclaimer。移至附录后主文可节省约 0.5 页，但需更新引用关系。
+需要用户决策：是否移至附录？
+
+### M6 — Figure 1 视觉拥挤【可改写】
+评审要求：将七条序列长度曲线改为分组柱状图（pre/post-Hadamard 对比）或单条 delta 熵曲线，使 "post 始终高于 pre" 一眼可读。
+现状：当前图仍为多折线图。
+不阻碍投稿，但改善可视性有利于 reviewer 理解。
 
 ---
 
@@ -216,23 +272,9 @@
 
 ---
 
-### 【已解决】页数确认（Stage 10 第一轮修订完全）
+### ✅ 【已解决】页数确认（Stage 10 第一轮修订完全）
 
-main.pdf 27 页、appendix 14 页（含主文+附录），主题完整。
-
-- **主文正文：约 12 页**
-- NeurIPS 典型限制：9 页正文（不含参考文献）
-- **超出约 3 页，必须在投稿前压缩**
-
-建议压缩方向：
-1. 精简 Related Work（当前约 1.5 页，可压至 0.75 页）
-2. 合并 Experimental Setup 与 End-to-End Performance 节开头的重复叙述
-3. 将 `tab:checkpoint_baseline` 或 `tab:hook_micro` 移至附录
-4. 压缩 Broader Impact 节（当前 2 段，可缩为 1 段）
-
-需要用户决策：
-- `Q: 哪些章节优先压缩？` A:
-- `Q: 是否接受把 tab:checkpoint_baseline 整体移至附录？` A: 接受
+正文已压缩至约 9 页（任务完成列表 2026-04-16 条目）。tab:checkpoint_baseline 移至附录（用户已接受）。
 
 ---
 
@@ -241,3 +283,17 @@ main.pdf 27 页、appendix 14 页（含主文+附录），主题完整。
 用户提供匿名链接：`https://anonymous.4open.science/r/COREY_Transformer-B0C5/`
 
 已写入 `paper/main.tex` abstract 末尾（`Code and data: \url{...}`），论文重新编译通过（0 undefined references）。
+
+---
+
+### 【未解决】新独立评审（Borderline Reject 4/10）需用户决策的六项
+
+`docs/revision_suggestions.tex` 已更新为新评审，其中以下六项需要你来决策：
+
+需要你提供/决策：
+1. **C2 item 2（扰动实验）**：C2 item 3（chunk sweep）✅ 已于任务 64 完成。是否在投稿前补充 item 2（改变输入熵分布，验证 chunk 推荐变化）？如否，则在 Limitations 注明为 future work。`A:` 
+2. **C3（Tier-1 代价模型校验）**：选 (a) 进一步将 tab:tiling_depth 等 Tier-1 引用移至附录+改标签 or (b) 做 ncu trace 校验。`A:`
+3. **C4（Quamba 量化 perplexity）**：是否运行 Quamba W8A8 评估？如否，建议删除 quality-drop 相关 proxy 表或标注 illustrative。`A:`
+4. **C6（Mamba-2.8B WT103 PPL 异常 954.81 vs 329.80）**：重跑 n=20 or 删除该行？`A:`
+5. **C8（外部基线 Mamba-2 / RWKV-6 / FlashAttention+Transformer）**：是否补充？如否，Limitations 需加句话。`A:`
+6. **M1（tab:hook_micro 移至附录）**：是否接受？会腾出约 0.5 页正文空间。`A:`
