@@ -202,6 +202,13 @@
   (6) **构建验证**：重新编译 `paper/main.pdf` 与 `paper/appendix.pdf` 成功；当前主 PDF 为 31 页，附录单独编译版为 18 页。MiKTeX 缺少 perl 导致 latexmk 不可用，但已自动回退到 pdflatex/bibtex 流程并构建成功。
   推进状态：✅ 已完成。
 
+- 任务 70（2026-04-17）：根据 `docs/review_reports/` 再做一轮 scope 与实现边界收紧。
+  (1) **R2 / R1 scope 收紧**：`paper/main.tex` 标题由 “Mamba-Family SSMs” 进一步收束为 “Mamba-1.x SSMs”，并在摘要与引言前段明确说明当前实证范围仅覆盖 Mamba-1.x，Mamba-2 SSD scan 因硬件特性不同而暂不外推。
+  (2) **R1-M3 实现边界澄清**：将若干仍偏“fusion”口径的主文措辞改为更保守的 “scheduling / grouping / scheduling boundary”，避免读者把 Tier-2 结果误读为已验证的一般算子融合系统。
+  (3) **Tier-1 / Tier-2 分离加强**：在 Experimental Setup 的 baseline 描述中，显式拆分 “Tier-1 prototype grouping” 与 “Tier-2 static chunking / entropy-guided chunk selection”，把 real-GPU 证据限定为现有 Triton selective-scan kernel 上的 chunk scheduling。
+  (4) **重新编译验证**：`paper/build.bat` 于 2026-04-17 再次通过；主 PDF 维持 31 页，附录单独编译版 18 页。MiKTeX 仍因缺少 perl 无法使用 latexmk，但 pdflatex/bibtex fallback 正常完成。
+  推进状态：✅ 已完成。
+
 
 ---
 
