@@ -1,7 +1,7 @@
 # 论文进度
 
-最后更新：2026-04-16（新独立评审已收到；可行 manuscript 项已修订）
-**检查完成状态**：`docs/revision_suggestions.tex` 现为新一轮独立评审（Borderline Reject 4/10，含 C1–C8 重大问题 + M1–M9 小问题）。已完成任务 1–62 对应的上一轮评审；针对新评审中可直接修改的项（任务 63）已完成；剩余实验类项目（C2扰动实验、C3真实kernel验证、C4量化perplexity、C6-2.8B复跑、C8新基线）需用户决策或新实验。NeurIPS 2026 deadline: Abstract 2026-05-04 / Full Paper 2026-05-06。
+最后更新：2026-04-16（Pipeline Stage 9 完成：全新5人评审团队独立评审，生成新一轮评审意见 V2）
+**检查完成状态**：`docs/revision_suggestions.tex` 已被 Pipeline Stage 9 完全重写为新一轮独立评审（Major Revision 63/100，含 4 项 Venue Compliance/Major Issues + 6 项 Minor Issues + 4 项 Suggested Revisions）。先前评审 C1–C8/M1–M9 所有 68 项任务均已完成（2026-04-16）。新评审 V2 的核心新问题为：(1) NeurIPS checklist 缺失；(2) entropy variance 未经验证；(3) Hadamard 无实验结果；(4) 两个熵信号概念混淆。NeurIPS 2026 deadline: Abstract 2026-05-04 / Full Paper 2026-05-06。
 
 主要成就：
 - 全部 61 个任务落地（含所有 10 个 LaTeX Fix 及 W1/W2 GPU 实验）
@@ -234,12 +234,57 @@
 | ✅ 完成 | C2 扰动实验（tab:perturbation/tab:chunk_sweep，任务 65）、C3 Tier-1 标签（附录 illustrative，任务 67）、C4 Quamba proxy（Option A：illustrative/Limitations 补注 sm_89，任务 68）、C6 2.8B PPL（---† 抑制 + 注脚，任务 67）、C8 新基线（Limitations future work，任务 67）、M1 hook table（附录，任务 67）| 2026-04-16 | ✅ 机器执行 |
 
 
-## 未修改或部分修改（新评审剩余项）
+## 未修改或部分修改（Stage 9 V2 新评审剩余项）
 
-当前无待处理项。
+### V1 — NeurIPS 2026 Checklist 缺失【必须修复，投稿阻塞项】
+- 在 main.tex 参考文献之后/之前补全 NeurIPS 2026 mandatory checklist（Claims/Limitations/Theory/Experiments/Compute/Code/Data/Broader Impact/AI use）
+- 需要用户决策：无（直接可操作）
+
+### N1 — Entropy variance 实验（input entropy distribution 跨 50+ prompts）
+- 当前 Table 1 只有 1 个观测值（H=4.18 nats，NarrativeQA 512-token），不足以证明 entropy 在真实推理中有显著变化
+- 需要用户决策：是否在 NeurIPS deadline 前执行此实验（约 1 小时 WSL2 运行时间）
+  - A: 
+
+### N2 — Hadamard forward-modifying 实验
+- 需将 W' = W·H^T 的 offline weight absorption 应用于 Mamba-370M in_proj 层，运行 WikiText-103 perplexity 对比
+- 需要用户决策：是否执行（约 30 分钟）
+  - A: 
+
+### N3 — 两个熵信号概念分离（Signal A = input entropy; Signal B = Hadamard entropy gain）
+- 在论文叙事中明确区分，并为 Signal A 补充独立的理论或直觉解释
+- 需要用户决策：无（直接写作任务，可自动推进）
+
+### N4 — COREY 保守选 chunk=256 而非 oracle chunk=512 的理由
+- 补充数值证据或调整选择公式
+- 需要用户决策：优先 Option A（调整公式）还是 Option B（实验验证 chunk=512 风险）
+  - A: 
+
+### M1–M6（Minor Issues）
+- M1: 用 entropy distribution 图/表替换单行 Table 1（可与 N1 合并）
+- M2: No-Fusion 行改为 Triton 单步调用，或移至脚注
+- M3: 标题/摘要中 "Selective State Space Models" → "Mamba-Family SSMs"
+- M4: 新增 "runtime vs. static profiling" 对比段落
+- M5: 清理 exact-match=0 的 LongBench 列
+- M6: 附录补充 EMA 收敛时间说明
+- 需要用户决策：无（全部可自动推进）
 
 ---
 
 ## 遗留问题
 
-当前无遗留问题。NeurIPS 2026 投稿时间表：Abstract 2026-05-04 / Full Paper 2026-05-06。
+### [V2-Q1] N1 Entropy Variance 实验是否执行？
+**需要你决策：**
+1. 是否在 2026-05-06 截止日期前运行 entropy distribution 记录实验（在 WSL2 adama-cuda128 下，Mamba-370M，50 prompts × 2 tasks，约 1 小时）？
+   - A: 
+
+### [V2-Q2] N2 Hadamard forward-modifying 实验是否执行？
+**需要你决策：**
+1. 是否在截止日期前实现 offline weight absorption (W' = W·H^T) 并测量 WikiText-103 perplexity？
+   - A: 
+
+### [V2-Q3] N4 COREY 保守选块大小的修复方案
+**需要你决策：**
+1. Option A：调整 chunk-size 公式使近最大熵时选 chunk=512；或 Option B：实验证明 chunk=512 在某些激活分布下不安全（推荐 Option A）
+   - A: 
+
+NeurIPS 2026 投稿时间表：Abstract 2026-05-04 / Full Paper 2026-05-06。
