@@ -1,70 +1,356 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
 \usepackage{enumerate}
+\usepackage{amsmath}
 \usepackage{hyperref}
 
 \begin{document}
 
-\title{NeurIPS 2026 Review Report: COREY}
+\title{NeurIPS 2026 Review Report (Integrated Version)}
 \author{Reviewer ID: Anonymous}
 \date{\today}
 
 \maketitle
 
-\section*{Part 1: Review Summary}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{1. Summary}
 
-\subsection*{Summary:}  
-This paper introduces COREY, a prototype framework designed to optimize memory-bandwidth limitations in Mamba-1.x Selective State Space Models (SSMs). The core innovation lies in using \textbf{activation entropy} (Signal A), estimated via lightweight fixed-width histograms, as a runtime signal to dynamically select chunk sizes and define kernel fusion boundaries. The authors evaluate the mechanism across two tiers: a deterministic Python cost model (Tier 1) and a real-checkpoint GPU feasibility study using Mamba-370M/1.4B (Tier 2). The paper also provides a theoretical analysis of Hadamard reparameterization as a method for outlier suppression and entropy enhancement.
+This paper presents \textbf{COREY}, a prototype runtime scheduling framework 
+designed to alleviate memory-bandwidth bottlenecks in 
+Mamba-1.x Selective State Space Models (SSMs).
 
-\subsection*{Strengths:}
+The central idea is to use \textbf{activation entropy} 
+as a lightweight runtime signal to dynamically determine:
+
+\begin{itemize}
+\item chunk size selection
+\item kernel fusion boundaries
+\item memory-aware scheduling decisions
+\end{itemize}
+
+Entropy is estimated using fixed-width histograms, 
+and decisions are made through a hardware-aware scoring mechanism.
+
+The framework is evaluated in two stages:
+
+\begin{itemize}
+\item Tier-1: deterministic Python-based analytic cost model
+\item Tier-2: GPU feasibility experiments on Mamba-370M and 1.4B checkpoints
+\end{itemize}
+
+Additionally, the paper proposes a theoretical analysis of 
+Hadamard reparameterization and its effect on entropy behavior.
+
+Overall, the paper explores an interesting intersection 
+between information theory and runtime kernel scheduling, 
+but the implementation remains at the prototype level, 
+and several theoretical and empirical gaps limit the strength 
+of the conclusions.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{2. Strengths}
+
 \begin{enumerate}
-    \item \textbf{Novelty of Signal:} Using activation entropy as a prompt-responsive scheduling signal is a creative departure from traditional static graph-level fusion or profile-based tuning [1, 2].
-    \item \textbf{Theoretical Rigor:} The paper provides three formal theorems (Entropy Growth, Fusion Depth Bound, and Quantization Stability) that link distributional geometry to systems-level hardware constraints [3-5].
-    \item \textbf{Hardware Awareness:} The scheduler explicitly accounts for register pressure, shared memory usage, and occupancy, making the "fusion score" grounded in physical hardware limits [6, 7].
-    \item \textbf{Transparency:} The authors are exceptionally clear about the scope of their claims, explicitly stating what is \textit{not} claimed (e.g., end-to-end speedup of a full fused kernel or perplexity improvements under Hadamard) [8, 9].
-    \item \textbf{Empirical Results:} Demonstrated a $3.24\times$ latency reduction at the kernel level on real RTX 3070/3090 hardware by automatically recovering optimal chunk sizes [10].
+
+\item \textbf{Novel Runtime Signal Design}
+
+Using activation entropy as a prompt-dependent scheduling signal 
+is an original idea compared with traditional static fusion 
+or offline profiling-based tuning.  
+The formulation is conceptually interesting and 
+could inspire future runtime-adaptive systems.
+
+\item \textbf{Hardware-Aware Modeling}
+
+The scheduling mechanism explicitly considers:
+
+\begin{itemize}
+\item register pressure
+\item shared memory limits
+\item occupancy constraints
+\end{itemize}
+
+This grounding in real GPU resource models 
+strengthens the credibility of the design.
+
+\item \textbf{Transparent Scope of Claims}
+
+The authors clearly state that:
+
+\begin{itemize}
+\item full fused-kernel deployment is not yet implemented
+\item end-to-end perplexity improvements are not claimed
+\end{itemize}
+
+Such clarity is appreciated and improves interpretability.
+
+\item \textbf{Proof-of-Concept GPU Results}
+
+Kernel-level latency measurements 
+on RTX-class GPUs demonstrate measurable gains 
+under optimized chunk settings, 
+indicating the feasibility of the scheduling mechanism.
+
+\item \textbf{Formal Theoretical Framing}
+
+The paper includes multiple theorems 
+relating entropy properties to system behavior, 
+which is uncommon in systems-oriented ML work 
+and adds intellectual depth.
+
 \end{enumerate}
 
-\subsection*{Major Weaknesses and Concerns}
-\begin{enumerate}[label=\Roman*)]
-      \item \textbf{Implementation Gap:} The primary system contribution (entropy-guided fusion) is not yet integrated as a full fused kernel in the inference path. The hook is currently "passive" on real checkpoints [9, 11].
-    \item \textbf{Limited Workload Diversity:} The real-workload evaluation is confined to 80 prompts from a LongBench subset. The results show that entropy is tightly concentrated, meaning the dynamic scheduler effectively acts as a stable auto-tuner rather than a rapidly switching controller in this specific regime [12].
-    \item \textbf{Hadamard Disconnect:} There is a significant gap between the synthetic "heavy-tailed" regime (where Hadamard increases entropy) and real Mamba checkpoints (where entropy decreases after rotation) [13, 14]. This limits the current practical utility of Theorem 1.
-    \item \textbf{Baseline Comparisons:} The evaluation lacks comparisons with more recent architectures like Mamba-2 or contemporary Transformers (e.g., with FlashAttention-3) at similar scales [15].
-    \item \textbf{Implementation Gap (The "Passive Hook" Issue):} For a TPAMI-level systems paper, the current integration is insufficient. The scheduler hook is currently "passive"—it suggests a tile size but does not yet forward it to the model execution. A "closed-loop" end-to-end evaluation is required to substantiate the claimed performance gains in a production-like environment. [9, 10]
-    \item \textbf{Disjoint between Theory and Real-World Activations:} Theorem 1 (Entropy Growth) is empirically falsified on real Mamba checkpoints, where entropy actually decreases after Hadamard rotation. While the authors acknowledge this, the paper's core motivation—that entropy serves as a "safety signal" for fusion—is weakened if the theory only holds for synthetic "heavy-tailed" data. [7, 11]
-    \item \textbf{Insufficient Competitive Baselines:} The experimental section lacks comparisons with state-of-the-art SSMs (Mamba-2/SSD) and optimized Transformers (FlashAttention-3). To satisfy TPAMI standards, the authors must demonstrate that COREY offers advantages over static profile-tuned memory managers in a wider architectural context. [12, 13]
-    \item \textbf{Generalization of the Entropy Signal:} The 80 real LongBench prompts exhibit a very narrow entropy range, causing the scheduler to "collapse" into a single chunk bucket (256). This suggests COREY currently acts as a static auto-tuner rather than a truly dynamic prompt-responsive controller. [14, 15]
-\end{enumerate}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{3. Major Weaknesses}
 
-\section*{Part 2: Rating and Confidence}
+\subsection*{W1. Passive Hook (Missing Closed-Loop Execution)}
 
-\textbf{Overall Score:} 6 (Marginal Accept) \\
-\textbf{Confidence Score:} 4 (High)
+The most critical limitation is that 
+the entropy scheduler remains \textbf{passive}.
 
-\textbf{Justification:} While the paper presents a "prototype study," the conceptual framework and the alignment between information theory (entropy) and systems optimization (fusion/tiling) are strong. The kernel-level timing results on real GPUs provide sufficient "proof of concept." However, the lack of end-to-end implementation prevents a higher score.
+Currently:
 
-\section*{Part 3: Questions for Authors}
+\begin{itemize}
+\item entropy is computed
+\item chunk recommendations are generated
+\item but recommendations are \textbf{not actively applied}
+to the runtime execution kernel
+\end{itemize}
+
+This prevents measurement of:
+
+\begin{itemize}
+\item end-to-end latency
+\item true system-level benefit
+\item real runtime overhead
+\end{itemize}
+
+Without closed-loop integration, 
+the work remains a feasibility prototype 
+rather than a deployable runtime system.
+
+This is a major limitation 
+for a systems-oriented NeurIPS submission.
+
+\vspace{6pt}
+
+\subsection*{W2. Limited Workload Diversity}
+
+The real workload evaluation 
+uses approximately 80 prompts 
+derived from a LongBench subset.
+
+Observed issue:
+
+\begin{itemize}
+\item entropy distribution is highly concentrated
+\item scheduler mostly selects a single chunk bucket
+\item dynamic behavior rarely occurs
+\end{itemize}
+
+This suggests the method behaves more like:
+
+\begin{center}
+\textbf{a static auto-tuner}
+\end{center}
+
+rather than a true dynamic controller.
+
+The generalization capability 
+remains insufficiently demonstrated.
+
+\vspace{6pt}
+
+\subsection*{W3. Theory–Practice Mismatch (Hadamard Behavior)}
+
+The paper proves theoretical entropy growth 
+under Hadamard rotation.
+
+However, empirical results on real Mamba activations show:
+
+\begin{center}
+\textbf{entropy often decreases}
+\end{center}
+
+This contradiction weakens the central theoretical narrative.
+
+The authors acknowledge this mismatch, 
+but the explanation remains incomplete.
+
+A theory validated only under synthetic heavy-tailed distributions 
+limits real-world relevance.
+
+\vspace{6pt}
+
+\subsection*{W4. Insufficient Strong Baselines}
+
+Comparisons with state-of-the-art systems are limited.
+
+Missing baselines include:
+
+\begin{itemize}
+\item Mamba-2 / SSD
+\item FlashAttention-3 style Transformer kernels
+\item Profile-based static tuning frameworks
+\end{itemize}
+
+Without these, 
+it is difficult to judge 
+whether entropy-based scheduling 
+provides unique advantages.
+
+\vspace{6pt}
+
+\subsection*{W5. Weak Demonstration of True Dynamic Adaptation}
+
+Entropy values in real workloads 
+show limited variance.
+
+As a result:
+
+\begin{itemize}
+\item bucket switching rarely occurs
+\item adaptive capability is not convincingly demonstrated
+\end{itemize}
+
+This challenges the claim 
+that the system is ``prompt-responsive.''
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{4. Minor Weaknesses}
 
 \begin{enumerate}
-    \item \textbf{Overhead of Active Mode:} Based on the analytic budget ($<1\%$), why has the "closing of the loop" (forwarding the chunk size to the kernel) not been implemented? Is there a technical blocker in the Triton interface? [16]
-    \item \textbf{Entropy Decrease:} Why do real Mamba activations exhibit an entropy decrease under Hadamard rotation? Is this purely due to the distributions being approximately normal rather than heavy-tailed? [17, 18]
-    \item \textbf{Heterogeneous Workloads:} Could the authors provide one example of a real-world activation regime (e.g., code vs. prose) where COREY would actually switch between the 64 and 512 chunk buckets? [19]
+
+\item Some theoretical sections 
+are lengthy relative to empirical validation.
+
+\item Notation related to entropy thresholds 
+(e.g., $H_{ref}$ selection) 
+is introduced before practical motivation 
+is fully established.
+
+\item Reproducibility details 
+(e.g., configuration scripts and profiling parameters) 
+should be more explicitly documented.
+
 \end{enumerate}
 
-\section*{Part 4: Suggestions for Revision}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{5. Questions for Authors}
 
-\subsection*{Mandatory Modifications for Revision}
 \begin{enumerate}
-    \item \textbf{Close the Loop:} To move toward a "deployment-grade" claim, implement the active forwarding of the tile recommendation to the \texttt{selective\_scan\_fn} and report end-to-end latency .
-    \item \textbf{Expand Baselines:} Include a comparison with Mamba-2 (SSD) to demonstrate why entropy guidance is specifically required for Mamba-1.x's hardware characteristics [20].
-    \item \textbf{Harmonize Thresholds:} Re-calibrate $H_{ref}$ to $\log K$ as suggested in Appendix A.16 to eliminate bin-count sensitivity and close the 35\% gap to the static-oracle [21].
-    \item \textbf{Clarify Hadamard Scope:} Given the findings in Remark 1, suggest moving the Hadamard analysis to a "Discussion" section to focus the "Results" section purely on the validated entropy scheduling mechanism [22].
-    \item \textbf{Diversify Prompts:} Test on a more heterogeneous corpus (e.g., interleaving sparse-token code with dense narrative) to validate the "rapid switching" capability of the scheduler [23].
-    \item \textbf{Active Loop Integration:} Implement the "Active Mode" where the entropy-derived chunk size is fed directly into the \texttt{selective\_scan\_fn} kernel during real inference. Report end-to-end wall-clock latency improvements across Mamba-370M and 1.4B.
-    \item \textbf{Harmonization of $H_{ref}$:} As noted in Appendix A.16, the default $H_{ref}=8.0$ nats is biased. Recalibrate the scheduler using the principled $H_{ref} = \log K$ to close the 35\% gap to the static oracle. [16, 17]
-    \item \textbf{Theoretical Refinement:} Provide a more comprehensive analysis of why real Mamba activations exhibit "entropy contraction" rather than growth under Hadamard rotation. Reconcile this with the "Quantization Stability" (Theorem 3) to show if stability increases even when entropy decreases. [7, 18]
-    \item \textbf{Heterogeneous Workload Benchmarking:} Conduct experiments on a mixed corpus (e.g., interleaving repetitive log data with dense narrative text) to demonstrate the scheduler's ability to switch chunk buckets in real-time. [19, 20]
+
+\item What technical barriers currently prevent 
+forwarding entropy-derived chunk sizes 
+into the actual execution kernel?
+
+\item Can the authors provide evidence 
+of real workloads where entropy variation 
+triggers multiple bucket switches?
+
+\item Why do real Mamba activations 
+exhibit entropy contraction under Hadamard rotation?
+
+\item How sensitive is the scheduler 
+to histogram resolution ($K$)?
+
+\item What is the expected runtime overhead 
+of a fully active scheduler?
+
 \end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{6. Required Revisions (Mandatory)}
+
+\begin{enumerate}
+
+\item \textbf{Implement Closed-Loop Execution}
+
+Forward entropy-derived chunk size 
+into the actual runtime kernel.
+
+Report:
+
+\begin{itemize}
+\item end-to-end latency
+\item runtime overhead
+\item GPU utilization
+\end{itemize}
+
+This is the single most important requirement.
+
+\item \textbf{Expand Benchmark Diversity}
+
+Include:
+
+\begin{itemize}
+\item heterogeneous prompts
+\item code-heavy workloads
+\item repetitive structured text
+\item long-context tasks
+\end{itemize}
+
+Demonstrate dynamic switching behavior.
+
+\item \textbf{Add Strong Baselines}
+
+Include:
+
+\begin{itemize}
+\item Mamba-2
+\item SSD variants
+\item FlashAttention-based Transformers
+\end{itemize}
+
+\item \textbf{Reconcile Theory with Empirical Behavior}
+
+Provide explanation for:
+
+\begin{center}
+entropy contraction under Hadamard
+\end{center}
+
+or restrict theoretical claims accordingly.
+
+\item \textbf{Stabilize Threshold Design}
+
+Recalibrate entropy thresholds 
+(e.g., $H_{ref} = \log K$) 
+to reduce sensitivity to histogram resolution.
+
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{7. Overall Evaluation}
+
+\textbf{Score: 5 (Borderline Reject)}  
+
+\textbf{Confidence: 4 (High)}
+
+\textbf{Estimated Accept Probability: 25--35\%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{8. Justification of Score}
+
+The core idea—using entropy 
+as a runtime scheduling signal—is interesting 
+and potentially impactful.
+
+However, the current implementation:
+
+\begin{itemize}
+\item lacks closed-loop execution
+\item lacks strong competitive baselines
+\item shows theoretical inconsistencies
+\item demonstrates limited dynamic behavior
+\end{itemize}
+
+These collectively prevent the work 
+from reaching the maturity level 
+typically required for acceptance at NeurIPS.
+
+With substantial system integration 
+and expanded evaluation, 
+this work could become competitive in future submissions.
 
 \end{document}
