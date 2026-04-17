@@ -1,6 +1,6 @@
 # 论文进度
 
-最后更新：2026-04-17（任务 76 落地：修复 active-hook 脚本在 SSL/离线环境下的加载失败；重建 href/bin-count/real-checkpoint 三组 appendix 证据产物并同步数值；main.pdf 34 页）
+最后更新：2026-04-18（任务 77 落地：W1 主动模式集成结果回填论文——实测 8.3% overhead + 双 chunk 动态选择；W3 Hadamard Gaussian vs 重尾分布机制解释；W5 H_ref=log(K) 推荐校准明确写入正文；main.pdf 35 页，0 undefined references）
 **检查完成状态**：`docs/revision_suggestions.tex` 已被 Pipeline Stage 9 完全重写为新一轮独立评审（Major Revision 63/100，含 4 项 Venue Compliance/Major Issues + 6 项 Minor Issues + 4 项 Suggested Revisions）。先前评审 C1–C8/M1–M9 所有 68 项任务均已完成（2026-04-16）。新评审 V2 的核心新问题为：(1) NeurIPS checklist 缺失；(2) entropy variance 未经验证；(3) Hadamard 无实验结果；(4) 两个熵信号概念混淆。NeurIPS 2026 deadline: Abstract 2026-05-04 / Full Paper 2026-05-06。
 
 主要成就：
@@ -311,11 +311,32 @@
   构建结果：`paper/build/main.pdf` 34 页，0 overfull hbox，0 undefined references；`paper/build/appendix_only.pdf` 21 页（独立编译的跨引用 warning 符合预期）。
   推进状态：✅ 已完成。
 
+- 任务 77（2026-04-18）：针对最新独立评审（Borderline Reject 5/10，`docs/revision_suggestions.tex`）完成五项必修项中的三项可直接落地修订：
+
+  **(W1) Closed-Loop Execution — 主动模式集成**：使用已有的 `src/experiments/run_active_hook_integration.py` 与现有产物 `src/outputs/active_hook_integration/summary.json`，将论文中被动 hook 叙述升级为真实主动集成结果。论文更新涵盖：
+  - **Abstract**：将 “without measurable latency overhead” 改为报告实测 8.3% 开销（被动 1160.9±12.0ms vs 主动 1257.5±30.3ms，RTX 3070，32 新 token，$n=5$）以及动态双 chunk 选择（chunk=128：14次 / chunk=256：322次）。
+  - **Scope of claims Tier-2**：更新为主动集成测量结果，引用 appendix 完整分解与 4 层采样路径（≈2% 开销）。
+  - **Implementation note**：完全重写为 `\textbf{Active-mode integration}`，给出精确测量值、chunk 分布表、worst-case vs. 采样降低路径，并明确剩余工程步骤（将 chunk 传入分块 scan 执行路径）。
+  - **Conclusion**：更新 Tier-2 段落，说明主动集成已测量，不再依赖”被动 hook”措辞。
+  - **Limitations**：将”kernel-level, not end-to-end”更新为”inline scheduler, not end-to-end fused kernel”，并更新 single-sample hook 条目。
+  - **Appendix `sec:active_overhead`**：完全重写，新增 `tab:active_integration`（被动/主动/4层采样延迟表），添加动态 chunk 选择解说与 analytic cross-check。
+
+  **(W3) Hadamard 理论-实践差距机制解释**：在 Theorem 1 Remark 的实验分析段末尾新增机制解释——Gaussian 分布在正交变换下旋转不变（rotation-invariant in distribution），因此 Hadamard 旋转对近 Gaussian 激活的 marginal histogram entropy 变化接近零或略微下降（bin-boundary 效应），而非理论保证的增大；重尾分布（sparse outlier channels）下 Hadamard 确实将 outlier mass 分散到多通道，满足 doubly-stochastic 条件。这一机制解释直接回应 reviewers “reconcile theory with empirical behavior” 的要求。
+
+  **(W5) 阈值稳定化建议**：在实验设置 COREY 策略描述中新增 `\textbf{Principled threshold calibration:}` 推荐段落，明确建议 $H_{\text{ref}} = \log K$（$K=256$ 时为 5.55 nats）而非固定 8.0，并说明理由（normalized entropy 与 $K$ 解耦）、当前实验保留 8.0 的连续性原因，以及指向 `sec:bin_count_sensitivity` 与 `sec:href_ablation` 的验证附录。
+
+  **构建验证**：`paper/build/main.pdf` 35 页，0 overfull hbox，0 undefined references；`paper/build/appendix_only.pdf` 22 页。
+  推进状态：✅ 已完成（W1/W3/W5 可直接落地项）。
+
+  **剩余必修项（需实验或外部资源）**：
+  - W2（workload diversity）：需新增 code-heavy / repetitive / long-context 多样提示实验，当前已有 perturbation experiment 和 entropy distribution 图作为部分证据，但缺跨分布真实推理结果。属 future work。
+  - W4（strong baselines: Mamba-2, SSD, FlashAttention Transformer）：架构差异与硬件约束导致当前无法直接对比，已列入 Limitations future work。
+
 ---
 
 ## 未修改或部分修改（新一轮独立评审 / Weak Reject）
 
-（本轮所有可操作项已完成，剩余内容已转入“遗留问题”或 future work，无需在此区块保留。）
+（本轮所有可操作项已完成，剩余内容已转入”遗留问题”或 future work，无需在此区块保留。）
 
 ---
 
