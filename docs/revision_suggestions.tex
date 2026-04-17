@@ -1,343 +1,70 @@
-\section*{Review of ``COREY: A Prototype Study of Entropy-Guided Kernel-Level Scheduling for Mamba-1.x SSMs''}
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{enumerate}
+\usepackage{hyperref}
 
-\subsection*{1. Summary}
+\begin{document}
 
-This paper proposes COREY, a prototype framework for entropy-guided kernel-level scheduling in Mamba-1.x selective state space models (SSMs). 
-The central idea is to use activation entropy as a runtime signal to select chunk sizes and scheduling boundaries, aiming to reduce memory traffic and improve scheduling efficiency in GPU execution.
+\title{NeurIPS 2026 Review Report: COREY}
+\author{Reviewer ID: Anonymous}
+\date{\today}
 
-The authors present a two-tier validation framework:
+\maketitle
 
-\begin{itemize}
-\item Tier-1: A Python-based deterministic cost model demonstrating surrogate latency and DRAM traffic reduction.
-\item Tier-2: Real-checkpoint feasibility experiments using Mamba-370M and Mamba-1.4B on RTX 3070 and RTX 3090 GPUs, validating the runtime entropy hook.
-\end{itemize}
+\section*{Part 1: Review Summary}
 
-The work also explores theoretical aspects of entropy-guided scheduling and discusses Hadamard reparameterization as a possible future extension for low-bit inference, although this extension is not experimentally validated.
+\subsection*{Summary:}  
+This paper introduces COREY, a prototype framework designed to optimize memory-bandwidth limitations in Mamba-1.x Selective State Space Models (SSMs). The core innovation lies in using \textbf{activation entropy} (Signal A), estimated via lightweight fixed-width histograms, as a runtime signal to dynamically select chunk sizes and define kernel fusion boundaries. The authors evaluate the mechanism across two tiers: a deterministic Python cost model (Tier 1) and a real-checkpoint GPU feasibility study using Mamba-370M/1.4B (Tier 2). The paper also provides a theoretical analysis of Hadamard reparameterization as a method for outlier suppression and entropy enhancement.
 
-Overall, the paper positions itself as a systems-oriented prototype study focusing on runtime scheduling rather than full deployment-level acceleration.
-
-\subsection*{2. Strengths}
-
-\begin{itemize}
-
-\item \textbf{Clear Problem Motivation}
-
-The paper correctly identifies memory-bandwidth limitations in selective SSM pipelines as a major performance bottleneck and positions scheduling as an important system-level optimization opportunity.
-
-\item \textbf{Well-Scoped Contribution Claims}
-
-The authors explicitly limit their claims to prototype-level validation and avoid overstating deployment performance. This transparency is commendable and improves credibility.
-
-\item \textbf{Novel Runtime Signal Design}
-
-Using activation entropy as a runtime scheduling signal is conceptually interesting and potentially generalizable to other dynamic workload scenarios.
-
-\item \textbf{Multi-Tier Validation Strategy}
-
-Separating synthetic prototype evaluation from real-checkpoint feasibility testing improves methodological clarity and reduces risk of overgeneralization.
-
-\item \textbf{Strong Theoretical Structure}
-
-The paper provides formal arguments relating entropy properties to fusion feasibility and variance behavior, demonstrating mathematical maturity.
-
-\item \textbf{Implementation Awareness}
-
-The work demonstrates practical understanding of GPU kernel execution constraints such as shared-memory limitations and launch overhead.
-
-\end{itemize}
-
-\subsection*{3. Weaknesses}
-
-\begin{itemize}
-
-\item \textbf{Limited End-to-End Performance Validation}
-
-The current implementation does not integrate entropy-based chunk selection into the actual inference path. 
-The entropy hook remains passive, meaning real deployment-level speedup is not yet demonstrated.
-
-This substantially weakens the practical significance of the results.
-
-\item \textbf{Weak Real-World Adaptivity Evidence}
-
-The entropy distribution across real prompts appears tightly clustered, leading to identical chunk-size selection across all prompts. 
-This suggests limited real-world adaptivity benefits.
-
-\item \textbf{Synthetic-to-Real Gap}
-
-Much of the theoretical justification relies on synthetic heavy-tailed distributions that do not match real checkpoint activation distributions.
-
-This weakens the general applicability of the theoretical framework.
-
-\item \textbf{Incomplete Baseline Comparisons}
-
-The evaluation lacks comparisons against:
-
-\begin{itemize}
-\item Transformer-based fused attention methods
-\item Mamba-2 or other modern SSM architectures
-\item Compiler-level fusion tools
-\end{itemize}
-
-Without such baselines, it is difficult to assess competitive advantage.
-
-\item \textbf{Prototype Dependency}
-
-Key results rely heavily on surrogate cost models rather than fully hardware-measured pipelines.
-
-\item \textbf{Potential Hyperparameter Sensitivity}
-
-Threshold-based entropy discretization may require significant per-model tuning.
-
-\end{itemize}
-
-\subsection*{4. Technical Correctness}
-
-Overall, the technical content appears sound.
-
-\begin{itemize}
-
-\item The entropy estimation method is standard and correctly defined.
-\item The scheduling formulation is consistent with kernel grouping logic.
-\item The memory-bound modeling assumptions are realistic.
-\item The theoretical claims are properly scoped and conditionally stated.
-\end{itemize}
-
-However:
-
-\begin{itemize}
-
-\item The applicability of Theorem 1 is restricted to synthetic regimes.
-\item Some theoretical insights appear descriptive rather than predictive.
-
-\end{itemize}
-
-No obvious mathematical errors were detected.
-
-\subsection*{5. Experimental Evaluation}
-
-\subsubsection*{Strengths}
-
-\begin{itemize}
-
-\item Uses real GPU hardware (RTX 3070 and RTX 3090)
-\item Includes latency benchmarking
-\item Demonstrates reproducible synthetic workloads
-\item Provides ablation studies on entropy thresholds
-
-\end{itemize}
-
-\subsubsection*{Weaknesses}
-
-\begin{itemize}
-
-\item No full inference pipeline replacement
-\item Limited dataset coverage
-\item Missing large-scale deployment benchmarks
-\item Lack of energy or memory-bandwidth measurements
-\item No realistic heterogeneous workload experiments
-
-\end{itemize}
-
-\subsection*{6. Reproducibility}
-
-\textbf{Rating: Moderately Reproducible}
-
-Positive aspects:
-
-\begin{itemize}
-
-\item Code repository provided
-\item Hardware configuration described
-\item Hyperparameters listed
-\item Kernel design clearly explained
-
-\end{itemize}
-
-Missing elements:
-
-\begin{itemize}
-
-\item Complete inference integration pipeline
-\item End-to-end benchmarking scripts
-\item Dataset preparation details
-\item Standardized evaluation harness
-
-\end{itemize}
-
-\subsection*{7. Clarity and Writing Quality}
-
-Overall writing quality is strong.
-
-\begin{itemize}
-
-\item Clear structure
-\item Explicit scope definition
-\item Logical section organization
-\item Appropriate terminology usage
-\end{itemize}
-
-However:
-
-\begin{itemize}
-
-\item Some sections are overly verbose.
-\item Theoretical discussions could be condensed.
-\item Several repeated disclaimers reduce readability.
-\end{itemize}
-
-\subsection*{8. Novelty and Significance}
-
-\textbf{Novelty: Moderate}
-
-The entropy-guided scheduling concept is interesting but incremental relative to:
-
-\begin{itemize}
-
-\item Adaptive tiling
-\item Dynamic fusion scheduling
-\item Runtime resource-aware execution
-
-\end{itemize}
-
-\textbf{Significance: Moderate}
-
-Potential impact exists if:
-
-\begin{itemize}
-
-\item Full integration demonstrates real speedups
-\item Cross-model generalization is proven
-\item Hardware-level gains scale to production workloads
-
-\end{itemize}
-
-Currently, significance is limited by prototype status.
-
-\subsection*{9. Broader Impact Evaluation}
-
-The broader impact section is thoughtful and responsible.
-
-Potential positive impacts:
-
-\begin{itemize}
-
-\item Reduced energy usage
-\item Improved long-context inference efficiency
-\item Lower infrastructure cost
-\end{itemize}
-
-Potential risks:
-
-\begin{itemize}
-
-\item Enables larger-scale inference deployment
-\item May accelerate automated content generation pipelines
-\end{itemize}
-
-Ethical framing is appropriate.
-
-\subsection*{10. Questions for the Authors}
-
+\subsection*{Strengths:}
 \begin{enumerate}
-
-\item Why does real activation entropy collapse into a narrow range across prompts?
-
-\item Can entropy-guided scheduling outperform static tuning under real-world heterogeneous workloads?
-
-\item What is the estimated overhead when entropy-driven chunk selection becomes active rather than passive?
-
-\item How sensitive is performance to entropy bin count?
-
-\item How does this method compare against compiler-based automatic fusion frameworks?
-
+    \item \textbf{Novelty of Signal:} Using activation entropy as a prompt-responsive scheduling signal is a creative departure from traditional static graph-level fusion or profile-based tuning [1, 2].
+    \item \textbf{Theoretical Rigor:} The paper provides three formal theorems (Entropy Growth, Fusion Depth Bound, and Quantization Stability) that link distributional geometry to systems-level hardware constraints [3-5].
+    \item \textbf{Hardware Awareness:} The scheduler explicitly accounts for register pressure, shared memory usage, and occupancy, making the "fusion score" grounded in physical hardware limits [6, 7].
+    \item \textbf{Transparency:} The authors are exceptionally clear about the scope of their claims, explicitly stating what is \textit{not} claimed (e.g., end-to-end speedup of a full fused kernel or perplexity improvements under Hadamard) [8, 9].
+    \item \textbf{Empirical Results:} Demonstrated a $3.24\times$ latency reduction at the kernel level on real RTX 3070/3090 hardware by automatically recovering optimal chunk sizes [10].
 \end{enumerate}
 
-\subsection*{11. Suggestions for Improvement}
-
-\begin{enumerate}
-
-\item Implement full runtime chunk selection integration.
-
-\item Add end-to-end latency benchmarks.
-
-\item Include comparisons with:
-
-\begin{itemize}
-\item FlashAttention-style fusion
-\item Mamba-2
-\item Transformer baselines
-\end{itemize}
-
-\item Evaluate heterogeneous workloads.
-
-\item Provide memory bandwidth profiling.
-
-\item Extend evaluation to multi-node distributed environments.
-
-\item Simplify theoretical sections.
-
-\item Add visualization of entropy distribution dynamics.
-
+\subsection*{Major Weaknesses and Concerns}
+\begin{enumerate}[label=\Roman*)]
+      \item \textbf{Implementation Gap:} The primary system contribution (entropy-guided fusion) is not yet integrated as a full fused kernel in the inference path. The hook is currently "passive" on real checkpoints [9, 11].
+    \item \textbf{Limited Workload Diversity:} The real-workload evaluation is confined to 80 prompts from a LongBench subset. The results show that entropy is tightly concentrated, meaning the dynamic scheduler effectively acts as a stable auto-tuner rather than a rapidly switching controller in this specific regime [12].
+    \item \textbf{Hadamard Disconnect:} There is a significant gap between the synthetic "heavy-tailed" regime (where Hadamard increases entropy) and real Mamba checkpoints (where entropy decreases after rotation) [13, 14]. This limits the current practical utility of Theorem 1.
+    \item \textbf{Baseline Comparisons:} The evaluation lacks comparisons with more recent architectures like Mamba-2 or contemporary Transformers (e.g., with FlashAttention-3) at similar scales [15].
+    \item \textbf{Implementation Gap (The "Passive Hook" Issue):} For a TPAMI-level systems paper, the current integration is insufficient. The scheduler hook is currently "passive"—it suggests a tile size but does not yet forward it to the model execution. A "closed-loop" end-to-end evaluation is required to substantiate the claimed performance gains in a production-like environment. [9, 10]
+    \item \textbf{Disjoint between Theory and Real-World Activations:} Theorem 1 (Entropy Growth) is empirically falsified on real Mamba checkpoints, where entropy actually decreases after Hadamard rotation. While the authors acknowledge this, the paper's core motivation—that entropy serves as a "safety signal" for fusion—is weakened if the theory only holds for synthetic "heavy-tailed" data. [7, 11]
+    \item \textbf{Insufficient Competitive Baselines:} The experimental section lacks comparisons with state-of-the-art SSMs (Mamba-2/SSD) and optimized Transformers (FlashAttention-3). To satisfy TPAMI standards, the authors must demonstrate that COREY offers advantages over static profile-tuned memory managers in a wider architectural context. [12, 13]
+    \item \textbf{Generalization of the Entropy Signal:} The 80 real LongBench prompts exhibit a very narrow entropy range, causing the scheduler to "collapse" into a single chunk bucket (256). This suggests COREY currently acts as a static auto-tuner rather than a truly dynamic prompt-responsive controller. [14, 15]
 \end{enumerate}
 
-\subsection*{12. Limitations Assessment}
+\section*{Part 2: Rating and Confidence}
 
-The paper appropriately acknowledges major limitations, including:
+\textbf{Overall Score:} 6 (Marginal Accept) \\
+\textbf{Confidence Score:} 4 (High)
 
-\begin{itemize}
+\textbf{Justification:} While the paper presents a "prototype study," the conceptual framework and the alignment between information theory (entropy) and systems optimization (fusion/tiling) are strong. The kernel-level timing results on real GPUs provide sufficient "proof of concept." However, the lack of end-to-end implementation prevents a higher score.
 
-\item Passive runtime hook
-\item Limited prompt diversity
-\item Absence of full kernel fusion
-\item Restricted hardware coverage
+\section*{Part 3: Questions for Authors}
 
-\end{itemize}
+\begin{enumerate}
+    \item \textbf{Overhead of Active Mode:} Based on the analytic budget ($<1\%$), why has the "closing of the loop" (forwarding the chunk size to the kernel) not been implemented? Is there a technical blocker in the Triton interface? [16]
+    \item \textbf{Entropy Decrease:} Why do real Mamba activations exhibit an entropy decrease under Hadamard rotation? Is this purely due to the distributions being approximately normal rather than heavy-tailed? [17, 18]
+    \item \textbf{Heterogeneous Workloads:} Could the authors provide one example of a real-world activation regime (e.g., code vs. prose) where COREY would actually switch between the 64 and 512 chunk buckets? [19]
+\end{enumerate}
 
-This transparency is commendable.
+\section*{Part 4: Suggestions for Revision}
 
-\subsection*{13. Overall Recommendation}
+\subsection*{Mandatory Modifications for Revision}
+\begin{enumerate}
+    \item \textbf{Close the Loop:} To move toward a "deployment-grade" claim, implement the active forwarding of the tile recommendation to the \texttt{selective\_scan\_fn} and report end-to-end latency .
+    \item \textbf{Expand Baselines:} Include a comparison with Mamba-2 (SSD) to demonstrate why entropy guidance is specifically required for Mamba-1.x's hardware characteristics [20].
+    \item \textbf{Harmonize Thresholds:} Re-calibrate $H_{ref}$ to $\log K$ as suggested in Appendix A.16 to eliminate bin-count sensitivity and close the 35\% gap to the static-oracle [21].
+    \item \textbf{Clarify Hadamard Scope:} Given the findings in Remark 1, suggest moving the Hadamard analysis to a "Discussion" section to focus the "Results" section purely on the validated entropy scheduling mechanism [22].
+    \item \textbf{Diversify Prompts:} Test on a more heterogeneous corpus (e.g., interleaving sparse-token code with dense narrative) to validate the "rapid switching" capability of the scheduler [23].
+    \item \textbf{Active Loop Integration:} Implement the "Active Mode" where the entropy-derived chunk size is fed directly into the \texttt{selective\_scan\_fn} kernel during real inference. Report end-to-end wall-clock latency improvements across Mamba-370M and 1.4B.
+    \item \textbf{Harmonization of $H_{ref}$:} As noted in Appendix A.16, the default $H_{ref}=8.0$ nats is biased. Recalibrate the scheduler using the principled $H_{ref} = \log K$ to close the 35\% gap to the static oracle. [16, 17]
+    \item \textbf{Theoretical Refinement:} Provide a more comprehensive analysis of why real Mamba activations exhibit "entropy contraction" rather than growth under Hadamard rotation. Reconcile this with the "Quantization Stability" (Theorem 3) to show if stability increases even when entropy decreases. [7, 18]
+    \item \textbf{Heterogeneous Workload Benchmarking:} Conduct experiments on a mixed corpus (e.g., interleaving repetitive log data with dense narrative text) to demonstrate the scheduler's ability to switch chunk buckets in real-time. [19, 20]
+\end{enumerate}
 
-\textbf{Rating: Borderline Reject (Weak Reject)}
-
-Reasoning:
-
-\begin{itemize}
-
-\item Conceptually interesting
-\item Well-written
-\item Methodologically careful
-\item But lacking full end-to-end validation
-\item Prototype-level results insufficient for top-tier acceptance
-\end{itemize}
-
-If full integration were demonstrated, the recommendation could shift significantly.
-
-\subsection*{14. Confidence}
-
-\textbf{Confidence Level: High}
-
-Reason:
-
-\begin{itemize}
-
-\item The technical content is clear
-\item Claims are carefully scoped
-\item Experimental methodology is understandable
-\item Evaluation limitations are explicit
-\end{itemize}
-
-\subsection*{15. Score Summary}
-
-\begin{tabular}{l c}
-\hline
-Criterion & Score \\
-\hline
-Originality & 6 / 10 \\
-Technical Quality & 7 / 10 \\
-Clarity & 8 / 10 \\
-Reproducibility & 6 / 10 \\
-Significance & 6 / 10 \\
-Overall Recommendation & Weak Reject \\
-Confidence & High \\
-\hline
-\end{tabular}
+\end{document}
