@@ -1,6 +1,6 @@
 # 论文进度
 
-最后更新：2026-04-17（Stage 9 V3 独立评审 + Stage 10 修订：M1/M2/M4/M6/N1/N3/N4 全部落地，PDF 干净重建）
+最后更新：2026-04-17（任务 75 落地：real-checkpoint cross-layer entropy validation via PyTorch forward hooks；6/7 sampled layers → chunk=256；sec:real_checkpoint_entropy 新增 appendix；main.pdf 34 页 0 undefined references）
 **检查完成状态**：`docs/revision_suggestions.tex` 已被 Pipeline Stage 9 完全重写为新一轮独立评审（Major Revision 63/100，含 4 项 Venue Compliance/Major Issues + 6 项 Minor Issues + 4 项 Suggested Revisions）。先前评审 C1–C8/M1–M9 所有 68 项任务均已完成（2026-04-16）。新评审 V2 的核心新问题为：(1) NeurIPS checklist 缺失；(2) entropy variance 未经验证；(3) Hadamard 无实验结果；(4) 两个熵信号概念混淆。NeurIPS 2026 deadline: Abstract 2026-05-04 / Full Paper 2026-05-06。
 
 主要成就：
@@ -272,30 +272,39 @@
   论文重新编译：✅ 成功（0 overfull hbox，0 undefined references）。
   推进状态：✅ 已完成。
 
+- 任务 75（2026-04-17）：W1/S1 real-checkpoint entropy validation via PyTorch forward hooks。
+  (1) **脚本**：新增 `src/experiments/run_active_hook_real_benchmark.py`（hook-based tensor capture via `x_proj` forward hook，无需 mamba_ssm CUDA 内核）与 `src/scripts/wsl_run_active_hook_real.sh`（corey-cuda128 环境驱动脚本，含跨层扫描选项 `--sweep-layers`）。
+  (2) **实验结果**（RTX 3070 / Mamba-370M / 89-token 真实提示）：
+    - Layer 0：H=2.27 nats → chunk=128（embedding 层邻近，熵值较低），entropy overhead 1.10±0.09ms
+    - Layer 8：H=2.91 → chunk=256
+    - Layer 16：H=3.22 → chunk=256
+    - Layer 24：H=3.15 → chunk=256
+    - Layer 32：H=2.91 → chunk=256
+    - Layer 40：H=3.39 → chunk=256
+    - Layer 47：H=3.31 → chunk=256
+    - **6/7 采样层一致选出 chunk=256**（与合成数据及 LongBench 分布一致）
+  (3) **论文更新**：
+    - `paper/appendix.tex` 新增 `sec:real_checkpoint_entropy` 小节（`tab:real_checkpoint_entropy`，7 层扫描表）
+    - `paper/main.tex` W1 implementation note 新增指向 `sec:real_checkpoint_entropy` 的交叉引用，Limitations item 7 补充"6/7 层验证"注释
+  (4) **构建验证**：`paper/build/main.pdf` 34 页，0 overfull hbox，0 undefined references；`appendix_only.pdf` 21 页
+  (5) **产物**：`src/outputs/active_hook_real_benchmark/metadata.json + results.csv + summary.json + layer_sweep.json`
+  推进状态：✅ 已完成。
+
+- 任务 74（2026-04-17）：新一轮独立评审（Weak Reject，15 节标准格式）可直接落地项收口四项：
+  (1) **S8 熵分布可视化**：新增 `src/figures/generate_entropy_distribution.py`，从 80 条真实 LongBench prompt 的 `entropy_before` 生成 violin+scatter 分组图，附 coarse chunk-bucket 水平参考线与 $\log K{=}5.55$ nats 理论上限；输出 `paper/figs/entropy_distribution.jpg`，在 `paper/appendix.tex` `sec:entropy_variance_real` 插入 `fig:entropy_variance_real`，与 `tab:entropy_variance_real` 并列。
+  (2) **Q4 K 直方图 bin 数敏感性**：新增 `src/experiments/bin_count_sensitivity.py`（纯 CPU 解析式，$10^{6}$ 样本），针对 standard-normal 与 uniform 两种激活分布扫 $K \in \{16,32,64,128,256,512,1024,2048\}$ 并在两种 $H_{\text{ref}}$ 策略（principled $\log K$ vs fixed 8.0）下给出 chunk 选择与延迟；产物 `src/outputs/bin_count_sensitivity/bin_count_sensitivity.csv` + `summary.txt`；在 `paper/appendix.tex` 新增 `sec:bin_count_sensitivity` 小节与 `tab:bin_count_sensitivity`。关键结论：principled 校准下 $H/\log K$ 近似 $K$-invariant，chunk 选择与 bin 数解耦；fixed $H_{\text{ref}}{=}8.0$ 才是之前观察到的 K-sensitivity 根源。
+  (3) **Q3 active-mode overhead 估算**：在 `paper/appendix.tex` 新增 `sec:active_overhead` 小节，给出 (a) 解析式 per-prompt 上限（$16.8$\,MB HBM → $\approx 33.6\,\mu$s → 占 COREY 单次 scan 的 $\approx 3.1\%$，摊销到 32 token 生成约 $0.1\%$），以及 (b) 基于 `tab:hook_micro` 三组实测值（$-3.63$ / $-4.02$ / $-1.30\%$）的数据上界（$\lesssim 4\%$），并说明 active 模式只是改变 `selective_scan_fn` 的一个 runtime 参数，不引入额外 kernel launch。
+  (4) **Q2/S4 heterogeneous workload**：在 `paper/main.tex` Limitations "Prompt-regime concentration" 条目改写，显式绑定 `fig:entropy_variance_real` 与 `tab:perturbation`，证明机制已具备 chunk 切换能力但缺混合真实工作负载；新增 `\textbf{Heterogeneous real workloads.}` 作为第六条 open experimental gap，并给出三步未来协议（跨三个 entropy 十分位交错语料 / 再跑三策略 W1 与 real-checkpoint harness / 记录 per-prompt chunk-selection transitions 与端到端延迟 delta）。
+  构建结果：`paper/build/main.pdf` 34 页，0 overfull hbox，0 undefined references；`paper/build/appendix_only.pdf` 21 页（独立编译的跨引用 warning 符合预期）。
+  推进状态：✅ 已完成。
+
 ---
 
-## 未修改或部分修改（Stage 9 V3）
+## 未修改或部分修改（新一轮独立评审 / Weak Reject）
 
-- **N2/N4 完整集成**（评级：中优先）：hook 目前仍是被动的；完整接入需要在 HF generate 调用中传入 `suggested_tile_size`，影响前向计算。已在论文中诚实披露；完整实现属于 future work，不阻挡投稿。
-  - 无需用户决策；可在投稿前补充实现（nice-to-have）。
-- **N1 Option A 域迁移实验**（评级：低优先）：跨工作负载域的 prompt 分布多样性实验，说明 COREY 在不同 domain 下 entropy 确实会切换 chunk。当前 80 个 prompts 全部落在 chunk=256 桶，无 domain shift 证据。此项超出当前仓库现有产物范围，非投稿阻塞。
-  - 无需用户决策；可在投稿后作为修订增补。
-- **N5 原型-GPU 相关性校准**：Tier-1 prototype surrogate 与 Tier-2 GPU timing 的对应关系尚无量化实验。非投稿阻塞。
+（本轮所有可操作项已完成，剩余内容已转入“遗留问题”或 future work，无需在此区块保留。）
 
 ---
 
 ## 遗留问题
 
-### 【已解决 - 2026-04-17】Stage 9 V3 评审 + Stage 10 修订
-
-当前所有 V3 可执行项（M1–M6 + N1 Option B + N3 + N2/N4 被动 hook 披露）已完成。
-
-**最终论文状态（2026-04-17 Stage 10 after）**：
-- `paper/build/main.pdf`：0 overfull hbox，0 undefined references
-- `paper/build/appendix_only.pdf`：19 pages
-- H_ref ablation 新增于 appendix (sec:href_ablation + tab:href_ablation)
-- 被动 hook 显式披露：main.tex Online Scheduler Hook 小节
-- Data-parallel 类型说明：sec:ckpt_status
-- Static-512 oracle 行已加入 tab:w1_chunked_scan
-
-NeurIPS 2026 投稿时间表：Abstract 2026-05-04 / Full Paper 2026-05-06。
