@@ -1,55 +1,30 @@
-# Stage 9 — Field Analysis and Reviewer Configuration Card
+# Stage 9 Field Analysis (2026-04-18)
 
-**Date:** 2026-04-16  
-**Stage:** Pipeline Stage 9 (Independent Full Review)  
-**Target Venue:** NeurIPS 2026  
-**Reviewer Framework:** 5-Reviewer Panel (EIC + R1 + R2 + R3 + DA)
+Target venue: NeurIPS 2026 main track
 
----
+Paper type assessment:
+- Primary area: ML systems / LLM efficiency for Mamba-1.x inference
+- Best-fitting contribution type: Concept & Feasibility, not General systems
+- Review emphasis: venue compliance, claim-to-evidence alignment, runtime adaptivity value, and systems-baseline strength
 
-## Paper Summary
+Recommended reviewer configuration used for this round:
+- EIC: NeurIPS AC/SAC-style editor with ML systems scope focus
+- R1 Methodology: systems-and-theory reviewer focused on causal validity of the proposed scheduler
+- R2 Domain: Mamba / SSM efficiency reviewer focused on baseline strength and positioning
+- R3 Perspective: deployment-oriented reviewer focused on practical value, reproducibility, and user-facing significance
+- Devil's Advocate: novelty and overclaim stress test
 
-**Title:** COREY: A Prototype Study of Entropy-Guided Kernel-Level Scheduling and Hadamard Reparameterization for Selective State Space Models
+Key paper strengths:
+- The manuscript is unusually transparent about what is and is not claimed.
+- The chunked selective-scan benchmark is a genuine kernel-level measurement on real GPUs.
+- The paper makes a clear effort to separate prototype-only evidence from real-checkpoint evidence.
 
-**Research Problem:** Improving inference efficiency of Mamba-family Selective State Space Models (SSMs) by reducing memory-bandwidth overhead through better kernel scheduling and activation smoothing.
+Primary risk profile identified before synthesis:
+1. Venue compliance risk: the current `paper/main.pdf` keeps main-text sections through page 11, while NeurIPS 2026 allows 9 content pages.
+2. Closed-loop evidence risk: the active scheduler computes chunk decisions inline, but the selected chunk is not yet consumed by the real checkpoint inference path.
+3. Significance risk: on the measured real workload regime, all 80 prompts fall into the same coarse chunk bucket, and the paper's own static oracle is 35% faster than COREY on W1.
+4. Narrative focus risk: the Hadamard/quantization theory occupies substantial space even though its assumptions are empirically falsified on real checkpoints and it is not part of the validated system contribution.
+5. Coverage risk: checkpoint evaluation remains narrow (4 LongBench tasks x 20 samples, one external baseline scale, pending 2.8B static row).
 
-**Core Contribution:**
-1. An entropy-driven chunk-size selection policy for the Triton `selective_scan_fn` kernel — COREY selects a larger chunk (e.g., 256) from a runtime entropy observation, reducing kernel invocations and improving HBM coalescing.
-2. A Hadamard reparameterization layer that absorbs forward/inverse transforms into projection blocks to smooth activation outliers.
-
-**Two-Tier Evidence Structure:**
-- Tier 1: Python cost-model prototype (illustrative diagnostics only, NOT GPU measurements)
-- Tier 2: Real-GPU chunked selective-scan benchmark (genuine kernel-level timing)
-
-**Key Result:** COREY achieves 3.24× latency speedup vs. Static-64 on RTX 3070 (Triton kernel, seq_len=4096). An oracle-tuned Static-256 baseline achieves identical latency, confirming the speedup comes from chunk-size selection, not the entropy mechanism per se.
-
----
-
-## Field Classification
-
-- **Primary domain:** ML Systems / Efficient Inference
-- **Secondary domain:** Selective State Space Models, Quantization-Oriented Architectures
-- **Research paradigm:** Empirical systems study + mathematical formalization
-- **Methodology type:** Quantitative (hardware benchmarks + theoretical analysis)
-- **Target journal tier:** NeurIPS 2026 (Tier 1 ML conference, systems track)
-- **Paper maturity:** Prototype / Proof-of-Concept, explicitly scoped as such
-
----
-
-## Reviewer Configuration
-
-| Reviewer | Identity | Focus |
-|----------|----------|-------|
-| **EIC** | NeurIPS 2026 Area Chair, specializing in efficient ML inference and systems papers | Journal fit, contribution scope, submission readiness |
-| **R1** | GPU Systems Researcher — Triton/CUDA expert, operator fusion, memory-bandwidth optimization | Methodological rigor, kernel-level evidence quality, cost-model validity |
-| **R2** | SSM/Mamba Architecture Expert — familiar with mamba-ssm codebase, SSM inference optimization, Mamba-2 architecture | Domain contribution, related work coverage, architectural analysis |
-| **R3** | Applied Quantization Researcher — AWQ, GPTQ, Quamba, deployment considerations | Hadamard/quantization contribution, practical utility, deployment gap |
-| **DA** | Devil's Advocate — challenges core claims about entropy guidance value, novelty, and causal attribution | Fundamental validity of entropy-guidance claim, circular evidence, practical value |
-
----
-
-## Stage 9 Protocol Notes
-
-- **READ-ONLY constraint**: This review process does NOT modify any files in `paper/`. All output is reports and revision guidance only.
-- **Venue compliance check**: Conducted before scoring (Phase 1).
-- **Independence**: Each reviewer has reviewed the paper independently without cross-referencing other reviewers.
+Field-level conclusion:
+- This is a promising prototype paper with credible mechanism exploration, but in its current form it is better aligned with a narrower concept paper or workshop-style systems note than with a NeurIPS main-track paper claiming a publishable systems advance.

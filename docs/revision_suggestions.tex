@@ -1,356 +1,192 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
-\usepackage{enumerate}
+\usepackage[T1]{fontenc}
 \usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{enumitem}
 \usepackage{hyperref}
 
 \begin{document}
 
-\title{NeurIPS 2026 Review Report (Integrated Version)}
-\author{Reviewer ID: Anonymous}
-\date{\today}
-
+\title{NeurIPS 2026 Stage 9 Independent Review Reset}
+\author{EIC + R1 Methodology + R2 Domain + R3 Perspective + Devil's Advocate}
+\date{2026-04-18}
 \maketitle
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{1. Summary}
+% COMPANION CONTEXT FOR STAGE 10 REVISION
+% Read together with:
+% - docs/revision_roadmap.md
+% - docs/review_reports/stage9_field_analyst.md
+% - docs/review_reports/stage9_eic_review.md
+% - docs/review_reports/stage9_r1_methodology.md
+% - docs/review_reports/stage9_r2_domain.md
+% - docs/review_reports/stage9_r3_perspective.md
+% - docs/review_reports/stage9_da_review.md
+% - docs/review_reports/stage9_revision_roadmap.md
 
-This paper presents \textbf{COREY}, a prototype runtime scheduling framework 
-designed to alleviate memory-bandwidth bottlenecks in 
-Mamba-1.x Selective State Space Models (SSMs).
+\section*{0. Companion Context Files}
 
-The central idea is to use \textbf{activation entropy} 
-as a lightweight runtime signal to dynamically determine:
+This file is the \textbf{primary Stage 10 revision driver}, but it is intentionally
+paired with the review reports and roadmap generated during the same Stage 9 reset.
+When using this file to revise the paper, also consult the following repository files:
 
-\begin{itemize}
-\item chunk size selection
-\item kernel fusion boundaries
-\item memory-aware scheduling decisions
+\begin{itemize}[leftmargin=1.5em]
+\item \texttt{docs/revision\_roadmap.md}: the compact execution-order baseline for the next revision cycle.
+\item \texttt{docs/review\_reports/stage9\_revision\_roadmap.md}: the fuller roadmap with rationale and priority structure.
+\item \texttt{docs/review\_reports/stage9\_eic\_review.md}: the top-level editorial decision and venue-facing summary.
+\item \texttt{docs/review\_reports/stage9\_r1\_methodology.md}: the strongest methodological objections, especially claim-to-evidence mismatch and calibration issues.
+\item \texttt{docs/review\_reports/stage9\_r2\_domain.md}: Mamba / SSM positioning concerns, baseline-strength concerns, and domain-specific weaknesses.
+\item \texttt{docs/review\_reports/stage9\_r3\_perspective.md}: practical-value concerns, especially whether runtime adaptation is useful beyond one-time profiling.
+\item \texttt{docs/review\_reports/stage9\_da\_review.md}: the most adversarial reject arguments; use this file to stress-test whether a planned revision really closes the paper's weakest points.
+\item \texttt{docs/review\_reports/stage9\_field\_analyst.md}: contribution-type recommendation and reviewer-configuration context.
 \end{itemize}
 
-Entropy is estimated using fixed-width histograms, 
-and decisions are made through a hardware-aware scoring mechanism.
-
-The framework is evaluated in two stages:
-
-\begin{itemize}
-\item Tier-1: deterministic Python-based analytic cost model
-\item Tier-2: GPU feasibility experiments on Mamba-370M and 1.4B checkpoints
-\end{itemize}
-
-Additionally, the paper proposes a theoretical analysis of 
-Hadamard reparameterization and its effect on entropy behavior.
-
-Overall, the paper explores an interesting intersection 
-between information theory and runtime kernel scheduling, 
-but the implementation remains at the prototype level, 
-and several theoretical and empirical gaps limit the strength 
-of the conclusions.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{2. Strengths}
-
-\begin{enumerate}
-
-\item \textbf{Novel Runtime Signal Design}
-
-Using activation entropy as a prompt-dependent scheduling signal 
-is an original idea compared with traditional static fusion 
-or offline profiling-based tuning.  
-The formulation is conceptually interesting and 
-could inspire future runtime-adaptive systems.
-
-\item \textbf{Hardware-Aware Modeling}
-
-The scheduling mechanism explicitly considers:
-
-\begin{itemize}
-\item register pressure
-\item shared memory limits
-\item occupancy constraints
-\end{itemize}
-
-This grounding in real GPU resource models 
-strengthens the credibility of the design.
-
-\item \textbf{Transparent Scope of Claims}
-
-The authors clearly state that:
-
-\begin{itemize}
-\item full fused-kernel deployment is not yet implemented
-\item end-to-end perplexity improvements are not claimed
-\end{itemize}
-
-Such clarity is appreciated and improves interpretability.
-
-\item \textbf{Proof-of-Concept GPU Results}
-
-Kernel-level latency measurements 
-on RTX-class GPUs demonstrate measurable gains 
-under optimized chunk settings, 
-indicating the feasibility of the scheduling mechanism.
-
-\item \textbf{Formal Theoretical Framing}
-
-The paper includes multiple theorems 
-relating entropy properties to system behavior, 
-which is uncommon in systems-oriented ML work 
-and adds intellectual depth.
-
+\noindent\textbf{How to use these files together.}
+\begin{enumerate}[leftmargin=1.5em]
+\item Use \texttt{docs/revision\_suggestions.tex} for the actionable revision agenda.
+\item Use \texttt{docs/revision\_roadmap.md} to decide execution order and what should be prioritized first.
+\item Use the individual files under \texttt{docs/review\_reports/} to recover nuance, justification, and failure modes that are intentionally compressed in this file.
 \end{enumerate}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{3. Major Weaknesses}
+\noindent\textbf{Conflict-resolution rule.}
+If the files differ in wording, use the following priority:
+\begin{enumerate}[leftmargin=1.5em]
+\item this file for \emph{what} must be revised,
+\item \texttt{docs/revision\_roadmap.md} for \emph{what to do first},
+\item the individual review reports for \emph{why the issue matters} and \emph{how reviewers are likely to challenge an incomplete fix}.
+\end{enumerate}
 
-\subsection*{W1. Passive Hook (Missing Closed-Loop Execution)}
+\section*{1. Editorial Summary}
 
-The most critical limitation is that 
-the entropy scheduler remains \textbf{passive}.
+This review was conducted from the current manuscript artifacts only:
+\texttt{paper/main.tex}, \texttt{paper/main.pdf}, \texttt{paper/appendix.tex}, and
+\texttt{paper/appendix.pdf}. The review criterion is NeurIPS 2026 main-track policy
+and formatting guidance.
 
-Currently:
-
-\begin{itemize}
-\item entropy is computed
-\item chunk recommendations are generated
-\item but recommendations are \textbf{not actively applied}
-to the runtime execution kernel
-\end{itemize}
-
-This prevents measurement of:
-
-\begin{itemize}
-\item end-to-end latency
-\item true system-level benefit
-\item real runtime overhead
-\end{itemize}
-
-Without closed-loop integration, 
-the work remains a feasibility prototype 
-rather than a deployable runtime system.
-
-This is a major limitation 
-for a systems-oriented NeurIPS submission.
-
-\vspace{6pt}
-
-\subsection*{W2. Limited Workload Diversity}
-
-The real workload evaluation 
-uses approximately 80 prompts 
-derived from a LongBench subset.
-
-Observed issue:
-
-\begin{itemize}
-\item entropy distribution is highly concentrated
-\item scheduler mostly selects a single chunk bucket
-\item dynamic behavior rarely occurs
-\end{itemize}
-
-This suggests the method behaves more like:
+\textbf{Overall recommendation: Borderline Reject / Major Revision before resubmission.}
 
 \begin{center}
-\textbf{a static auto-tuner}
+\begin{tabular}{lcc}
+\toprule
+Dimension & Score & Comment \\
+\midrule
+Novelty & 54 / 100 & Interesting runtime signal, but currently close to a heuristic auto-tuner story \\
+Methodology & 49 / 100 & Real-system loop is still open; theory is only partially tied to validated evidence \\
+Experiments & 43 / 100 & Kernel evidence is useful, but checkpoint-path and baseline coverage remain weak \\
+Clarity & 66 / 100 & Honest and generally clear, but overloaded by caveats and side stories \\
+Significance & 47 / 100 & Practical value beyond one-time profiling is not yet convincingly demonstrated \\
+\midrule
+Editorial overall & 52 / 100 & Borderline Reject \\
+\bottomrule
+\end{tabular}
 \end{center}
 
-rather than a true dynamic controller.
-
-The generalization capability 
-remains insufficiently demonstrated.
-
-\vspace{6pt}
-
-\subsection*{W3. Theory–Practice Mismatch (Hadamard Behavior)}
-
-The paper proves theoretical entropy growth 
-under Hadamard rotation.
-
-However, empirical results on real Mamba activations show:
-
-\begin{center}
-\textbf{entropy often decreases}
-\end{center}
-
-This contradiction weakens the central theoretical narrative.
-
-The authors acknowledge this mismatch, 
-but the explanation remains incomplete.
-
-A theory validated only under synthetic heavy-tailed distributions 
-limits real-world relevance.
-
-\vspace{6pt}
-
-\subsection*{W4. Insufficient Strong Baselines}
-
-Comparisons with state-of-the-art systems are limited.
-
-Missing baselines include:
-
-\begin{itemize}
-\item Mamba-2 / SSD
-\item FlashAttention-3 style Transformer kernels
-\item Profile-based static tuning frameworks
+NeurIPS-style recommendation:
+\begin{itemize}[leftmargin=1.5em]
+\item Overall score: \textbf{3 / 6} (Borderline Reject)
+\item Confidence: \textbf{4 / 5}
+\item Best-fitting contribution type: \textbf{Concept \& Feasibility}, not a fully validated systems paper
 \end{itemize}
 
-Without these, 
-it is difficult to judge 
-whether entropy-based scheduling 
-provides unique advantages.
+\section*{2. Venue Compliance}
 
-\vspace{6pt}
+\textbf{MUST FIX before any further submission round.}
 
-\subsection*{W5. Weak Demonstration of True Dynamic Adaptation}
-
-Entropy values in real workloads 
-show limited variance.
-
-As a result:
-
-\begin{itemize}
-\item bucket switching rarely occurs
-\item adaptive capability is not convincingly demonstrated
-\end{itemize}
-
-This challenges the claim 
-that the system is ``prompt-responsive.''
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{4. Minor Weaknesses}
-
-\begin{enumerate}
-
-\item Some theoretical sections 
-are lengthy relative to empirical validation.
-
-\item Notation related to entropy thresholds 
-(e.g., $H_{ref}$ selection) 
-is introduced before practical motivation 
-is fully established.
-
-\item Reproducibility details 
-(e.g., configuration scripts and profiling parameters) 
-should be more explicitly documented.
-
+\begin{enumerate}[leftmargin=1.5em]
+\item \textbf{Page limit violation.} NeurIPS 2026 allows \emph{nine content pages} for the main paper; references, technical appendices, and the mandatory checklist do not count toward this limit. In the current rebuilt \texttt{paper/main.pdf}, the main text continues through page 11 and references begin only on page 12. This is a material format violation and risks desk rejection.
+\item \textbf{Positive compliance points.} The manuscript does use the NeurIPS 2026 style, is anonymous, includes the checklist, and stays well below the 50MB PDF limit. These are strengths, but they do not offset the content-page overrun.
 \end{enumerate}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{5. Questions for Authors}
+\section*{3. What The Paper Already Does Well}
 
-\begin{enumerate}
-
-\item What technical barriers currently prevent 
-forwarding entropy-derived chunk sizes 
-into the actual execution kernel?
-
-\item Can the authors provide evidence 
-of real workloads where entropy variation 
-triggers multiple bucket switches?
-
-\item Why do real Mamba activations 
-exhibit entropy contraction under Hadamard rotation?
-
-\item How sensitive is the scheduler 
-to histogram resolution ($K$)?
-
-\item What is the expected runtime overhead 
-of a fully active scheduler?
-
-\end{enumerate}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{6. Required Revisions (Mandatory)}
-
-\begin{enumerate}
-
-\item \textbf{Implement Closed-Loop Execution}
-
-Forward entropy-derived chunk size 
-into the actual runtime kernel.
-
-Report:
-
-\begin{itemize}
-\item end-to-end latency
-\item runtime overhead
-\item GPU utilization
+\begin{itemize}[leftmargin=1.5em]
+\item The paper is admirably explicit about what it does \emph{not} claim.
+\item The chunked selective-scan benchmark in Section 6.2 is a real GPU kernel measurement on two hardware setups.
+\item The manuscript clearly separates prototype-only evidence from real-checkpoint evidence better than many systems drafts do.
+\item The limitations and broader-impact sections are stronger than average for an efficiency paper.
 \end{itemize}
 
-This is the single most important requirement.
+\section*{4. Major Issues}
 
-\item \textbf{Expand Benchmark Diversity}
+\subsection*{J1. The paper still does not close the main systems loop on real checkpoints}
 
-Include:
+The strongest remaining weakness is that the inline active scheduler in Section 6.3 computes entropy and selects a chunk, but the selected chunk is \emph{not yet passed into the real checkpoint scan execution path}. As written, the real-checkpoint contribution is an inline monitoring-and-decision mechanism with measured overhead, not a closed-loop scheduler that demonstrates end-to-end serving benefit. The direct speedup evidence remains the synthetic-input kernel benchmark in Section 6.2.
 
-\begin{itemize}
-\item heterogeneous prompts
-\item code-heavy workloads
-\item repetitive structured text
-\item long-context tasks
+\subsection*{J2. The current real-workload evidence weakens the case for runtime adaptivity}
+
+The manuscript itself reports that across 80 real LongBench prompts all measured prompts map to the same coarse chunk bucket, while the W1 benchmark shows that a one-time static oracle (\texttt{Static-512}) is 35\% faster than COREY on the showcased regime. This means the current evidence supports COREY primarily as an \emph{automatic static tuner within one workload regime}, not as a runtime policy whose adaptivity is necessary on heterogeneous workloads.
+
+\subsection*{J3. The manuscript knowingly evaluates a miscalibrated default}
+
+Section 6.2 now recommends the principled choice $H_{\text{ref}}=\log K$, and Appendix A.16--A.17 shows that the current default $H_{\text{ref}}=8.0$ is systematically conservative for $K=256$. This is not a cosmetic issue: by the paper's own appendix, the calibration choice contributes directly to the gap between COREY and the static oracle. The current version therefore evaluates a setting that the manuscript itself argues is not the right one.
+
+\subsection*{J4. The Hadamard / quantization thread occupies too much of the main body relative to its validated role}
+
+The paper does a careful job of disclaiming the Hadamard extension, but that is also the problem: the extension is not part of the validated runtime contribution, and the key theorem is explicitly shown not to transfer to real checkpoint activations. For a page-limited NeurIPS paper, the current main-body allocation is too generous to a side story whose empirical assumptions fail on the real system.
+
+\subsection*{J5. Evaluation breadth is still below the bar for a main-track systems paper}
+
+The checkpoint story still relies on four LongBench tasks with 20 samples each, one external baseline scale used only as an architectural sanity check, a partially pending Mamba-2.8B table, and some appendix entries that are suppressed or estimated due to instability. This is enough for a feasibility note, but not enough for a persuasive main-track systems contribution.
+
+\section*{5. Minor Issues}
+
+\subsection*{M1. The standalone appendix artifact is not self-consistent}
+
+The local \texttt{paper/appendix.pdf} build still produces unresolved references and an empty bibliography warning. While NeurIPS reviews the single submission PDF, this separate artifact is still part of the repository's Stage 9 package and should be made self-contained.
+
+\subsection*{M2. Reporting mixes measured, estimated, and extrapolated quantities too often}
+
+The paper is generally honest about this, but the reader still has to keep track of which numbers are kernel-timed, checkpoint-timed, estimated from a static sweep, or extrapolated from layer sampling. This creates avoidable cognitive load.
+
+\subsection*{M3. The submission should lean more explicitly into the ``Concept \& Feasibility'' contribution type}
+
+The present manuscript is strongest when read as a concept-and-feasibility paper. That positioning should be made even more explicit in the front matter and submission metadata.
+
+\subsection*{M4. Too many main-text claims require appendix lookups to become properly qualified}
+
+The main paper repeatedly asks the reader to look up critical caveats in the appendix. That is usually a sign that the main story is overpacked for the available page budget.
+
+\section*{6. Consolidated Recommendation}
+
+I would not accept the paper in its current form for NeurIPS 2026. However, I do think there is a publishable idea here if the manuscript is reduced to a sharper and more defensible contribution:
+
+\begin{itemize}[leftmargin=1.5em]
+\item a venue-compliant, 9-page concept-and-feasibility paper;
+\item one clearly validated story about runtime entropy as a control signal for Mamba chunk selection;
+\item a direct comparison against matched static alternatives on the same real checkpoint path;
+\item a much smaller role for the prospective Hadamard extension in the main paper.
 \end{itemize}
 
-Demonstrate dynamic switching behavior.
+\section*{7. Suggested Revisions}
 
-\item \textbf{Add Strong Baselines}
+% STAGE: 10 (revision)
+% RULES: agents/pipeline/academic-paper.md
+\subsection*{S1. Reduce the main body to nine content pages and refocus the narrative}
 
-Include:
+Compress the current main body from 11 content pages to 9. The most direct route is to move most of the Hadamard/quantization material, secondary diagnostic commentary, and any non-essential proof discussion out of the main text and into the appendix. The main paper should concentrate on one thesis: runtime entropy as a scheduler signal for Mamba-1.x chunk selection.
 
-\begin{itemize}
-\item Mamba-2
-\item SSD variants
-\item FlashAttention-based Transformers
-\end{itemize}
+% STAGE: 10 (revision) + src
+% RULES: agents/pipeline/academic-paper.md
+\subsection*{S2. Close the checkpoint-side loop or narrow the claim further}
 
-\item \textbf{Reconcile Theory with Empirical Behavior}
+The highest-value revision is to route the selected chunk into the real checkpoint scan path and report the resulting end-to-end latency under the same serving setup used in Section 6.3. If that integration is still infeasible, then the paper must narrow its claim even more sharply and present the current contribution as an inline control-path feasibility result plus a separate kernel-level performance study.
 
-Provide explanation for:
+% STAGE: 10 (revision) + src
+% RULES: agents/pipeline/academic-paper.md
+\subsection*{S3. Re-evaluate the runtime policy against matched static baselines under the principled calibration}
 
-\begin{center}
-entropy contraction under Hadamard
-\end{center}
+The paper should report checkpoint-path comparisons against matched static baselines (\texttt{static-64}, \texttt{static-256}, and preferably \texttt{static-512}) on the same real workload. In addition, the main evaluation should no longer rely on the known-miscalibrated default $H_{\text{ref}}=8.0$ if the paper's own appendix shows that $H_{\text{ref}}=\log K$ is the principled setting.
 
-or restrict theoretical claims accordingly.
+% STAGE: 10 (revision) + src
+% RULES: agents/pipeline/academic-paper.md
+\subsection*{S4. Demonstrate when runtime adaptation is actually needed}
 
-\item \textbf{Stabilize Threshold Design}
+Either add a heterogeneous real workload mixture in which prompts span multiple entropy regimes and therefore trigger meaningfully different chunk choices, or rewrite the paper so that COREY is explicitly described as an automatic one-regime tuner rather than a broadly adaptive online scheduler.
 
-Recalibrate entropy thresholds 
-(e.g., $H_{ref} = \log K$) 
-to reduce sensitivity to histogram resolution.
+% STAGE: 10 (revision)
+% RULES: agents/pipeline/academic-paper.md
+\subsection*{S5. Clean up evidence hygiene and artifact quality}
 
-\end{enumerate}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{7. Overall Evaluation}
-
-\textbf{Score: 5 (Borderline Reject)}  
-
-\textbf{Confidence: 4 (High)}
-
-\textbf{Estimated Accept Probability: 25--35\%}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{8. Justification of Score}
-
-The core idea—using entropy 
-as a runtime scheduling signal—is interesting 
-and potentially impactful.
-
-However, the current implementation:
-
-\begin{itemize}
-\item lacks closed-loop execution
-\item lacks strong competitive baselines
-\item shows theoretical inconsistencies
-\item demonstrates limited dynamic behavior
-\end{itemize}
-
-These collectively prevent the work 
-from reaching the maturity level 
-typically required for acceptance at NeurIPS.
-
-With substantial system integration 
-and expanded evaluation, 
-this work could become competitive in future submissions.
+Make the standalone appendix artifact self-consistent, reduce reliance on estimated quantities where they are central to the argument, and make the measured-versus-estimated distinction even more explicit in the main paper. Also ensure the submission metadata and narrative clearly identify the paper as a Concept \& Feasibility contribution.
 
 \end{document}

@@ -1,7 +1,7 @@
 # 论文进度
 
-最后更新：2026-04-18（任务 77 落地：W1 主动模式集成结果回填论文——实测 8.3% overhead + 双 chunk 动态选择；W3 Hadamard Gaussian vs 重尾分布机制解释；W5 H_ref=log(K) 推荐校准明确写入正文；main.pdf 35 页，0 undefined references）
-**检查完成状态**：`docs/revision_suggestions.tex` 已被 Pipeline Stage 9 完全重写为新一轮独立评审（Major Revision 63/100，含 4 项 Venue Compliance/Major Issues + 6 项 Minor Issues + 4 项 Suggested Revisions）。先前评审 C1–C8/M1–M9 所有 68 项任务均已完成（2026-04-16）。新评审 V2 的核心新问题为：(1) NeurIPS checklist 缺失；(2) entropy variance 未经验证；(3) Hadamard 无实验结果；(4) 两个熵信号概念混淆。NeurIPS 2026 deadline: Abstract 2026-05-04 / Full Paper 2026-05-06。
+最后更新：2026-04-18（任务 84：增强 `docs/revision_suggestions.tex` 作为 Stage 10 总入口的上下文承载能力——新增对 `docs/review_reports/` 与 `docs/revision_roadmap.md` 的显式引用、使用顺序与冲突优先级说明，使后续仅从该文件启动 revision 时也能同步拿到 companion context）
+**检查完成状态**：`docs/revision_suggestions.tex` 已被 Pipeline Stage 9 完全重写为新一轮独立评审（Borderline Reject / Major Revision，52/100）。本轮新评审的核心问题为：(1) `main.pdf` 正文实际延伸到第 11 页，超过 NeurIPS 2026 的 9 个 content pages；(2) 实时调度仍未把选出的 chunk 真正接入 real-checkpoint scan path；(3) 当前实测 workload 下 80 个 prompt 全部落在同一 coarse chunk bucket，且 Static-512 仍比 COREY 更快；(4) Hadamard/quantization 叙事占用过多正文页数但仍属 prospective extension；(5) baseline 与 workload 覆盖仍偏窄。NeurIPS 2026 官网核验：Abstract deadline 2026-05-04 AoE，Full paper deadline 2026-05-06 AoE。
 
 主要成就：
 - 全部 61 个任务落地（含所有 10 个 LaTeX Fix 及 W1/W2 GPU 实验）
@@ -13,6 +13,19 @@
 - **P0.1/P0.2/P0.3（2026-04-16）**：Title 改为 "Kernel-Level Scheduling"，Theorem 1 Remark 加分布适用性警告，`tab:ablation_tau` 加 proxy circularity note
 
 ## 已全部修改
+
+- 任务 84（2026-04-18）：增强 `docs/revision_suggestions.tex` 的“总入口”能力，使其不再只是列出 revision items，而是显式引用并解释同轮 Stage 9 生成的 companion context。具体包括：
+  (1) 在 `docs/revision_suggestions.tex` 顶部新增 `Companion Context Files` 小节。
+  (2) 显式列出 `docs/revision_roadmap.md` 与 `docs/review_reports/` 下各个 Stage 9 评审文件的路径和用途。
+  (3) 新增“如何联用这些文件”的说明：`revision_suggestions.tex` 负责“改什么”，`revision_roadmap.md` 负责“先改什么”，各 reviewer report 负责“为什么重要、reviewer 会从哪里继续攻击”。
+  (4) 新增冲突优先级规则，避免后续只读一个文件时丢失上下文或在多份评审文件之间出现执行歧义。
+
+- 任务 78（2026-04-18）：显式触发 `进入 Pipeline Stage 9` 后，按当前稿件完成一次全新的独立评审重置。具体包括：
+  (1) 重新运行 `paper/build.bat`，确认 `paper/main.pdf` 与 `paper/appendix.pdf` 基于当前源码成功生成；`main.pdf` 为 35 页，`appendix.pdf` 独立版为 22 页。
+  (2) 核验 NeurIPS 2026 官网 CFP / Main Track Handbook / Paper Checklist，并据此更新 `agents/pipeline/domain-venues.md`：明确 `neurips_2026.sty`、9 个 content pages、single PDF ≤ 50MB、double-blind 与 checklist mandatory 等规则。
+  (3) 覆盖重写 `docs/revision_suggestions.tex`，生成全新的英文 LaTeX 评审文件；当前结论为 Borderline Reject / Major Revision（52/100）。
+  (4) 覆盖重写 `docs/review_reports/stage9_field_analyst.md`、`stage9_eic_review.md`、`stage9_r1_methodology.md`、`stage9_r2_domain.md`、`stage9_r3_perspective.md`、`stage9_da_review.md` 与 `stage9_revision_roadmap.md`，并新增顶层 `docs/revision_roadmap.md` 作为本轮 Stage 10 基线。
+  (5) 本轮最关键的新发现是：正文超出 NeurIPS 页数限制；COREY 在 real-checkpoint 路径上仍未形成“选 chunk → 真正改变 scan 执行”的闭环；当前 workload 主要支持“同一 regime 下的自动调参”，尚不足以支撑强 runtime-adaptation 叙事。
 
 - 任务 1：在 `paper/main.tex` 中新增 `Entropy-Regularized Fusion Optimization`，将融合调度写成带硬件约束的优化问题，并补充动态规划求解器与自适应熵阈值。这样正文对“entropy-guided”不再只停留在启发式描述。
 - 任务 2：在 `paper/main.tex` 中新增 `Theoretical Analysis`，补充熵增长、融合可行性、量化稳定性三组理论化表述与 proof sketch，使方法论叙述更符合 NeurIPS 论文对理论支撑的预期。
@@ -334,9 +347,22 @@
 
 ---
 
-## 未修改或部分修改（新一轮独立评审 / Weak Reject）
+## 未修改或部分修改（新一轮独立评审 / Borderline Reject）
 
-（本轮所有可操作项已完成，剩余内容已转入”遗留问题”或 future work，无需在此区块保留。）
+- 任务 79：按本轮 Stage 9 V4 评审先完成最硬性的 venue 合规修订：将 `paper/main.tex` 主体压缩到 NeurIPS 2026 允许的 9 个 content pages，并把当前非核心的 Hadamard / quantization / secondary diagnostics 尽量移出正文。
+  推进状态：待推进（当前不需要用户决策；下一步直接按 Stage 10 执行。）
+
+- 任务 80：闭合 real-checkpoint 主证据链。优先目标是在真实 checkpoint 推理路径上把 entropy-selected chunk 真正传入 scan 执行；若当前工程上仍做不到，则必须进一步收窄论文 claim，把贡献明确改写为“inline control-path feasibility + separate kernel benchmark”，而不再暗示已完成 end-to-end runtime gain 验证。
+  推进状态：待推进（当前不需要用户决策；下一步先评估现有实现能否低风险接入真实 scan path。）
+
+- 任务 81：重新校准并补强 runtime-vs-static 比较。当前正文已推荐 `H_ref = log(K)`，但主实验仍沿用 `H_ref = 8.0`；下一步需在同一 real-checkpoint 路径下重新对比 `static-64`、`static-256`、`static-512` 与校准后的 COREY，确认运行时信号是否真能提供超过一次性 profiling 的价值。
+  推进状态：待推进（当前不需要用户决策；下一步按现有 harness 与 appendix sweep 结果组织最小补实验。）
+
+- 任务 82：补足“runtime adaptation 真有必要”的 workload 证据。当前 80 个真实 prompt 全部落在同一 coarse bucket，尚不足以支撑强 online-adaptation 叙事；下一步要么增加跨 entropy regime 的真实混合 workload，要么在正文中把 COREY 更严格改写为“单一 workload regime 下的自动静态调参器”。
+  推进状态：待推进（当前不需要用户决策；先尝试从现有数据与代码中构造最小 heterogeneous real-workload 版本。）
+
+- 任务 83：清理附录与 artifact 质量问题。当前独立 `appendix.pdf` 仍有 unresolved references / empty bibliography warning，且部分表格混合 measured / estimated / suppressed entries；下一步需让 standalone appendix 自洽，并进一步强化主文中对 measured-vs-estimated 的标注。
+  推进状态：待推进（当前不需要用户决策；属于 Stage 10 文稿清理项。）
 
 ---
 
