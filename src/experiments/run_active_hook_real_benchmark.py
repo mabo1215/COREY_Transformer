@@ -105,7 +105,11 @@ def _entropy_to_chunk(entropy_nats: float, min_chunk: int = 32, max_chunk: int =
 # Model loading
 # ---------------------------------------------------------------------------
 
-def _load_model_and_tokenizer(model_name: str, device: Any) -> tuple[Any, Any]:
+def _load_model_and_tokenizer(
+    model_name: str,
+    device: Any,
+    local_files_only: bool = False,
+) -> tuple[Any, Any]:
     try:
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -114,10 +118,33 @@ def _load_model_and_tokenizer(model_name: str, device: Any) -> tuple[Any, Any]:
 
     model_id = MODEL_REGISTRY.get(model_name, model_name)
     print(f"[active_hook] Loading {model_id} …")
-    tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id, dtype=torch.float16, device_map=str(device), trust_remote_code=True
+    # Prefer built-in Transformers implementations first to avoid downloading
+    # remote custom_generate files in restricted/SSL-intercepted environments.
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_id,
+        trust_remote_code=False,
+        local_files_only=local_files_only,
     )
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            dtype=torch.float16,
+            device_map=str(device),
+            trust_remote_code=False,
+            local_files_only=local_files_only,
+        )
+    except Exception as first_exc:
+        print(
+            "[active_hook] Built-in model load failed; retrying with trust_remote_code=True "
+            f"(error: {first_exc})"
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            dtype=torch.float16,
+            device_map=str(device),
+            trust_remote_code=True,
+            local_files_only=local_files_only,
+        )
     model.eval()
     return model, tokenizer
 
@@ -326,6 +353,11 @@ def _parse_args() -> argparse.Namespace:
                         help="Histogram bins for entropy estimation.")
     parser.add_argument("--output-dir",        type=Path,
                         default=Path("src/outputs/active_hook_real_benchmark"))
+    parser.add_argument(
+        "--local-files-only",
+        action="store_true",
+        help="Load only from local HuggingFace cache (no network requests).",
+    )
     return parser.parse_args()
 
 
@@ -341,7 +373,11 @@ def main() -> None:
     gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
     print(f"[active_hook] Device: {device}  ({gpu_name})")
 
-    model, tokenizer = _load_model_and_tokenizer(args.model, device)
+    model, tokenizer = _load_model_and_tokenizer(
+        args.model,
+        device,
+        local_files_only=args.local_files_only,
+    )
 
     print(f"[active_hook] Capturing SSM tensors from layer {args.layer_idx} via forward hook …")
     cap = capture_ssm_tensors_via_hooks(model, tokenizer, args.prompt, device, args.layer_idx)

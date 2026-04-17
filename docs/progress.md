@@ -1,6 +1,6 @@
 # 论文进度
 
-最后更新：2026-04-17（任务 75 落地：real-checkpoint cross-layer entropy validation via PyTorch forward hooks；6/7 sampled layers → chunk=256；sec:real_checkpoint_entropy 新增 appendix；main.pdf 34 页 0 undefined references）
+最后更新：2026-04-17（任务 76 落地：修复 active-hook 脚本在 SSL/离线环境下的加载失败；重建 href/bin-count/real-checkpoint 三组 appendix 证据产物并同步数值；main.pdf 34 页）
 **检查完成状态**：`docs/revision_suggestions.tex` 已被 Pipeline Stage 9 完全重写为新一轮独立评审（Major Revision 63/100，含 4 项 Venue Compliance/Major Issues + 6 项 Minor Issues + 4 项 Suggested Revisions）。先前评审 C1–C8/M1–M9 所有 68 项任务均已完成（2026-04-16）。新评审 V2 的核心新问题为：(1) NeurIPS checklist 缺失；(2) entropy variance 未经验证；(3) Hadamard 无实验结果；(4) 两个熵信号概念混淆。NeurIPS 2026 deadline: Abstract 2026-05-04 / Full Paper 2026-05-06。
 
 主要成就：
@@ -288,6 +288,19 @@
     - `paper/main.tex` W1 implementation note 新增指向 `sec:real_checkpoint_entropy` 的交叉引用，Limitations item 7 补充"6/7 层验证"注释
   (4) **构建验证**：`paper/build/main.pdf` 34 页，0 overfull hbox，0 undefined references；`appendix_only.pdf` 21 页
   (5) **产物**：`src/outputs/active_hook_real_benchmark/metadata.json + results.csv + summary.json + layer_sweep.json`
+  推进状态：✅ 已完成。
+
+- 任务 76（2026-04-17）：revision cycle 继续推进——补齐缺失产物并修复可复现性阻挡。
+  (1) **脚本鲁棒性修复**：`src/experiments/run_active_hook_real_benchmark.py` 新增 `--local-files-only` 参数，并将模型加载改为“优先 `trust_remote_code=False`，失败后再 fallback 到 `trust_remote_code=True`”，解决当前环境中 Hugging Face `custom_generate` 触发的 SSL 证书失败（`CERTIFICATE_VERIFY_FAILED`）导致实验无法重跑的问题。
+  (2) **阈值稳定性证据重建**：在当前 `.venv` 中重新执行 `python -m src.experiments.href_ablation` 与 `python -m src.experiments.bin_count_sensitivity`，补齐并确认产物：
+    - `src/outputs/href_ablation/href_ablation.csv`
+    - `src/outputs/href_ablation/href_ablation_summary.txt`
+    - `src/outputs/bin_count_sensitivity/bin_count_sensitivity.csv`
+    - `src/outputs/bin_count_sensitivity/summary.txt`
+  (3) **real-checkpoint hook 证据重建**：使用本地缓存模式重跑
+    `python -m src.experiments.run_active_hook_real_benchmark --model mamba-370m --layer-idx 0 --sweep-layers --warmup-runs 1 --benchmark-repeats 3 --local-files-only --output-dir src/outputs/active_hook_real_benchmark`，得到 7 层扫描结果：Layer0 选 chunk=128，Layer8/16/24/32/40/47 选 chunk=256（6/7 一致），entropy overhead=0.52±0.01ms（CPU）。
+  (4) **论文同步**：更新 `paper/appendix.tex` 的 `sec:real_checkpoint_entropy` 与 `tab:real_checkpoint_entropy` 数值和实验上下文（prompt 长度、tensor 形状、overhead 描述）以匹配新产物，避免“文稿已写但产物缺失/不一致”。
+  (5) **构建验证**：重新执行 `paper/build.bat`，`paper/build/main.pdf` 成功生成（34 页）。
   推进状态：✅ 已完成。
 
 - 任务 74（2026-04-17）：新一轮独立评审（Weak Reject，15 节标准格式）可直接落地项收口四项：
