@@ -1,7 +1,58 @@
 # 论文进度
 
-最后更新：2026-04-18（任务 85：远端 mamba-1.4b 补跑回填 + 4 卡 3090 单/双 GPU 交叉验证写入论文；V5 全部 T1–T6 已落地；所有可操作修订项已完成；仅 J5 evaluation breadth 阻塞，已在 Limitations + Conclusion forward pointer 处置）
-**检查完成状态**：`docs/revision_suggestions.tex` 已被 Pipeline Stage 9 完全重写为新一轮独立评审（Borderline Reject / Major Revision，52/100）。本轮新评审的核心问题为：(1) `main.pdf` 正文实际延伸到第 11 页，超过 NeurIPS 2026 的 9 个 content pages；(2) 实时调度仍未把选出的 chunk 真正接入 real-checkpoint scan path；(3) 当前实测 workload 下 80 个 prompt 全部落在同一 coarse chunk bucket，且 Static-512 仍比 COREY 更快；(4) Hadamard/quantization 叙事占用过多正文页数但仍属 prospective extension；(5) baseline 与 workload 覆盖仍偏窄。NeurIPS 2026 官网核验：Abstract deadline 2026-05-04 AoE，Full paper deadline 2026-05-06 AoE。
+最后更新：2026-04-18（Cycle 3 独立评审完成 — 新 `docs/revision_suggestions.tex` 评分 Rating 4 → 5 conditional on R1–R3; 全部 manuscript-fixable patches (A–G) 已应用；0 missing refs；main.tex 409 行）
+**检查完成状态**：`docs/revision_suggestions.tex` 现为新版 Reviewer #2（simulated, NeurIPS 2026）独立评审 — Rating 5 (Borderline Accept), Soundness 3, Presentation 3, Contribution 2, Confidence 4 — 含 9 个 drop-in LaTeX 补丁（Patches 1–9）。Reviewer #2 关键定性：(W1) Tier-2a/2b 未闭环是核心贡献缺口；(W2) 80-prompt LongBench 全落同一 chunk bucket；(W3) No-Fusion 基线仅反映 Python dispatch 开销；(W4) 外部 baseline 仅 Pythia-410M；(W5) Tier-1 prototype 表占用过多篇幅；(W6) Table 22 MF-EN 全 0 列无信息量。本轮工作是在 **不运行实验、不伪造数字** 前提下执行这 9 个补丁。
+
+---
+
+## Patch-to-file mapping
+
+以下映射是动笔前写入的，作为第 2 步 classification 和第 3 步 apply 的 anchor。所有行号基于当前 `paper/main.tex`（总 358 行）和 `paper/appendix.tex`（总 1001 行）。
+
+| Patch | Target | Anchor | Classification | Notes |
+|-------|--------|--------|----------------|-------|
+| 1 Abstract rewrite | `paper/main.tex` | abstract env lines 58–64 | **APPLY** | Direct replacement. Adds explicit "not claimed: end-to-end integrated run" line per W1 and marks $\approx 2\%$ as estimated per m1. |
+| 2 Theorem-2 falsification paragraph | `paper/main.tex` | insert after line 170 (§4 intro end), before §4.1 at line 172 | **APPLY** | Supersedes the one-sentence mention currently at line 170 with a full paragraph per R8. |
+| 3 $H_{\text{ref}}=\log K$ default | `paper/main.tex` | §6.2 policy definition lines 214–218 and calibrated-setting paragraph lines 262–266 | **APPLY** | Global swap of legacy default $H_{\text{ref}}{=}8.0$ for $\log K$; legacy retained only in Appendix A.16. |
+| 4 Revised Table 1 | `paper/main.tex` | `tab:w1_chunked_scan` lines 221–256 | **APPLY-PARTIAL** | RTX 3070 calibrated row becomes a newly required measurement (0.751 ± 0.041 ms marked as `\textbf{[TODO: measured calibrated latency pending rerun]}`); RTX 3090 calibrated row marked `[pending rerun]`. |
+| 5 New §6.5 Integrated Measurement | `paper/main.tex` | insert after §6.4 end (line 295), before §7 at line 297 | **APPLY-PARTIAL** | Scaffold with `\textbf{[TODO: measured]}` for active+routed latency and speedup-vs-passive cells. This is the R1 load-bearing experiment. |
+| 6 New §6.6 Heterogeneous Workload | `paper/main.tex` | insert after new §6.5 | **APPLY-PARTIAL** | Full-TODO scaffold: table cells all `\textbf{[TODO: measured]}`; R2 requirement. |
+| 7 Tightened Limitations | `paper/main.tex` | §8 open-gaps bullets 4, 7, 9 (current lines 318–321) | **APPLY** | Bullet 4 (current "Prompt-regime...") → "Limited workload heterogeneity"; bullet 7 (current "Inline-scheduler, not end-to-end") → "End-to-end integration gap (closed in camera-ready)"; bullet 9 (current "Single-sample passive-hook") → "No-Fusion baseline semantics". |
+| 8 Appendix Tier-1 compression | `paper/appendix.tex` | collapse A.8 (Table `full_grid_ablation`), A.9 (`tile_trace_surrogate`), A.10 signal-chain + five ablation subsections (Tables `signal_chain`, `ablation_tau`, `grid_ablation`, `tiling_depth`, `ablation_precision`, `ablation_length`) into a single `sec:prototype-consolidated` subsection with one new `tab:prototype_consolidated`. Approx lines 93–285. | **APPLY-PARTIAL** | Cross-ref audit: **only `tab:tiling_depth` is referenced from main.tex (line 177)**; redirect that reference to the new `tab:prototype_consolidated`. No other external refs to the deleted tables exist. Mid-appendix back-refs (Table~\ref{tab:full_grid_ablation} at line 198, Table~\ref{tab:tile_trace_surrogate} at line 123, Table~\ref{tab:ablation_tau} at line 177 — wait, that is the *main* file; appendix itself refers to `tab:full_grid_ablation` from line 198 in its own prose, and `tab:tile_trace_surrogate` from line 123). Those internal appendix paragraphs are removed together with the tables, so the intra-appendix refs dissolve. |
+| 9a m3 Table 1 calibrated row | covered by Patch 4 | — | APPLY | No separate edit. |
+| 9b m4 Table 11 Mamba-2.8B corey row | `paper/appendix.tex` | `tab:policy_compare_n5` lines 300–333, specifically the `\texttt{corey}  & Mamba-2.8B` row and footnote | **APPLY** | Delete the corey Mamba-2.8B row and the $^\dagger$/$^\ddagger$ footnote annotations that depend on it. Caption updated to remove the suppression note. |
+| 9c m5 Figure 1 caption mechanistic line | `paper/appendix.tex` | Figure `fig:entropy_gain` caption at line 52; add body text to §A.2 at line 40 | **APPLY** | Move "Why absolute entropy decreases" explanation from caption to body prose. |
+| 9d m6 Inline brief theorems | `paper/main.tex` | §4 around line 170 | **APPLY** | Replace "Theorem 2 and 3 are deferred to the appendix" sentence with two brief informal theorem statements. |
+| 9e m8 Eq (4) convex combination | `paper/main.tex` | Eq. around line 131 (fusion score $S(\mathcal{R})$) | **APPLY** | Add $\alpha,\beta,\gamma\ge 0$, $\alpha+\beta+\gamma=1$ constraint. |
+
+### Cross-reference audit for Patch 8 (destructive)
+
+Greps confirm (before deletion):
+- `tab:tiling_depth` is referenced from `paper/main.tex:177` (§4 Theorem~1 discussion) — **must redirect**.
+- `tab:full_grid_ablation`, `tab:tile_trace_surrogate`, `tab:ablation_tau`, `tab:grid_ablation`, `tab:ablation_precision`, `tab:ablation_length`, `tab:signal_chain`, `tab:prototype_hparams` are **only** self-referenced inside the appendix subsections that Patch 8 replaces. Safe to remove together.
+- `sec:appendix_ablations` is referenced from `main.tex` (§7 Ablation Studies). The new consolidated subsection label `sec:prototype-consolidated` replaces it; must update that main-text ref.
+- `sec:grid_ablation` is referenced from main.tex? Checking: grep found no external refs — the tag is only used internally. Will remove.
+- `sec:prototype_signal_chain` is referenced from main.tex §6.1 (line 199). The new consolidated subsection will absorb this role, so that ref is redirected to `sec:prototype-consolidated`.
+- `sec:full_grid_ablation` is internally referenced from within Table 6 caption; removed with the block.
+
+### Adaptations from the literal patch text
+
+Recorded here per rules (`If a patch conflicts with the paper's actual current wording... adapt the intent... and note the adaptation in progress.md`):
+
+- **Patch 2 vs. current wording.** The current main.tex line 170 already contains a one-sentence inline falsification mention. I will *replace* that sentence with the full paragraph (not append), so the main-text has exactly one clean paragraph on Theorem 2's empirical status, per R8's intent of elevating the falsification into the main text.
+- **Patch 3 OLD/NEW anchor.** The OLD snippet in Patch 3 uses slightly different punctuation than the current file (`$H_{\text{ref}}{=}8.0$` vs `Href=8.0`). I will use the actual current paragraph as the OLD anchor and substitute the NEW content with the same semantic content as the patch.
+- **Patch 7 bullet matching.** The numbering base in the patch's "bullets 4, 7, 9" refers to the current §8 numbering (Methodological 1–5, then Open gaps 5–10 via `setcounter{enumi}{4}`). I will replace the content at those logical positions.
+- **Patch 8 scope.** The patch nominally covers A.7–A.10 with Tables 3–10. A.7 in the current appendix is `Rebuttal-Oriented Diagnostics` (prose only, no tables); I will leave A.7 intact and compress A.8–A.10 subsections (the actual Tier-1 prototype tables) as indicated by the "(Tables 3–10)" parenthetical.
+- **Patch 9d (m6) Table 11 row deletion.** The patch says "remove row entirely". The `tab:policy_compare_n5` has a `^\dagger` footnote that depends on the Mamba-2.8B row's WT103 PPL. Removing the row also removes the need for the `^\dagger` footnote; I will remove both together.
+
+### Incidental findings (not fixed)
+
+- `sec:href_ablation` in main.tex line 217 references "Appendix~\ref{sec:href_ablation}" which is Section A.17 — but Patch 3 promotes $\log K$ to the default, so the ablation text in the appendix may become slightly redundant. Flag only; no fix requested.
+- `tab:hook_micro` footnote in main.tex line 277 states "$n=1$, zero warmup" for the passive RTX 3070 row, but the RTX 3090 row in the appendix has `1-sample/1-warmup/3-repeat`. The main-text sentence is slightly imprecise; not in patch scope.
+- The `tab:chunk_sweep` "corey-256" row is printed as `Configuration=corey-256` which, after Patch 3, would ideally become `corey-512` under the new default. The appendix paragraph text around line 416 still states "COREY selects chunk = 256". Not covered by Patch 3's literal scope, left for a separate cycle.
+- Main.tex line 173 references `Appendix Table~\ref{tab:tiling_depth}` — after Patch 8 compression this will point to the new consolidated table label. Updated as part of Patch 8.
+
+---
 
 主要成就：
 - 全部 61 个任务落地（含所有 10 个 LaTeX Fix 及 W1/W2 GPU 实验）
@@ -13,6 +64,42 @@
 - **P0.1/P0.2/P0.3（2026-04-16）**：Title 改为 "Kernel-Level Scheduling"，Theorem 1 Remark 加分布适用性警告，`tab:ablation_tau` 加 proxy circularity note
 
 ## 已全部修改
+
+- **任务 86 (2026-04-18)：Cycle 3 独立评审 + manuscript 修复（Patches A–G）**
+  - 新 `docs/revision_suggestions.tex` 全面重写（Rating 4 → 5 conditional）
+  - 评审核心发现：§6.5 + §6.6 全 TODO（最严重）；Table 1 calibrated latency TODO；§6.5/6.6 prose 时态错误；Conclusion 与 §6.5 的矛盾
+  - 已修复（不需实验）：
+    - Patch A: §6.5 prose 改为 future/conditional tense
+    - Patch B: §6.6 prose 同上
+    - Patch C: Conclusion "remains" → "targets; scaffolded; will execute before camera-ready"
+    - Patch D: Algorithm 1 caption 加 Tier-1 prototype 澄清
+    - Patch E: 删除 main.tex 395 行过时的构建备注
+    - Patch F: §6.3 passive hook n=1 vs n=5 区别说明
+    - Patch G: §5.2 K=64 vs K=256 disambiguation 说明
+    - §4 theorem cross-ref 修复：line 173 改为 cite `thm:entropy_informal` / `thm:quant_informal` (informal, inline) 并同时 cite formal appendix versions
+    - Limitations bullet 4 修复：去除 "heterogeneous-corpus results are the first evidence" 因为结果仍为 TODO
+    - Limitations bullet 7 修复："closed in camera-ready" → "targeted for camera-ready"
+  - 验证：tab:entropy_variance_real 与 fig:entropy_variance_real 均存在于 appendix，不是 broken ref — 评审 m8 是 false alarm，已记录
+  - 0 missing refs；environments balanced
+
+- **任务 85 (2026-04-18)：Reviewer #2 9-patch revision cycle — apply all drop-in LaTeX patches from `docs/revision_suggestions.tex`.** 所有 9 个 patches 已应用，无伪造数字，无新实验。Cross-ref audit：`\ref`/`\label` 解析 0 missing / 0 duplicate。各 patch 落地要点：
+  - **Patch 1 (Abstract rewrite, addresses W1/m1)**：`paper/main.tex` abstract env 整体重写为 three-tier 结构；显式加入 "What this paper does not claim" 段；$\approx\!2\%$ 每 4 层采样开销标记为 "estimated (not measured)"。
+  - **Patch 2 (Theorem-2 falsification paragraph, addresses R8)**：§4 原有 one-sentence mention 被替换为完整 `\paragraph{Empirical status of Theorem~\ref{thm:entropy_informal} on real checkpoints.}`，主文正式承载 160/160 falsification 结果与机制解释。
+  - **Patch 3 ($H_{\text{ref}}{=}\log K$ default, addresses R3/m2)**：§6.2 policy bullet 与 "Calibrated setting" 段落重写；$\log K{=}5.55$ 成为默认值，legacy 8.0 只保留于 Appendix~A.16 sensitivity 章节。主文新增 `\textbf{[TODO: measured calibrated latency pending rerun]}` 占位标记。
+  - **Patch 4 (Revised Table 1, addresses R6)**：`tab:real-gpu-three-policy`（原标签 `tab:w1_chunked_scan` 已全局重命名）RTX~3070 默认行使用 `\textbf{[TODO: measured calibrated latency pending rerun]}`；RTX~3090 calibrated 行使用 `\textbf{[TODO: measured value pending]}`；并用 "4.41$\times$ (analytic)" 标注 speedup，避免把 Static-512 stand-in 误读为实测。
+  - **Patch 5 (New §6.5 End-to-End Integrated Measurement, addresses W1/R1)**：§6.4 后插入新 subsection `sec:integrated` + `tab:integrated`；Active+routed 行三个格子全部 `\textbf{[TODO: measured value pending]}`。
+  - **Patch 6 (New §6.6 Heterogeneous Workload, addresses W2/R2)**：新 subsection `sec:heterogeneous` + `tab:heterogeneous`，三类 regime × 五个 chunk-bucket 共 15 格全部 `\textbf{[TODO]}`。
+  - **Patch 7 (Tightened Limitations, addresses W1/W2/W3)**：§Limitations 中 bullet 4 → "Limited workload heterogeneity"；bullet 7 → "End-to-end integration gap (closed in camera-ready)"；bullet 9 → "No-Fusion baseline semantics"。同时删除与新 bullet 重复的旧 bullet 10（"Heterogeneous real workloads"），避免主文自相矛盾。
+  - **Patch 8 (Appendix Tier-1 compression, addresses W5/R5)**：`paper/appendix.tex` 中 A.8 `tab:full_grid_ablation`、A.9 `tab:tile_trace_surrogate`、A.10 `tab:signal_chain` 及五个 subsubsection 的 `tab:ablation_tau` / `tab:grid_ablation` / `tab:tiling_depth` / `tab:ablation_precision` / `tab:ablation_length` 被整体替换为 `sec:prototype-consolidated` 的单表 `tab:prototype_consolidated`（5 行）。为避免破坏外部 `\ref`，consolidated subsection 与 consolidated table 同时挂载所有旧 label（`sec:appendix_ablations` / `sec:prototype_signal_chain` / `sec:full_grid_ablation` / `sec:grid_ablation`，以及 8 个旧 table label），从而 `main.tex:193`（`tab:tiling_depth`）、`main.tex:215`（`sec:prototype_signal_chain`）、`main.tex:352`（`sec:appendix_ablations`）、`appendix.tex:530`（`tab:tile_trace_surrogate` + `tab:tiling_depth`）均自动解析到新 consolidated 入口，无破坏性引用。
+  - **Patch 9b/m4 (Remove Mamba-2.8B corey row from `tab:policy_compare_n5`)**：删除 `\texttt{corey} & Mamba-2.8B` 行及其 `$^\dagger$`/`$^\ddagger$` footnote；caption 与前导段落同步更新为“`policy_static` + `policy_corey` Mamba-2.8B pending $n{\ge}20$ rerun”。
+  - **Patch 9c/m5 (Move Fig 1 caption explanation to body)**：`fig:entropy_gain` caption 去除 "Why absolute entropy decreases..." 机理句；改为 §A.3 body 中的独立段落，读者不需要看 caption 也能理解 generator artifact。
+  - **Patch 9d/m6 (Brief informal theorems inline)**：§4 内加入 `\begin{theorem}[informal, formal statement in Appendix C.1]` (`thm:entropy_informal`) 与 `\begin{theorem}[informal, formal statement in Appendix C.3]` (`thm:quant_informal`)，与主文 falsification paragraph 保持一致的符号与 label。
+  - **Patch 9e/m8 (Eq (4) convex constraint)**：`S(\mathcal{R}) = \alpha \widetilde{H} + \beta \widetilde{AI} - \gamma \widetilde{M}` 之后增加 `\quad \alpha,\beta,\gamma \ge 0, \ \alpha+\beta+\gamma = 1`。
+
+  **Diff summary**：
+  - `paper/main.tex`：abstract 重写；§4 新增一个 `\paragraph{...}` + 两个 informal `\begin{theorem}`；Eq (4) 加凸组合约束；§6.2 policy bullet 与 calibrated 段落重写；Table 1 内容与 label 重命名（`tab:w1_chunked_scan` → `tab:real-gpu-three-policy`，附 4 处 `\ref` 同步更新）；§6.5 `sec:integrated` + §6.6 `sec:heterogeneous` 为新插入小节，两张新 table 全 TODO；Limitations 三条 bullet 替换 + 一条旧 bullet 删除。总行数 358 → 410。
+  - `paper/appendix.tex`：§A.2 末尾新增机理段落；`fig:entropy_gain` caption 减短；A.7 `Full Coarse Grid Ablation` 小节与之后 A.8–A.10 及五个 ablation subsubsection 被替换为 `sec:prototype-consolidated` 单表；`tab:policy_compare_n5` 删掉 Mamba-2.8B corey 行 + 两处 footnote；caption 与前导段落同步更新。总行数 1001 → 840。
+  - 没有更改 `paper/refs.bib`，未新增 figure，未改动 `paper/figs/*`。
 
 - 任务 84（2026-04-18）：增强 `docs/revision_suggestions.tex` 的“总入口”能力，使其不再只是列出 revision items，而是显式引用并解释同轮 Stage 9 生成的 companion context。具体包括：
   (1) 在 `docs/revision_suggestions.tex` 顶部新增 `Companion Context Files` 小节。
@@ -407,6 +494,35 @@
 ---
 
 ## 遗留问题
+
+### Decisions required from Bob（本轮 9-patch cycle 新增）
+
+1. **RTX 3090 calibrated 行是否保留在 Table 1？** 当前 `tab:real-gpu-three-policy` RTX~3090 calibrated 行为 `[TODO: measured value pending]`。若 camera-ready 前无法在 3090 上重跑 calibrated 配置，可选项：(a) 保留 TODO 行并在 limitations 中说明；(b) 删除该行只保留 RTX 3090 的 legacy 8.0 行；(c) 把 3090 整个硬件块移入 appendix。
+
+A: **(a)** 以维持与 RTX 3070 对称性。
+
+2. **§6.5 `sec:integrated` 若实测延迟 ≥ passive（即 active+routed 没有净提速）要如何定位？** Patch 5 原文说 "if integrated latency $\le$ passive latency, COREY achieves net end-to-end improvement; if not, report honestly"。camera-ready 报告模版 / narrative 需要你决定：仍以 "feasibility" 定位发表，还是追加一次更小的 per-call scheduler 优化（例如 histogram kernel fusion）。
+
+A: 追加一次更小的 per-call scheduler 优化
+
+3. **§6.6 `sec:heterogeneous` 60-prompt 语料的具体来源**：HumanEval docstring、LongBench NarrativeQA/GovReport 已在主文指定；templated/repetitive 20 条需要你指定是脚本合成 (e.g., 固定模版 slot-fill) 还是选取自一个已有 templated corpus (e.g., BigBench multiple-choice)。推荐：脚本合成，模板 / slot 以附录 JSON 公开。
+
+A: 脚本合成
+
+
+4. **Mamba-2.8B n≥20 rerun 的 GPU 预算**：Patch 9b 把该行留为 "pending $n{\ge}20$ rerun"。需要你确认是否分配 A100/H100 时长。若不重跑，则应在下一轮评审前继续保持行缺失并更新 caption。
+
+### Experiments Bob still needs to run（严格不得在此会话内启动）
+
+| # | 实验 | 对应 TODO 占位符 | 期望输出 | 最低成本 |
+|---|------|------------------|----------|----------|
+| E1 | RTX 3070 COREY (calibrated, $H_{\text{ref}}{=}\log K$) 30-repeat 直接 `selective_scan_fn` 调用 (chunk=512, seq=4096, FP16, $\dim$=1024, $d_{\text{state}}$=16) | `tab:real-gpu-three-policy` RTX 3070 COREY 默认行 `[TODO: measured calibrated latency pending rerun]`；§6.2 "Calibrated latency" 段内同名占位符 | 单延迟 mean±std | ~10 GPU-min |
+| E2 | RTX 3090 同上配置 | `tab:real-gpu-three-policy` RTX 3090 COREY 默认行 `[TODO]` | 单延迟 mean±std | ~10 GPU-min |
+| E3 | §6.5 "Active + routed (integrated)" —— 修改 `MambaMixer.cuda_kernels_forward` 使 entropy-selected chunk 真正传入 `selective_scan_fn`，然后重跑 Mamba-370M / RTX 3070 / 182-token prompt / 32 new tokens / $n{=}5$ / 2 warmup | `tab:integrated` 第 3 行 2 个 TODO 格（latency + vs Passive） | 端到端 latency mean±std | ~30 GPU-min + 工程改动 |
+| E4 | §6.6 混合语料（20 templated + 20 HumanEval + 20 LongBench NarrativeQA/GovReport）在 Mamba-370M / RTX 3070 下跑 active+routed，记录 per-prompt 熵值 + chunk 选择 + 四 bucket 分布 | `tab:heterogeneous` 三行 × 5 列共 15 个 TODO 格 | 三行 $\bar H$ + 四个 chunk% | ~90 GPU-min（含语料准备） |
+| E5 | Mamba-2.8B policy_corey / policy_static LongBench 4-task $n{\ge}20$ rerun（需要 A100 / H100 或同等 VRAM 设备） | `tab:policy_compare_n5` 中 Mamba-2.8B 两行当前缺失 | 延迟 + 质量 + WT103 PPL | ~4 GPU-hr（A100） |
+
+### Legacy 遗留条目
 
 - **J5 评审意见（阻塞）**：Evaluation breadth 仍低于 NeurIPS 主赛道 systems paper 标准。当前 LongBench 仅覆盖四任务各 20 样本，无完整 Mamba-2.8B 表格，无 Mamba-2 / RWKV-6 / FlashAttention Transformer 同等规模对比。
   - **根本原因**：架构差异（Mamba-2 SSD vs. 1.x selective scan）与硬件约束（FlashAttention Transformer 需显存充足设备），当前环境无法直接支持。

@@ -1,9 +1,10 @@
 %==============================================================================
-% NeurIPS 2026 Peer Review: COREY
-% Paper ID: [Anonymous]
-% Title: COREY: A Prototype Study of Entropy-Guided Kernel-Level Scheduling
+% NeurIPS 2026 Independent Review: COREY (Fresh Cycle 3)
+% Paper: COREY: A Prototype Study of Entropy-Guided Kernel-Level Scheduling
 %        for Mamba-1.x SSMs
-% Track: Datasets & Benchmarks / Systems (Concept & Feasibility positioning)
+% Reviewer: Independent (simulated), NeurIPS 2026 Systems / Algorithms Track
+% Review date: 2026-04-18 (Cycle 3 -- all Reviewer #2 patches applied;
+%              two scaffold sections §6.5/§6.6 added with TODO measurements)
 %==============================================================================
 
 \documentclass[11pt]{article}
@@ -14,45 +15,59 @@
 \usepackage{xcolor}
 \usepackage{enumitem}
 
-\title{NeurIPS 2026 Review: COREY --- Entropy-Guided Kernel-Level Scheduling for Mamba-1.x SSMs}
-\author{Reviewer \#2 (simulated)}
-\date{Review cycle: NeurIPS 2026}
+\title{NeurIPS 2026 Independent Review (Cycle 3): COREY\\
+\large Entropy-Guided Kernel-Level Scheduling for Mamba-1.x SSMs}
+\author{Independent Reviewer (simulated)}
+\date{Review cycle: 2026-04-18}
 
 \begin{document}
 \maketitle
 
 %==============================================================================
-\section*{Summary of the Paper}
+\section*{Summary}
 %==============================================================================
-The authors propose COREY, a runtime scheduler that uses histogram-estimated
-Shannon entropy of SSM activations to select kernel chunk sizes for the
-Mamba-1.x \texttt{selective\_scan\_fn} Triton kernel. Evidence is organized in
-three tiers: (Tier 1) a deterministic Python cost-model prototype;
-(Tier 2a) an active inline hook on
-\texttt{MambaMixer.cuda\_kernels\_forward} measuring $8.3\%$ end-to-end
-overhead on Mamba-370M; (Tier 2b) a direct Triton kernel-timing study showing
-$3.24\times$ (default) and $4.41\times$ (calibrated $H_{\text{ref}}=\log K$)
-latency reduction over static chunk-64. A prospective Hadamard
-reparameterization is analyzed theoretically but explicitly \emph{not} claimed
-as a validated contribution; the authors report that Theorem 2 is empirically
-falsified on 160/160 real Mamba-370M activation pairs.
+
+COREY is a runtime chunk-size scheduler for the Mamba-1.x
+\texttt{selective\_scan\_fn} Triton kernel. The scheduler computes a
+Shannon entropy estimate over the post-convolution hidden state and maps it
+to a chunk size via a log-scale rule. Evidence is organized in three tiers:
+(Tier~1) a deterministic Python cost model; (Tier~2a) an active inline hook
+on \texttt{MambaMixer.cuda\_kernels\_forward} measuring $8.3\%$ overhead;
+(Tier~2b) a direct Triton scan-kernel timing showing $3.24\times$ (legacy
+$H_\text{ref}{=}8.0$) and $4.41\times$ (calibrated $H_\text{ref}{=}\log K$)
+speedup over static chunk-64. The authors explicitly flag that Tiers~2a and
+2b are disconnected experiments and that the end-to-end integrated speedup
+is unmeasured. Theorem~2 (entropy increase under Hadamard) is reported as
+empirically falsified on 160/160 real Mamba-370M activation pairs.
+
+Since Cycle~2 the paper has undergone substantial revision: inline informal
+theorem statements, a full falsification paragraph in \S4, a principled
+calibration ($H_\text{ref}{=}\log K$) as the default, tightened Limitations,
+and two new scaffold sections (\S6.5 Integrated Measurement, \S6.6
+Heterogeneous Workload). These additions show genuine responsiveness to prior
+review.
 
 %==============================================================================
 \section*{Overall Assessment}
 %==============================================================================
 
 \begin{description}[leftmargin=2em,style=nextline]
-  \item[Soundness:] 3 (good) --- claims are carefully scoped; the authors
-  proactively flag the Tier-2a/2b disconnect and falsify their own
-  Theorem 2.
-  \item[Presentation:] 3 (good) --- the tier taxonomy and Signal A / Signal B
-  separation are unusually clear for a systems paper.
-  \item[Contribution:] 2 (fair) --- the core system contribution (runtime chunk
-  scheduling) is a single-parameter auto-tuner; evidence breadth is narrow.
-  \item[Rating:] \textbf{5: Borderline accept.} Above the acceptance bar
-  conditional on the required revisions below being completed; below the bar
-  as currently submitted given the gaps in \S\ref{sec:weaknesses}.
-  \item[Confidence:] 4 (confident).
+  \item[Soundness:] 3 (good) --- claims are carefully scoped; the falsification
+  of Theorem~2 is reported honestly. The Tier-2a/2b disconnect is now
+  acknowledged in both Limitations and the dedicated sections.
+  \item[Presentation:] 3 (good) --- the three-tier taxonomy is clear; the
+  Signal~A / Signal~B separation is maintained consistently.
+  \item[Contribution:] 2 (fair) --- the core system contribution remains a
+  single-parameter auto-tuner with unmeasured end-to-end speedup.
+  \item[Rating:] \textbf{4: Borderline Reject.}
+  The paper is one successfully executed experiment away from borderline
+  accept (Cycle~2 score was 5). The integrated measurement (§6.5) and the
+  heterogeneous-corpus evaluation (§6.6) are both scaffolded but fully
+  unexecuted: all table cells carry \texttt{[TODO]} placeholders. Submitting
+  with two completely empty result sections is not appropriate for camera-ready
+  or for a main-track NeurIPS submission. The score is lowered from 5 to 4
+  accordingly.
+  \item[Confidence:] 5 (very confident).
 \end{description}
 
 %==============================================================================
@@ -60,27 +75,25 @@ falsified on 160/160 real Mamba-370M activation pairs.
 %==============================================================================
 
 \begin{enumerate}[leftmargin=2em]
-  \item \textbf{Honest self-scoping.} The ``Not claimed'' bullet list in the
-  introduction and the explicit Tier-1/2a/2b separation are exemplary. Many
-  systems submissions overstate kernel microbenchmarks as end-to-end speedups;
-  this paper does not.
-  \item \textbf{Self-falsification of Theorem 2.} Reporting that the
-  doubly-stochastic mixing assumption fails on 160/160 real checkpoint pairs
-  (mean $-1.40$ nats) with a mechanistic explanation (Gaussian in\_proj
-  outputs are rotation-invariant) is a genuine contribution to the field's
-  understanding of Hadamard-based SSM quantization.
-  \item \textbf{Principled calibration insight.} The observation that
-  $H_{\text{ref}}=\log K$ yields $K$-invariant behavior and closes the gap to
-  the one-time-profile oracle (Table~16, Table~17) is a clean result with
-  immediate practical value.
-  \item \textbf{Tier-2a real-checkpoint feasibility.} The active-mode hook on
-  \texttt{MambaMixer.cuda\_kernels\_forward} with measured $8.3\%$ overhead
-  ($n{=}5$, isolated per-call cost $1.10 \pm 0.16$\,ms) and observed per-layer
-  chunk switching (322 calls chunk=256, 14 calls chunk=128) is credible
-  evidence that the mechanism executes on the critical path.
-  \item \textbf{Reproducibility posture.} Anonymous repository, explicit
-  hyperparameters, per-policy timing seeds, and the Sinkhorn-fit residuals in
-  Appendix C.1 exceed typical systems-paper disclosure.
+  \item \textbf{Honest, layered self-scoping.} The ``What this paper does not
+  claim'' block in the abstract, the Tier-1/2a/2b taxonomy, and the tightened
+  Limitations remain exemplary for a systems submission.
+  \item \textbf{Theorem-2 falsification in main text.} Moving the
+  $-1.40\pm0.37$ nats falsification result into \S4 (Patch~2) is the right
+  call. It is one of the most intellectually honest findings in any recent
+  SSM submission.
+  \item \textbf{Calibration insight.} The $H_\text{ref}{=}\log K$ calibration
+  is now the default; the explanation (normalized ratio $r = H/\log K$
+  decouples from $K$) is clean and the oracle-matching behavior
+  ($4.41\times$, chunk$=512$) is a sharp result.
+  \item \textbf{Scaffold sections show clear intent.} §6.5 and §6.6 are
+  correctly structured experiments with precise protocol descriptions; the
+  authors know exactly what needs to be executed. This increases confidence
+  that results could be produced before camera-ready.
+  \item \textbf{Label / cross-reference hygiene.} The addition of informal
+  theorem labels (\texttt{thm:entropy\_informal},
+  \texttt{thm:quant\_informal}) alongside the formal appendix versions
+  (\texttt{thm:entropy}, \texttt{thm:quant}) is handled correctly.
 \end{enumerate}
 
 %==============================================================================
@@ -88,89 +101,108 @@ falsified on 160/160 real Mamba-370M activation pairs.
 \label{sec:weaknesses}
 %==============================================================================
 
-\subsection{W1 --- The Tier-2a/2b gap is the central contribution gap.}
-The paper demonstrates (a) that entropy selection can be computed inline at
-$8.3\%$ overhead and (b) that the selected chunk size \emph{would} produce a
-$3.24$--$4.41\times$ kernel-level speedup --- but never connects (a) to (b).
-The end-to-end integrated speedup is therefore \emph{unmeasured}, not merely
-``deferred.'' For a systems contribution this is the load-bearing
-experiment. Routing \texttt{chunk\_size} into \texttt{selective\_scan\_fn} is
-one function-signature change; the fact that it was not executed within the
-submission window materially weakens the ``Concept \& Feasibility'' framing.
+\subsection{W1 (critical) --- §6.5 and §6.6 are empty scaffolds.}
+The paper now contains two dedicated result sections that carry zero measured
+data. §6.5 (\emph{End-to-End Integrated Measurement}) has three rows in
+\texttt{tab:integrated}; the third row (Active + routed) has
+\texttt{[TODO: measured value pending]} in every cell. §6.6
+(\emph{Heterogeneous Real-Workload Evaluation}) has 15 \texttt{[TODO]} cells
+across three entropy regimes.
 
-\subsection{W2 --- The prompt-regime concentration undermines the online-adaptation value proposition.}
-Table~13 shows all 80 LongBench prompts map to a single coarse chunk bucket
-(256) with entropy $4.02 \pm 0.09$ nats. Under the calibrated
-$H_{\text{ref}}=\log K$ setting, this is \emph{identical} to what a one-time
-offline sweep produces. The authors acknowledge this as ``case (c)'' in
-\S6.2, but then the operational advantage reduces to ``no offline sweep
-required,'' which is a modest engineering convenience, not a research
-contribution. A heterogeneous workload that actually triggers chunk switching
-on real prompts is necessary to justify the online mechanism.
+A main-track systems paper cannot have result sections with no results. Either:
+(a) execute the experiments before submission, or
+(b) collapse §6.5 and §6.6 back into the Limitations as ``planned future
+work'' and stop claiming in Limitations bullet~7 that the gap is ``targeted
+for camera-ready'' (since it is currently not closed even for this draft).
 
-\subsection{W3 --- ``No-Fusion'' baseline is a Python dispatch-cost strawman.}
-The $37$--$49\times$ speedups against \texttt{policy\_off} (Appendix
-Table~21) measure Python-loop overhead, not kernel arithmetic. The authors
-are commendably honest about this (footnote $\ddagger$), but the numbers
-remain in the paper. A reader skimming the tables will substantially
-overestimate COREY's contribution. The fair comparison is
-COREY vs.\ Static-512 (calibrated: parity; default: $0.68\times$, i.e.,
-\emph{slower}).
+The authors must choose one path and be consistent.
 
-\subsection{W4 --- External-baseline coverage is one model (Pythia-410M).}
-One Pythia checkpoint as a ``sanity-check'' is insufficient. A Mamba-2 SSD
-baseline or a FlashAttention-3 Transformer at matched parameter count would
-establish whether the targeted $3.24\times$ (relative to Static-64, not the
-oracle) is competitive with alternative architectures solving the same
-long-context problem. Without this, the kernel-level speedup is in a vacuum.
+\subsection{W2 (critical) --- Table 1 COREY (default) RTX~3070 row is missing its measured latency.}
+The COREY (default, $H_\text{ref}{=}\log K$) row in Table~1 at RTX~3070
+shows \texttt{[TODO: measured calibrated latency pending rerun]}. The
+speedup entries read ``$4.41\times$ (analytic)'' rather than a measured
+number. This means the paper's headline result (the oracle-matching calibrated
+setting) has never been directly timed end-to-end.
 
-\subsection{W5 --- Tier-1 prototype tables consume disproportionate space.}
-The prototype surrogate latency tables (Tables~3--10) are deterministic
-Python outputs; the authors note the variance is $\pm 0.12$\,ms ``because the
-cost model is deterministic.'' These add little over a paragraph of prose.
-Reallocating this space to W1/W2 experiments would strengthen the paper.
+The RTX~3090 calibrated row is also empty. This is a 10-minute GPU job.
+It should be executed before submission.
 
-\subsection{W6 --- The MF-EN exact-match column of Table~22 is uninformative.}
-All zeros across all models. The authors acknowledge this is a harness
-artifact of 32-token generation vs.\ strict EM, but it still occupies a
-column in the main-text-adjacent appendix table. Either replace with
-token-F1 / ROUGE-L for MF-EN or remove.
+\subsection{W3 (high) --- §6.5/§6.6 prose uses present/past tense for unexecuted work.}
+§6.5 reads: ``\textit{To close this gap, we modify
+\texttt{MambaMixer.cuda\_kernels\_forward} so that...}''
+§6.6 reads: ``\textit{All 60 prompts are run on Mamba-370M under
+Active+routed integrated scheduling...}''
+
+These statements are factually false if the experiments have not been run.
+The present-tense description of experimental design that has not been
+executed will mislead reviewers. The tense must be future/conditional
+(``we will modify...'', ``will be run'') or the text recast explicitly as a
+protocol description.
+
+\subsection{W4 (high) --- Limitations bullet~7 contradiction.}
+Limitations bullet~7 reads: ``\textit{End-to-end integration gap (targeted
+for camera-ready).}'' This is the correct framing, but the same bullet says
+``The integrated measurement protocol in \S6.5 is scaffolded and targeted for
+camera-ready; \textbf{until the experiment is executed, the end-to-end speedup
+of routing entropy-selected chunks into the live scan path is unmeasured.}''
+
+The contradiction is: \S6.5 describes the experiment in present tense as if
+it has been done, while Limitations bullet~7 explicitly admits it has not.
+Readers who see the table \texttt{[TODO]} will understand, but the prose
+discrepancy is a red flag for reviewers who read the two sections out of order.
+
+\subsection{W5 (medium) --- Conclusion paragraph tension with §6.5 status.}
+The Conclusion says: ``\textit{Routing the selected chunk into the scan
+kernel---which would realize the $3.24\times$ speedup demonstrated in
+Tier-2b---remains the next engineering step.}'' This is accurate but is now
+in direct conflict with the title of §6.5, which claims this gap is being
+addressed in this very paper. A reader who reads the Conclusion before
+§6.5 will be confused.
 
 %==============================================================================
-\section{Minor Weaknesses and Presentation Issues}
+\section{Minor Weaknesses}
 %==============================================================================
 
 \begin{enumerate}[leftmargin=2em,label=m\arabic*.]
-  \item \textbf{Line 19.} ``$\approx 2\%$ with every-4th-layer sampling'' is
-  an estimate, not measured. Mark as such in the abstract.
-  \item \textbf{Line 244--246.} Retaining $H_{\text{ref}}=8.0$ ``for
-  continuity with prior benchmark runs'' is reviewer-unfriendly. If
-  $\log K$ is principled and free, make it the default and relegate $8.0$
-  to the ablation.
-  \item \textbf{Table 1, COREY (calibrated) row.} Reusing the Static-512
-  latency as a ``conservative stand-in'' rather than running the calibrated
-  setting end-to-end is awkward. A $30$-repeat calibrated run takes
-  minutes.
-  \item \textbf{Table 11, Mamba-2.8B WT103 PPL.} Suppressing an anomalous
-  value is correct behavior, but leaves a dangling row. Either rerun at
-  $n{=}20$ or remove the row entirely for this submission.
-  \item \textbf{Figure 1 caption.} ``Why absolute entropy decreases at longer
-  sequences'' is buried in the caption. Move to text; many readers skip
-  captions.
-  \item \textbf{\S4.} Theorem~1 is stated in the main text but Theorems 2--3
-  are ``deferred to the appendix.'' For consistency either state all three
-  briefly in the main text or defer all to the appendix.
-  \item \textbf{Appendix A.22, Hardware list.} Prototype hardware is listed
-  as i9-13900K / 64\,GB / PyTorch 2.3, but the Tier-2 benchmarks use
-  PyTorch 2.11. Clarify which environment produced which table.
-  \item \textbf{Equation (4).} $\alpha + \beta + \gamma = 1.0$ is not
-  enforced; the scheme would be cleaner as a convex combination.
-  \item \textbf{Terminology.} ``Chunk size'' and ``fusion depth'' are used
-  interchangeably in places (e.g., lines 230--232). A one-sentence glossary
-  would help.
-  \item \textbf{Broken cross-references.} Line 174 refers to
-  ``Appendix Table~8''; in the compiled PDF this is Table~8 (\S A.9).
-  Verify all forward-references.
+  \item \textbf{§6.3 passive hook latency footnote.}
+  Line~281 says the passive hook results use $n{=}1$, zero warmup. The active
+  integration uses $n{=}5$, 2 warmup. This asymmetry is noted in the appendix
+  but should also appear in the main-text footnote at first mention.
+  \item \textbf{Scheduler configuration heterogeneity.}
+  The prototype uses $K{=}64$ bins, but the checkpoint hook uses $K{=}256$.
+  The two configurations are documented but only in separate subsections;
+  a one-sentence ``these two $K$ values are for different evaluation paths''
+  note in the Experimental Setup would prevent reader confusion.
+  \item \textbf{Algorithm box and real kernel.}
+  Algorithm~1 (\emph{Entropy-Guided Scheduling Boundary Selection}) operates
+  on an ``operator chain $\mathcal{C}$'' with a generic scoring function.
+  Readers unfamiliar with the paper history may not realize this algorithm
+  is the Tier-1 prototype logic and not the Tier-2b Triton kernel invocation.
+  Adding a one-sentence clarification (``this algorithm describes the
+  Tier-1 prototype scheduling logic'') would prevent misreading.
+  \item \textbf{Stale build note in main.tex.}
+  A comment at line 395 reads ``Build note: paper/build/main.pdf compiled to
+  31 pages on 2026-04-17.'' After the addition of §6.5 and §6.6, the page
+  count will differ. Remove or update this comment.
+  \item \textbf{MF-EN column.}
+  Table~22 in the appendix still contains MF-EN exact-match scores (all
+  zeros). The caption acknowledges this is a harness artifact. Replacing
+  with token-level F1 or removing the column is cleaner.
+  \item \textbf{Terminology alignment: §6.2 calibration paragraph.}
+  Line~267 says ``\textit{The calibrated RTX~3070 latency is
+  \texttt{[TODO]}...ms from a dedicated 30-repeat timing at chunk$=512$.
+  The RTX~3090 calibrated run is pending.}'' Once the measurements are filled
+  in, this paragraph should be rewritten in declarative form; the
+  ``pending'' language must be removed.
+  \item \textbf{`tab:active\_integration` reference in Limitations.}
+  Limitations bullet~9 references \texttt{tab:active\_integration}. Verify
+  that this label is defined in the appendix (it should be in
+  \texttt{sec:active\_overhead}).
+  \item \textbf{`tab:entropy\_variance\_real` vs `fig:entropy\_variance\_real`.}
+  §6.4 references \texttt{Appendix Table~\ref{tab:entropy\_variance\_real}}
+  (line~219) while §6.6 also references the same label. The appendix has
+  \texttt{fig:entropy\_variance\_real} (a figure). Confirm whether this is
+  a table or a figure and ensure the label type is consistent.
 \end{enumerate}
 
 %==============================================================================
@@ -178,27 +210,27 @@ token-F1 / ROUGE-L for MF-EN or remove.
 %==============================================================================
 
 \begin{enumerate}[leftmargin=2em,label=Q\arabic*.]
-  \item Can you run the end-to-end integrated experiment (active hook
-  $+$ routed chunk size) during the author response? This is the single
-  experiment that would move my score from 5 to 6.
-  \item For the 80-prompt LongBench distribution (Table~13), what is the
-  measured entropy on \emph{code} prompts (e.g., HumanEval, MBPP) or
-  templated/repetitive inputs? My expectation is these enter the
-  chunk-128 or chunk-64 regime; verifying this would address W2.
-  \item Under the calibrated $H_{\text{ref}}=\log K$ setting, is there
-  \emph{any} prompt in your real workloads where COREY and the Static-512
-  oracle disagree? If not, the case (c) claim is complete; if yes, this is
-  the killer figure for the paper.
-  \item The per-call scheduler cost of $1.10$\,ms (line 297) is $\sim 20\times$
-  the $\sim 50\,\mu$s CUDA estimate (line 759). Where is the remaining time
-  spent --- Python dispatch, \texttt{cudaDeviceSynchronize}, histogram
-  construction? A kernel-level breakdown (Nsight Systems trace) would
-  clarify whether the $8.3\%$ overhead can be driven substantially lower.
-  \item Theorem 3 ($\ell_\infty$ reduction by $\sqrt{d}$) is stated for the
-  sparse-outlier regime and caveated for $D=\Theta(d)$. What is the
-  empirical outlier density $D/d$ on real Mamba-370M in\_proj outputs? This
-  determines whether Theorem 3 is vacuous or tight for the architecture you
-  target.
+  \item What prevented executing the integrated measurement (§6.5) and the
+  heterogeneous corpus (§6.6) before this submission? Is there a technical
+  obstacle (not just time) that warrants retaining the scaffold sections
+  rather than collapsing them?
+  \item For the calibrated latency of COREY (default, chunk$=512$, RTX~3070):
+  Static-512 measured $0.748\pm0.037$\,ms with 30 repeats. Is there any
+  reason to expect the calibrated COREY run to differ from Static-512, given
+  that COREY (calibrated) selects the same chunk size? If not, $0.748$\,ms
+  is already an empirical upper bound.
+  \item The active-mode hook applies a $K{=}256$ histogram entropy estimate.
+  The Tier-2b benchmark uses \texttt{torch.randn()} standard-normal activations.
+  For the intended integrated experiment (§6.5), will the hook entropy
+  measurement be performed on the same \texttt{torch.randn()} tensor as used
+  in the Tier-2b benchmark, or on real Mamba-370M checkpoint activations during
+  inference? The answer determines whether the 182-token prompt configuration or
+  the synthetic 4096-token seq\_len configuration is the correct protocol.
+  \item For the heterogeneous corpus (§6.6), the paper specifies ``20 prompts
+  from HumanEval docstrings.'' HumanEval docstrings are typically very short
+  (10--50 tokens). How will prompt length be standardized across the three
+  entropy regimes to avoid confounding sequence-length effects with entropy
+  effects?
 \end{enumerate}
 
 %==============================================================================
@@ -206,412 +238,187 @@ token-F1 / ROUGE-L for MF-EN or remove.
 %==============================================================================
 
 \begin{enumerate}[leftmargin=2em,label=R\arabic*.]
-  \item \textbf{[Critical]} Execute the Tier-2a\,$\oplus$\,Tier-2b
-  integrated run. Report end-to-end latency with the selected chunk routed
-  into \texttt{selective\_scan\_fn}. Failure to do this before camera-ready
-  should downgrade the paper to a workshop contribution.
-  \item \textbf{[Critical]} Add one heterogeneous real workload spanning
-  $\geq 3$ entropy deciles (code + templated + long-narrative). Report
-  per-prompt chunk selection distribution. Without this, W2 stands.
-  \item \textbf{[High]} Replace the $H_{\text{ref}}=8.0$ default throughout
-  the paper with $H_{\text{ref}}=\log K$. Keep $8.0$ only in
-  Appendix~A.16.
-  \item \textbf{[High]} Add one Mamba-2 (SSD) baseline \emph{or} one
-  FlashAttention-3 baseline at Mamba-370M scale, sequence length 4096, on
-  RTX 3070.
-  \item \textbf{[Medium]} Compress Tier-1 prototype tables (current
-  Appendix A.7--A.10) into a single consolidated table with a cross-reference
-  to the repository for full numbers. Reclaim space for R1/R2.
-  \item \textbf{[Medium]} Run the calibrated COREY setting end-to-end
-  (Table~1, row ``COREY (calibrated)'') rather than reusing the Static-512
-  latency as a stand-in.
-  \item \textbf{[Low]} Remove the MF-EN column from Table~22 or replace
-  with token-level F1.
-  \item \textbf{[Low]} Move the Theorem-2 falsification (currently in
-  Remark~1 of Appendix C.1) into the main-text \S4 as a numbered paragraph.
-  It is one of the most interesting findings in the paper.
+  \item \textbf{[Critical]} Either execute §6.5 (Active+routed integrated
+  measurement) and fill in \texttt{tab:integrated}, or convert §6.5 into a
+  Limitations subsection describing the planned protocol without empty result
+  cells.
+  \item \textbf{[Critical]} Either execute §6.6 (heterogeneous corpus) and
+  fill in \texttt{tab:heterogeneous}, or convert §6.6 into a Limitations
+  subsection.
+  \item \textbf{[Critical]} Execute the calibrated COREY timing on RTX~3070
+  (chunk$=512$, 30-repeat, standard-normal activations) and fill in
+  Table~1's \texttt{[TODO: measured calibrated latency pending rerun]} cell.
+  This is the headline result of Tier~2b and should not be marked as pending.
+  \item \textbf{[High]} Fix tense inconsistency in §6.5 and §6.6 prose. If
+  experiments are not yet run, rewrite ``we modify'' and ``are run'' as
+  ``we will modify'' and ``will be run,'' or as explicit protocol descriptions.
+  \item \textbf{[High]} Resolve the Conclusion / §6.5 tension. Either the
+  Conclusion should acknowledge that §6.5 provides the measured result (if
+  executed) or should not contradict it by saying the routing step ``remains
+  the next engineering step'' while §6.5 claims to address it.
+  \item \textbf{[Medium]} Verify \texttt{tab:entropy\_variance\_real} vs
+  \texttt{fig:entropy\_variance\_real} label mismatch (see m8 above).
+  \item \textbf{[Medium]} Add a one-sentence clarification in Algorithm~1
+  caption that this is the Tier-1 prototype scheduling logic, not the
+  Tier-2 Triton kernel invocation.
+  \item \textbf{[Low]} Remove or update the stale build comment at main.tex
+  line~395.
+  \item \textbf{[Low]} Resolve or remove the MF-EN zero column in
+  Appendix Table~22.
 \end{enumerate}
-
-%==============================================================================
-\section{Ethics / Broader Impact Review}
-%==============================================================================
-The Broader Impact statement is appropriately hedged. No ethics concerns
-beyond standard efficiency-gain dual-use considerations, which the authors
-acknowledge.
 
 %==============================================================================
 \section{Reproducibility}
 %==============================================================================
-Anonymous code link present; hyperparameters documented; hardware stack
-listed. Reproducibility checklist (Appendix A.22) is thorough. Rated:
-\textbf{Reproducible with moderate effort} (sm\_89 hardware requirement for
-Quamba path is a known gate, but not required for the main Tier-2
-experiments).
 
-%==============================================================================
+The reproducibility posture is strong: anonymous repository, per-policy
+timing seeds, hardware documented, subset sizes stated. The remaining concern
+is that two result sections (§6.5 / §6.6) and one headline Table~1 row have
+no measured data; these cannot be reproduced by readers because the numbers
+do not yet exist.
+
 %==============================================================================
 \part*{Drop-in LaTeX Revision Patches}
 %==============================================================================
-%==============================================================================
 
-The following patches are intended to be applied directly to the authors'
-LaTeX source. Each is a self-contained block.
+The following patches address the manuscript-level fixable issues that do not
+require new experiments.
 
 %------------------------------------------------------------------------------
-\section*{Patch 1 --- Revised Abstract (addresses W1, m1)}
+\section*{Patch A --- Fix §6.5 prose tense (addresses W3, R4)}
 %------------------------------------------------------------------------------
+
+Replace the present-tense description in §6.5 with protocol/future framing:
+
 \begin{verbatim}
-\begin{abstract}
-Mamba-1.x selective state space models (SSMs) offer linear-time sequence
-modeling but are memory-bandwidth limited in practice: selective state
-updates are decomposed into fragmented kernels with repeated intermediate
-tensor materialization. We present COREY, a prototype scheduler that uses
-activation entropy---estimated via fixed-width histograms---as a runtime
-signal for chunk-size selection at the kernel-invocation granularity.
-We position this work as a \emph{Concept \& Feasibility} contribution:
-COREY is a single-parameter runtime auto-tuner over an existing Triton
-selective-scan kernel, not a new fused kernel.
-%
-Evidence is organized in three tiers. \textbf{Tier 1} (Python cost model):
-entropy-guided grouping reduces surrogate latency and DRAM traffic.
-\textbf{Tier 2a} (real-checkpoint inline hook): on Mamba-370M (RTX 3070,
-$n{=}5$), entropy computation and chunk selection execute inline on the
-critical path of \texttt{model.generate()}; measured end-to-end overhead
-is $8.3\%$ for all-48-layer instrumentation, estimated $\approx\!2\%$ with
-every-4th-layer sampling (not measured).
-\textbf{Tier 2b} (kernel-level scan benchmark): under the principled
-calibration $H_{\text{ref}}{=}\log K$, COREY selects the same chunk as
-the one-time-profile oracle ($4.41\times$ vs.\ static chunk-64) without
-an offline sweep; under the legacy default $H_{\text{ref}}{=}8.0$ it
-achieves $3.24\times$.
-%
-\textbf{What this paper does not claim:} an end-to-end integrated run
-that connects Tier 2a (hook) with Tier 2b (chunk-routed scan); this is
-the most important future work. Across 80 real LongBench prompts entropy
-is tightly concentrated, so present real-workload evidence supports
-COREY as a stable auto-tuner within one regime rather than as a
-prompt-switching controller. Hadamard reparameterization is analyzed as
-a prospective low-bit extension only; we report that Theorem~2 is
-empirically falsified on 160/160 real Mamba-370M activation pairs.
-Code and data: \url{https://anonymous.4open.science/r/COREY_Transformer-B0C5/}.
-\end{abstract}
+% OLD (in sec:integrated):
+% "To close this gap, we modify MambaMixer.cuda_kernels_forward so that
+%  the entropy-selected chunk size is passed as the chunk_size argument to
+%  selective_scan_fn in the same forward pass, rather than being merely
+%  logged. All other settings match..."
+
+% NEW:
+To close this gap, the integrated protocol modifies
+\texttt{MambaMixer.cuda\_kernels\_forward} so that the entropy-selected
+chunk size will be passed as the \texttt{chunk\_size} argument to
+\texttt{selective\_scan\_fn} in the same forward pass, rather than being
+merely logged. All other settings will match the active-mode hook
+configuration (Mamba-370M, RTX~3070, 182-token prompt, 32 new tokens,
+$n{=}5$ repeats, 2 warmup runs). Results are pending; measured values will
+replace the \textbf{[TODO]} cells before camera-ready.
 \end{verbatim}
 
 %------------------------------------------------------------------------------
-\section*{Patch 2 --- Main-text Theorem-2 falsification paragraph (addresses R8)}
+\section*{Patch B --- Fix §6.6 prose tense (addresses W3, R4)}
 %------------------------------------------------------------------------------
-Insert after line~166 in \S4, immediately before \S4.1:
+
+Replace the present-tense run description in §6.6:
 
 \begin{verbatim}
-\paragraph{Empirical status of Theorem~2 on real checkpoints.}
-Theorem~2 gives a sufficient condition---doubly-stochastic histogram
-mixing---under which Shannon entropy grows after Hadamard rotation.
-We report that this condition is \emph{empirically falsified} on real
-Mamba-370M \texttt{in\_proj} outputs: across 160 checkpoint pairs, the
-post-Hadamard histogram entropy \emph{decreases} in 160/160 cases
-(mean $\Delta H = -1.40 \pm 0.37$ nats). The mechanistic reason is
-that real \texttt{in\_proj} outputs are approximately Gaussian, and
-orthogonal transforms preserve the Gaussian distribution, so no
-histogram spreading occurs. Consequently, while Theorem~2 holds in the
-synthetic heavy-tailed regime exercised by our prototype, it should
-\emph{not} be used to motivate Hadamard pre-rotation on standard
-Mamba-1.x checkpoints. This negative result motivates our decision
-to restrict the validated system contribution of this paper to the
-entropy-guided chunk scheduler, treating Hadamard as a prospective
-extension only (see Appendix~C.1, Remark~1).
+% OLD: "All 60 prompts are run on Mamba-370M under Active+routed integrated
+%       scheduling (\S\ref{sec:integrated}) with a per-prompt chunk-selection
+%       log."
+
+% NEW:
+All 60 prompts will be run on Mamba-370M under Active+routed integrated
+scheduling (\S\ref{sec:integrated}) with a per-prompt chunk-selection log.
+Results are pending; measured values will replace the \textbf{[TODO]} cells
+before camera-ready.
 \end{verbatim}
 
 %------------------------------------------------------------------------------
-\section*{Patch 3 --- Replace default $H_{\text{ref}}$ throughout (addresses R3, m2)}
+\section*{Patch C --- Resolve Conclusion tension with §6.5 (addresses W5, R5)}
 %------------------------------------------------------------------------------
-Global find/replace pattern for \S6.2 and Algorithm descriptions:
+
+In the Conclusion, update the sentence about routing:
 
 \begin{verbatim}
 % OLD:
-% and Href=8.0 nats. The entropy hook uses K=256 histogram bins
-% (max log 256=5.55 nats). Principled threshold calibration: we recommend
-% setting Href=log K (here 5.55 nats for K=256) rather than a fixed value;
+% "Routing the selected chunk into the scan kernel---which would realize
+%  the 3.24x speedup demonstrated in Tier-2b---remains the next
+%  engineering step."
 
 % NEW:
-and $H_{\text{ref}}=\log K$ (for $K{=}256$ histogram bins, this gives
-$\log 256 = 5.55$ nats). This principled calibration makes the
-normalized ratio $r = H / \log K$ approximately $K$-invariant, so
-chunk-size decisions decouple from histogram resolution (Appendix~A.17).
-We adopt $H_{\text{ref}}=\log K$ as the default throughout. The legacy
-setting $H_{\text{ref}}=8.0$ (used in earlier revisions of this work
-before the $K=256$ bin count was finalized) is retained only in the
-sensitivity ablation (Appendix~A.16); it systematically biases the
-scheduler toward smaller chunks because $8.0 > \log K$ for any $K \le 512$.
-Under the default $H_{\text{ref}}=\log K$ and input entropy $H=4.60$ nats
-(standard-normal synthetic activations, $r = 0.83$), COREY selects
-chunk $= 512$ and matches the one-time-profile oracle at $4.41\times$
-lower latency than static chunk-64.
+Routing the selected chunk into the scan kernel---which targets the
+$3.24\times$ speedup demonstrated in Tier-2b---is the central integration
+step; the protocol is scaffolded in \S\ref{sec:integrated} and will be
+executed before camera-ready.
 \end{verbatim}
 
 %------------------------------------------------------------------------------
-\section*{Patch 4 --- Revised Table 1 (addresses R6, removes stand-in)}
+\section*{Patch D --- Algorithm~1 caption clarification (addresses m3, R7)}
 %------------------------------------------------------------------------------
-\begin{verbatim}
-\begin{table}[t]
-\centering
-\caption{Real-GPU chunked selective-scan policy comparison ($\dim{=}1024$,
-$d_{\text{state}}{=}16$, FP16, seq\_len${=}4096$, $n{=}30$ repeats after
-$5$ warmup). Chunk size is the number of timesteps per
-\texttt{selective\_scan\_fn} call. Speedup-A is relative to Static-64;
-Speedup-B is relative to Static-512 (one-time-profile oracle). All
-policies use the same \texttt{mamba\_ssm} Triton kernel. COREY
-(default) and COREY (calibrated) are separate measured runs; the
-calibrated setting uses $H_{\text{ref}}=\log K=5.55$ nats and selects
-chunk $= 512$ at $r=0.83$, matching the oracle without an offline sweep.
-The pure-Python No-Fusion loop (403--502\,ms, 4096 calls) is a
-Python-dispatch reference, \emph{not} a hardware-level unfused GPU
-baseline, and is omitted from the main speedup comparisons.}
-\label{tab:real-gpu-three-policy}
-\small
-\begin{tabular}{llrrrrrl}
-\toprule
-Hardware & Policy & Chunk & Calls & Lat.\,(ms) & Std\,(ms) & Spdup-A & Spdup-B \\
-\midrule
-\multicolumn{8}{l}{\emph{RTX 3070 / CUDA 12.8 / WSL2}} \\
- & Static-64            &  64 & 64 & 3.58 & 0.66 & 1.00$\times$ & 0.21$\times$ \\
- & COREY (default, $H_{\text{ref}}{=}8.0$) & 256 & 16 & 1.10 & 0.09 & 3.24$\times$ & 0.68$\times$ \\
- & \textbf{COREY (calibrated, $H_{\text{ref}}{=}\log K$)} & 512 & 8 & 0.751 & 0.041 & \textbf{4.41$\times$} & \textbf{1.00$\times$} \\
- & Static-512 (oracle)  & 512 &  8 & 0.748 & 0.037 & 4.41$\times$ & 1.00$\times$ \\
-\midrule
-\multicolumn{8}{l}{\emph{RTX 3090 / CUDA 12.1 / Linux (4$\times$GPU server)}} \\
- & Static-64            &  64 & 64 & 4.43 & 0.32 & 1.00$\times$ & --- \\
- & COREY (default)      & 256 & 16 & 1.36 & 0.40 & 3.26$\times$ & --- \\
- & COREY (calibrated)   & 512 &  8 & [pending rerun] & --- & --- & --- \\
-\bottomrule
-\end{tabular}
-\end{table}
-\end{verbatim}
 
-\emph{Author note:} The calibrated latency (RTX 3070: 0.751\,ms) is a
-\textbf{newly required measurement}, not the Static-512 stand-in. Allocate
-roughly 10 minutes of GPU time to produce it for camera-ready.
-
-%------------------------------------------------------------------------------
-\section*{Patch 5 --- New \S6.5: End-to-End Integrated Measurement (addresses W1, R1)}
-%------------------------------------------------------------------------------
-Insert as new subsection after \S6.4. \textbf{This is the load-bearing
-experiment required for acceptance.} The LaTeX scaffold below assumes the
-authors execute the experiment; fill in the measured numbers.
+Add a sentence to the Algorithm~1 caption:
 
 \begin{verbatim}
-\subsection{End-to-End Integrated Measurement (Tier-2a $\oplus$ Tier-2b)}
-\label{sec:integrated}
-
-The active-mode hook (\S6.3) and the chunk-routed scan (\S6.2 / Table~1)
-are independent experiments in all prior revisions of this work. To
-close this gap, we modify \texttt{MambaMixer.cuda\_kernels\_forward} so
-that the entropy-selected chunk size is passed as the
-\texttt{chunk\_size} argument to \texttt{selective\_scan\_fn} in the
-same forward pass, rather than being merely logged. All other settings
-match \S6.3 (Mamba-370M, RTX 3070, 182-token prompt, 32 new tokens,
-$n{=}5$ repeats, 2 warmup runs).
-
-\begin{table}[h]
-\centering
-\caption{End-to-end integrated measurement: entropy computation and
-chunk selection execute inline \emph{and} the selected chunk is routed
-into the scan kernel in the same forward pass.}
-\label{tab:integrated}
-\small
-\begin{tabular}{lrr}
-\toprule
-Configuration & Latency (ms) & vs.\ Passive \\
-\midrule
-Passive (stock fast path, static chunk)        & 1160.9 $\pm$ 12.0 & 1.00$\times$ \\
-Active hook only (chunk selected, not routed)  & 1257.5 $\pm$ 30.3 & 0.924$\times$ (overhead +8.3\%) \\
-\textbf{Active + routed (integrated)}          & [measured] & [measured] \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The integrated configuration preserves the per-layer dynamic chunk
-switching observed in \S6.3 (322 calls at chunk~256, 14 calls at
-chunk~128) while realizing the kernel-level speedup demonstrated in
-Table~\ref{tab:real-gpu-three-policy}. [Authors: report measured
-latency; if integrated latency $\le$ passive latency, COREY achieves
-net end-to-end improvement; if not, report honestly and position as
-feasibility rather than speedup.]
+% In \caption{Entropy-Guided Scheduling Boundary Selection}, append:
+This algorithm describes the Tier-1 prototype scheduling logic over an
+abstract operator chain. The Tier-2b experiment uses this logic to select
+a fixed chunk size for the real \texttt{selective\_scan\_fn} Triton kernel;
+it does not replace or reimplement the Triton kernel itself.
 \end{verbatim}
 
 %------------------------------------------------------------------------------
-\section*{Patch 6 --- Heterogeneous Workload Protocol (addresses W2, R2)}
+\section*{Patch E --- Stale build comment removal (addresses m4, R8)}
 %------------------------------------------------------------------------------
-Insert as new subsection \S6.6:
+
+Delete or replace the following comment in main.tex (near line~395):
 
 \begin{verbatim}
-\subsection{Heterogeneous Real-Workload Evaluation}
-\label{sec:heterogeneous}
-
-The 80-prompt LongBench distribution (Table~13) sits entirely in one
-coarse chunk bucket. To test whether COREY genuinely switches chunks
-on real prompts, we construct a \emph{mixed} corpus that interleaves
-three entropy regimes:
-\begin{itemize}[leftmargin=2em,topsep=0pt]
-  \item \textbf{Low-entropy (templated / repetitive):} 20 prompts from
-  a synthetic template corpus (e.g., fill-in-the-blank, repeated
-  phrase completion).
-  \item \textbf{Medium-entropy (code):} 20 prompts from HumanEval docstrings
-  (dense-token Python source).
-  \item \textbf{High-entropy (dense natural language):} 20 prompts from
-  LongBench NarrativeQA / GovReport.
-\end{itemize}
-All 60 prompts are run on Mamba-370M under Active+routed integrated
-scheduling (\S\ref{sec:integrated}) with a per-prompt chunk-selection
-log.
-
-\begin{table}[h]
-\centering
-\caption{Per-prompt chunk selection distribution on the heterogeneous
-corpus. A non-degenerate distribution (multiple buckets populated)
-validates COREY as an \emph{adaptive} controller rather than a
-single-regime auto-tuner.}
-\label{tab:heterogeneous}
-\small
-\begin{tabular}{lrrrrrr}
-\toprule
-Regime & $n$ & $\bar H$ (nats) & \%\,chunk-64 & \%\,chunk-128 & \%\,chunk-256 & \%\,chunk-512 \\
-\midrule
-Low-entropy (templated)   & 20 & [meas.] & [meas.] & [meas.] & [meas.] & [meas.] \\
-Medium-entropy (code)     & 20 & [meas.] & [meas.] & [meas.] & [meas.] & [meas.] \\
-High-entropy (narrative)  & 20 & [meas.] & [meas.] & [meas.] & [meas.] & [meas.] \\
-\bottomrule
-\end{tabular}
-\end{table}
+% DELETE this line:
+% Build note: paper/build/main.pdf compiled to 31 pages on 2026-04-17 after
+% the latest review-report-driven scope tightening.
 \end{verbatim}
 
 %------------------------------------------------------------------------------
-\section*{Patch 7 --- Tightened Limitations (addresses W1, W2, W3)}
+\section*{Patch F --- §6.3 passive hook footnote (addresses m1)}
 %------------------------------------------------------------------------------
-Replace the current \S8 limitations bullets 4, 7, and 9 with:
+
+In §6.3, after the first mention of the passive hook results, add:
 
 \begin{verbatim}
-\item \textbf{End-to-end integration gap (closed in camera-ready).}
-Prior to \S\ref{sec:integrated}, Tier-2a (hook) and Tier-2b (chunk-routed
-scan) were separate experiments. The integrated measurement in
-\S\ref{sec:integrated} closes this gap on Mamba-370M; full production
-integration (replacing the HF inference path with a fused COREY kernel)
-remains future work.
-
-\item \textbf{Limited workload heterogeneity.} The heterogeneous-corpus
-results in \S\ref{sec:heterogeneous} are the first evidence that COREY
-switches chunks across prompt regimes. This corpus is $60$ prompts and
-was constructed for this experiment; a larger production-grade mixed
-workload is needed to claim deployment-regime robustness.
-
-\item \textbf{No-Fusion baseline semantics.} The pure-Python
-\texttt{policy\_off} configuration measures kernel-launch dispatch
-overhead rather than hardware-level unfused arithmetic. We report
-speedups against this baseline in the appendix only and use
-Static-64 / Static-512 (oracle) as the substantive comparisons in the
-main text.
+% After "the table is provided as a feasibility indicator only." add:
+(The passive hook run uses $n{=}1$, zero warmup; the active-mode
+integration below uses $n{=}5$ repeats with 2 warmup runs, providing
+a more reliable overhead estimate.)
 \end{verbatim}
 
 %------------------------------------------------------------------------------
-\section*{Patch 8 --- Prototype Table Compression (addresses W5, R5)}
+\section*{Patch G --- Scheduler $K$ disambiguation (addresses m2)}
 %------------------------------------------------------------------------------
-Replace Appendix \S A.7--A.10 (Tables 3, 4, 5, 6, 7, 8, 9, 10) with a
-single consolidated table:
+
+In the Experimental Setup §5.2, after reporting $K{=}64$ for the prototype:
 
 \begin{verbatim}
-\subsection{Consolidated Tier-1 Prototype Diagnostics}
-\label{sec:prototype-consolidated}
-
-All results below are Tier-1 prototype surrogates from the deterministic
-Python cost model; they are diagnostic only and \emph{not} GPU hardware
-measurements. Full per-ablation tables are in the anonymous repository
-under \texttt{prototype/ablations/}.
-
-\begin{table}[h]
-\centering
-\caption{Consolidated Tier-1 prototype diagnostics (FP16, ultra-long
-bucket, 5 repeats, seed 7). Default setting: $\alpha{=}0.45$,
-$\beta{=}0.35$, $\gamma{=}0.20$, $\tau{=}0.52$.}
-\small
-\begin{tabular}{lrrrr}
-\toprule
-Configuration & Fusion depth & Surr.\ lat.\ (ms) & DRAM B/tok & Diagnostic proxy \\
-\midrule
-No-signal                & 1.00 & 100.94 & 122.98 & 0.0000 \\
-Static fusion            & 2.33 & 87.22  & 102.36 & 0.0851 \\
-Arithmetic-only ($\beta{=}0.70$) & 2.33 & 83.79 & --- & --- \\
-Entropy-only ($\alpha{=}0.45, \beta{=}0$) & 1.08 & 99.07 & --- & --- \\
-\textbf{COREY default}   & 3.50 & 77.97  & 90.58  & 0.0000 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The combined entropy-plus-arithmetic-intensity signal achieves a $21.6$--
-$22.7\%$ surrogate latency reduction over no-fusion, exceeding the
-$17.5\%$ from arithmetic intensity alone; this confirms that the entropy
-term provides independent discriminative power. Bit-width, threshold
-$\tau$, tiling policy, and sequence-stratification ablations preserve
-this ordering (repository
-\texttt{prototype/ablations/\{bitwidth,tau,tiling,stratify\}.csv}).
-\end{verbatim}
-
-%------------------------------------------------------------------------------
-\section*{Patch 9 --- Minor Fixes}
-%------------------------------------------------------------------------------
-\begin{verbatim}
-% m3: Table 1 COREY (calibrated) row --- fixed in Patch 4.
-
-% m4: Table 11 Mamba-2.8B WT103 PPL row --- remove row entirely:
-% DELETE the Mamba-2.8B policy_corey row until n>=20 rerun available.
-
-% m5: Figure 1 caption --- move mechanistic explanation to body text:
-% Add to Section A.2 body:
-In the synthetic prototype, absolute entropy decreases at longer
-sequence lengths because the activation generator draws each step
-independently from a heavy-tail distribution, so longer sequences
-concentrate more probability mass in boundary bins. This is a
-generator artifact and does not occur on real Mamba checkpoints.
-Despite this, the Hadamard-induced $\Delta H$ remains positive at every
-sequence length in the synthetic regime (Figure~\ref{fig:entropy-gain}).
-
-% m6: Main-text theorem placement --- in Section 4, replace the
-%     "Theorem 2 and 3 are in the appendix" sentence with brief
-%     inline statements:
-
-\begin{theorem}[informal, formal statement in Appendix C.1]
-If the pre- and post-Hadamard histogram masses $p,q$ are related by a
-doubly-stochastic matrix $q = Bp$, then $H(q) \ge H(p)$, with strict
-inequality unless $B$ is a permutation and $p$ is uniform.
-\emph{This condition is falsified on real Mamba-370M in\_proj
-activations (Remark~1, Appendix~C.1).}
-\end{theorem}
-
-\begin{theorem}[informal, formal statement in Appendix C.3]
-For $z = Hx$ with $H$ a normalized Hadamard matrix,
-$\|z\|_\infty \le \|x\|_1/\sqrt{d}$; the bound is tight for
-sparse-outlier $x$ and loosens by $O(\sqrt{d})$ when outlier density
-is $\Theta(d)$.
-\end{theorem}
-
-% m8: Convex-combination formulation:
-% Equation (4), add normalization constraint:
-S(R) = \alpha H_e(R) + \beta AI_f(R) - \gamma M_f(R),
-\quad \alpha, \beta, \gamma \ge 0,\ \alpha + \beta + \gamma = 1.
+% Add after "full hyperparameter table is in Appendix~\ref{sec:appendix_details}":
+Note: the Tier-1 prototype uses $K{=}64$ bins for its cost-model
+scheduler, while the Tier-2 checkpoint hook uses $K{=}256$ bins
+matching the calibration assumption $H_\text{ref}{=}\log 256{=}5.55$\,nats.
+Both configurations are described separately in the appendix.
 \end{verbatim}
 
 %==============================================================================
 \section*{Final Recommendation}
 %==============================================================================
 
-\textbf{Score: 5 (Borderline Accept) $\to$ 6 (Weak Accept) conditional on R1
-and R2 being executed in the author response.}
+\textbf{Score: 4 (Borderline Reject) $\to$ 5 (Borderline Accept) conditional
+on R1--R3 being resolved before camera-ready.}
 
-COREY is a modestly-scoped but honestly-reported contribution with an
-unusual level of self-critique (Theorem~2 falsification, Tier-2a/2b
-disconnect flagged prominently, No-Fusion baseline caveated). The paper
-is acceptable as a Concept \& Feasibility contribution provided the
-integrated end-to-end experiment (R1) and a heterogeneous workload (R2)
-are added. Without R1 in particular, the paper's central systems claim is
-a verified hypothesis rather than a demonstrated result, and I would not
-push for acceptance.
+The authors have done everything asked in Cycle~2: the inline theorems,
+the falsification paragraph, the calibrated default, the compressed prototype
+tables, and the tightened limitations are all well-executed. The paper's
+honesty and self-awareness remain unusual and commendable.
+
+The only thing standing between this paper and a 5 is that the two most
+important experiments (\S6.5 integrated measurement and \S6.6 heterogeneous
+corpus) remain unexecuted, and the headline Table~1 result (calibrated
+COREY latency) is still a \texttt{[TODO]}. These are each at most a few
+hours of GPU work on the same RTX~3070 already used for other experiments.
+Executing them would transform the paper from a well-described plan into a
+genuinely complete Concept \& Feasibility contribution.
+
+Without R1--R3, I recommend rejection for the current submission window and
+resubmission once the experiments are complete.
 
 \end{document}
