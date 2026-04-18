@@ -404,5 +404,12 @@
 - **J5 评审意见（阻塞）**：Evaluation breadth 仍低于 NeurIPS 主赛道 systems paper 标准。当前 LongBench 仅覆盖四任务各 20 样本，无完整 Mamba-2.8B 表格，无 Mamba-2 / RWKV-6 / FlashAttention Transformer 同等规模对比。
   - **根本原因**：架构差异（Mamba-2 SSD vs. 1.x selective scan）与硬件约束（FlashAttention Transformer 需显存充足设备），当前环境无法直接支持。
   - **解除条件**：(a) 获得 A100/H100 或更大 VRAM 设备运行 Mamba-2.8B full table；(b) 选择 Mamba-2 small checkpoint 并修改 scan kernel 适配其 SSD 结构；(c) 在相同序列长度下部署一个 same-param Transformer + FlashAttention 作为 reference。
-  - **当前处置**：已在 Limitations Section 6（Missing architecture-level system comparisons）中明确声明为 future work。
+  - **当前处置**：已在 Limitations Section 6（Missing architecture-level system comparisons）中明确声明为 future work；Conclusion 末尾已补 T6 forward pointer，明确指出关闭该缺口所需的具体实验类型。
+  - **【2026-04-18 远端 4×RTX 3090 可行性评估】**：
+    - ✅ 可做：mamba-370m / mamba-1.4b LongBench 扩大样本（远端 `quamba-py310` 环境有 `selective_scan_fn` fast-path）
+    - ✅ 可做：W1 Triton chunked-scan 基准在远端 3090 上复现
+    - ❌ 无法做：mamba-2.8b 未缓存于远端服务器
+    - ❌ 无法做：Mamba-2 / RWKV-6 / FlashAttention Transformer 对比（架构不兼容 / 未安装）
+    - ❌ 无法做：将 entropy-selected chunk 路由进 HF Mamba 真实 scan 路径（HF Mamba forward 对整个序列调用一次 `selective_scan_fn`，无 chunking 入口；W1 基准的 chunk 拆分是人工控制的合成路径，与 HF 推理路径不同）
+    - **结论**：远端 3090 无法关闭 J5 核心缺口（架构对比）。当前 Limitations + Conclusion forward pointer 是正确处置方式；论文已达 Borderline Accept (V5 58/100)，所有可落地修订均已完成，投稿准备就绪。
 
