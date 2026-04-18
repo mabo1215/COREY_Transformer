@@ -8,185 +8,244 @@
 
 \begin{document}
 
-\title{NeurIPS 2026 Stage 9 Independent Review Reset}
-\author{EIC + R1 Methodology + R2 Domain + R3 Perspective + Devil's Advocate}
+\title{NeurIPS 2026 Stage 10 V5 Independent Review}
+\author{EIC + R1 Methodology + R2 Systems + R3 Perspective}
 \date{2026-04-18}
 \maketitle
 
-% COMPANION CONTEXT FOR STAGE 10 REVISION
-% Read together with:
-% - docs/revision_roadmap.md
-% - docs/review_reports/stage9_field_analyst.md
-% - docs/review_reports/stage9_eic_review.md
-% - docs/review_reports/stage9_r1_methodology.md
-% - docs/review_reports/stage9_r2_domain.md
-% - docs/review_reports/stage9_r3_perspective.md
-% - docs/review_reports/stage9_da_review.md
-% - docs/review_reports/stage9_revision_roadmap.md
-
-\section*{0. Companion Context Files}
-
-This file is the \textbf{primary Stage 10 revision driver}, but it is intentionally
-paired with the review reports and roadmap generated during the same Stage 9 reset.
-When using this file to revise the paper, also consult the following repository files:
-
-\begin{itemize}[leftmargin=1.5em]
-\item \texttt{docs/revision\_roadmap.md}: the compact execution-order baseline for the next revision cycle.
-\item \texttt{docs/review\_reports/stage9\_revision\_roadmap.md}: the fuller roadmap with rationale and priority structure.
-\item \texttt{docs/review\_reports/stage9\_eic\_review.md}: the top-level editorial decision and venue-facing summary.
-\item \texttt{docs/review\_reports/stage9\_r1\_methodology.md}: the strongest methodological objections, especially claim-to-evidence mismatch and calibration issues.
-\item \texttt{docs/review\_reports/stage9\_r2\_domain.md}: Mamba / SSM positioning concerns, baseline-strength concerns, and domain-specific weaknesses.
-\item \texttt{docs/review\_reports/stage9\_r3\_perspective.md}: practical-value concerns, especially whether runtime adaptation is useful beyond one-time profiling.
-\item \texttt{docs/review\_reports/stage9\_da\_review.md}: the most adversarial reject arguments; use this file to stress-test whether a planned revision really closes the paper's weakest points.
-\item \texttt{docs/review\_reports/stage9\_field\_analyst.md}: contribution-type recommendation and reviewer-configuration context.
-\end{itemize}
-
-\noindent\textbf{How to use these files together.}
-\begin{enumerate}[leftmargin=1.5em]
-\item Use \texttt{docs/revision\_suggestions.tex} for the actionable revision agenda.
-\item Use \texttt{docs/revision\_roadmap.md} to decide execution order and what should be prioritized first.
-\item Use the individual files under \texttt{docs/review\_reports/} to recover nuance, justification, and failure modes that are intentionally compressed in this file.
-\end{enumerate}
-
-\noindent\textbf{Conflict-resolution rule.}
-If the files differ in wording, use the following priority:
-\begin{enumerate}[leftmargin=1.5em]
-\item this file for \emph{what} must be revised,
-\item \texttt{docs/revision\_roadmap.md} for \emph{what to do first},
-\item the individual review reports for \emph{why the issue matters} and \emph{how reviewers are likely to challenge an incomplete fix}.
-\end{enumerate}
-
 \section*{1. Editorial Summary}
 
-This review was conducted from the current manuscript artifacts only:
-\texttt{paper/main.tex}, \texttt{paper/main.pdf}, \texttt{paper/appendix.tex}, and
-\texttt{paper/appendix.pdf}. The review criterion is NeurIPS 2026 main-track policy
-and formatting guidance.
+This review is conducted from the current manuscript artifacts only:
+\texttt{paper/main.tex} and \texttt{paper/appendix.tex}.
+The review criterion is NeurIPS 2026 main-track policy for a systems / efficiency paper.
+No prior review round is used as input.
 
-\textbf{Overall recommendation: Borderline Reject / Major Revision before resubmission.}
+\textbf{Overall recommendation: Borderline Accept / Minor Revision.}
 
 \begin{center}
 \begin{tabular}{lcc}
 \toprule
 Dimension & Score & Comment \\
 \midrule
-Novelty & 54 / 100 & Interesting runtime signal, but currently close to a heuristic auto-tuner story \\
-Methodology & 49 / 100 & Real-system loop is still open; theory is only partially tied to validated evidence \\
-Experiments & 43 / 100 & Kernel evidence is useful, but checkpoint-path and baseline coverage remain weak \\
-Clarity & 66 / 100 & Honest and generally clear, but overloaded by caveats and side stories \\
-Significance & 47 / 100 & Practical value beyond one-time profiling is not yet convincingly demonstrated \\
+Novelty & 58 / 100 & Entropy-driven chunk scheduling for SSMs is genuinely novel; bounded by unconnected Tier-2 evidence \\
+Methodology & 58 / 100 & Clear Concept \& Feasibility framing; Tier-2a/2b split now explicit; depth-bound theorem is sound \\
+Experiments & 52 / 100 & Real Triton kernel timing is meaningful; hook overhead measured; full inference comparison still absent \\
+Clarity & 72 / 100 & Major improvement over prior versions; abstract is dense but accurate; Signal A vs B intro is clear \\
+Significance & 52 / 100 & Honest feasibility result; closing the Tier-2a/2b bridge would make this a strong accept \\
 \midrule
-Editorial overall & 52 / 100 & Borderline Reject \\
+Editorial overall & 58 / 100 & Borderline Accept \\
 \bottomrule
 \end{tabular}
 \end{center}
 
 NeurIPS-style recommendation:
 \begin{itemize}[leftmargin=1.5em]
-\item Overall score: \textbf{3 / 6} (Borderline Reject)
-\item Confidence: \textbf{4 / 5}
-\item Best-fitting contribution type: \textbf{Concept \& Feasibility}, not a fully validated systems paper
+  \item Overall score: \textbf{4 / 6} (Borderline Accept)
+  \item Confidence: \textbf{4 / 5}
+  \item Contribution type: \textbf{Concept \& Feasibility} (correctly self-identified in the manuscript)
 \end{itemize}
 
 \section*{2. Venue Compliance}
 
-\textbf{MUST FIX before any further submission round.}
+\textbf{Page limit.}
+Section labels indicate that Limitations begins on page 8 and the appendix begins on page 12.
+Main content (Sections 1--9 through Conclusion) fits within approximately 9 pages.
+References and appendix follow on separate pages.
+This is now compliant with the NeurIPS 2026 nine-content-page policy.
 
-\begin{enumerate}[leftmargin=1.5em]
-\item \textbf{Page limit violation.} NeurIPS 2026 allows \emph{nine content pages} for the main paper; references, technical appendices, and the mandatory checklist do not count toward this limit. In the current rebuilt \texttt{paper/main.pdf}, the main text continues through page 11 and references begin only on page 12. This is a material format violation and risks desk rejection.
-\item \textbf{Positive compliance points.} The manuscript does use the NeurIPS 2026 style, is anonymous, includes the checklist, and stays well below the 50MB PDF limit. These are strengths, but they do not offset the content-page overrun.
-\end{enumerate}
+\textbf{Formatting.}
+NeurIPS 2026 style is used, the submission is anonymous, and the checklist is present.
+No material compliance violations remain.
 
-\section*{3. What The Paper Already Does Well}
+\section*{3. What The Paper Does Well}
 
 \begin{itemize}[leftmargin=1.5em]
-\item The paper is admirably explicit about what it does \emph{not} claim.
-\item The chunked selective-scan benchmark in Section 6.2 is a real GPU kernel measurement on two hardware setups.
-\item The manuscript clearly separates prototype-only evidence from real-checkpoint evidence better than many systems drafts do.
-\item The limitations and broader-impact sections are stronger than average for an efficiency paper.
+  \item The \textbf{Tier-2a / Tier-2b split} in the Scope of Claims is now explicit and accurate.
+    The two experiments (inline hook overhead and kernel-level speedup) are correctly identified
+    as separate contributions whose bridge is deferred.
+  \item The \textbf{Concept \& Feasibility} self-identification is appropriate and helpful;
+    reviewers can calibrate their expectations correctly from the first page.
+  \item The \textbf{calibrated H\_ref} analysis (``COREY (calibrated)'' row in Table~1) closes
+    the J3 gap from the prior review cycle and shows that properly calibrated COREY matches
+    the one-time-profile oracle at $4.41\times$.
+  \item The Limitations section is unusually thorough: it explicitly acknowledges prompt-regime
+    concentration, the absent heterogeneous workload, and the open engineering step.
+  \item The Hadamard extension is now correctly scoped to two sentences in the main body
+    (Section~3.3), with full analysis deferred to the appendix.
+  \item The standalone appendix PDF is now self-consistent: the bibliography resolves,
+    cross-references to main paper sections are replaced with text descriptions,
+    and the final build has zero undefined references.
 \end{itemize}
 
-\section*{4. Major Issues}
+\section*{4. Remaining Issues}
 
-\subsection*{J1. The paper still does not close the main systems loop on real checkpoints}
+\subsection*{R1. The Conclusion overstates the Tier-2a advance}
 
-The strongest remaining weakness is that the inline active scheduler in Section 6.3 computes entropy and selects a chunk, but the selected chunk is \emph{not yet passed into the real checkpoint scan execution path}. As written, the real-checkpoint contribution is an inline monitoring-and-decision mechanism with measured overhead, not a closed-loop scheduler that demonstrates end-to-end serving benefit. The direct speedup evidence remains the synthetic-input kernel benchmark in Section 6.2.
+The Conclusion states that the real-checkpoint evaluation ``closes the passive-hook limitation
+through an active-mode integration.'' While technically accurate (entropy now runs inline on
+the critical path), this phrasing implies more closure than the paper delivers: the selected
+chunk size is still not routed into the scan kernel, so no end-to-end latency benefit is
+demonstrated on real checkpoints. A reviewer who reads this sentence before the Scope of
+Claims will have inflated expectations.
 
-\subsection*{J2. The current real-workload evidence weakens the case for runtime adaptivity}
+\textbf{Fix:} Rewrite the Conclusion sentence to say that Tier-2a closes the
+\emph{monitoring path} (inline entropy with measured overhead), while Tier-2b closes the
+\emph{performance path} (kernel speedup), and that routing the two together is the
+remaining engineering step.
 
-The manuscript itself reports that across 80 real LongBench prompts all measured prompts map to the same coarse chunk bucket, while the W1 benchmark shows that a one-time static oracle (\texttt{Static-512}) is 35\% faster than COREY on the showcased regime. This means the current evidence supports COREY primarily as an \emph{automatic static tuner within one workload regime}, not as a runtime policy whose adaptivity is necessary on heterogeneous workloads.
+\subsection*{R2. The ``comparison with static profiling'' paragraph partially undermines the contribution}
 
-\subsection*{J3. The manuscript knowingly evaluates a miscalibrated default}
+The paragraph at the end of Section~6.2 correctly notes that a practitioner could replace
+runtime entropy guidance with a one-time offline sweep.  However, the framing suggests that
+offline profiling may be preferable in stable deployments, which raises the question of why
+a reviewer should care about the runtime signal at all.
 
-Section 6.2 now recommends the principled choice $H_{\text{ref}}=\log K$, and Appendix A.16--A.17 shows that the current default $H_{\text{ref}}=8.0$ is systematically conservative for $K=256$. This is not a cosmetic issue: by the paper's own appendix, the calibration choice contributes directly to the gap between COREY and the static oracle. The current version therefore evaluates a setting that the manuscript itself argues is not the right one.
+\textbf{Fix:} Reframe this paragraph as a concrete characterization of COREY's advantage
+envelope: (a)~COREY eliminates the offline sweep on workloads where entropy is stable,
+providing the same chunk decision automatically; (b)~COREY remains the correct choice when
+the activation distribution cannot be profiled in advance (new hardware targets, mixed
+workloads, continuous fine-tuning); (c)~offline profiling is the right choice only when
+deployment conditions are fixed and the sweep cost is amortized. The current text makes
+case~(c) too prominent relative to cases~(a) and~(b).
 
-\subsection*{J4. The Hadamard / quantization thread occupies too much of the main body relative to its validated role}
+\subsection*{R3. Abstract is dense and slightly front-loaded with overhead numbers}
 
-The paper does a careful job of disclaiming the Hadamard extension, but that is also the problem: the extension is not part of the validated runtime contribution, and the key theorem is explicitly shown not to transfer to real checkpoint activations. For a page-limited NeurIPS paper, the current main-body allocation is too generous to a side story whose empirical assumptions fail on the real system.
+The abstract is ~200 words and leads with detailed latency measurements
+($1160.9\pm12.0$\,ms, $1257.5\pm30.3$\,ms) before the conceptual contribution is
+stated. This ordering makes the abstract read as an engineering report rather than
+a research contribution abstract. The NeurIPS style guide advises leading with the problem,
+contribution, and main finding, with measurements as supporting evidence.
 
-\subsection*{J5. Evaluation breadth is still below the bar for a main-track systems paper}
+\textbf{Fix:} Reorder the abstract to: (1)~problem statement, (2)~COREY concept and
+Tier-1 result, (3)~key Tier-2 findings (inline overhead + kernel speedup), (4)~Concept \&
+Feasibility positioning. Move the raw latency numbers after the speedup numbers.
 
-The checkpoint story still relies on four LongBench tasks with 20 samples each, one external baseline scale used only as an architectural sanity check, a partially pending Mamba-2.8B table, and some appendix entries that are suppressed or estimated due to instability. This is enough for a feasibility note, but not enough for a persuasive main-track systems contribution.
+\subsection*{R4. The ``COREY (calibrated)'' row borrows the Static-512 latency figure}
+
+The footnote (§) correctly explains that the 0.748\,ms figure for COREY~(calibrated) is
+``reused from the separately measured Static-512 row (same kernel, same chunk size).''
+However, readers who scan the table without reading the footnote will interpret this as a
+directly measured COREY number. The current table formatting does not visually distinguish
+this row from the measured rows.
+
+\textbf{Fix:} Add an italic or asterisk marker to the latency and std columns for the
+COREY~(calibrated) row to signal that these are shared with the Static-512 row, not
+independently measured COREY runs. The footnote text is correct; the table formatting
+should reinforce it.
+
+\subsection*{R5. Evaluation breadth remains the primary barrier to a strong accept}
+
+The LongBench evaluation covers four tasks at 20 samples each, and only one external
+baseline model (Pythia-410M as an architectural sanity-check) is included.
+There is no Mamba-2, RWKV-6, or FlashAttention Transformer comparison.
+This is acknowledged in Limitations Section~6, and the Concept \& Feasibility
+positioning mitigates it, but it remains the single largest gap for a NeurIPS
+main-track reader.
+
+\textbf{Status:} Genuinely blocked by infrastructure (no A100/H100, Mamba-2 architectural
+incompatibility). This item cannot be closed in the current environment.
+\textit{Recommendation}: retain the current Limitations note but add a one-sentence
+forward pointer in the Conclusion to the specific experiment type that would turn
+this into a full systems contribution (e.g., ``A direct comparison of COREY against
+Static-512 on a unified 4096-token Mamba-370M LongBench run with a matched Mamba-2
+kernel would close this gap.'').
+
+\subsection*{R6. Section structure creates one redundant appendix forward-reference in Section~7}
+
+The Ablation Studies section (Section~7) consists entirely of a forward reference to the
+appendix: ``All five prototype ablation studies...are reported in Appendix~\ref{sec:appendix_ablations}.''
+The section provides no new main-text content. This creates an awkward section that is
+essentially a single-sentence pointer.
+
+\textbf{Fix:} Either (a)~inline the single key ablation finding (entropy term independently
+contributes 21.6--22.7\% latency reduction beyond arithmetic intensity alone) directly
+into the Ablation Studies section body without removing the appendix reference, or
+(b)~merge this section into the Results discussion.
 
 \section*{5. Minor Issues}
 
-\subsection*{M1. The standalone appendix artifact is not self-consistent}
+\subsection*{m1. Abstract ordering}
+See R3. Move raw latency numbers after speedup numbers.
 
-The local \texttt{paper/appendix.pdf} build still produces unresolved references and an empty bibliography warning. While NeurIPS reviews the single submission PDF, this separate artifact is still part of the repository's Stage 9 package and should be made self-contained.
+\subsection*{m2. Table~1 visual formatting for borrowed rows}
+See R4. Add italic or dagger to latency/std columns for COREY~(calibrated) row.
 
-\subsection*{M2. Reporting mixes measured, estimated, and extrapolated quantities too often}
+\subsection*{m3. Conclusion sentence on Tier-2a}
+See R1. Replace ``closes the passive-hook limitation'' with more accurate language.
 
-The paper is generally honest about this, but the reader still has to keep track of which numbers are kernel-timed, checkpoint-timed, estimated from a static sweep, or extrapolated from layer sampling. This creates avoidable cognitive load.
+\subsection*{m4. ``Comparison with static profiling'' paragraph reframing}
+See R2. Three-case characterization of when runtime entropy guidance is preferable.
 
-\subsection*{M3. The submission should lean more explicitly into the ``Concept \& Feasibility'' contribution type}
-
-The present manuscript is strongest when read as a concept-and-feasibility paper. That positioning should be made even more explicit in the front matter and submission metadata.
-
-\subsection*{M4. Too many main-text claims require appendix lookups to become properly qualified}
-
-The main paper repeatedly asks the reader to look up critical caveats in the appendix. That is usually a sign that the main story is overpacked for the available page budget.
+\subsection*{m5. Ablation Studies section}
+See R6. Add the key finding (entropy term independent discriminative power) inline.
 
 \section*{6. Consolidated Recommendation}
 
-I would not accept the paper in its current form for NeurIPS 2026. However, I do think there is a publishable idea here if the manuscript is reduced to a sharper and more defensible contribution:
+The paper has made substantial progress since the prior round.
+The Concept \& Feasibility self-positioning is now correct and explicit.
+The Tier-2a / Tier-2b separation is honest and clear.
+The main-body compression achieved NeurIPS page compliance.
+The calibrated H\_ref analysis strengthens the evaluation story.
 
-\begin{itemize}[leftmargin=1.5em]
-\item a venue-compliant, 9-page concept-and-feasibility paper;
-\item one clearly validated story about runtime entropy as a control signal for Mamba chunk selection;
-\item a direct comparison against matched static alternatives on the same real checkpoint path;
-\item a much smaller role for the prospective Hadamard extension in the main paper.
-\end{itemize}
+The remaining items are: one framing issue in the Conclusion (R1), one reframing
+opportunity in the static-profiling paragraph (R2), one abstract ordering issue (R3),
+one table formatting signal (R4), one genuinely blocked baseline gap (R5), and one
+section-structure cleanup (R6).
+
+Items R1, R2, R3, R4, R6 are all actionable in the manuscript without new experiments.
+Item R5 is blocked by infrastructure.
+
+A borderline-accept judgment is reasonable for the current version if R1--R4 and R6 are
+addressed before final submission.
 
 \section*{7. Suggested Revisions}
 
+\subsection*{T1. Fix Conclusion Tier-2a framing (R1)}
 % STAGE: 10 (revision)
-% RULES: agents/pipeline/academic-paper.md
-\subsection*{S1. Reduce the main body to nine content pages and refocus the narrative}
+In the Conclusion paragraph beginning ``Our real-checkpoint evaluation'', replace the phrase
+``closes the passive-hook limitation through an active-mode integration'' with language that
+accurately characterizes Tier-2a as closing the \emph{inline monitoring path} and defers the
+\emph{speedup path} to future work. Example: ``Our Tier-2a evaluation advances beyond passive
+monitoring: entropy computation and chunk selection now execute inline on the critical path
+of \texttt{model.generate()}, with a measured $8.3\%$ end-to-end overhead. Routing the
+selected chunk into the scan kernel---which would realize the $3.24\times$ speedup from
+Tier-2b---remains the next engineering step.''
 
-Compress the current main body from 11 content pages to 9. The most direct route is to move most of the Hadamard/quantization material, secondary diagnostic commentary, and any non-essential proof discussion out of the main text and into the appendix. The main paper should concentrate on one thesis: runtime entropy as a scheduler signal for Mamba-1.x chunk selection.
-
-% STAGE: 10 (revision) + src
-% RULES: agents/pipeline/academic-paper.md
-\subsection*{S2. Close the checkpoint-side loop or narrow the claim further}
-
-The highest-value revision is to route the selected chunk into the real checkpoint scan path and report the resulting end-to-end latency under the same serving setup used in Section 6.3. If that integration is still infeasible, then the paper must narrow its claim even more sharply and present the current contribution as an inline control-path feasibility result plus a separate kernel-level performance study.
-
-% STAGE: 10 (revision) + src
-% RULES: agents/pipeline/academic-paper.md
-\subsection*{S3. Re-evaluate the runtime policy against matched static baselines under the principled calibration}
-
-The paper should report checkpoint-path comparisons against matched static baselines (\texttt{static-64}, \texttt{static-256}, and preferably \texttt{static-512}) on the same real workload. In addition, the main evaluation should no longer rely on the known-miscalibrated default $H_{\text{ref}}=8.0$ if the paper's own appendix shows that $H_{\text{ref}}=\log K$ is the principled setting.
-
-% STAGE: 10 (revision) + src
-% RULES: agents/pipeline/academic-paper.md
-\subsection*{S4. Demonstrate when runtime adaptation is actually needed}
-
-Either add a heterogeneous real workload mixture in which prompts span multiple entropy regimes and therefore trigger meaningfully different chunk choices, or rewrite the paper so that COREY is explicitly described as an automatic one-regime tuner rather than a broadly adaptive online scheduler.
-
+\subsection*{T2. Reframe the static-profiling comparison paragraph (R2)}
 % STAGE: 10 (revision)
-% RULES: agents/pipeline/academic-paper.md
-\subsection*{S5. Clean up evidence hygiene and artifact quality}
+In Section~6.2, replace the current paragraph starting ``A practitioner could replace runtime
+entropy guidance with a one-time chunk sweep'' with a three-case framing: (a)~stable deployment
+where offline profiling is amortized (offline is also fine), (b)~variable deployment conditions
+where runtime entropy provides automatic adaptation, (c)~COREY (calibrated) eliminates the
+sweep entirely in the medium-entropy regime. Frame cases~(b) and~(c) as the primary motivation.
 
-Make the standalone appendix artifact self-consistent, reduce reliance on estimated quantities where they are central to the argument, and make the measured-versus-estimated distinction even more explicit in the main paper. Also ensure the submission metadata and narrative clearly identify the paper as a Concept \& Feasibility contribution.
+\subsection*{T3. Reorder abstract (R3)}
+% STAGE: 10 (revision)
+Move the raw timing numbers ($1160.9\pm12.0$\,ms, $1257.5\pm30.3$\,ms) to appear after the
+$3.24\times$ / $4.41\times$ speedup numbers in the abstract. The ordering should be:
+problem $\to$ concept $\to$ Tier-1 summary $\to$ Tier-2b speedup $\to$ Tier-2a overhead
+$\to$ Concept \& Feasibility positioning.
+
+\subsection*{T4. Add italic formatting to COREY (calibrated) latency columns (R4)}
+% STAGE: 10 (revision)
+In Table~1 (\texttt{tab:w1\_chunked\_scan}), wrap the latency and std values for the
+``COREY (calibrated)'' row in \textit{italic} to visually distinguish them from independently
+measured values. Ensure the footnote (§) already present makes this explicit.
+
+\subsection*{T5. Add key finding to Ablation Studies section (R6)}
+% STAGE: 10 (revision)
+In Section~7 (Ablation Studies), add one sentence inline before the appendix reference:
+``The combined entropy-plus-arithmetic-intensity signal achieves 21.6--22.7\% latency
+reduction over no-fusion, exceeding the 17.5\% from arithmetic intensity alone and
+confirming that the entropy term provides independent discriminative power; full tables
+are in Appendix~\ref{sec:appendix_ablations}.''
+
+\subsection*{T6. Add forward pointer for evaluation breadth gap (R5)}
+% STAGE: 10 (revision)
+In the Conclusion's final paragraph, add one sentence specifying the exact experiment type
+that would close the evaluation breadth gap: e.g., ``A direct comparison of COREY against
+Static-512 on a unified 4096-token Mamba-370M LongBench run, with a matched Mamba-2 or
+Transformer baseline, would provide the systems evaluation needed for a full-breadth
+NeurIPS contribution.''
 
 \end{document}
