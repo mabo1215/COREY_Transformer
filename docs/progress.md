@@ -1,6 +1,6 @@
 # 论文进度
 
-最后更新：2026-04-18（V5 新一轮独立评审落地：R1 Conclusion 措辞修正、R2 静态 profiling 三情景重写、R3 Abstract 结构调整（概念先行）、R4 COREY calibrated 行斜体标注、R5 Conclusion 末尾补充评估广度 forward pointer、R6 Ablation Studies 内联关键发现）
+最后更新：2026-04-18（任务 85：远端 mamba-1.4b 补跑回填 + 4 卡 3090 单/双 GPU 交叉验证写入论文；V5 全部 T1–T6 已落地；所有可操作修订项已完成；仅 J5 evaluation breadth 阻塞，已在 Limitations + Conclusion forward pointer 处置）
 **检查完成状态**：`docs/revision_suggestions.tex` 已被 Pipeline Stage 9 完全重写为新一轮独立评审（Borderline Reject / Major Revision，52/100）。本轮新评审的核心问题为：(1) `main.pdf` 正文实际延伸到第 11 页，超过 NeurIPS 2026 的 9 个 content pages；(2) 实时调度仍未把选出的 chunk 真正接入 real-checkpoint scan path；(3) 当前实测 workload 下 80 个 prompt 全部落在同一 coarse chunk bucket，且 Static-512 仍比 COREY 更快；(4) Hadamard/quantization 叙事占用过多正文页数但仍属 prospective extension；(5) baseline 与 workload 覆盖仍偏窄。NeurIPS 2026 官网核验：Abstract deadline 2026-05-04 AoE，Full paper deadline 2026-05-06 AoE。
 
 主要成就：
@@ -373,6 +373,13 @@
 
   **整体构建结果**：`paper/build/main.pdf` 34 页，0 undefined references；`paper/build/appendix_only.pdf` 22 页，0 undefined references。
   推进状态：✅ 已完成（所有 V4 评审可落地修订项）。
+
+- 任务 85（2026-04-18，本 session）：远端 mamba-1.4b 补跑结果回填论文，补充 4 卡 3090 与单卡验证的交叉验证描述。
+  (1) **Experimental Setup 更新**：`paper/main.tex` 第 183 行，将平台描述从"RTX 3070（primary）and RTX 3090/CUDA 12.1（cross-hardware confirmation）"改写为"RTX 3070（primary）and a 4-card RTX 3090 / CUDA 12.1 Linux server（cross-hardware confirmation, both single-GPU and multi-GPU data-parallel configurations）"，明确体现 4 卡服务器与单/双 GPU 均有验证。
+  (2) **`tab:checkpoint_baseline` 新增行**：在 `paper/appendix.tex` 的 checkpoint baseline 表中新增 `RTX 3090 / CUDA 12.1 (1-GPU) & Mamba-1.4B` 行，填入远端 1 GPU 实跑的质量分数（NarrQA=0.0191, Qasper=0.0569, MF-EN=0.000, GovRpt=0.1582），延迟列标注 `--$^\star$` 并加脚注说明 float32 加载原因（不可与 FP16 对比）。
+  (3) **Cross-hardware 段落扩展**：将附录原有 2 句 cross-hardware 段落扩展为四个明确子段落（Single-GPU Mamba-370M / Single-GPU Mamba-1.4B / 2-GPU data-parallel Mamba-1.4B / 总结），显式报告三种 GPU 配置下 Mamba-1.4B 质量分数的平台无关性。
+  (4) **远端实验产物**：`src/outputs/remote_1.4b_longbench20_v2/`（单卡 RTX 3090，float32，质量有效）已并入 `remote_adama_longbench20_merged/mamba-1.4b/`；延迟数据因 float32 不用于论文。
+  推进状态：✅ 已完成（论文已包含更新内容，远端质量分数已交叉验证）。
 
 - 任务 V5（2026-04-18，新独立评审 V5 — Borderline Accept 58/100）：针对 V5 评审的全部可落地修订（T1–T6）完成：
 
