@@ -412,4 +412,10 @@
     - ❌ 无法做：Mamba-2 / RWKV-6 / FlashAttention Transformer 对比（架构不兼容 / 未安装）
     - ❌ 无法做：将 entropy-selected chunk 路由进 HF Mamba 真实 scan 路径（HF Mamba forward 对整个序列调用一次 `selective_scan_fn`，无 chunking 入口；W1 基准的 chunk 拆分是人工控制的合成路径，与 HF 推理路径不同）
     - **结论**：远端 3090 无法关闭 J5 核心缺口（架构对比）。当前 Limitations + Conclusion forward pointer 是正确处置方式；论文已达 Borderline Accept (V5 58/100)，所有可落地修订均已完成，投稿准备就绪。
+  - **【2026-04-18 远端 mamba-1.4b LongBench 补跑完成】**：
+    - 已在远端 RTX 3090 安装 `causal-conv1d 1.6.1`（从源码编译，耗时约 20 分钟），验证 `causal_conv1d_fn` + `selective_scan_fn` 均可导入
+    - 实跑 mamba-1.4b 四任务各 20 样本，结果保存于 `src/outputs/remote_1.4b_longbench20_v2/` 并并入 `remote_adama_longbench20_merged/mamba-1.4b/`
+    - 质量分数：NarrQA token_F1=0.019, Qasper token_F1=0.057, MF-EN exact_match=0.0, GovReport ROUGE-L=0.158
+    - 注意：metadata 记录 `dtype=float32`（脚本未传 `torch_dtype=float16`），导致延迟（6445/5233/3883/11985 ms）高于本地 WSL fast-path 结果，**延迟数据不用于论文**；质量分数与本地结果一致，可作交叉验证
+    - `remote_adama_longbench20_merged/` 现已同时含 mamba-370m（已有）和 mamba-1.4b（新补）两个子目录
 
