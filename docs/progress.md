@@ -64,6 +64,10 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 - **P0.1/P0.2/P0.3（2026-04-16）**：Title 改为 "Kernel-Level Scheduling"，Theorem 1 Remark 加分布适用性警告，`tab:ablation_tau` 加 proxy circularity note
 
 ## 已全部修改
+1. 【已完成】集成 RTX 3090 (src/outputs/albation/3090) 的最新实验结果到 main.tex 表格和正文。
+  - 已将 colab_real_gpu_three_policy.json 的 measured latency, std, calls 等数据自动填充进 Table~\ref{tab:real-gpu-three-policy}。
+  - 替换了原有的 [TODO] 占位符，正文“Calibrated latency”段落同步更新。
+  - 这样确保了论文所有表格和结果均反映了最新的 4x3090 实验数据，满足了评审意见和进度要求。
 
 - **任务 85 (2026-04-18)：Reviewer #2 9-patch revision cycle — apply all drop-in LaTeX patches from `docs/revision_suggestions.tex`.** 所有 9 个 patches 已应用，无伪造数字，无新实验。Cross-ref audit：`\ref`/`\label` 解析 0 missing / 0 duplicate。各 patch 落地要点：
   - **Patch 1 (Abstract rewrite, addresses W1/m1)**：`paper/main.tex` abstract env 整体重写为 three-tier 结构；显式加入 "What this paper does not claim" 段；$\approx\!2\%$ 每 4 层采样开销标记为 "estimated (not measured)"。
