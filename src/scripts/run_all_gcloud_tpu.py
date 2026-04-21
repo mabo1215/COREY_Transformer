@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+"""
+Automated GCP TPU experiment runner for COREY.
+- Creates TPU VM (if needed)
+- Installs dependencies
+- Runs all key experiments (integrated, heterogeneous, calibrated, tpu benchmark)
+- Downloads results
+- Cleans up resources
+
+Usage:
+  python src/scripts/run_all_gcloud_tpu.py --zone us-east1-d --tpu-type v6e-8 --model mamba-370m --seq-len 4096 --chunk-size 512
+
+Requirements:
+- gcloud CLI installed and authenticated
+- This script runs locally and uses gcloud ssh/scp to control the TPU VM
+"""
+
+import argparse
+import subprocess
+import os
+import json
+from pathlib import Path
+
+
+def load_config(config_path=None):
+    if config_path is None:
+        config_path = Path(__file__).parent / "config.json"
+    else:
+        config_path = Path(config_path)
+    if config_path.exists():
+        with open(config_path, "r") as f:
+            return json.load(f)
+    return {}
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', type=str, default=None, help='Path to config.json')
+parser.add_argument('--project-id', type=str, default=None)
+parser.add_argument('--zone', type=str, default=None)
+parser.add_argument('--tpu-type', type=str, default=None)
+parser.add_argument('--tpu-name', type=str, default=None)
+parser.add_argument('--model', type=str, default=None)
+parser.add_argument('--seq-len', type=int, default=None)
+parser.add_argument('--chunk-size', type=int, default=None)
+parser.add_argument('--repeat', type=int, default=None)
+parser.add_argument('--output-dir', type=str, default=None)
+# 添加下面这一行：
+parser.add_argument('--version', type=str, default=None, help='TPU VM Runtime version')
+args = parser.parse_args()
+
+config = load_config(args.config)
+
+def get_arg(name, default=None):
+    v = getattr(args, name)
+    if v is not None:
+        return v
+    if name in config:
+        return config[name]
+    return default
+
+
+project_id = get_arg('project_id')
+zone = get_arg('zone')
+tpu_type = get_arg('tpu_type', 'v6e-8')
+tpu_name = get_arg('tpu_name', 'corey-tpu-exp')
+model = get_arg('model', 'mamba-370m')
+seq_len = get_arg('seq_len', 4096)
+chunk_size = get_arg('chunk_size', 512)
+repeat = get_arg('repeat', 30)
+output_dir = get_arg('output_dir', 'src/outputs/gcloud_tpu_all')
+version = get_arg('version', None)
+
+
+# 参数健壮性检查
+missing = []
+for k in ["zone", "tpu_type", "tpu_name", "model", "seq_len", "chunk_size", "repeat", "output_dir", "version"]:
+    if eval(k) is None:
+        missing.append(k)
+if missing:
+    raise ValueError(f"Missing required config parameters: {', '.join(missing)}. Please check config.json or provide them as command-line arguments.")
+
+# 类型转换
+seq_len = int(seq_len)
+chunk_size = int(chunk_size)
+repeat = int(repeat)
+
+# Set gcloud project if specified
+if project_id:
+    print(f"[INFO] Setting gcloud project to {project_id}")
+    subprocess.run(['gcloud', 'config', 'set', 'project', str(project_id)], check=True)
+
+
+
+# 1. Create TPU VM
+print(f"[INFO] Creating TPU VM {tpu_name} in {zone} ({tpu_type}), version={version} ...")
+subprocess.run([
+    'gcloud', 'compute', 'tpus', 'tpu-vm', 'create', tpu_name,
+    f'--zone={zone}', f'--accelerator-type={tpu_type}',
+    f'--version={version}'
+], check=True)
+
+
+# 2. Upload code (sync src/ and requirements.txt)
+print("[INFO] Uploading code to TPU VM...")
+subprocess.run([
+    'gcloud', 'compute', 'tpus', 'tpu-vm', 'scp', '-r', 'src', 'requirements.txt',
+    f'{tpu_name}:~', f'--zone={zone}'
+], check=True)
+
+
+# 3. Install dependencies
+print("[INFO] Installing dependencies on TPU VM...")
+subprocess.run([
+    'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
+    '--command', 'pip install -r ~/requirements.txt'
+], check=True)
+
+# 4. Run experiments
+
+exp_cmds = [
+    f"python ~/src/experiments/run_corey_tpu_benchmark.py --device tpu --model {model} --chunk-size {chunk_size} --seq-len {seq_len} --repeat {repeat} --output-dir ~/src/outputs/corey_tpu_benchmark",
+    f"python ~/src/experiments/run_integrated_end_to_end.py --model {model} --output-dir ~/src/outputs/integrated_end_to_end",
+    f"python ~/src/experiments/run_heterogeneous_corpus.py --model {model} --output-dir ~/src/outputs/heterogeneous_corpus",
+]
+for cmd in exp_cmds:
+    print(f"[INFO] Running on TPU VM: {cmd}")
+    subprocess.run([
+        'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
+        '--command', cmd
+    ], check=True)
+
+# 5. Download results
+
+print("[INFO] Downloading results from TPU VM...")
+for remote_dir in [
+    '~/src/outputs/corey_tpu_benchmark',
+    '~/src/outputs/integrated_end_to_end',
+    '~/src/outputs/heterogeneous_corpus',
+]:
+    subprocess.run([
+        'gcloud', 'compute', 'tpus', 'tpu-vm', 'scp', '--recurse',
+        f'{tpu_name}:{remote_dir}', output_dir, f'--zone={zone}'
+    ], check=True)
+
+# 6. Delete TPU VM
+
+print(f"[INFO] Deleting TPU VM {tpu_name}...")
+subprocess.run([
+    'gcloud', 'compute', 'tpus', 'tpu-vm', 'delete', tpu_name, f'--zone={zone}', '--quiet'
+], check=True)
+
+
+# 7. Upload results to GCS if configured
+gcs_bucket = config.get("gcs_bucket")
+gcs_results_prefix = config.get("gcs_results_prefix", "results/")
+if gcs_bucket:
+    print(f"[INFO] Uploading results to GCS bucket: {gcs_bucket}/{gcs_results_prefix}")
+    # Recursively upload all files in output_dir to the GCS bucket
+    subprocess.run([
+        'gsutil', '-m', 'cp', '-r', str(output_dir), f"gs://{gcs_bucket}/{gcs_results_prefix}"
+    ], check=True)
+    print(f"[ALL DONE] Results uploaded to: gs://{gcs_bucket}/{gcs_results_prefix}")
+else:
+    print("[ALL DONE] Results downloaded to:", args.output_dir)

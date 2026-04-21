@@ -5,6 +5,20 @@
 
 ---
 
+
+## 未修改或部分修改
+
+- 【进行中】run_calibrated_chunk512_3090.py：在GPU（如RTX 3090/3070）上运行，补全Table 1/3的chunk=512延迟基线。
+  - 需要你提供/决策：
+    1. 指定可用的GPU硬件环境（如本地或云端）。
+    2. 是否需要自动化脚本集成GPU实验，或手动运行。
+
+- 【进行中】系统级横向对比实验（Mamba-2, RWKV-6, FlashAttention-3等，future work）。
+  - 需要你提供/决策：
+    1. 是否补充相关模型的benchmark脚本。
+    2. 是否有可用的权重和环境。
+
+---
 ## Patch-to-file mapping
 
 以下映射是动笔前写入的，作为第 2 步 classification 和第 3 步 apply 的 anchor。所有行号基于当前 `paper/main.tex`（总 358 行）和 `paper/appendix.tex`（总 1001 行）。
