@@ -1,6 +1,6 @@
 # 论文进度
 
-最后更新：2026-04-18（Reviewer #2 9-patch revision cycle — **Patches 1–9 all applied**; TODO markers in place for experiments Bob must run; cross-ref audit passed (0 missing refs, 0 duplicate labels).）
+最后更新：2026-04-21（Reviewer #2 9-patch revision cycle全部已落地，后续所有 Patch A–G 文稿修正（时态、注释、脚注、K 配置等）已全部应用于 paper/main.tex，当前 revision_suggestions.tex 可落地项已全部完成；TODO markers 仅剩实验数据位 future work；cross-ref audit passed (0 missing refs, 0 duplicate labels)。）
 **检查完成状态**：`docs/revision_suggestions.tex` 现为新版 Reviewer #2（simulated, NeurIPS 2026）独立评审 — Rating 5 (Borderline Accept), Soundness 3, Presentation 3, Contribution 2, Confidence 4 — 含 9 个 drop-in LaTeX 补丁（Patches 1–9）。Reviewer #2 关键定性：(W1) Tier-2a/2b 未闭环是核心贡献缺口；(W2) 80-prompt LongBench 全落同一 chunk bucket；(W3) No-Fusion 基线仅反映 Python dispatch 开销；(W4) 外部 baseline 仅 Pythia-410M；(W5) Tier-1 prototype 表占用过多篇幅；(W6) Table 22 MF-EN 全 0 列无信息量。本轮工作是在 **不运行实验、不伪造数字** 前提下执行这 9 个补丁。
 
 ---
