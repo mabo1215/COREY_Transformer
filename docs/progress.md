@@ -478,12 +478,5 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 遗留问题
 
-### Experiments Bob still needs to run
-
-| # | 实验 | 对应 TODO 占位符 | 期望输出 | 最低成本 | 状态 |
-|---|------|------------------|----------|----------|------|
-| E3 | kernel-level chunk routing | Active-mode 8.3% overhead 已测量；kernel routing 本身仍为 future work | 端到端 latency with actual chunk branching | ~30 GPU-min + 工程改动 | **Future work**（已在 Limitations 声明） |
-
-#### 说明：
-E1/E2 已全部完成，TPU/GPU selective_scan_fn benchmark 结果已写入论文。当前仅剩 kernel-level chunk routing 需 future work/工程实现。
+（当前无未完成实验或阻塞项。所有已完成项已回填论文，唯一剩余 kernel-level chunk routing 已在 Limitations 作为 future work 声明，无需重复跟踪。）
 
