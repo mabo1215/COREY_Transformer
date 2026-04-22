@@ -145,16 +145,11 @@ else:
 print("[INFO] Uploading code to TPU VM...")
 # 递归上传 src 目录（仅目录加 --recurse），排除无效文件
 
-# 2. 上传代码到 GCS 存储桶（本地执行）
-import shutil
+
+# 仅在 TPU VM 上下载代码
 gcs_bucket = config.get('gcs_bucket', None)
 if not gcs_bucket:
     raise ValueError('gcs_bucket must be set in config.json')
-print(f"[INFO] Syncing code to GCS bucket {gcs_bucket} ...")
-subprocess.run(['gsutil', '-m', 'rsync', '-r', './src', f'gs://{gcs_bucket}/code/src'], check=True)
-subprocess.run(['gsutil', 'cp', 'requirements.txt', f'gs://{gcs_bucket}/code/requirements.txt'], check=True)
-
-# 3. 在 TPU VM 上下载代码
 print("[INFO] Downloading code from GCS bucket on TPU VM ...")
 subprocess.run([
     'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
