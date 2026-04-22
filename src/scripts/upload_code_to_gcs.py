@@ -28,7 +28,7 @@ gcs_bucket = args.gcs_bucket or config.get('gcs_bucket', None)
 
 print(f"[INFO] Syncing src/ to GCS bucket {gcs_bucket} (excluding src/outputs/) ...")
 # 用 rsync --exclude 排除 src/outputs/、src/__pycache__/、src/AGENTS.md
-exclude_regex = r'^(src/outputs/.*|src/__pycache__/.*|src/AGENTS\.md)$'
+exclude_regex = r'^(outputs/.*|__pycache__/.*|AGENTS\.md)$'
 subprocess.run([
   'gsutil', '-m', 'rsync', '-r', '-x', exclude_regex, './src', f'gs://{gcs_bucket}/code/src'
 ], check=True)
