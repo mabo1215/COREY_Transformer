@@ -329,11 +329,30 @@ def _parse_args() -> argparse.Namespace:
 
 
 
+
+def _set_hf_token_from_envfile(env_path="/home/amabo1215/source/.env"):
+    import os
+    try:
+        if os.path.exists(env_path):
+            with open(env_path, "r") as f:
+                for line in f:
+                    if line.strip().startswith("Huggingface_model_token:="):
+                        token = line.strip().split("Huggingface_model_token:=", 1)[-1].strip()
+                        if token:
+                            os.environ["HF_TOKEN"] = token
+                            print(f"[integrated] Set HF_TOKEN from {env_path}")
+                        break
+    except Exception as e:
+        print(f"[integrated] Failed to set HF_TOKEN from {env_path}: {e}")
+
 def main() -> None:
     args = _parse_args()
 
     import torch
     import json
+    import os
+    # Set HF_TOKEN from env file if available
+    _set_hf_token_from_envfile()
     # Intermediate state file
     args.output_dir.mkdir(parents=True, exist_ok=True)
     partial_path = args.output_dir / "summary_partial.json"

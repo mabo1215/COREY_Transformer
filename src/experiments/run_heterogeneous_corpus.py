@@ -705,8 +705,25 @@ def _parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+
+def _set_hf_token_from_envfile(env_path="/home/amabo1215/source/.env"):
+    import os
+    try:
+        if os.path.exists(env_path):
+            with open(env_path, "r") as f:
+                for line in f:
+                    if line.strip().startswith("Huggingface_model_token:="):
+                        token = line.strip().split("Huggingface_model_token:=", 1)[-1].strip()
+                        if token:
+                            os.environ["HF_TOKEN"] = token
+                            print(f"[hetero] Set HF_TOKEN from {env_path}")
+                        break
+    except Exception as e:
+        print(f"[hetero] Failed to set HF_TOKEN from {env_path}: {e}")
+
 def main() -> None:
     args = _parse_args()
+    _set_hf_token_from_envfile()
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 

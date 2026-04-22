@@ -31,6 +31,25 @@ parser.add_argument("--repeat", type=int, default=30)
 parser.add_argument("--output-dir", type=Path, default=Path("src/outputs/corey_tpu_benchmark"))
 args = parser.parse_args()
 
+
+# Set HF_TOKEN from env file if available
+def _set_hf_token_from_envfile(env_path="/home/amabo1215/source/.env"):
+    import os
+    try:
+        if os.path.exists(env_path):
+            with open(env_path, "r") as f:
+                for line in f:
+                    if line.strip().startswith("Huggingface_model_token:="):
+                        token = line.strip().split("Huggingface_model_token:=", 1)[-1].strip()
+                        if token:
+                            os.environ["HF_TOKEN"] = token
+                            print(f"[corey_bench] Set HF_TOKEN from {env_path}")
+                        break
+    except Exception as e:
+        print(f"[corey_bench] Failed to set HF_TOKEN from {env_path}: {e}")
+
+_set_hf_token_from_envfile()
+
 # Device setup
 device = args.device
 if device == "tpu":
