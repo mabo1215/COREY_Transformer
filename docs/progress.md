@@ -492,6 +492,10 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 （本节已清空——所有 79–83 及 V5 T1–T6 任务均已落地，见下方已全部修改区。）
 
+'''bash
+nohup bash src/scripts/run_all_experiments_and_upload.sh > run_all.log 2>&1 &
+'''
+
 ---
 
 ## 遗留问题
