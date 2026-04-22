@@ -50,7 +50,17 @@ def check_gcs_file_exists(local_path, gcs_path):
   return gcs_path in result.stdout
 
 print("[INFO] Verifying GCS code/src/ file list matches local src/ ...")
+
+# 校验时忽略被排除的文件
+def is_excluded(path):
+  return (
+    path.startswith('outputs/') or
+    path.startswith('__pycache__/') or
+    path == 'AGENTS.md'
+  )
+
 local_files = [os.path.relpath(f, './src') for f in glob.glob('./src/**/*', recursive=True) if os.path.isfile(f)]
+local_files = [f for f in local_files if not is_excluded(f)]
 gcs_files = list_gcs_files(f'gs://{gcs_bucket}/code/src/')
 gcs_files_rel = [f[len(f'gs://{gcs_bucket}/code/src/'):] for f in gcs_files if not f.endswith('/')]
 missing = set(local_files) - set(gcs_files_rel)
@@ -58,7 +68,7 @@ if missing:
   print(f"[ERROR] Missing files in GCS: {missing}")
   exit(1)
 else:
-  print("[INFO] All local src/ files found in GCS.")
+  print("[INFO] All local src/ files found in GCS (excluding outputs/, __pycache__/, AGENTS.md).")
 
 if not check_gcs_file_exists('requirements.txt', f'gs://{gcs_bucket}/code/requirements.txt'):
   print("[ERROR] requirements.txt not found in GCS!")

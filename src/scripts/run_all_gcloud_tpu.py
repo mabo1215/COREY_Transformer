@@ -158,10 +158,17 @@ subprocess.run([
 
 
 # 3. Install dependencies
+
 print("[INFO] Installing dependencies on TPU VM...")
 subprocess.run([
     'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
     '--command', 'pip install -r ~/requirements.txt'
+], check=True)
+# 降级 numpy 以兼容 torch_xla
+print("[INFO] Ensuring numpy<2.0 on TPU VM...")
+subprocess.run([
+    'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
+    '--command', 'pip install "numpy<2"'
 ], check=True)
 
 # 4. Run experiments
