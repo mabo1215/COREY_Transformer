@@ -12,14 +12,14 @@ GCS_BUCKET="corey-transformer-paper-results"
 GCS_RESULTS_PREFIX="results/"
 
 # 1. 运行所有实验
-PJRT_DEVICE=TPU python3 ~/source/COREY_Transformer/src/scripts/run_corey_tpu_benchmark.py \
+PJRT_DEVICE=TPU python3 ~/source/COREY_Transformer/src/experiments/run_corey_tpu_benchmark.py \
   --device tpu --model $MODEL --chunk-size $CHUNK_SIZE --seq-len $SEQ_LEN --repeat $REPEAT \
   --output-dir ~/source/COREY_Transformer/src/outputs/corey_tpu_benchmark
 
-PJRT_DEVICE=TPU python3 ~/source/COREY_Transformer/src/scripts/run_integrated_end_to_end.py \
+PJRT_DEVICE=TPU python3 ~/source/COREY_Transformer/src/experiments/run_integrated_end_to_end.py \
   --model $MODEL --output-dir ~/source/COREY_Transformer/src/outputs/integrated_end_to_end
 
-PJRT_DEVICE=TPU python3 ~/source/COREY_Transformer/src/scripts/run_heterogeneous_corpus.py \
+PJRT_DEVICE=TPU python3 ~/source/COREY_Transformer/src/experiments/run_heterogeneous_corpus.py \
   --model $MODEL --output-dir ~/source/COREY_Transformer/src/outputs/heterogeneous_corpus
 
 # 2. 合并所有结果到 OUTPUT_DIR
