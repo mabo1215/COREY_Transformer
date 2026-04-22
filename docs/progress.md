@@ -497,6 +497,14 @@ gcloud compute tpus tpu-vm ssh tpu-exp1 --zone=europe-west4-a
 
 nohup bash src/scripts/run_all_experiments_and_upload.sh > run_all.log 2>&1 &
 tail -f run_all.log
+
+# 每 5 分钟自动同步一次，即使被抢占也只损失最后 5 分钟的数据
+nohup sh -c 'while true; do gsutil -m rsync -r ~/source/COREY_Transformer/src/outputs gs://corey-transformer-paper-results/outputs; sleep 300; done' > sync.log 2>&1 &
+
+'''
+copy
+'''
+gcloud compute tpus tpu-vm ssh tpu-exp1 --zone=europe-west4-a --command="gsutil -m cp -r /home/amabo1215/source/COREY_Transformer/src/outputs/* gs://corey-transformer-paper-results/rec423/"
 '''
 
 ---
