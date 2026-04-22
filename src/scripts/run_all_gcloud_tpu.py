@@ -159,17 +159,55 @@ subprocess.run([
 
 # 3. Install dependencies
 
-print("[INFO] Installing dependencies on TPU VM...")
+
+# 先检测TPU VM上已安装的numpy等包版本，只有缺失或不兼容时才安装requirements.txt
+print("[INFO] Checking existing Python packages on TPU VM...")
+check_pkgs = subprocess.run([
+    'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
+    '--command', 'python -c "import numpy; print(numpy.__version__)"'
+], capture_output=True, text=True)
+need_install = False
+if check_pkgs.returncode != 0:
+    print("[WARN] numpy not found, will install requirements.txt...")
+    need_install = True
+else:
+    numpy_version = check_pkgs.stdout.strip().splitlines()[-1]
+    print(f"[INFO] Detected numpy version on TPU VM: {numpy_version}")
+    if numpy_version.startswith('2.'):
+        print("[WARN] numpy>=2 detected, will downgrade...")
+        need_install = True
+    else:
+        print("[INFO] numpy version is compatible, skipping install.")
+
+if need_install:
+    print("[INFO] Installing dependencies on TPU VM via requirements.txt ...")
+    subprocess.run([
+        'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
+        '--command', 'pip install -r ~/requirements.txt'
+    ], check=True)
+    print("[INFO] Ensuring numpy<2.0 on TPU VM...")
+    subprocess.run([
+        'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
+        '--command', 'pip install "numpy<2"'
+    ], check=True)
+else:
+    print("[INFO] Skipped requirements.txt install; system packages are compatible.")
+# 卸载用户pip安装的torch/torch_xla/libtpu，防止污染官方环境（不再尝试rm系统包）
+print("[INFO] Removing user-installed torch/torch_xla/libtpu on TPU VM (keep only official runtime)...")
 subprocess.run([
     'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
-    '--command', 'pip install -r ~/requirements.txt'
+    '--command', 'pip uninstall -y torch torch_xla libtpu || true'
 ], check=True)
-# 降级 numpy 以兼容 torch_xla
-print("[INFO] Ensuring numpy<2.0 on TPU VM...")
-subprocess.run([
+
+# 检查 torch_xla 是否可用，否则提示用户重建 TPU VM
+print("[INFO] Checking torch_xla availability on TPU VM...")
+check_xla = subprocess.run([
     'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
-    '--command', 'pip install "numpy<2"'
-], check=True)
+    '--command', 'python -c "import torch_xla"'
+], capture_output=True)
+if check_xla.returncode != 0:
+    print("[FATAL] torch_xla not found in TPU runtime. Please delete and recreate the TPU VM to restore a clean environment.")
+    sys.exit(1)
 
 # 4. Run experiments
 
