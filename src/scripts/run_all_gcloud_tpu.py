@@ -153,7 +153,7 @@ if not gcs_bucket:
 print("[INFO] Downloading code from GCS bucket on TPU VM ...")
 subprocess.run([
     'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
-    '--command', f'gsutil -m rsync -r gs://{gcs_bucket}/code/src ~/src && gsutil cp gs://{gcs_bucket}/code/requirements.txt ~/'
+    '--command', f'mkdir -p ~/src && gsutil -m rsync -r gs://{gcs_bucket}/code/src ~/src && gsutil cp gs://{gcs_bucket}/code/requirements.txt ~/'
 ], check=True)
 
 
