@@ -164,7 +164,7 @@ subprocess.run([
 print("[INFO] Checking existing Python packages on TPU VM...")
 check_pkgs = subprocess.run([
     'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
-    '--command', 'python -c "import numpy; print(numpy.__version__)"'
+    '--command', 'python3 -c "import numpy; print(numpy.__version__)"'
 ], capture_output=True, text=True)
 need_install = False
 if check_pkgs.returncode != 0:
@@ -183,12 +183,12 @@ if need_install:
     print("[INFO] Installing dependencies on TPU VM via requirements.txt ...")
     subprocess.run([
         'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
-        '--command', 'pip install -r ~/requirements.txt'
+        '--command', 'python3 -m pip install -r ~/requirements.txt'
     ], check=True)
     print("[INFO] Ensuring numpy<2.0 on TPU VM...")
     subprocess.run([
         'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
-        '--command', 'pip install "numpy<2"'
+        '--command', 'python3 -m pip install \"numpy<2\"'
     ], check=True)
 else:
     print("[INFO] Skipped requirements.txt install; system packages are compatible.")
@@ -197,7 +197,7 @@ else:
 print("[INFO] Checking torch_xla availability on TPU VM...")
 check_xla = subprocess.run([
     'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
-    '--command', 'python -c "import torch_xla"'
+    '--command', 'python3 -c "import torch_xla"'
 ], capture_output=True)
 if check_xla.returncode != 0:
     print("[FATAL] torch_xla not found in TPU runtime.")
@@ -206,9 +206,9 @@ if check_xla.returncode != 0:
 # 4. Run experiments
 
 exp_cmds = [
-    f"python ~/src/experiments/run_corey_tpu_benchmark.py --device tpu --model {model} --chunk-size {chunk_size} --seq-len {seq_len} --repeat {repeat} --output-dir ~/src/outputs/corey_tpu_benchmark",
-    f"python ~/src/experiments/run_integrated_end_to_end.py --model {model} --output-dir ~/src/outputs/integrated_end_to_end",
-    f"python ~/src/experiments/run_heterogeneous_corpus.py --model {model} --output-dir ~/src/outputs/heterogeneous_corpus",
+    f"python3 ~/src/experiments/run_corey_tpu_benchmark.py --device tpu --model {model} --chunk-size {chunk_size} --seq-len {seq_len} --repeat {repeat} --output-dir ~/src/outputs/corey_tpu_benchmark",
+    f"python3 ~/src/experiments/run_integrated_end_to_end.py --model {model} --output-dir ~/src/outputs/integrated_end_to_end",
+    f"python3 ~/src/experiments/run_heterogeneous_corpus.py --model {model} --output-dir ~/src/outputs/heterogeneous_corpus",
 ]
 for cmd in exp_cmds:
     print(f"[INFO] Running on TPU VM: {cmd}")
