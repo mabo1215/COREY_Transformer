@@ -192,12 +192,6 @@ if need_install:
     ], check=True)
 else:
     print("[INFO] Skipped requirements.txt install; system packages are compatible.")
-# 卸载用户pip安装的torch/torch_xla/libtpu，防止污染官方环境（不再尝试rm系统包）
-print("[INFO] Removing user-installed torch/torch_xla/libtpu on TPU VM (keep only official runtime)...")
-subprocess.run([
-    'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
-    '--command', 'pip uninstall -y torch torch_xla libtpu || true'
-], check=True)
 
 # 检查 torch_xla 是否可用，否则提示用户重建 TPU VM
 print("[INFO] Checking torch_xla availability on TPU VM...")
@@ -206,7 +200,7 @@ check_xla = subprocess.run([
     '--command', 'python -c "import torch_xla"'
 ], capture_output=True)
 if check_xla.returncode != 0:
-    print("[FATAL] torch_xla not found in TPU runtime. Please delete and recreate the TPU VM to restore a clean environment.")
+    print("[FATAL] torch_xla not found in TPU runtime.")
     sys.exit(1)
 
 # 4. Run experiments
