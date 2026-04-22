@@ -36,11 +36,11 @@ device = args.device
 if device == "tpu":
     try:
         import torch_xla
-        import torch_xla.core.xla_model as xm
+        import torch_xla
         import torch
     except ImportError:
         raise RuntimeError("torch_xla is required for TPU execution. See https://pytorch.org/xla/")
-    dev = xm.xla_device()
+    dev = torch_xla.device()
 elif device == "cuda":
     import torch
     dev = torch.device("cuda")
@@ -78,7 +78,7 @@ for _ in range(3):
     if device == "cuda":
         torch.cuda.synchronize()
     elif device == "tpu":
-        xm.mark_step()
+        torch_xla.sync()
 
 # Timing
 latencies = []
@@ -88,7 +88,7 @@ for i in range(args.repeat):
     if device == "cuda":
         torch.cuda.synchronize()
     elif device == "tpu":
-        xm.mark_step()
+        torch_xla.sync()
     t1 = time.time()
     latencies.append((t1 - t0) * 1000)  # ms
 
