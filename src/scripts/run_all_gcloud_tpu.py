@@ -91,20 +91,65 @@ if project_id:
 
 
 
-# 1. Create TPU VM
-print(f"[INFO] Creating TPU VM {tpu_name} in {zone} ({tpu_type}), version={version} ...")
-subprocess.run([
-    'gcloud', 'compute', 'tpus', 'tpu-vm', 'create', tpu_name,
-    f'--zone={zone}', f'--accelerator-type={tpu_type}',
-    f'--version={version}'
-], check=True)
+
+# 1. Create TPU VM（支持资源池轮询）
+import sys
+resource_pool = config.get("resource_pool", None)
+create_success = False
+if resource_pool:
+    for res in resource_pool:
+        zone = res["zone"]
+        tpu_type = res["tpu_type"]
+        version = res["version"]
+        spot = res.get("spot", False)
+        print(f"[INFO] Trying TPU VM {tpu_name} in {zone} ({tpu_type}), version={version} ({'spot' if spot else 'on-demand'}) ...")
+        cmd = [
+            'gcloud', 'compute', 'tpus', 'tpu-vm', 'create', tpu_name,
+            f'--zone={zone}', f'--accelerator-type={tpu_type}',
+            f'--version={version}'
+        ]
+        if spot:
+            cmd.append('--spot')
+        try:
+            subprocess.run(cmd, check=True, capture_output=True)
+            create_success = True
+            break
+        except subprocess.CalledProcessError as e:
+            err = e.stderr.decode() if hasattr(e.stderr, 'decode') else str(e)
+            if 'ALREADY_EXISTS' in err:
+                print(f"[INFO] TPU VM already exists, skipping creation.")
+                create_success = True
+                break
+            if 'Insufficient capacity' in err:
+                print(f"[WARN] Insufficient capacity for {zone} {tpu_type}, trying next...")
+                continue
+            else:
+                print(f"[ERROR] Failed to create TPU VM: {err}")
+                sys.exit(1)
+    if not create_success:
+        print("[FATAL] All resource pool options exhausted. No available TPU capacity.")
+        sys.exit(1)
+else:
+    print(f"[INFO] Creating TPU VM {tpu_name} in {zone} ({tpu_type}), version={version} (spot) ...")
+    cmd = [
+        'gcloud', 'compute', 'tpus', 'tpu-vm', 'create', tpu_name,
+        f'--zone={zone}', f'--accelerator-type={tpu_type}',
+        f'--version={version}',
+        '--spot'
+    ]
+    subprocess.run(cmd, check=True)
 
 
 # 2. Upload code (sync src/ and requirements.txt)
+
 print("[INFO] Uploading code to TPU VM...")
+# 先递归上传 src 目录
 subprocess.run([
-    'gcloud', 'compute', 'tpus', 'tpu-vm', 'scp', '-r', 'src', 'requirements.txt',
-    f'{tpu_name}:~', f'--zone={zone}'
+    'gcloud', 'compute', 'tpus', 'tpu-vm', 'scp', '-r', 'src', f'{tpu_name}:~', f'--zone={zone}'
+], check=True)
+# 再单独上传 requirements.txt
+subprocess.run([
+    'gcloud', 'compute', 'tpus', 'tpu-vm', 'scp', 'requirements.txt', f'{tpu_name}:~', f'--zone={zone}'
 ], check=True)
 
 
