@@ -284,8 +284,15 @@ def _load(model_name: str, device: Any) -> tuple[Any, Any]:
     print(f"[integrated] Loading {model_id} …")
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     model = AutoModelForCausalLM.from_pretrained(
-        model_id, dtype=torch.float16, device_map=str(device)
+        model_id, device_map=str(device)
     ).eval()
+    # If device is CUDA or XLA, and float16 is desired, convert after loading
+    import torch
+    if hasattr(torch, 'xla') or (hasattr(device, 'type') and device.type == 'cuda'):
+        try:
+            model = model.to(torch.float16)
+        except Exception as e:
+            print(f"[integrated] Warning: model.to(float16) failed: {e}")
     return model, tokenizer
 
 
