@@ -330,28 +330,41 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = _parse_args()
-    import torch
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type != "cuda":
-        raise RuntimeError("CUDA + mamba_ssm kernels required.")
-    gpu_name = torch.cuda.get_device_name(0)
-    print(f"[integrated] Device: {gpu_name}")
+    import torch
+    try:
+        import torch_xla
+        is_tpu = torch_xla.device().type == 'xla'
+    except ImportError:
+        is_tpu = False
+
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        gpu_name = torch.cuda.get_device_name(0)
+        print(f"[integrated] Device: {gpu_name}")
+    elif is_tpu:
+        device = torch_xla.device()
+        print(f"[integrated] Device: TPU ({device})")
+    else:
+        raise RuntimeError("Neither CUDA nor TPU detected.")
 
     model, tokenizer = _load(args.model, device)
 
-    from transformers.models.mamba import modeling_mamba as _mm
-    fast_path = all(
-        getattr(_mm, n, None) is not None
-        for n in ("selective_scan_fn", "selective_state_update",
-                  "causal_conv1d_fn", "causal_conv1d_update", "mamba_inner_fn")
-    )
-    print(f"[integrated] mamba_ssm fast-path: {fast_path}")
-    if not fast_path:
-        missing = [n for n in ("selective_scan_fn", "selective_state_update",
-                               "causal_conv1d_fn", "causal_conv1d_update", "mamba_inner_fn")
-                   if getattr(_mm, n, None) is None]
-        raise RuntimeError(f"mamba_ssm CUDA kernels missing: {missing}")
+    if torch.cuda.is_available():
+        from transformers.models.mamba import modeling_mamba as _mm
+        fast_path = all(
+            getattr(_mm, n, None) is not None
+            for n in ("selective_scan_fn", "selective_state_update",
+                      "causal_conv1d_fn", "causal_conv1d_update", "mamba_inner_fn")
+        )
+        print(f"[integrated] mamba_ssm fast-path: {fast_path}")
+        if not fast_path:
+            missing = [n for n in ("selective_scan_fn", "selective_state_update",
+                                   "causal_conv1d_fn", "causal_conv1d_update", "mamba_inner_fn")
+                       if getattr(_mm, n, None) is None]
+            raise RuntimeError(f"mamba_ssm CUDA kernels missing: {missing}")
+    elif is_tpu:
+        print("[integrated] Running on TPU: skipping mamba_ssm CUDA kernel checks.")
 
     STATE.num_bins = args.num_bins
     STATE.h_ref = None  # use log(num_bins) = log K
