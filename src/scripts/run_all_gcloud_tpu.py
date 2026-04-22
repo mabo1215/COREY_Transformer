@@ -194,21 +194,25 @@ else:
     print("[INFO] Skipped requirements.txt install; system packages are compatible.")
 
 # 检查 torch_xla 是否可用，否则提示用户重建 TPU VM
-print("[INFO] Checking torch_xla availability on TPU VM...")
+print("[INFO] Checking torch_xla and torch version/device on TPU VM...")
 check_xla = subprocess.run([
     'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
-    '--command', 'python3 -c "import torch_xla"'
-], capture_output=True)
+    '--command', 'PJRT_DEVICE=TPU python3 -c "import torch; import torch_xla; print(\'Torch Version:\', torch.__version__); print(\'XLA Device:\', torch_xla.device())"'
+], capture_output=True, text=True)
 if check_xla.returncode != 0:
-    print("[FATAL] torch_xla not found in TPU runtime.")
+    print("[FATAL] torch_xla not found or not working in TPU runtime.")
     sys.exit(1)
+else:
+    print(check_xla.stdout)
+    if "xla:0" not in check_xla.stdout.lower():
+        print("[WARNING] torch_xla is installed but TPU hardware (xla:0) is NOT detected. Please check PJRT_DEVICE and runtime compatibility.")
 
 # 4. Run experiments
 
 exp_cmds = [
-    f"python3 ~/src/experiments/run_corey_tpu_benchmark.py --device tpu --model {model} --chunk-size {chunk_size} --seq-len {seq_len} --repeat {repeat} --output-dir ~/src/outputs/corey_tpu_benchmark",
-    f"python3 ~/src/experiments/run_integrated_end_to_end.py --model {model} --output-dir ~/src/outputs/integrated_end_to_end",
-    f"python3 ~/src/experiments/run_heterogeneous_corpus.py --model {model} --output-dir ~/src/outputs/heterogeneous_corpus",
+    f"PJRT_DEVICE=TPU python3 ~/src/experiments/run_corey_tpu_benchmark.py --device tpu --model {model} --chunk-size {chunk_size} --seq-len {seq_len} --repeat {repeat} --output-dir ~/src/outputs/corey_tpu_benchmark",
+    f"PJRT_DEVICE=TPU python3 ~/src/experiments/run_integrated_end_to_end.py --model {model} --output-dir ~/src/outputs/integrated_end_to_end",
+    f"PJRT_DEVICE=TPU python3 ~/src/experiments/run_heterogeneous_corpus.py --model {model} --output-dir ~/src/outputs/heterogeneous_corpus",
 ]
 for cmd in exp_cmds:
     print(f"[INFO] Running on TPU VM: {cmd}")
