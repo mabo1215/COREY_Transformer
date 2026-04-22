@@ -505,6 +505,10 @@ nohup sh -c 'while true; do gsutil -m rsync -r ~/source/COREY_Transformer/src/ou
 copy
 '''
 gcloud compute tpus tpu-vm ssh tpu-exp1 --zone=europe-west4-a --command="gsutil -m cp -r /home/amabo1215/source/COREY_Transformer/src/outputs/* gs://corey-transformer-paper-results/rec423/"
+
+
+# Delete tpu vm 
+gcloud compute tpus tpu-vm delete tpu-exp2 --zone=europe-west4-a --async
 '''
 
 ---

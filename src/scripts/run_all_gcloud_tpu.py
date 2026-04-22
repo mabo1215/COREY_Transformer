@@ -20,6 +20,7 @@ import subprocess
 import os
 import json
 from pathlib import Path
+from shutil import which
 
 
 def load_config(config_path=None):
@@ -33,6 +34,41 @@ def load_config(config_path=None):
     return {}
 
 
+def resolve_cli(primary_name, windows_names=(), override=None):
+    if override:
+        override_path = Path(override).expanduser()
+        if override_path.exists():
+            return str(override_path)
+        raise FileNotFoundError(f"Configured path for '{primary_name}' does not exist: {override}")
+
+    candidate_names = [primary_name, *windows_names]
+    for candidate in candidate_names:
+        resolved = which(candidate)
+        if resolved:
+            return resolved
+
+    if os.name == "nt":
+        candidate_paths = []
+        sdk_home = os.environ.get("GOOGLE_CLOUD_SDK_HOME")
+        if sdk_home:
+            sdk_bin = Path(sdk_home) / "bin"
+            candidate_paths.extend(sdk_bin / name for name in candidate_names)
+
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if local_app_data:
+            sdk_bin = Path(local_app_data) / "Google" / "Cloud SDK" / "google-cloud-sdk" / "bin"
+            candidate_paths.extend(sdk_bin / name for name in candidate_names)
+
+        for candidate_path in candidate_paths:
+            if candidate_path.exists():
+                return str(candidate_path)
+
+    raise FileNotFoundError(
+        f"Could not find '{primary_name}'. Install Google Cloud SDK or add it to PATH. "
+        f"Tried: {', '.join(candidate_names)}"
+    )
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default=None, help='Path to config.json')
 parser.add_argument('--project-id', type=str, default=None)
@@ -44,6 +80,8 @@ parser.add_argument('--seq-len', type=int, default=None)
 parser.add_argument('--chunk-size', type=int, default=None)
 parser.add_argument('--repeat', type=int, default=None)
 parser.add_argument('--output-dir', type=str, default=None)
+parser.add_argument('--gcloud-bin', type=str, default=None, help='Path to gcloud executable')
+parser.add_argument('--gsutil-bin', type=str, default=None, help='Path to gsutil executable')
 # 添加下面这一行：
 parser.add_argument('--version', type=str, default=None, help='TPU VM Runtime version')
 args = parser.parse_args()
@@ -57,6 +95,21 @@ def get_arg(name, default=None):
     if name in config:
         return config[name]
     return default
+
+
+def get_cli_override(name):
+    arg_name = name.replace('-', '_')
+    value = getattr(args, arg_name, None)
+    if value:
+        return value
+    return config.get(arg_name)
+
+
+gcloud_bin = resolve_cli(
+    'gcloud',
+    windows_names=('gcloud.cmd', 'gcloud.exe', 'gcloud.bat'),
+    override=get_cli_override('gcloud-bin'),
+)
 
 
 project_id = get_arg('project_id')
@@ -87,7 +140,7 @@ repeat = int(repeat)
 # Set gcloud project if specified
 if project_id:
     print(f"[INFO] Setting gcloud project to {project_id}")
-    subprocess.run(['gcloud', 'config', 'set', 'project', str(project_id)], check=True)
+    subprocess.run([gcloud_bin, 'config', 'set', 'project', str(project_id)], check=True)
 
 
 
@@ -104,7 +157,7 @@ if resource_pool:
         spot = res.get("spot", False)
         print(f"[INFO] Trying TPU VM {tpu_name} in {zone} ({tpu_type}), version={version} ({'spot' if spot else 'on-demand'}) ...")
         cmd = [
-            'gcloud', 'compute', 'tpus', 'tpu-vm', 'create', tpu_name,
+            gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'create', tpu_name,
             f'--zone={zone}', f'--accelerator-type={tpu_type}',
             f'--version={version}'
         ]
@@ -132,7 +185,7 @@ if resource_pool:
 else:
     print(f"[INFO] Creating TPU VM {tpu_name} in {zone} ({tpu_type}), version={version} (spot) ...")
     cmd = [
-        'gcloud', 'compute', 'tpus', 'tpu-vm', 'create', tpu_name,
+        gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'create', tpu_name,
         f'--zone={zone}', f'--accelerator-type={tpu_type}',
         f'--version={version}',
         '--spot'
@@ -152,7 +205,7 @@ if not gcs_bucket:
     raise ValueError('gcs_bucket must be set in config.json')
 print("[INFO] Downloading code from GCS bucket on TPU VM ...")
 subprocess.run([
-    'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
+    gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
     '--command', f'mkdir -p ~/src && gsutil -m rsync -r gs://{gcs_bucket}/code/src ~/src && gsutil cp gs://{gcs_bucket}/code/requirements.txt ~/'
 ], check=True)
 
@@ -163,7 +216,7 @@ subprocess.run([
 # 先检测TPU VM上已安装的numpy等包版本，只有缺失或不兼容时才安装requirements.txt
 print("[INFO] Checking existing Python packages on TPU VM...")
 check_pkgs = subprocess.run([
-    'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
+    gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
     '--command', 'python3 -c "import numpy; print(numpy.__version__)"'
 ], capture_output=True, text=True)
 need_install = False
@@ -182,12 +235,12 @@ else:
 if need_install:
     print("[INFO] Installing dependencies on TPU VM via requirements.txt ...")
     subprocess.run([
-        'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
+        gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
         '--command', 'python3 -m pip install -r ~/requirements.txt'
     ], check=True)
     print("[INFO] Ensuring numpy<2.0 on TPU VM...")
     subprocess.run([
-        'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
+        gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
         '--command', 'python3 -m pip install \"numpy<2\"'
     ], check=True)
 else:
@@ -196,7 +249,7 @@ else:
 # 检查 torch_xla 是否可用，否则提示用户重建 TPU VM
 print("[INFO] Checking torch_xla and torch version/device on TPU VM...")
 check_xla = subprocess.run([
-    'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
+    gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
     '--command', 'PJRT_DEVICE=TPU python3 -c "import torch; import torch_xla; print(\'Torch Version:\', torch.__version__); print(\'XLA Device:\', torch_xla.device())"'
 ], capture_output=True, text=True)
 if check_xla.returncode != 0:
@@ -217,7 +270,7 @@ exp_cmds = [
 for cmd in exp_cmds:
     print(f"[INFO] Running on TPU VM: {cmd}")
     subprocess.run([
-        'gcloud', 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
+        gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
         '--command', cmd
     ], check=True)
 
@@ -230,7 +283,7 @@ for remote_dir in [
     '~/src/outputs/heterogeneous_corpus',
 ]:
     subprocess.run([
-        'gcloud', 'compute', 'tpus', 'tpu-vm', 'scp', '--recurse',
+        gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'scp', '--recurse',
         f'{tpu_name}:{remote_dir}', output_dir, f'--zone={zone}'
     ], check=True)
 
@@ -238,7 +291,7 @@ for remote_dir in [
 
 print(f"[INFO] Deleting TPU VM {tpu_name}...")
 subprocess.run([
-    'gcloud', 'compute', 'tpus', 'tpu-vm', 'delete', tpu_name, f'--zone={zone}', '--quiet'
+    gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'delete', tpu_name, f'--zone={zone}', '--quiet'
 ], check=True)
 
 
@@ -246,10 +299,15 @@ subprocess.run([
 gcs_bucket = config.get("gcs_bucket")
 gcs_results_prefix = config.get("gcs_results_prefix", "results/")
 if gcs_bucket:
+    gsutil_bin = resolve_cli(
+        'gsutil',
+        windows_names=('gsutil.cmd', 'gsutil.exe', 'gsutil.bat'),
+        override=get_cli_override('gsutil-bin'),
+    )
     print(f"[INFO] Uploading results to GCS bucket: {gcs_bucket}/{gcs_results_prefix}")
     # Recursively upload all files in output_dir to the GCS bucket
     subprocess.run([
-        'gsutil', '-m', 'cp', '-r', str(output_dir), f"gs://{gcs_bucket}/{gcs_results_prefix}"
+        gsutil_bin, '-m', 'cp', '-r', str(output_dir), f"gs://{gcs_bucket}/{gcs_results_prefix}"
     ], check=True)
     print(f"[ALL DONE] Results uploaded to: gs://{gcs_bucket}/{gcs_results_prefix}")
 else:
