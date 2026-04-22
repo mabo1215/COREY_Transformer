@@ -55,9 +55,14 @@ DEFAULT_PROMPT = (
 )
 
 
+
 # ---------------------------------------------------------------------------
-# Entropy + chunk policy (H_ref = log K, default calibration)
+# TPU/GPU sync compatibility
 # ---------------------------------------------------------------------------
+try:
+    import torch_xla.core.xla_model as xm
+except ImportError:
+    xm = None
 
 def _hist_entropy(values: Any, num_bins: int = 256) -> float:
     import torch
@@ -303,14 +308,24 @@ def _time_generate(model, tokenizer, prompt, new_tokens, device, warmup, repeats
     for _ in range(warmup):
         with torch.no_grad():
             model.generate(**inputs, max_new_tokens=new_tokens, do_sample=False)
-    torch.cuda.synchronize()
+    # Sync after warmup
+    if xm:
+        xm.mark_step()
+    elif torch.cuda.is_available():
+        torch.cuda.synchronize()
     latencies: list[float] = []
     for _ in range(repeats):
-        torch.cuda.synchronize()
+        if xm:
+            xm.mark_step()
+        elif torch.cuda.is_available():
+            torch.cuda.synchronize()
         t0 = time.perf_counter()
         with torch.no_grad():
             model.generate(**inputs, max_new_tokens=new_tokens, do_sample=False)
-        torch.cuda.synchronize()
+        if xm:
+            xm.mark_step()
+        elif torch.cuda.is_available():
+            torch.cuda.synchronize()
         latencies.append((time.perf_counter() - t0) * 1000.0)
     return {
         "prompt_len": prompt_len,

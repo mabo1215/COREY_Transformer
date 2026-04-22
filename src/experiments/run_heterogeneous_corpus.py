@@ -33,6 +33,7 @@ Usage:
         --output-dir src/outputs/heterogeneous_corpus
 """
 
+
 from __future__ import annotations
 
 import argparse
@@ -43,6 +44,10 @@ import statistics
 import time
 from pathlib import Path
 from typing import Any
+try:
+    import torch_xla.core.xla_model as xm
+except ImportError:
+    xm = None
 
 
 MODEL_REGISTRY: dict[str, str] = {
@@ -671,16 +676,23 @@ def _run_prompt(
         for _ in range(warmup):
             with torch.no_grad():
                 model.generate(**inputs, max_new_tokens=16, do_sample=False)
-        if torch.cuda.is_available():
+        # Sync after warmup
+        if xm:
+            xm.mark_step()
+        elif torch.cuda.is_available():
             torch.cuda.synchronize()
         latencies: list[float] = []
         for _ in range(repeats):
-            if torch.cuda.is_available():
+            if xm:
+                xm.mark_step()
+            elif torch.cuda.is_available():
                 torch.cuda.synchronize()
             t0 = time.perf_counter()
             with torch.no_grad():
                 model.generate(**inputs, max_new_tokens=16, do_sample=False)
-            if torch.cuda.is_available():
+            if xm:
+                xm.mark_step()
+            elif torch.cuda.is_available():
                 torch.cuda.synchronize()
             latencies.append((time.perf_counter() - t0) * 1000.0)
         result["latency_mean_ms"] = round(statistics.mean(latencies), 4)
