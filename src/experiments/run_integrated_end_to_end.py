@@ -328,135 +328,175 @@ def _parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+
 def main() -> None:
     args = _parse_args()
 
     import torch
-    try:
-        import torch_xla
-        is_tpu = torch_xla.device().type == 'xla'
-    except ImportError:
-        is_tpu = False
-
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-        gpu_name = torch.cuda.get_device_name(0)
-        print(f"[integrated] Device: {gpu_name}")
-    elif is_tpu:
-        device = torch_xla.device()
-        print(f"[integrated] Device: TPU ({device})")
-    else:
-        raise RuntimeError("Neither CUDA nor TPU detected.")
-
-    model, tokenizer = _load(args.model, device)
-
-    if torch.cuda.is_available():
-        from transformers.models.mamba import modeling_mamba as _mm
-        fast_path = all(
-            getattr(_mm, n, None) is not None
-            for n in ("selective_scan_fn", "selective_state_update",
-                      "causal_conv1d_fn", "causal_conv1d_update", "mamba_inner_fn")
-        )
-        print(f"[integrated] mamba_ssm fast-path: {fast_path}")
-        if not fast_path:
-            missing = [n for n in ("selective_scan_fn", "selective_state_update",
-                                   "causal_conv1d_fn", "causal_conv1d_update", "mamba_inner_fn")
-                       if getattr(_mm, n, None) is None]
-            raise RuntimeError(f"mamba_ssm CUDA kernels missing: {missing}")
-    elif is_tpu:
-        print("[integrated] Running on TPU: skipping mamba_ssm CUDA kernel checks.")
-
-    STATE.num_bins = args.num_bins
-    STATE.h_ref = None  # use log(num_bins) = log K
-
-    # --- Condition 1: Passive baseline ---
-    STATE.enabled = False
-    STATE.route_chunk = False
-    STATE.records.clear()
-    print("[integrated] (1/3) Timing passive baseline …")
-    passive = _time_generate(model, tokenizer, args.prompt, args.new_tokens,
-                             device, args.warmup, args.repeats)
-    print(f"  passive: {passive['lat_mean_ms']:.2f} ± {passive['lat_std_ms']:.2f} ms "
-          f"(prompt_len={passive['prompt_len']})")
-
-    # --- Condition 2: Active hook only (entropy computed, chunk NOT routed) ---
-    original = install_patch()
-    try:
-        STATE.enabled = True
-        STATE.route_chunk = False
-        STATE.records.clear()
-        print("[integrated] (2/3) Timing active-hook-only (chunk selected, not routed) …")
-        active_only = _time_generate(model, tokenizer, args.prompt, args.new_tokens,
-                                     device, args.warmup, args.repeats)
-        chunk_dist_active = {}
-        for rec in STATE.records:
-            chunk_dist_active[rec["chunk"]] = chunk_dist_active.get(rec["chunk"], 0) + 1
-        print(f"  active-only: {active_only['lat_mean_ms']:.2f} ± {active_only['lat_std_ms']:.2f} ms")
-        print(f"  chunk distribution: {dict(sorted(chunk_dist_active.items()))}")
-
-        # --- Condition 3: Active + routed (integrated, Tier-2a ⊕ Tier-2b) ---
-        STATE.enabled = True
-        STATE.route_chunk = True
-        STATE.records.clear()
-        print("[integrated] (3/3) Timing active+routed (chunk selected AND routed into scan) …")
-        integrated = _time_generate(model, tokenizer, args.prompt, args.new_tokens,
-                                    device, args.warmup, args.repeats)
-        chunk_dist_routed = {}
-        for rec in STATE.records:
-            chunk_dist_routed[rec["chunk"]] = chunk_dist_routed.get(rec["chunk"], 0) + 1
-        print(f"  active+routed: {integrated['lat_mean_ms']:.2f} ± {integrated['lat_std_ms']:.2f} ms")
-        print(f"  chunk distribution: {dict(sorted(chunk_dist_routed.items()))}")
-    finally:
-        STATE.enabled = False
-        restore(original)
-
-    # --- Summary ---
-    passive_lat = passive["lat_mean_ms"]
-    print()
-    print("[integrated] === Table: integrated measurement ===")
-    print(f"{'Configuration':<45} {'Latency (ms)':>14} {'vs. Passive':>12}")
-    print(f"{'Passive (stock fast path, static chunk)':<45} "
-          f"{passive_lat:>10.2f} ± {passive['lat_std_ms']:>5.2f}  {'1.00x':>12}")
-    ao = active_only["lat_mean_ms"]
-    print(f"{'Active hook only (chunk selected, not routed)':<45} "
-          f"{ao:>10.2f} ± {active_only['lat_std_ms']:>5.2f}  "
-          f"{ao/passive_lat:>10.3f}x")
-    ai = integrated["lat_mean_ms"]
-    print(f"{'Active + routed (integrated)':<45} "
-          f"{ai:>10.2f} ± {integrated['lat_std_ms']:>5.2f}  "
-          f"{ai/passive_lat:>10.3f}x")
-    if ai <= passive_lat:
-        print("  => Net end-to-end improvement achieved (integrated <= passive).")
-    else:
-        print(f"  => Overhead: +{ai - passive_lat:.2f} ms (+{(ai/passive_lat - 1)*100:.1f}%)")
-
-    kwarg_supported = STATE.chunk_size_kwarg_supported
-    if kwarg_supported is False:
-        print("\n  NOTE: selective_scan_fn in the installed mamba_ssm does not accept")
-        print("  chunk_size as a kwarg (compile-time constant).  The 'Active+routed'")
-        print("  row above reflects entropy overhead only (same as active-hook-only).")
-        print("  True chunk routing requires a mamba_ssm build that exposes chunk_size")
-        print("  at the Python API level.  Kernel-level speedup evidence is in Table 3.")
-
-    output = {
-        "gpu": gpu_name,
-        "torch": torch.__version__,
-        "model": args.model,
-        "prompt_len": passive["prompt_len"],
-        "new_tokens": args.new_tokens,
-        "warmup": args.warmup,
-        "repeats": args.repeats,
-        "h_ref": f"log({args.num_bins})={math.log(args.num_bins):.4f}",
-        "platform": platform.platform(),
-        "chunk_size_kwarg_supported": kwarg_supported,
-        "passive": passive,
-        "active_only": {**active_only, "chunk_dist": chunk_dist_active},
-        "integrated": {**integrated, "chunk_dist": chunk_dist_routed},
-    }
+    import json
+    # Intermediate state file
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    partial_path = args.output_dir / "summary_partial.json"
     out_path = args.output_dir / "summary.json"
-    out_path.write_text(json.dumps(output, indent=2))
-    print(f"\n[integrated] Results saved to {out_path}")
+    # Try to resume from partial file
+    if partial_path.exists():
+        with open(partial_path, "r") as f:
+            partial = json.load(f)
+        print(f"[integrated] Resuming from {partial_path}")
+    else:
+        partial = {}
+
+    try:
+        try:
+            import torch_xla
+            is_tpu = torch_xla.device().type == 'xla'
+        except ImportError:
+            is_tpu = False
+
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+            gpu_name = torch.cuda.get_device_name(0)
+            print(f"[integrated] Device: {gpu_name}")
+        elif is_tpu:
+            device = torch_xla.device()
+            gpu_name = f"TPU ({device})"
+            print(f"[integrated] Device: {gpu_name}")
+        else:
+            raise RuntimeError("Neither CUDA nor TPU detected.")
+
+        model, tokenizer = _load(args.model, device)
+
+        if torch.cuda.is_available():
+            from transformers.models.mamba import modeling_mamba as _mm
+            fast_path = all(
+                getattr(_mm, n, None) is not None
+                for n in ("selective_scan_fn", "selective_state_update",
+                          "causal_conv1d_fn", "causal_conv1d_update", "mamba_inner_fn")
+            )
+            print(f"[integrated] mamba_ssm fast-path: {fast_path}")
+            if not fast_path:
+                missing = [n for n in ("selective_scan_fn", "selective_state_update",
+                                       "causal_conv1d_fn", "causal_conv1d_update", "mamba_inner_fn")
+                           if getattr(_mm, n, None) is None]
+                raise RuntimeError(f"mamba_ssm CUDA kernels missing: {missing}")
+        elif is_tpu:
+            print("[integrated] Running on TPU: skipping mamba_ssm CUDA kernel checks.")
+
+        STATE.num_bins = args.num_bins
+        STATE.h_ref = None  # use log(num_bins) = log K
+
+        # --- Condition 1: Passive baseline ---
+        if "passive" not in partial:
+            STATE.enabled = False
+            STATE.route_chunk = False
+            STATE.records.clear()
+            print("[integrated] (1/3) Timing passive baseline …")
+            passive = _time_generate(model, tokenizer, args.prompt, args.new_tokens,
+                                     device, args.warmup, args.repeats)
+            print(f"  passive: {passive['lat_mean_ms']:.2f} ± {passive['lat_std_ms']:.2f} ms "
+                  f"(prompt_len={passive['prompt_len']})")
+            partial["passive"] = passive
+            with open(partial_path, "w") as f:
+                json.dump(partial, f, indent=2)
+        else:
+            passive = partial["passive"]
+
+        # --- Condition 2: Active hook only (entropy computed, chunk NOT routed) ---
+        original = install_patch()
+        try:
+            if "active_only" not in partial:
+                STATE.enabled = True
+                STATE.route_chunk = False
+                STATE.records.clear()
+                print("[integrated] (2/3) Timing active-hook-only (chunk selected, not routed) …")
+                active_only = _time_generate(model, tokenizer, args.prompt, args.new_tokens,
+                                             device, args.warmup, args.repeats)
+                chunk_dist_active = {}
+                for rec in STATE.records:
+                    chunk_dist_active[rec["chunk"]] = chunk_dist_active.get(rec["chunk"], 0) + 1
+                print(f"  active-only: {active_only['lat_mean_ms']:.2f} ± {active_only['lat_std_ms']:.2f} ms")
+                print(f"  chunk distribution: {dict(sorted(chunk_dist_active.items()))}")
+                partial["active_only"] = {**active_only, "chunk_dist": chunk_dist_active}
+                with open(partial_path, "w") as f:
+                    json.dump(partial, f, indent=2)
+            else:
+                active_only = partial["active_only"]
+
+            # --- Condition 3: Active + routed (integrated, Tier-2a ⊕ Tier-2b) ---
+            if "integrated" not in partial:
+                STATE.enabled = True
+                STATE.route_chunk = True
+                STATE.records.clear()
+                print("[integrated] (3/3) Timing active+routed (chunk selected AND routed into scan) …")
+                integrated = _time_generate(model, tokenizer, args.prompt, args.new_tokens,
+                                            device, args.warmup, args.repeats)
+                chunk_dist_routed = {}
+                for rec in STATE.records:
+                    chunk_dist_routed[rec["chunk"]] = chunk_dist_routed.get(rec["chunk"], 0) + 1
+                print(f"  active+routed: {integrated['lat_mean_ms']:.2f} ± {integrated['lat_std_ms']:.2f} ms")
+                print(f"  chunk distribution: {dict(sorted(chunk_dist_routed.items()))}")
+                partial["integrated"] = {**integrated, "chunk_dist": chunk_dist_routed}
+                with open(partial_path, "w") as f:
+                    json.dump(partial, f, indent=2)
+            else:
+                integrated = partial["integrated"]
+        finally:
+            STATE.enabled = False
+            restore(original)
+
+        # --- Summary ---
+        passive_lat = passive["lat_mean_ms"]
+        print()
+        print("[integrated] === Table: integrated measurement ===")
+        print(f"{'Configuration':<45} {'Latency (ms)':>14} {'vs. Passive':>12}")
+        print(f"{'Passive (stock fast path, static chunk)':<45} "
+              f"{passive_lat:>10.2f} ± {passive['lat_std_ms']:>5.2f}  {'1.00x':>12}")
+        ao = active_only["lat_mean_ms"]
+        print(f"{'Active hook only (chunk selected, not routed)':<45} "
+              f"{ao:>10.2f} ± {active_only['lat_std_ms']:>5.2f}  "
+              f"{ao/passive_lat:>10.3f}x")
+        ai = integrated["lat_mean_ms"]
+        print(f"{'Active + routed (integrated)':<45} "
+              f"{ai:>10.2f} ± {integrated['lat_std_ms']:>5.2f}  "
+              f"{ai/passive_lat:>10.3f}x")
+        if ai <= passive_lat:
+            print("  => Net end-to-end improvement achieved (integrated <= passive).")
+        else:
+            print(f"  => Overhead: +{ai - passive_lat:.2f} ms (+{(ai/passive_lat - 1)*100:.1f}%)")
+
+        # chunk_size_kwarg_supported may only be set after running integrated
+        kwarg_supported = STATE.chunk_size_kwarg_supported
+        if kwarg_supported is False:
+            print("\n  NOTE: selective_scan_fn in the installed mamba_ssm does not accept")
+            print("  chunk_size as a kwarg (compile-time constant).  The 'Active+routed'")
+            print("  row above reflects entropy overhead only (same as active-hook-only).")
+            print("  True chunk routing requires a mamba_ssm build that exposes chunk_size")
+            print("  at the Python API level.  Kernel-level speedup evidence is in Table 3.")
+
+        output = {
+            "gpu": gpu_name,
+            "torch": torch.__version__,
+            "model": args.model,
+            "prompt_len": passive["prompt_len"],
+            "new_tokens": args.new_tokens,
+            "warmup": args.warmup,
+            "repeats": args.repeats,
+            "h_ref": f"log({args.num_bins})={math.log(args.num_bins):.4f}",
+            "platform": platform.platform(),
+            "chunk_size_kwarg_supported": kwarg_supported,
+            "passive": passive,
+            "active_only": active_only,
+            "integrated": integrated,
+        }
+        out_path.write_text(json.dumps(output, indent=2))
+        print(f"\n[integrated] Results saved to {out_path}")
+        # Remove partial file after success
+        if partial_path.exists():
+            partial_path.unlink()
+    except Exception as e:
+        print(f"[integrated] Exception: {e}")
+        print(f"[integrated] Partial results saved to {partial_path}")
+        raise
 
 
 if __name__ == "__main__":
