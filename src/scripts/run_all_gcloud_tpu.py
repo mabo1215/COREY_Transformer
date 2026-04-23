@@ -112,6 +112,15 @@ def is_capacity_error(err_text):
         'insufficient capacity',
         'no more capacity',
         'resource exhausted',
+        'quota exceeded',
+        'quota limit',
+        'quotafailure',
+        'resource_exhausted',
+        'status":[ \"resource_exhausted\"',
+        'status": "resource_exhausted"',
+        'httperror accessing',
+        "'status': 429",
+        '"code": 429',
         'unavailable in the zone',
         'code": 8',
     ]
@@ -207,7 +216,7 @@ if resource_pool:
                     create_success = True
                     break
                 if is_capacity_error(err):
-                    print(f"[WARN] Capacity unavailable for {zone} {tpu_type} ({'spot' if spot else 'on-demand'}), trying next...")
+                    print(f"[WARN] Capacity or quota unavailable for {zone} {tpu_type} ({'spot' if spot else 'on-demand'}), trying next...")
                     continue
                 if is_retryable_create_error(err):
                     print(f"[WARN] Transient create error for {zone} {tpu_type} ({'spot' if spot else 'on-demand'}), trying next...")
