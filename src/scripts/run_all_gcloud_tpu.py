@@ -19,6 +19,7 @@ import argparse
 import subprocess
 import os
 import json
+import time
 from pathlib import Path
 from shutil import which
 
@@ -105,6 +106,33 @@ def get_cli_override(name):
     return config.get(arg_name)
 
 
+def is_capacity_error(err_text):
+    err_lower = err_text.lower()
+    capacity_markers = [
+        'insufficient capacity',
+        'no more capacity',
+        'resource exhausted',
+        'unavailable in the zone',
+        'code": 8',
+    ]
+    return any(marker in err_lower for marker in capacity_markers)
+
+
+def is_retryable_create_error(err_text):
+    err_lower = err_text.lower()
+    retryable_markers = [
+        '"code": 13',
+        'internal error has occurred',
+        'internal error',
+        'deadline exceeded',
+        'temporarily unavailable',
+        'service unavailable',
+        'unavailable',
+        'connection reset',
+    ]
+    return any(marker in err_lower for marker in retryable_markers)
+
+
 gcloud_bin = resolve_cli(
     'gcloud',
     windows_names=('gcloud.cmd', 'gcloud.exe', 'gcloud.bat'),
@@ -150,37 +178,52 @@ import sys
 resource_pool = config.get("resource_pool", None)
 create_success = False
 if resource_pool:
-    for res in resource_pool:
-        zone = res["zone"]
-        tpu_type = res["tpu_type"]
-        version = res["version"]
-        spot = res.get("spot", False)
-        print(f"[INFO] Trying TPU VM {tpu_name} in {zone} ({tpu_type}), version={version} ({'spot' if spot else 'on-demand'}) ...")
-        cmd = [
-            gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'create', tpu_name,
-            f'--zone={zone}', f'--accelerator-type={tpu_type}',
-            f'--version={version}'
-        ]
-        if spot:
-            cmd.append('--spot')
-        try:
-            subprocess.run(cmd, check=True, capture_output=True)
-            create_success = True
-            break
-        except subprocess.CalledProcessError as e:
-            err = e.stderr.decode() if hasattr(e.stderr, 'decode') else str(e)
-            if 'ALREADY_EXISTS' in err:
-                print(f"[INFO] TPU VM already exists, skipping creation.")
+    create_retry_rounds = int(config.get("create_retry_rounds", 3))
+    create_retry_sleep_sec = int(config.get("create_retry_sleep_sec", 20))
+    total_candidates = len(resource_pool)
+    for round_idx in range(create_retry_rounds):
+        print(f"[INFO] Create round {round_idx + 1}/{create_retry_rounds} across {total_candidates} candidates")
+        for res in resource_pool:
+            zone = res["zone"]
+            tpu_type = res["tpu_type"]
+            version = res["version"]
+            spot = res.get("spot", False)
+            print(f"[INFO] Trying TPU VM {tpu_name} in {zone} ({tpu_type}), version={version} ({'spot' if spot else 'on-demand'}) ...")
+            cmd = [
+                gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'create', tpu_name,
+                f'--zone={zone}', f'--accelerator-type={tpu_type}',
+                f'--version={version}'
+            ]
+            if spot:
+                cmd.append('--spot')
+            try:
+                subprocess.run(cmd, check=True, capture_output=True)
                 create_success = True
                 break
-            if 'Insufficient capacity' in err:
-                print(f"[WARN] Insufficient capacity for {zone} {tpu_type}, trying next...")
-                continue
-            else:
+            except subprocess.CalledProcessError as e:
+                err = e.stderr.decode() if hasattr(e.stderr, 'decode') else str(e)
+                if 'ALREADY_EXISTS' in err:
+                    print(f"[INFO] TPU VM already exists, skipping creation.")
+                    create_success = True
+                    break
+                if is_capacity_error(err):
+                    print(f"[WARN] Capacity unavailable for {zone} {tpu_type} ({'spot' if spot else 'on-demand'}), trying next...")
+                    continue
+                if is_retryable_create_error(err):
+                    print(f"[WARN] Transient create error for {zone} {tpu_type} ({'spot' if spot else 'on-demand'}), trying next...")
+                    continue
                 print(f"[ERROR] Failed to create TPU VM: {err}")
                 sys.exit(1)
+
+        if create_success:
+            break
+
+        if round_idx < create_retry_rounds - 1:
+            print(f"[WARN] No capacity found in this round. Waiting {create_retry_sleep_sec}s before next round...")
+            time.sleep(create_retry_sleep_sec)
+
     if not create_success:
-        print("[FATAL] All resource pool options exhausted. No available TPU capacity.")
+        print("[FATAL] All resource pool options exhausted after retry rounds. No available TPU capacity.")
         sys.exit(1)
 else:
     print(f"[INFO] Creating TPU VM {tpu_name} in {zone} ({tpu_type}), version={version} (spot) ...")
