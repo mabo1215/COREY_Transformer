@@ -1,6 +1,6 @@
 #!/bin/bash
 # Usage: bash run_all_experiments_and_upload.sh
-# 在 TPU VM 内部运行本脚本
+# Run this script inside the TPU VM
 set -e
 
 MODEL="mamba-370m"
@@ -41,7 +41,7 @@ sync_stage_outputs() {
   gsutil -m rsync -r "$SYNC_SOURCE_DIR" "$SYNC_TARGET"
 }
 
-# 1. 运行所有实验
+# 1. Run all experiments
 restore_outputs_from_gcs
 
 if is_stage_completed ~/source/COREY_Transformer/src/outputs/corey_tpu_benchmark; then
@@ -72,7 +72,7 @@ else
   sync_stage_outputs "heterogeneous_corpus"
 fi
 
-# 2. 合并所有结果到 OUTPUT_DIR
+# 2. Merge all results into OUTPUT_DIR
 mkdir -p $OUTPUT_DIR
 cp -r ~/source/COREY_Transformer/src/outputs/corey_tpu_benchmark $OUTPUT_DIR/
 cp -r ~/source/COREY_Transformer/src/outputs/integrated_end_to_end $OUTPUT_DIR/

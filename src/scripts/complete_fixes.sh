@@ -1,14 +1,14 @@
 #!/bin/bash
-# 一键修复和验证脚本：Policy_Corey 和 Quamba 修复
-# 使用方法：bash complete_fixes.sh [task]
-# task 选项：all (默认) | corey-fix | corey-rerun | quamba-verify
+# One-click fix and verification script for Policy_Corey and Quamba
+# Usage: bash complete_fixes.sh [task]
+# Task options: all (default) | corey-fix | corey-rerun | quamba-verify
 
 set -euo pipefail
 
 REPO_ROOT="${1:-.}"
 TASK="${2:-all}"
 
-# 环境配置
+# Environment configuration
 export REPO_ROOT="/mnt/c/source/Corey_Transformer"
 export MAMBA_ROOT_PREFIX="/home/bobma-resideo/.corey-micromamba"
 export ENV_NAME="corey-cuda128"

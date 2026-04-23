@@ -83,7 +83,7 @@ parser.add_argument('--repeat', type=int, default=None)
 parser.add_argument('--output-dir', type=str, default=None)
 parser.add_argument('--gcloud-bin', type=str, default=None, help='Path to gcloud executable')
 parser.add_argument('--gsutil-bin', type=str, default=None, help='Path to gsutil executable')
-# 添加下面这一行：
+# TPU VM runtime version
 parser.add_argument('--version', type=str, default=None, help='TPU VM Runtime version')
 args = parser.parse_args()
 
@@ -161,7 +161,7 @@ output_dir = get_arg('output_dir', 'src/outputs/gcloud_tpu_all')
 version = get_arg('version', None)
 
 
-# 参数健壮性检查
+# Validate required parameters
 missing = []
 for k in ["zone", "tpu_type", "tpu_name", "model", "seq_len", "chunk_size", "repeat", "output_dir", "version"]:
     if eval(k) is None:
@@ -169,7 +169,7 @@ for k in ["zone", "tpu_type", "tpu_name", "model", "seq_len", "chunk_size", "rep
 if missing:
     raise ValueError(f"Missing required config parameters: {', '.join(missing)}. Please check config.json or provide them as command-line arguments.")
 
-# 类型转换
+# Normalize numeric argument types
 seq_len = int(seq_len)
 chunk_size = int(chunk_size)
 repeat = int(repeat)
@@ -182,7 +182,7 @@ if project_id:
 
 
 
-# 1. Create TPU VM（支持资源池轮询）
+# 1. Create the TPU VM with resource-pool polling support
 import sys
 resource_pool = config.get("resource_pool", None)
 create_success = False
@@ -248,10 +248,10 @@ else:
 # 2. Upload code (sync src/ and requirements.txt)
 
 print("[INFO] Uploading code to TPU VM...")
-# 递归上传 src 目录（仅目录加 --recurse），排除无效文件
+# Upload the src directory recursively while excluding irrelevant files
 
 
-# 仅在 TPU VM 上下载代码
+# Download code only on the TPU VM
 gcs_bucket = config.get('gcs_bucket', None)
 if not gcs_bucket:
     raise ValueError('gcs_bucket must be set in config.json')
@@ -265,7 +265,7 @@ subprocess.run([
 # 3. Install dependencies
 
 
-# 先检测TPU VM上已安装的numpy等包版本，只有缺失或不兼容时才安装requirements.txt
+# Check the installed NumPy version first and install requirements.txt only if needed
 print("[INFO] Checking existing Python packages on TPU VM...")
 check_pkgs = subprocess.run([
     gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',
@@ -298,7 +298,7 @@ if need_install:
 else:
     print("[INFO] Skipped requirements.txt install; system packages are compatible.")
 
-# 检查 torch_xla 是否可用，否则提示用户重建 TPU VM
+# Check whether torch_xla is available; otherwise instruct the user to recreate the TPU VM
 print("[INFO] Checking torch_xla and torch version/device on TPU VM...")
 check_xla = subprocess.run([
     gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'ssh', tpu_name, f'--zone={zone}',

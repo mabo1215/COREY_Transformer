@@ -1,5 +1,5 @@
 #!/bin/bash
-# 综合修复脚本：处理 einops 缺失和 policy_corey 重新执行
+# Combined fix script for the missing einops dependency and policy_corey reruns
 
 set -euo pipefail
 

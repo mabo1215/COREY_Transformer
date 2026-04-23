@@ -1,12 +1,12 @@
-# COREY Transformer 全表格自动化 Colab 脚本
-# 运行本脚本可自动生成 main.tex 所有实验表格所需 JSON 文件
+# Automated Colab script for all COREY Transformer tables
+# Running this script generates the JSON files required for all experiment tables in main.tex
 
 import torch
 import time
 import numpy as np
 import json
 
-# 通用 selective-scan benchmark
+# Generic selective-scan benchmark
 
 def run_selective_scan_benchmark(seq_len, dim, chunk_sizes, n_repeats=30, warmup=5, device='cuda'):
     x = torch.randn(seq_len, dim, device=device)
@@ -36,7 +36,7 @@ real_gpu_results = run_selective_scan_benchmark(
 with open('colab_real_gpu_three_policy.json', 'w') as f:
     json.dump(real_gpu_results, f, indent=2)
 
-# 2. Perturbation sweep (5种分布)
+# 2. Perturbation sweep (five distributions)
 def perturbation_data(dist, seq_len, dim):
     if dist == 'uniform':
         return torch.rand(seq_len, dim)
@@ -80,7 +80,7 @@ chunk_sweep_results = run_selective_scan_benchmark(4096, 1024, chunk_sizes)
 with open('colab_chunk_sweep.json', 'w') as f:
     json.dump(chunk_sweep_results, f, indent=2)
 
-# 4. Ablation study (示例：不同 H_ref)
+# 4. Ablation study (example: different H_ref values)
 H_refs = [4.0, 5.0, 5.55, 8.0]
 ablation_results = {}
 x = torch.randn(4096, 1024, device='cuda')
