@@ -184,56 +184,54 @@ if project_id:
 
 # 1. Create the TPU VM with resource-pool polling support
 import sys
+
 resource_pool = config.get("resource_pool", None)
 create_success = False
 if resource_pool:
-    create_retry_rounds = int(config.get("create_retry_rounds", 3))
     create_retry_sleep_sec = int(config.get("create_retry_sleep_sec", 20))
     total_candidates = len(resource_pool)
-    for round_idx in range(create_retry_rounds):
-        print(f"[INFO] Create round {round_idx + 1}/{create_retry_rounds} across {total_candidates} candidates")
-        for res in resource_pool:
-            zone = res["zone"]
-            tpu_type = res["tpu_type"]
-            version = res["version"]
-            spot = res.get("spot", False)
-            print(f"[INFO] Trying TPU VM {tpu_name} in {zone} ({tpu_type}), version={version} ({'spot' if spot else 'on-demand'}) ...")
-            cmd = [
-                gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'create', tpu_name,
-                f'--zone={zone}', f'--accelerator-type={tpu_type}',
-                f'--version={version}'
-            ]
-            if spot:
-                cmd.append('--spot')
-            try:
-                subprocess.run(cmd, check=True, capture_output=True)
-                create_success = True
-                break
-            except subprocess.CalledProcessError as e:
-                err = e.stderr.decode() if hasattr(e.stderr, 'decode') else str(e)
-                if 'ALREADY_EXISTS' in err:
-                    print(f"[INFO] TPU VM already exists, skipping creation.")
+    print(f"[INFO] Entering infinite polling mode for TPU resource pool ({total_candidates} candidates). Will loop until success or Ctrl+C.")
+    try:
+        while True:
+            for idx, res in enumerate(resource_pool):
+                zone = res["zone"]
+                tpu_type = res["tpu_type"]
+                version = res["version"]
+                spot = res.get("spot", False)
+                print(f"[INFO] Trying TPU VM {tpu_name} in {zone} ({tpu_type}), version={version} ({'spot' if spot else 'on-demand'}) ...")
+                cmd = [
+                    gcloud_bin, 'compute', 'tpus', 'tpu-vm', 'create', tpu_name,
+                    f'--zone={zone}', f'--accelerator-type={tpu_type}',
+                    f'--version={version}'
+                ]
+                if spot:
+                    cmd.append('--spot')
+                try:
+                    subprocess.run(cmd, check=True, capture_output=True)
                     create_success = True
+                    print(f"[INFO] Successfully created TPU VM in {zone} ({tpu_type}).")
                     break
-                if is_capacity_error(err):
-                    print(f"[WARN] Capacity or quota unavailable for {zone} {tpu_type} ({'spot' if spot else 'on-demand'}), trying next...")
-                    continue
-                if is_retryable_create_error(err):
-                    print(f"[WARN] Transient create error for {zone} {tpu_type} ({'spot' if spot else 'on-demand'}), trying next...")
-                    continue
-                print(f"[ERROR] Failed to create TPU VM: {err}")
-                sys.exit(1)
-
-        if create_success:
-            break
-
-        if round_idx < create_retry_rounds - 1:
+                except subprocess.CalledProcessError as e:
+                    err = e.stderr.decode() if hasattr(e.stderr, 'decode') else str(e)
+                    if 'ALREADY_EXISTS' in err:
+                        print(f"[INFO] TPU VM already exists, skipping creation.")
+                        create_success = True
+                        break
+                    if is_capacity_error(err):
+                        print(f"[WARN] Capacity or quota unavailable for {zone} {tpu_type} ({'spot' if spot else 'on-demand'}), trying next...")
+                        continue
+                    if is_retryable_create_error(err):
+                        print(f"[WARN] Transient create error for {zone} {tpu_type} ({'spot' if spot else 'on-demand'}), trying next...")
+                        continue
+                    print(f"[ERROR] Failed to create TPU VM: {err}")
+                    sys.exit(1)
+            if create_success:
+                break
             print(f"[WARN] No capacity found in this round. Waiting {create_retry_sleep_sec}s before next round...")
             time.sleep(create_retry_sleep_sec)
-
-    if not create_success:
-        print("[FATAL] All resource pool options exhausted after retry rounds. No available TPU capacity.")
-        sys.exit(1)
+    except KeyboardInterrupt:
+        print("[INFO] Interrupted by user (Ctrl+C). Exiting TPU polling loop.")
+        sys.exit(0)
 else:
     print(f"[INFO] Creating TPU VM {tpu_name} in {zone} ({tpu_type}), version={version} (spot) ...")
     cmd = [
