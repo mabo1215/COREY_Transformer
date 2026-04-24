@@ -47,7 +47,7 @@ restore_outputs_from_gcs
 if is_stage_completed ~/source/COREY_Transformer/src/outputs/corey_tpu_benchmark; then
   echo "[SKIP] corey_tpu_benchmark already exists, skipping run"
 else
-  PJRT_DEVICE=TPU python3 ~/source/COREY_Transformer/src/experiments/run_corey_tpu_benchmark.py \
+  python3 -m torch_xla.distributed.xla_spawn --num_procs 1 python3 ~/source/COREY_Transformer/src/experiments/run_corey_tpu_benchmark.py \
     --device tpu --model $MODEL --chunk-size $CHUNK_SIZE --seq-len $SEQ_LEN --repeat $REPEAT \
     --output-dir ~/source/COREY_Transformer/src/outputs/corey_tpu_benchmark
   touch ~/source/COREY_Transformer/src/outputs/corey_tpu_benchmark/$STAGE_DONE_MARKER
@@ -57,7 +57,7 @@ fi
 if is_stage_completed ~/source/COREY_Transformer/src/outputs/integrated_end_to_end; then
   echo "[SKIP] integrated_end_to_end already exists, skipping run"
 else
-  PJRT_DEVICE=TPU python3 ~/source/COREY_Transformer/src/experiments/run_integrated_end_to_end.py \
+  python3 -m torch_xla.distributed.xla_spawn --num_procs 1 python3 ~/source/COREY_Transformer/src/experiments/run_integrated_end_to_end.py \
     --model $MODEL --output-dir ~/source/COREY_Transformer/src/outputs/integrated_end_to_end
   touch ~/source/COREY_Transformer/src/outputs/integrated_end_to_end/$STAGE_DONE_MARKER
   sync_stage_outputs "integrated_end_to_end"
@@ -66,7 +66,7 @@ fi
 if is_stage_completed ~/source/COREY_Transformer/src/outputs/heterogeneous_corpus; then
   echo "[SKIP] heterogeneous_corpus already exists, skipping run"
 else
-  PJRT_DEVICE=TPU python3 ~/source/COREY_Transformer/src/experiments/run_heterogeneous_corpus.py \
+  python3 -m torch_xla.distributed.xla_spawn --num_procs 1 python3 ~/source/COREY_Transformer/src/experiments/run_heterogeneous_corpus.py \
     --model $MODEL --output-dir ~/source/COREY_Transformer/src/outputs/heterogeneous_corpus
   touch ~/source/COREY_Transformer/src/outputs/heterogeneous_corpus/$STAGE_DONE_MARKER
   sync_stage_outputs "heterogeneous_corpus"
