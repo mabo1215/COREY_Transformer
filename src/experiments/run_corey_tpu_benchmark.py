@@ -54,12 +54,11 @@ _set_hf_token_from_envfile()
 device = args.device
 if device == "tpu":
     try:
-        import torch_xla
-        import torch_xla
+        import torch_xla.core.xla_model as xm
         import torch
     except ImportError:
         raise RuntimeError("torch_xla is required for TPU execution. See https://pytorch.org/xla/")
-    dev = torch_xla.device()
+    dev = xm.xla_device()
 elif device == "cuda":
     import torch
     dev = torch.device("cuda")

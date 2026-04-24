@@ -495,7 +495,10 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 '''bash
 gcloud compute tpus tpu-vm ssh tpu-exp1 --zone=europe-west4-a
 
-nohup bash src/scripts/run_all_experiments_and_upload.sh > run_all.log 2>&1 &
+#internal login
+gcloud compute tpus tpu-vm ssh tpu-v4-ready --zone=us-central2-b --worker=0
+
+nohup bash src/scripts/run_all_experiments_and_upload_TPU.sh > run_all.log 2>&1 &
 tail -f run_all.log
 
 # 每 5 分钟自动同步一次，即使被抢占也只损失最后 5 分钟的数据

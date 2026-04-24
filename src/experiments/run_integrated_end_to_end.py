@@ -389,8 +389,8 @@ def main() -> None:
 
     try:
         try:
-            import torch_xla
-            is_tpu = torch_xla.device().type == 'xla'
+            import torch_xla.core.xla_model as xm
+            is_tpu = True
         except ImportError:
             is_tpu = False
 
@@ -399,7 +399,7 @@ def main() -> None:
             gpu_name = torch.cuda.get_device_name(0)
             print(f"[integrated] Device: {gpu_name}")
         elif is_tpu:
-            device = torch_xla.device()
+            device = xm.xla_device()
             gpu_name = f"TPU ({device})"
             print(f"[integrated] Device: {gpu_name}")
         else:
