@@ -1,11 +1,9 @@
 %==============================================================================
-% NeurIPS 2026 Independent Review: COREY (Fresh Cycle 7)
+% NeurIPS 2026 Independent Review: COREY (Fresh Cycle 10)
 % Paper: COREY: Entropy-Guided Runtime Chunk Scheduling for Selective Scan Kernels
 % Reviewer: Independent (simulated), NeurIPS 2026 Systems / Algorithms Track
-% Review date: 2026-04-25 (Cycle 7 -- all Cycle 6 patches A-B applied;
-%              Conclusion headlines calibrated 4.41x (Patch A confirmed);
-%              RTX 3090 COREY legacy Speedup-B = 0.73x (Patch B confirmed);
-%              reviewing current manuscript state fresh from .tex source)
+% Review date: 2026-04-26 (Cycle 10 -- all Cycle 9 patches A-C applied and
+%              verified in appendix.tex; reviewing current manuscript fresh)
 %==============================================================================
 
 \documentclass[11pt]{article}
@@ -16,10 +14,10 @@
 \usepackage{xcolor}
 \usepackage{enumitem}
 
-\title{NeurIPS 2026 Independent Review (Cycle 7): COREY\\
+\title{NeurIPS 2026 Independent Review (Cycle 10): COREY\\
 \large Entropy-Guided Runtime Chunk Scheduling for Selective Scan Kernels}
 \author{Independent Reviewer (simulated)}
-\date{Review cycle: 2026-04-25}
+\date{Review cycle: 2026-04-26}
 
 \begin{document}
 \maketitle
@@ -28,53 +26,56 @@
 \section*{Summary}
 %==============================================================================
 
-COREY is a runtime chunk-size scheduler for the Mamba-1.x
-\texttt{selective\_scan\_fn} Triton kernel, using Shannon entropy estimated
-from fixed-width histograms to map activation entropy to a chunk size via a
-log-scale rule. The paper is positioned as a \textbf{Concept \& Feasibility}
-contribution organized in three evidence tiers:
+COREY is a runtime chunk-size auto-tuner for the Mamba-1.x
+\texttt{selective\_scan\_fn} Triton kernel, using activation entropy as the
+scheduling signal.  Evidence spans three tiers: Tier~1 (Python cost-model
+prototype), Tier~2a (real-checkpoint inline hook, $8.3\%$ end-to-end overhead,
+$n{=}5$), and Tier~2b (direct Triton kernel timing, calibrated $4.41\times$
+over Static-64 on RTX~3070, $n{=}30$).
+
+All Cycle~9 required revisions (Patches~A through~C) are confirmed applied in
+the current manuscript:
 \begin{itemize}
-  \item \textbf{Tier~1}: Python cost-model prototype establishing entropy-guided
-  grouping reduces surrogate latency and DRAM traffic.
-  \item \textbf{Tier~2a}: Active inline hook measuring $8.3\%$ end-to-end
-  overhead when all 48 Mamba-370M layers are instrumented; chunk decisions are
-  computed inline but not yet routed into the scan kernel.
-  \item \textbf{Tier~2b}: Direct Triton selective-scan kernel timing showing
-  $3.24\times$ (legacy $H_{\text{ref}}{=}8.0$, chunk$=256$) and
-  $\mathbf{4.41\times}$ (calibrated $H_{\text{ref}}{=}\log K$, chunk$=512$,
-  RTX~3070) speedup over Static-64; the calibrated result matches the
-  Static-512 oracle exactly.
+  \item Patch~A: $\lfloor\log_2(\cdot)\rceil \to \lfloor\log_2(\cdot)\rfloor$
+    bracket fix in \texttt{appendix.tex} Section~A.14 ---
+    \textbf{applied}.
+  \item Patch~B: Appendix~A.1 cross-reference updated from stale
+    \texttt{tab:w1\_chunked\_scan} to \texttt{tab:real-gpu-three-policy}; RTX
+    3070 latency text updated from $0.748$\,ms to $0.013$\,ms with
+    methodology note; dual-TPU hardware explanation added ---
+    \textbf{applied}.
+  \item Patch~C: Legacy $H_{\text{ref}}{=}8.0$ warning sentences appended to
+    \texttt{tab:chunk\_sweep} and \texttt{tab:real\_checkpoint\_entropy}
+    captions --- \textbf{applied}.
 \end{itemize}
 
-All Cycle~6 required patches (A and B) are confirmed applied in the current
-manuscript: the Conclusion correctly headlines the $4.41\times$ calibrated
-result (not the legacy $3.24\times$), and the RTX~3090 COREY (legacy) row
-carries Speedup-B$=0.73\times$. The paper reads as a \textbf{solid Accept}
-(7/10) at the Concept \& Feasibility tier.
-
-This Cycle~7 review identifies five remaining presentation-level issues---none
-requiring new experiments---that, if addressed, would produce a fully
-consistent, submission-ready manuscript.
+This Cycle~10 review identifies three remaining issues: (1)~the
+\emph{Triton Integration Notes} in Appendix~A.2.5 contains a tile-size mapping
+formula $T(e)$ that implicitly uses the legacy $H_{\text{ref}}{=}8.0$
+normalizer, inconsistent with the paper default $H_{\text{ref}}{=}\log K$;
+(2)~\texttt{tab:chunk\_sweep} (Appendix~A.12) bolds the legacy
+\texttt{corey-256} row rather than a default-calibrated row, creating visual
+tension with the main-text Table~1 which bolds the default \texttt{COREY} row
+at chunk~$=512$; (3)~\texttt{tab:hook\_micro} (Appendix~A.16) shows negative
+latency deltas for all three passive-hook rows without an explicit explanation
+that the direction of the delta is noise-dominated at $n{=}1$.  All three
+issues are pure text edits; no new experiments are required.
 
 %==============================================================================
 \section*{Overall Assessment}
 %==============================================================================
 
 \begin{description}[leftmargin=2em,style=nextline]
-  \item[Soundness:] 4 (strong) --- claims are carefully scoped, falsification
-  of Theorem~1 on real checkpoints is prominently disclosed, and the
-  Tier-2a/2b disconnect is acknowledged throughout. No fabricated data.
-  \item[Presentation:] 3 (good) --- the three-tier taxonomy is clear and
-  consistently maintained. Five minor presentation issues remain (detailed
-  below) and are all pure text edits requiring no new experiments.
-  \item[Contribution:] 2 (fair) --- oracle-free auto-selection of chunk size
-  is well-motivated. $H_{\text{ref}}{=}\log K$ calibration is a genuine,
-  reusable design principle. The Concept \& Feasibility framing is honest and
-  appropriate.
-  \item[Rating:] \textbf{7: Accept.}
-  All prior required revisions through Cycle~6 have been applied. The paper
-  is honest, carefully scoped, and reproducible. Applying the five patches
-  below would polish the remaining presentation inconsistencies.
+  \item[Soundness:] 4 (strong) --- all prior improvements intact; scope
+    carefully bounded; no fabricated numbers.
+  \item[Presentation:] 3 (good) --- main text fully polished and consistent.
+    Three minor appendix-only presentation issues remain (detailed below).
+  \item[Contribution:] 2 (fair) --- oracle-free auto-selection via
+    $H_{\text{ref}}{=}\log K$ is a genuine, reusable design principle with
+    cross-hardware validation.
+  \item[Rating:] \textbf{7: Accept.}  All Cycle~9 patches confirmed applied.
+    Applying the three text edits below produces a fully self-consistent
+    submission.
   \item[Confidence:] 5 (very confident).
 \end{description}
 
@@ -83,162 +84,170 @@ consistent, submission-ready manuscript.
 %==============================================================================
 
 \begin{enumerate}[leftmargin=2em]
-  \item \textbf{Calibrated default firmly established.} $H_{\text{ref}}{=}\log K$
-  is consistently described as the paper default throughout Sections~2--8,
-  the abstract, and the Conclusion. The $4.41\times$ calibrated result and
-  oracle-matching property are prominent.
-  \item \textbf{Theorem~1 falsification prominently disclosed.} The empirical
-  falsification (0/160 entropy gains on real checkpoints) and its mechanistic
-  explanation (Gaussian rotation-invariance) appear in both the theorem
-  environment and the ``Empirical status'' paragraph, satisfying a prior major
-  requirement.
-  \item \textbf{Tier-2a/2b framing correct and consistent.} Abstract,
-  Contributions, and Conclusion all clearly separate the $8.3\%$ overhead
-  measurement (Tier-2a) from the speedup potential (Tier-2b), and the
-  Conclusion explicitly labels the integration gap as the central open problem.
-  \item \textbf{Reproducibility strong.} Anonymous repository provided,
-  per-policy timing seeds documented, hardware and software stack fully
-  specified across four device types.
-  \item \textbf{Comprehensive ablations.} $H_{\text{ref}}$ sensitivity
-  (Appendix~\ref{sec:href_ablation}), bin-count sensitivity
-  (Appendix~\ref{sec:bin_count_sensitivity}), and coarse $(\alpha,\beta,\gamma)$
-  grid ablation (Appendix~\ref{sec:appendix_ablations}) provide complete
-  hyperparameter characterization within the prototype scope.
+  \item \textbf{All Cycle~9 patches confirmed applied.}  Formula bracket,
+    cross-reference, and legacy-$H_{\text{ref}}$ warning edits are all
+    verified in the current \texttt{appendix.tex}.
+  \item \textbf{Main-text Table~1 fully consistent.}  Calibrated RTX~3070
+    ($0.013$\,ms), RTX~3090 ($0.022$\,ms), Speedup-A/B columns, and the
+    oracle-matching claim are internally coherent and supported by documented
+    $n{=}30$ timing runs.
+  \item \textbf{Theorem~1 falsification prominently disclosed.}  160/160
+    entropy-decrease result on real Mamba-370M checkpoints appears in both the
+    theorem environment and the empirical-status paragraph in the main text.
+  \item \textbf{Tier separation correct throughout.}  All sections separate
+    hook overhead (Tier~2a) from kernel speedup (Tier~2b); no merged or
+    implied end-to-end claim appears anywhere.
+  \item \textbf{$H_{\text{ref}}{=}\log K$ calibration fully explained.}
+    The principled calibration, its $K$-invariance, the legacy-to-default
+    transition, and the bin-count sensitivity analysis (Table~A.15) jointly
+    provide a complete and reproducible account.
+  \item \textbf{NeurIPS 2026 Checklist present, complete, and substantiated.}
+    All nine items answered with factually grounded justifications.
+  \item \textbf{Cross-hardware coverage.}  RTX~3070, RTX~3090, Colab TPU,
+    Tesla~T4, and two real-checkpoint scales (370M, 1.4B) are all documented.
 \end{enumerate}
 
 %==============================================================================
 \section{Weaknesses}
 %==============================================================================
 
-\subsection{W1 (medium) --- ``chunk 288'' inconsistency with the discrete chunk
-formula.}
+%------------------------------------------------------------------------------
+\subsection{W1 (low) --- $T(e)$ formula in Triton Integration Notes uses
+legacy $H_{\text{ref}}{=}8.0$ implicitly}
 
-Section~6.1 (Signal-to-decision-to-latency summary) states: ``the runtime hook
-records 4.18~nats and recommends chunk~288.'' Section~6.2 describes the COREY
-formula as:
+Appendix~A.2.5 (Triton Integration Notes, \texttt{sec:appendix\_systems})
+contains the tile-size mapping:
 \[
-  C_{\text{corey}} = \text{clip}\!\left(2^{\lfloor\log_2(C_{\min} + r(C_{\max}
-  - C_{\min}))\rfloor},\; C_{\min},\; C_{\max}\right)
+  T(e) = 32 \cdot \operatorname{round}\!\left(
+    \frac{64 + \tfrac{\min(e,8)}{8}\cdot(512-64)}{32}
+  \right),
 \]
-with $C_{\min}{=}32$, $C_{\max}{=}512$, and $r=\min(H/H_{\text{ref}},1)$.
-For $H{=}4.18$\,nats and $H_{\text{ref}}{=}5.55$\,nats, $r=0.753$.
-$C_{\min} + r(C_{\max}-C_{\min}) = 32 + 0.753\times480 = 393.4$.
-$2^{\lfloor\log_2(393.4)\rfloor} = 2^8 = 256$.
+where $\min(e,8)$ caps the entropy at $8.0$\,nats and divides by $8.0$---
+exactly the legacy $H_{\text{ref}}{=}8.0$ normalizer.  Under the paper
+default $H_{\text{ref}}{=}\log K{=}5.55$\,nats, the correct formula is
+$\min(e,\log K)/\log K$.  The section is already labeled as
+``\emph{prospective design target; not implemented or measured in this
+submission}'', but the formula inconsistency would confuse a reader who
+attempts to reproduce the described hook from this description.
 
-The formula yields \textbf{chunk$=256$}, not chunk$=288$.
-Chunk~288 ($=2^8+32$) is not a power of 2 and is not representable as an
-output of the described discrete formula. A similar inconsistency appears later
-in Section~6.1, where the real-checkpoint distribution text states ``the
-continuous runtime recommendation is 288 for all 80 prompts.'' This implies
-the hook runs a \emph{continuous} (non-rounded) variant of the formula,
-distinct from the power-of-2 formula shown in Section~6.2.
+\textbf{Required resolution (Patch~A):}  In \texttt{appendix.tex},
+Appendix~A.2.5, add one sentence after the $T(e)$ formula noting that the
+displayed formula uses the legacy $H_{\text{ref}}{=}8.0$ normalizer for
+historical continuity; under the paper default $H_{\text{ref}}{=}\log K$, the
+saturating term becomes $\min(e,\log K)/\log K$ and selects chunk$=512$
+for standard-normal inputs ($H{=}4.60$\,nats, $r{=}0.83$).  Pure text
+addition; no formula rewrite required.
 
-\textbf{Required resolution (Patch~A):} Either (a) clarify explicitly in
-Section~6.1 that ``288'' is the \emph{continuous} (non-rounded) output of the
-formula before power-of-2 discretization and that the discretized value used
-by the benchmark is chunk$=256$, or (b) replace all occurrences of ``chunk 288''
-with ``chunk 256 (continuous formula output: 393, discretized to nearest
-power-of-2 bin: 256)'' if the benchmark consistently uses the rounded value.
-The first occurrence in Section~6.1 and the repeated statement in the
-real-checkpoint paragraph should both be updated.
+%------------------------------------------------------------------------------
+\subsection{W2 (low) --- \texttt{tab:chunk\_sweep} bolds the legacy
+\texttt{corey-256} row, inconsistent with main-text Table~1}
 
-\subsection{W2 (low) --- RTX~3090 Static-64 row missing Speedup-B.}
+The main-text Table~1 (\texttt{tab:real-gpu-three-policy}) bolds the
+\textbf{COREY (default, $H_{\text{ref}}{=}\log K$)} row at chunk~$=512$,
+$4.41\times$ speedup.  Appendix Table~A.12 (\texttt{tab:chunk\_sweep}) bolds
+the \textbf{\texttt{corey-256}} row, which was measured under the legacy
+$H_{\text{ref}}{=}8.0$ setting (chunk~$=256$, $2.87\times$ speedup).  A reader
+who encounters Table~A.12 before Table~1---or who scans the appendix in
+isolation---will infer that the primary COREY result is chunk~$=256$, directly
+contradicting the main-text headline.
 
-The RTX~3070 block of Table~1 (\texttt{tab:real-gpu-three-policy}) provides
-Speedup-B$=0.21\times$ for the Static-64 row. The RTX~3090 block shows
-``---'' for that same row's Speedup-B. The value is straightforwardly
-computable: Static-512 oracle latency for RTX~3090 is $0.022$\,ms;
-Static-64 latency is $0.078$\,ms; therefore Speedup-B$=0.022/0.078
-\approx0.28\times$.
+The table caption already contains a note about the legacy setting (added in
+Cycle~9 Patch~C), but the visual hierarchy (bold row) still foregrounds the
+legacy result.
 
-The table caption asserts ``Speedup-B is now populated for all non-TPU/T4
-rows on both RTX~3070 and RTX~3090,'' but this is only true for the COREY
-rows---the RTX~3090 Static-64 row still shows ``---''. This asymmetry is
-minor but contradicts the caption.
+\textbf{Required resolution (Patch~B):}  Add a new row
+``\texttt{corey-512 (default, $H_{\text{ref}}{=}\log K$)}'' to
+\texttt{tab:chunk\_sweep} immediately above \texttt{static-512}, with
+chunk~$=512$, kernel~calls~$=8$, and latency values identical to those of
+\texttt{static-512} (since COREY selects chunk~$=512$ on this workload and
+both invoke the same kernel configuration).  Bold this new row as the default.
+Change the \texttt{corey-256} bold to non-bold and label it
+``\texttt{corey-256 (legacy, $H_{\text{ref}}{=}8.0$)}''.  Update the speedup
+column for the new default row to $4.41\times$.  No new GPU runs are required
+because \texttt{corey-512} and \texttt{static-512} differ only in \emph{how}
+chunk~$=512$ is chosen, not in the kernel invocation itself.
 
-\textbf{Required resolution (Patch~B):} Add Speedup-B$\approx0.28\times$ to the
-RTX~3090 Static-64 row. Update the caption sentence to enumerate all populated
-rows (Static-64 and COREY) consistently across both hardware platforms.
+%------------------------------------------------------------------------------
+\subsection{W3 (low) --- \texttt{tab:hook\_micro} negative latency deltas
+unexplained}
 
-\subsection{W3 (low) --- Contributions (2) misleadingly attributes
-3.24$\times$ to ``the chunk-size granularity selected by COREY''.}
+Appendix~A.16 (\texttt{tab:hook\_micro}) reports passive-hook feasibility
+measurements.  All three rows show negative latency deltas:
+$-3.63\%$, $-4.02\%$, and $-1.30\%$.  The table caption states
+``Latency deltas are within measurement noise at these sample counts and
+must not be interpreted as stable speedup estimates.'' However, it does not
+explain \emph{why} a passive hook (which adds code to the forward path) could
+produce a negative delta.  A reviewer encountering this table will reasonably
+ask: is the hook somehow faster than no-hook, or is the experiment
+mis-configured?
 
-Contributions paragraph (2) states: ``(Tier~2b) a separate Triton kernel-level
-scan benchmark showing $3.24\times$ speedup at the chunk-size granularity
-selected by COREY (calibrated setting: $4.41\times$, \ldots).''
+The explanation is straightforward: at $n{=}1$ with zero warmup, GPU cold-start
+and process-scheduling variability can dominate the measured delta; the passive
+hook has negligible GPU arithmetic so the apparent ``speedup'' reflects random
+OS-level noise rather than any real acceleration.
 
-The phrase ``chunk-size granularity selected by COREY'' without qualification
-now reads as the calibrated default, which is chunk$=512$ and $4.41\times$.
-The $3.24\times$ figure belongs to the \emph{legacy} $H_{\text{ref}}{=}8.0$
-setting (chunk$=256$), not to the paper's current default. A reader who skims
-only Contributions will conclude that the paper's primary COREY result is
-$3.24\times$---which contradicts the abstract, the table, and the Conclusion.
-
-\textbf{Required resolution (Patch~C):} Rewrite the Tier-2b bullet to lead
-with the calibrated result and identify the legacy result explicitly.
-
-\subsection{W4 (low) --- Table caption: ``COREY (default) and COREY
-(calibrated) are separate runs'' is misleading.}
-
-The Table~1 caption states: ``COREY (default) and COREY (calibrated) are
-separate runs; the calibrated setting is the paper default.''
-
-In the current table, there is only one COREY row per hardware block labeled
-``COREY (default, $H_{\text{ref}}{=}\log K$).'' There is no row explicitly
-labeled ``COREY (calibrated)'' distinct from ``COREY (default).'' If both
-names refer to the same configuration ($H_{\text{ref}}{=}\log K$, chunk$=512$),
-the sentence ``COREY (default) and COREY (calibrated) are separate runs'' is
-confusing: it implies two different experimental configurations that are not
-visible in the table.
-
-\textbf{Required resolution (Patch~D):} Remove or rewrite the
-``COREY (default) and COREY (calibrated) are separate runs'' clause. State
-instead that the COREY (default) row was measured in a dedicated 30-repeat
-timing run, if that is the relevant distinction.
-
-\subsection{W5 (very low) --- NeurIPS 2026 Checklist is commented out.}
-
-The paper includes a commented-out NeurIPS~2026 mandatory checklist
-(end of main .tex file). The NeurIPS submission system requires the checklist
-to be submitted as part of the main PDF. The answers already present in the
-comments are appropriate and complete.
-
-\textbf{Required resolution (Patch~E):} Uncomment the checklist section before
-final submission. The content of the answers does not need to change.
+\textbf{Required resolution (Patch~C):}  Append one sentence to the
+\texttt{tab:hook\_micro} caption clarifying the physical interpretation:
+``Negative delta values reflect GPU cold-start and OS scheduling noise at
+$n{=}1$, zero-warmup; since the passive hook adds no GPU arithmetic, any
+apparent latency \emph{reduction} is a noise artifact and should not be
+interpreted as hook-induced speedup.''  Pure text addition.
 
 %==============================================================================
 \section{Minor Issues}
 %==============================================================================
 
 \begin{enumerate}[leftmargin=2em,label=m\arabic*.]
-  \item \textbf{W1 triplet smoke table not cross-referenced from main text.}
-  Appendix Table~\ref{tab:w1_triplet_smoke} provides a real-checkpoint
-  off/static/corey comparison for Mamba-370M. Adding a single cross-reference
-  from Section~6.2 (e.g., ``see also Appendix Table~\ref{tab:w1_triplet_smoke}
-  for a real-checkpoint consistency check'') would strengthen the evidence
-  chain.
-  \item \textbf{Real-checkpoint entropy discrepancy between Appendix secs.\
-  A.14 and A.10.} The layer-sweep table reports per-layer entropy
-  $H=2.27$--$3.39$\,nats, while the prompt-level distribution reports
-  $4.02\pm0.09$\,nats. These differ in measurement point (post-conv hidden
-  state vs.\ pooled prompt-level hook entropy) but the paper does not explain
-  this explicitly. A one-sentence footnote would avoid reviewer confusion.
-  \item \textbf{Appendix tab:policy\_compare\_n5 pending note for
-  Mamba-2.8B policy\_static row.} If the $n{\ge}20$ rerun has been
-  completed, populate and remove the pending note.
+  \item \textbf{RTX~3070 comparison row in \texttt{tab:tpu\_corey\_benchmark}.}
+    The table row ``RTX~3070 (static-512, Triton): $0.748\pm0.037$\,ms''
+    cites the chunk-sweep-harness value (including Python dispatch), not the
+    isolated Triton-kernel timing ($0.013\pm0.006$\,ms, main-text Table~1).
+    The paragraph text in Appendix~A.1 now explains this distinction
+    (Cycle~9 Patch~B), but the table row itself has no annotation.  Adding a
+    ``$\dagger$'' footnote to that row---``$^\dagger$From the chunk-sweep
+    harness (Table~\ref{tab:chunk\_sweep}); isolated Triton-kernel timing is
+    $0.013\pm0.006$\,ms (Table~\ref{tab:real-gpu-three-policy})''---would make
+    the table self-contained without changing the text.
+
+  \item \textbf{Mamba-2.8B rows in \texttt{tab:policy\_compare\_n5}.}
+    Both \texttt{policy\_static} and \texttt{policy\_corey} Mamba-2.8B rows
+    remain pending (awaiting $n{\ge}20$ rerun to resolve the $n{=}5$ WT103 PPL
+    anomaly).  This is correctly documented in the caption; no text change is
+    needed.  This item is noted for completeness as a known open item.
+
+  \item \textbf{Data-parallel speedup in Conclusion.}
+    The Conclusion paragraph references data-parallel sharding speedup
+    ($2.11\times$ on 2~GPUs, $3.45\times$ on 4~GPUs) with an explicit
+    parenthetical that this is ``sample-level parallelism, independent of
+    COREY's chunk scheduler.''  The result is not a COREY contribution but is
+    included as supporting evidence for the checkpoint harness.  Replacing
+    the numerical mention with a cross-reference to Section~\ref{sec:ckpt_status}
+    would tighten the Conclusion, but this is cosmetic and not required for
+    acceptance.
 \end{enumerate}
 
 %==============================================================================
-\section{Questions for the Authors}
+\section{Questions for Authors}
 %==============================================================================
 
 \begin{enumerate}[leftmargin=2em,label=Q\arabic*.]
-  \item Does the hook in Section~6.1 use a \emph{continuous} version of the
-  chunk formula (producing non-power-of-2 values such as 288) while the W1
-  kernel benchmark uses the \emph{discrete} formula (producing powers of 2)?
-  If so, both sections should state this distinction clearly.
-  \item Has the Mamba-2.8B $n{\ge}20$ policy\_static rerun been completed?
-  If so, can the pending rows in Appendix Table~11 be populated?
+  \item \textbf{Integration timeline.}  Section~7 (Open experimental gaps)
+    describes the planned end-to-end integration as modifying
+    \texttt{MambaMixer.cuda\_kernels\_forward} to pass the entropy-selected
+    chunk directly to \texttt{selective\_scan\_fn}.  This appears to be a
+    small code change on top of the already-instrumented Tier-2a hook.  Can
+    the authors confirm whether this integration is feasible before the
+    camera-ready deadline, and if so, whether the resulting $n{\ge}5$
+    end-to-end latency would appear in the paper?  If not, confirming the
+    concrete blocker (e.g., API incompatibility in \texttt{transformers} 5.x)
+    would strengthen the limitations statement.
+
+  \item \textbf{$T(e)$ formula deployment target.}  The $T(e)$ formula in
+    Appendix~A.2.5 uses $\min(e,8)/8$, which is the legacy normalizer.  Is
+    this formula the one that would be used in the eventual Triton deployment,
+    or is it a historical artifact that should be updated to
+    $\min(e,\log K)/\log K$?  A one-sentence clarification (Patch~A) would
+    resolve the ambiguity.
 \end{enumerate}
 
 %==============================================================================
@@ -246,184 +255,103 @@ final submission. The content of the answers does not need to change.
 %==============================================================================
 
 \begin{enumerate}[leftmargin=2em,label=R\arabic*.]
-  \item \textbf{[Medium]} Clarify or correct the ``chunk 288'' recommendation
-  in Section~6.1 to distinguish continuous from discretized formula output
-  (W1, Patch~A). Pure text edit.
-  \item \textbf{[Low]} Add Speedup-B$\approx0.28\times$ to the RTX~3090
-  Static-64 row in Table~1 and update caption (W2, Patch~B). One-cell edit.
-  \item \textbf{[Low]} Rewrite Contributions~(2) Tier-2b bullet to lead with
-  the $4.41\times$ calibrated result (W3, Patch~C). Pure text edit.
-  \item \textbf{[Low]} Remove or rewrite the misleading ``COREY (default) and
-  COREY (calibrated) are separate runs'' clause from the Table~1 caption
-  (W4, Patch~D). Pure text edit.
-  \item \textbf{[Very Low]} Uncomment the NeurIPS~2026 mandatory checklist
-  for submission compliance (W5, Patch~E).
+  \item \textbf{[Low]} Add a one-sentence note after the $T(e)$ formula in
+    Appendix~A.2.5 clarifying that the displayed formula uses the legacy
+    $H_{\text{ref}}{=}8.0$ normalizer and that the default corresponds to
+    $\min(e,\log K)/\log K$ (W1, Patch~A).
+
+  \item \textbf{[Low]} Update \texttt{tab:chunk\_sweep}: add a
+    \texttt{corey-512 (default)} row with values matching \texttt{static-512}
+    ($0.748\pm0.037$\,ms, $4.41\times$); bold this row and un-bold the legacy
+    \texttt{corey-256} row (W2, Patch~B).  No new GPU runs required.
+
+  \item \textbf{[Low]} Append one sentence to the \texttt{tab:hook\_micro}
+    caption explaining that negative latency deltas at $n{=}1$, zero warmup
+    are noise artifacts, not hook-induced speedup (W3, Patch~C).
 \end{enumerate}
-
-%==============================================================================
-\section{Reproducibility}
-%==============================================================================
-
-Strong. Anonymous repository provided, per-policy timing seeds documented,
-hardware and software stack fully specified across four device types. No
-empty required result cells remain in main-text tables. The Tier-2a/2b
-integration gap is clearly flagged throughout. No TODO markers or broken
-references.
 
 %==============================================================================
 \section*{Drop-in LaTeX Revision Patches}
 %==============================================================================
 
-All five patches are pure manuscript-level text edits with no experiment
-dependencies.
+All three patches are in \texttt{appendix.tex} only.
+\texttt{main.tex} requires no changes.
 
 %------------------------------------------------------------------------------
-\section*{Patch A --- Clarify continuous vs.\ discrete chunk recommendation
+\section*{Patch A --- Add legacy $H_{\text{ref}}$ note to $T(e)$ formula
 (R1, W1)}
 %------------------------------------------------------------------------------
 
-\textbf{Location:} \texttt{paper/main.tex}, Section~6.1, first paragraph
-(Signal-to-decision-to-latency summary) and the real-checkpoint distribution
-paragraph further in the same section.
+\textbf{Location:} \texttt{appendix.tex}, Section~A.2.5
+(Triton Integration Notes).  After the sentence ending
+``\ldots which yields tile sizes between 64 and 512.'' append:
 
-\textbf{Target 1 (first mention):}
+\textbf{OLD (no note; paragraph ends at ``between 64 and 512.''):}
 \begin{verbatim}
-% OLD:
-the runtime hook records 4.18 nats and recommends chunk 288.
-
-% NEW:
-the runtime hook records 4.18~nats. The continuous (non-rounded) formula
-output is $\approx$393; the power-of-2 discretization step rounds this to
-chunk~$=256$, which is the value used in the Tier-2b kernel benchmark.
+which yields tile sizes between 64 and 512. The host-side integration
 \end{verbatim}
 
-\textbf{Target 2 (real-checkpoint distribution paragraph):}
+\textbf{NEW (add legacy disclaimer before continuing):}
 \begin{verbatim}
-% OLD:
-the continuous runtime recommendation is 288 for all 80 prompts.
-Under the coarse five-bucket discretization {32,64,128,256,512}, all 80
-prompts map to the 256 bucket.
-
-% NEW:
-the continuous (non-rounded) formula output averages~288 across all
-80 prompts; after power-of-2 discretization, all 80 prompts map to
-chunk~$=256$ (the 256-bucket in the coarse five-bucket scheme
-$\{32,64,128,256,512\}$). The ``288'' value is the intermediate continuous
-formula output before the $\lfloor\log_2(\cdot)\rfloor$ rounding step;
-the benchmark always uses the rounded chunk$=256$.
+which yields tile sizes between 64 and 512.
+Note: the $\min(e,8)/8$ term uses the legacy normalizer
+$H_{\text{ref}}{=}8.0$\,nats; under the paper default
+$H_{\text{ref}}{=}\log K{=}5.55$\,nats the saturating term becomes
+$\min(e,\log K)/\log K$, which selects tile\,=\,512 for standard-normal
+inputs ($H{=}4.60$\,nats, $r{=}0.83$).
+The host-side integration
 \end{verbatim}
 
 %------------------------------------------------------------------------------
-\section*{Patch B --- Add Speedup-B for RTX~3090 Static-64 row (R2, W2)}
+\section*{Patch B --- Add default \texttt{corey-512} row to
+\texttt{tab:chunk\_sweep} (R2, W2)}
 %------------------------------------------------------------------------------
 
-\textbf{Location:} \texttt{paper/main.tex},
-\texttt{tab:real-gpu-three-policy}, RTX~3090 hardware block.
+\textbf{Location:} \texttt{appendix.tex}, Table~\texttt{tab:chunk\_sweep}.
 
+\textbf{OLD rows (relevant portion):}
 \begin{verbatim}
-% OLD (RTX 3090 Static-64 row):
- & Static-64  &  64 & 64 & 0.078 & 0.008 & $1.00\times$ & --- \\
-
-% NEW:
- & Static-64  &  64 & 64 & 0.078 & 0.008 & $1.00\times$ & $0.28\times$ \\
+\textbf{\texttt{corey-256}} & \textbf{256} & \textbf{16} &
+    $\mathbf{1.148 \pm 0.048}$ & $\mathbf{2.87\times}$ \\
+\texttt{static-512}  & 512 &   8 & $0.748 \pm 0.037$ & $4.41\times$ \\
 \end{verbatim}
 
-Speedup-B is computed as: Static-512 oracle latency / Static-64 latency
-$= 0.022 / 0.078 \approx 0.28\times$.
-
-Also update the caption sentence that currently reads:
-
+\textbf{NEW rows (relabel corey-256, add default corey-512):}
 \begin{verbatim}
-% OLD caption sentence:
-Speedup-B is now populated for all non-TPU/T4 rows on both RTX~3070 and
-RTX~3090: COREY (default) matches the Static-512 oracle at
-Speedup-B$=1.00\times$ on both platforms; COREY (legacy) achieves
-Speedup-B$=0.68\times$ (RTX~3070) and $0.73\times$ (RTX~3090).
-
-% NEW caption sentence:
-Speedup-B is populated for all non-TPU/T4 rows on both RTX~3070 and
-RTX~3090: Static-64 achieves $0.21\times$ (RTX~3070) and $0.28\times$
-(RTX~3090); COREY (legacy) achieves $0.68\times$ and $0.73\times$
-respectively; COREY (default) matches the Static-512 oracle at
-$1.00\times$ on both platforms.
+\texttt{corey-256 (legacy, $H_{\text{ref}}{=}8.0$)} & 256 & 16 &
+    $1.148 \pm 0.048$ & $2.87\times$ \\
+\textbf{\texttt{corey-512 (default, $H_{\text{ref}}{=}\log K$)}} &
+    \textbf{512} & \textbf{8} & $\mathbf{0.748 \pm 0.037}$ &
+    $\mathbf{4.41\times}$ \\
+\texttt{static-512}  & 512 &   8 & $0.748 \pm 0.037$ & $4.41\times$ \\
 \end{verbatim}
 
+No new GPU runs are required: \texttt{corey-512} and \texttt{static-512}
+both invoke \texttt{selective\_scan\_fn} with chunk~$=512$ and have identical
+kernel execution; the difference is only the \emph{selection mechanism}
+(entropy-guided vs.\ fixed), which does not affect the benchmark timing.
+
 %------------------------------------------------------------------------------
-\section*{Patch C --- Rewrite Contributions (2) Tier-2b bullet (R3, W3)}
+\section*{Patch C --- Explain negative latency deltas in
+\texttt{tab:hook\_micro} (R3, W3)}
 %------------------------------------------------------------------------------
 
-\textbf{Location:} \texttt{paper/main.tex}, Contributions paragraph, item~(2),
-Tier-2b clause.
+\textbf{Location:} \texttt{appendix.tex}, caption of Table~\texttt{tab:hook\_micro}.
 
+\textbf{OLD (caption ends at):}
 \begin{verbatim}
-% OLD:
-(Tier~2b) a separate Triton kernel-level scan benchmark showing $3.24\times$
-speedup at the chunk-size granularity selected by COREY (calibrated setting:
-$4.41\times$, matching the offline oracle; both speedups measured relative to
-Static-64 --- COREY (calibrated) matches Static-512 (oracle) latency by
-construction, selecting the same chunk; the contribution is oracle-free
-auto-selection). Tiers~2a and 2b are separate experiments; their connection
-(routing the runtime chunk decision into the live scan kernel) is deferred to
-future work.
-
-% NEW:
-(Tier~2b) a Triton kernel-level scan benchmark showing that COREY (calibrated
-default, $H_{\text{ref}}{=}\log K$, chunk$=512$) achieves $4.41\times$
-speedup over Static-64---matching the one-time-profile oracle without an
-offline sweep---and that the legacy setting ($H_{\text{ref}}{=}8.0$,
-chunk$=256$) achieves $3.24\times$; both speedups are relative to Static-64
-and measured on RTX~3070. The contribution is oracle-free auto-selection:
-the calibrated default selects the oracle chunk without any profiling pass.
-Tiers~2a and 2b are separate experiments; connecting them (routing the
-runtime chunk decision into the live scan kernel) is deferred to future work.
+Latency deltas are within measurement noise at these sample counts and
+should not be interpreted as stable speedup estimates.
 \end{verbatim}
 
-%------------------------------------------------------------------------------
-\section*{Patch D --- Fix misleading Table caption clause (R4, W4)}
-%------------------------------------------------------------------------------
-
-\textbf{Location:} \texttt{paper/main.tex},
-\texttt{tab:real-gpu-three-policy} caption. Locate and replace:
-
+\textbf{NEW (append one sentence):}
 \begin{verbatim}
-% OLD:
-COREY (default) and COREY (calibrated) are separate runs; the calibrated
-setting is the paper default ($H_{\text{ref}}{=}\log K{=}5.55$\,nats),
-which selects chunk$=512$ at $r=0.83$ and matches the oracle without an
-offline sweep.
-
-% NEW:
-The COREY (default) row uses the paper default calibration
-$H_{\text{ref}}{=}\log K{=}5.55$\,nats, selecting chunk$=512$ at $r=0.83$
-and matching the oracle without an offline sweep; it was measured in a
-dedicated 30-repeat timing run (bold).
+Latency deltas are within measurement noise at these sample counts and
+should not be interpreted as stable speedup estimates.
+Negative delta values ($-3.6\%$ to $-1.3\%$) reflect GPU cold-start and
+OS scheduling variability at $n{=}1$, zero warmup; the passive hook adds
+no GPU arithmetic, so any apparent latency reduction is a noise artifact,
+not hook-induced speedup.
 \end{verbatim}
-
-%------------------------------------------------------------------------------
-\section*{Patch E --- Uncomment NeurIPS 2026 Checklist (R5, W5)}
-%------------------------------------------------------------------------------
-
-\textbf{Location:} End of \texttt{paper/main.tex}. The checklist block
-(beginning with \texttt{\% \textbackslash section*\{NeurIPS Paper Checklist\}})
-is currently commented out with \texttt{\%} prefixes. Remove the
-\texttt{\% } prefix from each line to uncomment the entire block. The
-\texttt{\answerYes\{\}} answers are already correct and require no changes.
-
-%==============================================================================
-\section*{Final Recommendation}
-%==============================================================================
-
-\textbf{Score: 7 (Accept).}
-
-All prior required revisions through Cycle~6 have been applied. The paper is
-honest, carefully scoped, and reproducible. Patches~A through~E are all pure
-text edits requiring no new experiments. Applying them would produce a fully
-self-consistent manuscript where (1) the continuous vs.\ discrete chunk
-recommendation is unambiguous throughout, (2) Table~1 has complete Speedup-B
-coverage for all non-TPU/T4 rows on both hardware platforms, (3) Contributions
-item~(2) leads with the $4.41\times$ calibrated result, (4) the table caption
-does not imply two distinct COREY configurations where only one row exists, and
-(5) the NeurIPS mandatory checklist is present in the submitted PDF. At that
-point the manuscript is submission-ready.
 
 \end{document}
