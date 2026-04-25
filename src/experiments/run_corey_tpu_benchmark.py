@@ -92,12 +92,9 @@ _xm = None
 if args.device == "tpu":
     try:
         import torch_xla.core.xla_model as _xm
-        import torch.distributed as dist
     except ImportError:
         raise RuntimeError("torch_xla is required for TPU execution. See https://pytorch.org/xla/")
-    # PJRT: 必须用 torch.distributed 初始化
-    if not dist.is_initialized():
-        dist.init_process_group("xla", init_method="xla://")
+    # PJRT: torchrun 自动处理分布式，不要手动初始化
     dev = _xm.xla_device()
 elif args.device == "cuda":
     if not torch.cuda.is_available():
