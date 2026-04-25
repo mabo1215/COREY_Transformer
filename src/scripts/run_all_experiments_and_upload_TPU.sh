@@ -41,6 +41,7 @@ sync_stage_outputs() {
   gsutil -m rsync -r "$SYNC_SOURCE_DIR" "$SYNC_TARGET"
 }
 
+
 # 1. Run all experiments
 restore_outputs_from_gcs
 
