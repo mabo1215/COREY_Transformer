@@ -1,6 +1,6 @@
 # 论文进度
 
-最后更新：2026-04-26（Cycle 9 全部可落地修改已完成：Patch A（appendix.tex §A.15 COREY 公式括号 \rceil 改为 \rfloor，与 main.tex Cycle 8 Patch A 保持一致）；Patch B（appendix.tex §A.1 陈旧引用 tab:w1_chunked_scan → tab:real-gpu-three-policy，同步修正 0.748 ms → 0.013 ms，并注明两处 TPU 测量值差异来源）；Patch C（tab:chunk_sweep 和 tab:real_checkpoint_entropy 两处表格 caption 追加 H_ref=8.0 legacy 说明，指向 tab:href_ablation）。`docs/revision_suggestions.tex` 已覆盖为 Cycle 9 独立评审（7/10 Accept）。）
+最后更新：2026-04-26（Cycle 9 全部可落地修改已完成：Patch A（appendix.tex §A.15 COREY 公式括号 \rceil 改为 \rfloor，与 main.tex Cycle 8 Patch A 保持一致）；Patch B（appendix.tex §A.1 陈旧引用 tab:w1_chunked_scan → tab:real-gpu-three-policy，同步修正 0.748 ms → 0.013 ms，并注明两处 TPU 测量值差异来源）；Patch C（tab:chunk_sweep 和 tab:real_checkpoint_entropy 两处表格 caption 追加 H_ref=8.0 legacy 说明，指向 tab:href_ablation）。`docs/revision_suggestions.tex` 已覆盖为 Cycle 9 独立评审（7/10 Accept）。
 **检查完成状态（Cycle 9 — Accept 7/10，所有可落地项完成）**：`docs/revision_suggestions.tex` 已覆盖为 Cycle 9 评审（2026-04-26）。Cycle 9 新落地 3 项纯文本/单字符修改，无需新实验，均在 appendix.tex。
 
 ---
@@ -160,7 +160,7 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
   - **Patch 4 (Revised Table 1, addresses R6)**：`tab:real-gpu-three-policy`（原标签 `tab:w1_chunked_scan` 已全局重命名）RTX~3070 默认行使用 `\textbf{[TODO: measured calibrated latency pending rerun]}`；RTX~3090 calibrated 行使用 `\textbf{[TODO: measured value pending]}`；并用 "4.41$\times$ (analytic)" 标注 speedup，避免把 Static-512 stand-in 误读为实测。
   - **Patch 5 (New §6.5 End-to-End Integrated Measurement, addresses W1/R1)**：§6.4 后插入新 subsection `sec:integrated` + `tab:integrated`；Active+routed 行三个格子全部 `\textbf{[TODO: measured value pending]}`。
   - **Patch 6 (New §6.6 Heterogeneous Workload, addresses W2/R2)**：新 subsection `sec:heterogeneous` + `tab:heterogeneous`，三类 regime × 五个 chunk-bucket 共 15 格全部 `\textbf{[TODO]}`。
-  - **Patch 7 (Tightened Limitations, addresses W1/W2/W3)**：§Limitations 中 bullet 4 → "Limited workload heterogeneity"；bullet 7 → "End-to-end integration gap (closed in camera-ready)"；bullet 9 → "No-Fusion baseline semantics"。同时删除与新 bullet 重复的旧 bullet 10（"Heterogeneous real workloads"），避免主文自相矛盾。
+  - **Patch 7 (Tightened Limitations, addresses W1/W2/W3)**：§Limitations 中 bullet 4 → "Limited workload heterogeneity"; bullet 7 → "End-to-end integration gap (closed in camera-ready)"; bullet 9 → "No-Fusion baseline semantics". 同时删除与新 bullet 重复的旧 bullet 10（"Heterogeneous real workloads"），避免主文自相矛盾。
   - **Patch 8 (Appendix Tier-1 compression, addresses W5/R5)**：`paper/appendix.tex` 中 A.8 `tab:full_grid_ablation`、A.9 `tab:tile_trace_surrogate`、A.10 `tab:signal_chain` 及五个 subsubsection 的 `tab:ablation_tau` / `tab:grid_ablation` / `tab:tiling_depth` / `tab:ablation_precision` / `tab:ablation_length` 被整体替换为 `sec:prototype-consolidated` 的单表 `tab:prototype_consolidated`（5 行）。为避免破坏外部 `\ref`，consolidated subsection 与 consolidated table 同时挂载所有旧 label（`sec:appendix_ablations` / `sec:prototype_signal_chain` / `sec:full_grid_ablation` / `sec:grid_ablation`，以及 8 个旧 table label），从而 `main.tex:193`（`tab:tiling_depth`）、`main.tex:215`（`sec:prototype_signal_chain`）、`main.tex:352`（`sec:appendix_ablations`）、`appendix.tex:530`（`tab:tile_trace_surrogate` + `tab:tiling_depth`）均自动解析到新 consolidated 入口，无破坏性引用。
   - **Patch 9b/m4 (Remove Mamba-2.8B corey row from `tab:policy_compare_n5`)**：删除 `\texttt{corey} & Mamba-2.8B` 行及其 `$^\dagger$`/`$^\ddagger$` footnote；caption 与前导段落同步更新为“`policy_static` + `policy_corey` Mamba-2.8B pending $n{\ge}20$ rerun”。
   - **Patch 9c/m5 (Move Fig 1 caption explanation to body)**：`fig:entropy_gain` caption 去除 "Why absolute entropy decreases..." 机理句；改为 §A.3 body 中的独立段落，读者不需要看 caption 也能理解 generator artifact。
@@ -196,7 +196,7 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 - 任务 9：继续把 LongBench runner 扩展为更稳健的多 schema 兼容版本，加入 batch inference、optional perplexity side-eval，以及可直接通过本机 Ollama API 运行的 backend；同时用本地 `llama3:latest` 完成了一次 smoke run，验证输出文件可正常生成。
 - 任务 10：新增独立 `.venv311`，安装 `torch/transformers/datasets` 并将 runner 扩展为统一输出 LongBench 与 WikiText-103 / PG19 的评测协议；同时使用用户指定的 `mlx-community/mamba-1.4b-hf-f32` 作为请求模型 ID，在 Windows/HF 路径下自动解析到其基座 `state-spaces/mamba-1.4b-hf` 并完成真实 HF Mamba-1.4B smoke run。
 - 任务 11：使用本机 `mathstral:latest` 审核论文中 entropy majorization 定理与证明的数学表述，并据此收紧正文 theorem wording 与 appendix 中的 proof phrasing。
-- 任务 12：按本轮 `docs/revision_suggestions.tex` 完成正文与附录的论文级修订：统一熵记号并引入正式 theorem 环境、将主文表格补齐 Static Fusion 真值行并改用 `[t]` 浮动、明确 `quality drop` 仅为原型 proxy 指标、把 checkpoint smoke-test 数值降级到附录、补充 prototype hardware/software 环境说明，并扩展 Related Work / BibTeX 以纳入 FlashAttention、Triton、SmoothQuant 与 AWQ。
+- 任务 12：按本轮 `docs/revision_suggestions.tex` 完成正文与附录的论文级修订：统一熵记号并引入正式 theorem 环境、将主文表格补齐 Static Fusion 真值行并改用 `[t]` 浮动、明确 `quality drop` 仅为 prototype proxy 指标、把 checkpoint smoke-test 数值降级到附录、补充 prototype hardware/software 环境说明，并扩展 Related Work / BibTeX 以纳入 FlashAttention、Triton、SmoothQuant 与 AWQ。
 - 任务 13：补齐真实官方 checkpoint benchmark 闭环：扩展 `run_longbench_inference.py` 以支持 `max_length` 与关闭 entropy hook，新增 `run_official_mamba_benchmark.py` 做 warmup/repeat/内存记录，并在 `state-spaces/mamba-370m-hf` 上完成一次真实 HF benchmark，产出 `src/outputs/official_hf_benchmark/` 与 `src/outputs/official_hf_benchmark_fastpath/`。同时清理 LaTeX 日志中的 duplicate hyperref destination 与 appendix overfull hbox，使论文编译日志显著收敛。
 - 任务 14：确认本机已切换到可用的 NVIDIA 环境后，将 `.venv` 中的 `torch` 重装为 `2.11.0+cu128`，验证 `torch.cuda.is_available()` 与 RTX 3070 可见，并在 GPU 上完成一次真实官方 HF Mamba benchmark，产出 `src/outputs/official_hf_benchmark_gpu/`。同时把 benchmark metadata 改为显式记录 `fast_path_status`，避免把“GPU 但无官方 fused kernel”的运行误标为 deployment-grade。
 - 任务 15：新增 `docs/wsl2_cuda128_migration.md`、`scripts/wsl_setup_cuda128_env.sh` 与 `scripts/wsl_run_official_benchmark.sh`，把 WSL2 CUDA 12.8 对齐迁移清单和一键 benchmark 命令集落到仓库中；同时确认 micromamba root 必须放在 WSL Linux 文件系统而非 `/mnt/c/...`，并进一步定位到 `causal-conv1d` 的上游 `setup.py` 会硬编码多架构 `nvcc` 编译目标，因而其构建耗时不能仅靠 `TORCH_CUDA_ARCH_LIST` 收敛。
@@ -269,7 +269,7 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
   推进状态：✅ 已完成。
 
 - 任务 55（本轮）：完成 task 50(3) Mamba-2.8B policy_corey 数据回填 + appendix env 名称清理。
-  (1) **tab:policy_compare_n5 最后一行**：已填入真实数值（NarrQA=0.0447, Qasper=0.0399, MF-EN=0.00, GovRpt=0.1084, WT103 PPL=954.81†, PG19 PPL=10.62, Avg Lat=11005ms‡），移除 "(pending)" 标注；在表注中说明 WT103 PPL n=5 粗估、latency 为 LongBench 推理均值（RTX 3070 8GB microbenchmark 受内存压力影响）。
+  (1) **tab:policy_compare_n5 最后一行**：已填入真实数值（NarrQA=0.0447, Qasper=0.0399, MF-EN=0.0, GovRpt=0.1084, WT103 PPL=954.81†, PG19 PPL=10.62, Avg Lat=11005ms‡），移除 "(pending)" 标注；在表注中说明 WT103 PPL n=5 粗估、latency 为 LongBench 推理均值（RTX 3070 8GB microbenchmark 受内存压力影响）。
   (2) **appendix.tex 叙述段落**：更新 completed rows 描述、新增 2.8B corey 解释段落、修正 2.8B fast_path_available 信息。
   (3) **内部 env 名称清理**：将 appendix.tex 中的 `corey-cuda128`、`adama-cuda128`、`\.venv` 替换为通用描述（WSL2 CUDA 12.8 Python 3.10、Windows Python environment），满足 reader-first manuscript boundary 要求。
   (4) 已重新编译通过（main.pdf + appendix.pdf）。
@@ -302,9 +302,7 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
   (4) 已将该 smoke 结果回填到 `paper/appendix.tex` 新增表 `tab:w1_triplet_smoke`，并重新编译通过（undefined reference=0）。
   推进状态：✅ 已完成（真实 GPU smoke 证据）。
 
-- 任务 59：W1 三策略 smoke 扩展到双模型（370M + 1.4B）。
-
-- 任务 60：W1 真实 GPU 三策略 chunked selective-scan benchmark 完整闭环。实际在 WSL2 adama-cuda128（RTX 3070 / CUDA 12.8）运行 `run_w1_triton_triplet.py`，三策略实测结果：off=403.0±4.3ms（Python 循环 4096 次），static=3.58±0.66ms（chunk=64，64 次 kernel 调用），corey=1.10±0.09ms（entropy=4.60 nats → chunk=256，16 次 kernel 调用）。COREY 比 static 快 3.24×，比 off 快 365×。主文 `tab:w1_chunked_scan` 已回填真实数值并更新 caption、叙述段落、Limitations 第 6 项与 Conclusion。论文重新编译通过（main.pdf + appendix_only.pdf，0 undefined references）。
+- 任务 59：W1 真实 GPU 三策略 chunked selective-scan benchmark 完整闭环。实际在 WSL2 adama-cuda128（RTX 3070 / CUDA 12.8）运行 `run_w1_triton_triplet.py`，三策略实测结果：off=403.0±4.3ms（Python 循环 4096 次），static=3.58±0.66ms（chunk=64，64 次 kernel 调用），corey=1.10±0.09ms（entropy=4.60 nats → chunk=256，16 次 kernel 调用）。COREY 比 static 快 3.24×，比 off 快 365×。主文 `tab:w1_chunked_scan` 已回填真实数值并更新 caption、叙述段落、Limitations 第 6 项与 Conclusion。论文重新编译通过（main.pdf + appendix_only.pdf，0 undefined references）。
   推进状态：✅ 已完成。
 
 - 任务 61：W2 真实激活 Sinkhorn proxy 验证——完整闭环。在 WSL2 adama-cuda128（RTX 3070 / CUDA 12.8）运行 `run_real_activation_sinkhorn.py`，对 mamba-370m 层 0–3 × 20 样本共 80 对进行验证。**关键发现（负向）**：entropy_gain 全部为负（mean = −1.30±0.47 nats，0/80 为正），Sinkhorn L1 = 1.689±0.037（远高于合成数据的 0.070±0.010）。说明 Theorem 1 熵增性质在合成重尾数据中成立，但对真实 Mamba in_proj 激活（近似正态分布）不成立。负向发现已诚实写入论文：Theorem 1 Remark 新增两情景对比数值、Empirical implication 明确限定合成情景并报告真实趋势、Introduction 第 82 行限定语境、Conclusion 说明熵增为分布依赖。论文重新编译通过（main.pdf undefined reference = 0）。
@@ -323,7 +321,7 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
   (2) **M2 + C7**：将 Experimental Setup 中的 baseline 列表条目从 "Entropy-Guided Fusion (Ours)" 改为 "Entropy-Guided Chunk Selection (COREY)"，明确说明 COREY 是现有 Triton kernel 的调度器，不引入新 fused kernel。同时在附录 Algorithm 3（Triton Fused SSM Kernel）caption 中加注 "(prospective design target; not implemented or measured in this submission)"。
   (3) **C5**：将 abstract、Scope of claims 与 Conclusion 中的 "without measurable overhead or quality regression" 改写为"adds no measurable latency overhead; NLP scores are identical to the unhooked baseline by construction, not by measurement"，避免把被动监控器的构造属性误读为实验发现。
   (4) **M7**：在 Scheduler Configuration 的 τ₀=5.0 nats 说明后补充"equivalently, setting τ₀=+∞ would be equivalent and may be less confusing to readers who notice the above-maximum value"。
-  (5) **M9**：在 appendix tab:cuda_kernel_profile 的 48.6× 行加 `$^\ddagger$` 注脚，说明 policy_off 是 Python per-timestep dispatch loop（非公平 GPU unfused 基线），$37$–$49\times$ 加速反映 loop dispatch 消除，而非 kernel 算术节省。
+  (5) **M9**：在 main.tex tab:w1_chunked_scan caption 末尾加 cross-reference 说明：附录 tab:cuda_kernel_profile 使用不同 kernel（合成轻量扫描）与不同硬件，两表不可直接对比列。
   (6) **M8**：在主文 tab:w1_chunked_scan caption 末尾加 cross-reference 说明：附录 tab:cuda_kernel_profile 使用不同 kernel（合成轻量扫描）与不同硬件，两表不可直接对比列。
   论文重新编译通过（main.pdf + appendix_only.pdf，0 undefined references）。
   推进状态：✅ 已完成。
@@ -549,7 +547,7 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
   **(T4) COREY calibrated 行延迟列斜体标注**：Table 1 中 COREY (calibrated) 行的延迟 0.748 和 std --- 改为 `\textit{0.748}` 和 `\textit{---}`，与已有 §footnote 配合，从视觉上区分借用值与实测值。
 
-  **(T5) Ablation Studies 内联关键发现**：在 Section 7 开头内联关键结论"21.6–22.7% latency reduction over no-fusion, exceeding 17.5% from arithmetic intensity alone"，确保读者不需要翻附录才能看到 entropy 信号的独立辨别力证据。
+  **(T5) Ablation Studies 内联关键发现**：在 Section 7 开头内联关键结论"21.6–22.7% latency reduction over no-fusion, exceeding 17.5% from arithmetic intensity alone"，确保读者不需要翻附录就能看到 entropy 信号的独立辨别力证据。
 
   **(T6) Conclusion 末尾评估广度 forward pointer**：在 Conclusion 末段新增一句，明确指出"A direct comparison of COREY against Static-512 on a unified 4096-token Mamba-370M LongBench run, with a matched Mamba-2 or FlashAttention Transformer baseline, would provide the full systems evaluation needed..."，让 reviewer 知道研究团队已意识到这一差距并有明确的后续方向。
 

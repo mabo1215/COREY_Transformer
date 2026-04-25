@@ -289,7 +289,24 @@ class HuggingFaceMambaBackend(MambaBackend):
         else:
             model_kwargs[dtype_key] = getattr(torch, "float16")
 
-        self.tokenizer = auto_tokenizer.from_pretrained(self.model_spec.model_id, trust_remote_code=True)
+        try:
+            self.tokenizer = auto_tokenizer.from_pretrained(
+                self.model_spec.model_id, trust_remote_code=True
+            )
+        except Exception as e_fast:
+            print(f"[WARN] Fast tokenizer load failed: {e_fast}. Trying slow tokenizer fallback.")
+            try:
+                self.tokenizer = auto_tokenizer.from_pretrained(
+                    self.model_spec.model_id, trust_remote_code=True, use_fast=False
+                )
+            except Exception as e_slow:
+                raise RuntimeError(
+                    f"Both fast and slow tokenizer loading failed for model '{self.model_spec.model_id}'. "
+                    f"Fast error: {e_fast}\nSlow error: {e_slow}\n"
+                    "This usually means the model repository is missing required tokenizer files (e.g., tokenizer.json, spiece.model, vocab.txt, merges.txt) or does not specify a compatible tokenizer class. "
+                    "Please check the model card on HuggingFace, try a different model, or contact the model author to add the necessary tokenizer files. "
+                    "If you know the correct tokenizer class, you can manually instantiate it in the code."
+                )
         if getattr(self.tokenizer, "padding_side", None) != "left":
             self.tokenizer.padding_side = "left"
         if getattr(self.tokenizer, "pad_token_id", None) is None and getattr(self.tokenizer, "eos_token_id", None) is not None:
@@ -539,7 +556,7 @@ def default_mamba_model_specs() -> list[ModelSpec]:
     return [
         ModelSpec(name="mamba-370m", model_id="state-spaces/mamba-370m-hf"),
         ModelSpec(name="mamba-1.4b", model_id="state-spaces/mamba-1.4b-hf"),
-        ModelSpec(name="mamba-2.8b", model_id="state-spaces/mamba-2.8b-hf"),
+        ModelSpec(name="mamba-2.7b", model_id="benchang1110/mamba2-2.7b-hf"),
         ModelSpec(name="pythia-410m", model_id="EleutherAI/pythia-410m", trust_remote_code=False),
         ModelSpec(name="pythia-1.4b", model_id="EleutherAI/pythia-1.4b", trust_remote_code=False),
         ModelSpec(name="pythia-2.8b", model_id="EleutherAI/pythia-2.8b", trust_remote_code=False),
