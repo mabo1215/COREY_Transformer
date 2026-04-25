@@ -58,7 +58,7 @@ fi
 if is_stage_completed ~/source/COREY_Transformer/src/outputs/integrated_end_to_end; then
   echo "[SKIP] integrated_end_to_end already exists, skipping run"
 else
-  python3 -m torch_xla.distributed.run_xla --num_procs 1 python3 ~/source/COREY_Transformer/src/experiments/run_integrated_end_to_end.py \
+  python3 -m torch_xla.distributed.xla_spawn --num_procs 1 python3 ~/source/COREY_Transformer/src/experiments/run_integrated_end_to_end.py \
     --model $MODEL --output-dir ~/source/COREY_Transformer/src/outputs/integrated_end_to_end
   touch ~/source/COREY_Transformer/src/outputs/integrated_end_to_end/$STAGE_DONE_MARKER
   sync_stage_outputs "integrated_end_to_end"
