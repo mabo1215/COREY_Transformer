@@ -7,8 +7,8 @@ MODEL="state-spaces/mamba2-2.7b"
 SEQ_LEN=4096
 CHUNK_SIZE=512
 REPEAT=30
-NUM_GPUS=8
-OUTPUT_DIR=~/src/outputs/gpu8_all
+NUM_GPUS=1
+OUTPUT_DIR=~/src/outputs/gpu1_all
 SYNC_SOURCE_DIR=~/source/COREY_Transformer/src/outputs
 SYNC_TARGET="gs://corey-transformer-paper-results/recdynamic/"
 RESTORE_FROM_GCS="${RESTORE_FROM_GCS:-1}"
@@ -48,7 +48,7 @@ restore_outputs_from_gcs
 if is_stage_completed ~/source/COREY_Transformer/src/outputs/corey_8gpu_benchmark; then
   echo "[SKIP] corey_8gpu_benchmark already exists, skipping run"
 else
-  CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 torchrun --nproc_per_node=$NUM_GPUS \
+  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 \
     ~/source/COREY_Transformer/src/experiments/run_corey_8gpu_benchmark.py \
     --device cuda --model $MODEL --chunk-size $CHUNK_SIZE --seq-len $SEQ_LEN --repeat $REPEAT \
     --output-dir ~/source/COREY_Transformer/src/outputs/corey_8gpu_benchmark
@@ -59,7 +59,7 @@ fi
 if is_stage_completed ~/source/COREY_Transformer/src/outputs/integrated_end_to_end_8gpu; then
   echo "[SKIP] integrated_end_to_end_8gpu already exists, skipping run"
 else
-  CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 torchrun --nproc_per_node=$NUM_GPUS \
+  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 \
     ~/source/COREY_Transformer/src/experiments/run_integrated_end_to_end_8gpu.py \
     --model $MODEL --output-dir ~/source/COREY_Transformer/src/outputs/integrated_end_to_end_8gpu
   touch ~/source/COREY_Transformer/src/outputs/integrated_end_to_end_8gpu/$STAGE_DONE_MARKER
@@ -69,12 +69,13 @@ fi
 if is_stage_completed ~/source/COREY_Transformer/src/outputs/heterogeneous_corpus_8gpu; then
   echo "[SKIP] heterogeneous_corpus_8gpu already exists, skipping run"
 else
-  CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 torchrun --nproc_per_node=$NUM_GPUS \
+  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 \
     ~/source/COREY_Transformer/src/experiments/run_heterogeneous_corpus_8gpu.py \
     --model $MODEL --output-dir ~/source/COREY_Transformer/src/outputs/heterogeneous_corpus_8gpu
   touch ~/source/COREY_Transformer/src/outputs/heterogeneous_corpus_8gpu/$STAGE_DONE_MARKER
   sync_stage_outputs "heterogeneous_corpus_8gpu"
 fi
+
 
 # 2. Merge all results into OUTPUT_DIR
 mkdir -p $OUTPUT_DIR
