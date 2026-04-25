@@ -75,6 +75,14 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 已全部修改
 
+- **任务 90 (2026-04-26)：实现全部 4 个 8-GPU 分布式实验脚本，修复 TPU 基准虚假 scan 代理。**
+  - **`run_corey_tpu_benchmark.py`（修复）**：将原始 dummy `selective_scan_fn = lambda u, delta, A, B, C, D=None: u + delta + ...` 替换为真实 mamba_ssm Triton kernel（CUDA 可用时）或 `_pytorch_selective_scan` 纯 PyTorch 代理（TPU/CPU fallback）；将单一时序扩展为 W1 三策略基准（Static-64 / COREY / Static-512-oracle），输出 Speedup-A/B 与 entropy overhead。
+  - **`run_corey_8gpu_benchmark.py`（全量实现）**：将仅含 `dist.init_process_group` + TODO 的 stub 替换为完整 torchrun 分布式 W1 三策略基准；每个 rank 在自己的 GPU 上独立运行，使用 seed offset `args.seed + rank`；`dist.gather_object` 在 rank 0 聚合延迟均值/标准差，输出跨所有 rank 的 aggregate Speedup-A/B 到 `summary.json`。
+  - **`run_integrated_end_to_end_8gpu.py`（全量实现）**：将 stub 替换为完整 Passive / Active-hook / Active+routed 三条件基准（port of single-GPU `run_integrated_end_to_end.py`）；每 rank 独立加载模型；Mamba-2 优雅 fallback（非 Mamba-1.x 模型跳过 hook，passive-only 带记录）；NCCL gather 聚合各 rank 三条件延迟。
+  - **`run_heterogeneous_corpus_8gpu.py`（全量实现）**：将 stub 替换为完整 60-prompt 语料库分布式运行（port of single-GPU `run_heterogeneous_corpus.py`）；`rank::world_size` stride 分片，每 rank 处理 ~7-8 个 prompt；rank 0 汇总并按 `prompt_idx_global` 排序，计算 per-regime 熵统计与 non-degenerate chunk 分布数量。
+  - 所有 4 个脚本语法检查通过（`python3 -m py_compile`），已提交到 main 分支（commit 1d0bca0）。
+  - 任务 89 paper 改动（m1/m2）也在此次提交中推入 paper 子模块（commit b05c07f in paper submodule）。
+
 - **任务 89 (2026-04-26)：Cycle 7 minor issues m1–m2 落地。**
   - 确认 Cycle 7 五项 Required Revisions（Patches A–E）在任务 88 中已全部应用。
   - **m1（Section 6.2 → tab:w1_triplet_smoke 交叉引用）**：在 `paper/main.tex` §5.2 Scheduler Configuration 末尾新增句子：``A real-checkpoint off/static/corey consistency check using the W1 triplet is provided in Appendix Table~\ref{tab:w1_triplet_smoke} for completeness.''，将附录中 W1 triplet smoke 表格从主文连接起来，强化证据链（Cycle 7 m1）。
