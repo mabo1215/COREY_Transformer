@@ -1,7 +1,7 @@
 # 论文进度
 
-最后更新：2026-04-25（Cycle 7 全部可落地修改已完成：Patch A（§6.1 "chunk 288" 歧义消除，明确 288 为连续公式中间值，离散化后为 chunk=256）；Patch B（Table 1 RTX 3090 Static-64 行补入 Speedup-B=0.28×，caption 同步更新枚举所有行）；Patch C（Contributions (2) Tier-2b 改写，以 4.41× 校准结果为首）；Patch D（Table caption 去除误导性 "COREY (default) and COREY (calibrated) are separate runs" 表述）；Patch E（NeurIPS 2026 Checklist 取消注释）。`docs/revision_suggestions.tex` 已覆盖为 Cycle 7 独立评审（7/10 Accept）。）
-**检查完成状态（Cycle 7 — Accept 7/10，所有可落地项完成）**：`docs/revision_suggestions.tex` 已覆盖为 Cycle 7 评审（2026-04-25）。Cycle 7 新落地 5 项纯文本修改，无需新实验。
+最后更新：2026-04-26（Cycle 9 全部可落地修改已完成：Patch A（appendix.tex §A.15 COREY 公式括号 \rceil 改为 \rfloor，与 main.tex Cycle 8 Patch A 保持一致）；Patch B（appendix.tex §A.1 陈旧引用 tab:w1_chunked_scan → tab:real-gpu-three-policy，同步修正 0.748 ms → 0.013 ms，并注明两处 TPU 测量值差异来源）；Patch C（tab:chunk_sweep 和 tab:real_checkpoint_entropy 两处表格 caption 追加 H_ref=8.0 legacy 说明，指向 tab:href_ablation）。`docs/revision_suggestions.tex` 已覆盖为 Cycle 9 独立评审（7/10 Accept）。）
+**检查完成状态（Cycle 9 — Accept 7/10，所有可落地项完成）**：`docs/revision_suggestions.tex` 已覆盖为 Cycle 9 评审（2026-04-26）。Cycle 9 新落地 3 项纯文本/单字符修改，无需新实验，均在 appendix.tex。
 
 ---
 
@@ -74,6 +74,36 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 - **P0.1/P0.2/P0.3（2026-04-16）**：Title 改为 "Kernel-Level Scheduling"，Theorem 1 Remark 加分布适用性警告，`tab:ablation_tau` 加 proxy circularity note
 
 ## 已全部修改
+
+- **任务 93 (2026-04-26)：Cycle 10 新鲜独立评审 + 全部 3 项可落地 patches 应用。**
+  - **触发原因**：Cycle 9 三项 patches（A-C）已全部确认应用于 `appendix.tex`（`tab:chunk_sweep` 和 `tab:real_checkpoint_entropy` legacy 说明、§A.1 引用更新、§A.15 公式括号修复）。按工作流规则触发 Cycle 10 新鲜独立评审。
+  - **Cycle 10 评分：7/10（Accept）**。主文全面一致；剩余三项均为 appendix 纯文本修改，无需新实验。
+  - **发现三项 appendix 议题**：
+    - **W1（低）**：§A.2.5 Triton Integration Notes 的 `T(e)` 公式使用 `min(e,8)/8`，隐式对应 legacy `H_ref=8.0`，与论文默认 `H_ref=log K` 不符；该节已标注为 "prospective design target, not implemented"。
+    - **W2（低）**：`tab:chunk_sweep` 加粗行为旧版 `corey-256`（legacy H_ref=8.0, 2.87×），与主文 Table 1 加粗 `COREY (default)` 行（chunk=512, 4.41×）视觉冲突。虽 caption 已有说明，视觉主次仍倒置。
+    - **W3（低）**：`tab:hook_micro` 三行被动 hook 均显示负延迟 delta（-3.6% 至 -1.3%），caption 未解释方向为何为负（n=1 cold-start 噪声）。
+  - **Patch A（W1）**：在 `appendix.tex` §A.2.5 `T(e)` 公式后追加一句：`min(e,8)/8` 使用 legacy H_ref=8.0 标准化器；paper default 对应 `min(e,log K)/log K`，对标准正态输入（H=4.60 nats, r=0.83）选 tile=512。
+  - **Patch B（W2）**：在 `tab:chunk_sweep` 中新增 `corey-512 (default, H_ref=log K)` 行（0.748±0.037 ms, 4.41×），设为加粗主行；`corey-256` 改标签为 `(legacy, H_ref=8.0)` 并取消加粗。无需新 GPU 实验。
+  - **Patch C（W3）**：在 `tab:hook_micro` caption 末尾追加：负 delta 值（-3.6% 至 -1.3%）为 n=1 zero-warmup GPU cold-start 与 OS scheduling 噪声，被动 hook 无 GPU 计算开销，任何表观延迟降低均为噪声伪影。
+  - 三项 patch 均已应用并通过 grep 确认；提交至 main 分支（commit 303d7af）。
+
+- **任务 92 (2026-04-26)：Cycle 9 独立评审 + 全部 Cycle 9 可落地 patches 应用。**
+  - 核查 `## 未修改或部分修改` 确认无剩余可执行项（仅有【已解决】和【已阻挡 — future work / data pending】条目）；按工作流规则触发 Cycle 9 新鲜独立评审。
+  - `docs/revision_suggestions.tex` 已覆盖为 Cycle 9 评审（英文 LaTeX，含 W1–W3、m1、Q1、R1–R3、Patches A–C）。评分：7/10（Accept）。
+  - 核心发现：(1) appendix.tex §A.15 中 COREY 公式括号仍为 `\lfloor...\rceil`（Cycle 8 Patch A 仅修复了 main.tex，遗漏了附录副本）；(2) appendix.tex §A.1 引用陈旧 label `tab:w1_chunked_scan`（已不存在，编译会产生 undefined reference）及过时 RTX 3070 latency 0.748 ms（来自 chunk-sweep harness，main.tex Table 1 已更新为校准值 0.013 ms，相差 57×）；(3) tab:chunk_sweep 和 tab:real_checkpoint_entropy 两处使用 legacy H_ref=8.0，caption 未标注，与正文 default H_ref=log K 混淆。
+  - **Patch A (R1 — appendix §A.15 公式括号修复)**：将 appendix.tex 第 317 行 `\lfloor\log_2(...)\rceil` 改为 `\lfloor\log_2(...)\rfloor`；一字符改动。
+  - **Patch B (R2 — appendix §A.1 陈旧引用 + 过时 latency 修复)**：将 `\ref{tab:w1_chunked_scan}` 改为 `\ref{tab:real-gpu-three-policy}`；更新 0.748 ms → 0.013 ms 并说明两种测量方法差异（harness 开销 vs 纯 kernel 时间）；增补 TPU v4-8（0.135 ms）与 Colab TPU（0.057 ms）差异说明（不同硬件配置）。
+  - **Patch C (R3 — 两处 caption 追加 legacy H_ref 说明)**：tab:chunk_sweep caption 末尾追加 corey-256 行使用 legacy H_ref=8.0 的说明，指出 paper default 选 chunk=512；tab:real_checkpoint_entropy caption 追加 H_ref=8.0 为 legacy 设置、paper default 结果相同的说明；两处均指向 tab:href_ablation。
+  - `paper/appendix.tex` 已修改；所有 3 项 patch 均通过文本校验（grep 确认括号已修正、陈旧 label 已替换、两处 caption 新增内容存在）。
+
+- **任务 91 (2026-04-26)：Cycle 8 独立评审 + 全部 Cycle 8 可落地 patches 应用。**
+  - 核查 `## 未修改或部分修改` 确认无剩余可执行项（仅有【已解决】和【已阻挡 — future work / data pending】条目）；按工作流规则触发 Cycle 8 新鲜独立评审。
+  - `docs/revision_suggestions.tex` 已覆盖为 Cycle 8 评审（英文 LaTeX，含 W1–W3、m1–m2、Q1–Q2、R1–R3、Patches A–C）。评分：7/10（Accept）。
+  - 核心发现：(1) §6.2 COREY 公式使用混合括号 `\lfloor...\rceil`（floor 开 + ceiling 关，即最近整数记号），与 §6.1 Patch A 文本中 `\lfloor\log_2(\cdot)\rfloor` 矛盾——对 H=4.18 nats 算例，混合括号给出 chunk=512 而非文中声称的 256；(2) Conclusion 中 "Routing the selected chunk...would realize 3.24×" 在 4.41× 已作为 headline 后显得自相矛盾，缺少语境说明（hook 当前在实测 workload 上选 chunk=256，对应 3.24×）；(3) Abstract Tier-2b 速度数字（3.24× 和 4.41×）未标注硬件平台（RTX 3090 给出的是 2.58× 和 3.55×）。
+  - **Patch A (W1 — §6.2 公式括号修复)**：将 `\lfloor\log_2(...)\rceil` 改为 `\lfloor\log_2(...)\rfloor`，使公式与 §6.1 文本及数值示例（chunk=256）一致；一字符改动（`\rceil` → `\rfloor`）。
+  - **Patch B (W2 — Conclusion 3.24× 语境补全)**：在 "Routing the selected chunk into the scan kernel...3.24×..." 句中添加括注，明确该 3.24× 对应 chunk=256（hook 在当前中熵 LongBench workload 上所选），并注明 chunk=512 校准默认值在 kernel benchmark 达 4.41×。
+  - **Patch C (W3 — Abstract Tier-2b 硬件限定词)**：在 abstract 中 3.24× 和 4.41× 后分别添加 `(RTX~3070)`，与 Table 1 主硬件平台对齐。
+  - `paper/main.tex` 已修改；所有 3 项 patch 均通过文本校验（公式括号、Conclusion 关键句、Abstract 速度数字均已确认）。
 
 - **任务 90 (2026-04-26)：实现全部 4 个 8-GPU 分布式实验脚本，修复 TPU 基准虚假 scan 代理。**
   - **`run_corey_tpu_benchmark.py`（修复）**：将原始 dummy `selective_scan_fn = lambda u, delta, A, B, C, D=None: u + delta + ...` 替换为真实 mamba_ssm Triton kernel（CUDA 可用时）或 `_pytorch_selective_scan` 纯 PyTorch 代理（TPU/CPU fallback）；将单一时序扩展为 W1 三策略基准（Static-64 / COREY / Static-512-oracle），输出 Speedup-A/B 与 entropy overhead。
