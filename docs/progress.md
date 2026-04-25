@@ -1,5 +1,17 @@
 # 论文进度
 
+最后更新：2026-04-26（**Cycle 10 全部 3 项 text patch 已确认在 appendix.tex 中**：W1/Patch A（T(e)公式 legacy normalizer 注释，§A.2.5 line 634）；W2/Patch B（corey-256 relabel + corey-512 default 行，§A.12）；W3/Patch C（tab:hook_micro caption negative delta 解释，§A.16）。Cycle 10 评审 7/Accept，所有 required revisions 已落地。
+
+**新增四个实验章节（2026-04-26）**：appendix.tex 末尾新增 §§A.18–A.21（sec:exp_fused_kernel, sec:exp_external_baselines, sec:exp_quamba, sec:exp_policy_corey_mamba2），包含：
+- Exp A（fused kernel algorithm benchmark）：已本机运行，实测 sweep 数据填入 tab:fused_kernel_sweep
+- Exp B（extended external baseline comparison）：文献参考值填入 tab:external_baseline_extended；Mamba2-2.7B 行标注 [TODO: 4×RTX 3090]
+- Exp C（Quamba INT4 quantization）：AWQ 不支持 Mamba 已说明；待 4×RTX 3090 Quamba extensions
+- Exp D（policy COREY ablation on Mamba2-2.7B）：框架 tab:policy_corey_mamba2 已建；数据 [TODO: 4×RTX 3090]
+
+**脚本更新（2026-04-26）**：run_fused_kernel_benchmark.py 增强为真实 sweep；run_external_baselines.py 增加 mock/real/auto；run_quamba_quant_benchmark.py 增加 AWQ fallback；run_all_experiments_4gpu.sh 新建（4GPU 并发）；src/usage.md 重写含完整 4×RTX 3090 指南。
+
+原 Cycle 9 记录（历史）：Patch A（\rceil→\rfloor）；Patch B（tab:w1_chunked_scan→tab:real-gpu-three-policy，0.748ms→0.013ms）；Patch C（tab:chunk_sweep/tab:real_checkpoint_entropy caption 追加 H_ref=8.0 legacy 说明）。
+
 最后更新：2026-04-26（Cycle 9 全部可落地修改已完成：Patch A（appendix.tex §A.15 COREY 公式括号 \rceil 改为 \rfloor，与 main.tex Cycle 8 Patch A 保持一致）；Patch B（appendix.tex §A.1 陈旧引用 tab:w1_chunked_scan → tab:real-gpu-three-policy，同步修正 0.748 ms → 0.013 ms，并注明两处 TPU 测量值差异来源）；Patch C（tab:chunk_sweep 和 tab:real_checkpoint_entropy 两处表格 caption 追加 H_ref=8.0 legacy 说明，指向 tab:href_ablation）。`docs/revision_suggestions.tex` 已覆盖为 Cycle 9 独立评审（7/10 Accept）。
 **检查完成状态（Cycle 9 — Accept 7/10，所有可落地项完成）**：`docs/revision_suggestions.tex` 已覆盖为 Cycle 9 评审（2026-04-26）。Cycle 9 新落地 3 项纯文本/单字符修改，无需新实验，均在 appendix.tex。
 
