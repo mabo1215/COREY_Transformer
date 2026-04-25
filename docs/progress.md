@@ -1,22 +1,16 @@
 # 论文进度
 
-最后更新：2026-04-21（Reviewer #2 9-patch revision cycle全部已落地，后续所有 Patch A–G 文稿修正（时态、注释、脚注、K 配置等）已全部应用于 paper/main.tex，当前 revision_suggestions.tex 可落地项已全部完成；TODO markers 仅剩实验数据位 future work；cross-ref audit passed (0 missing refs, 0 duplicate labels)。）
-**检查完成状态**：`docs/revision_suggestions.tex` 现为新版 Reviewer #2（simulated, NeurIPS 2026）独立评审 — Rating 5 (Borderline Accept), Soundness 3, Presentation 3, Contribution 2, Confidence 4 — 含 9 个 drop-in LaTeX 补丁（Patches 1–9）。Reviewer #2 关键定性：(W1) Tier-2a/2b 未闭环是核心贡献缺口；(W2) 80-prompt LongBench 全落同一 chunk bucket；(W3) No-Fusion 基线仅反映 Python dispatch 开销；(W4) 外部 baseline 仅 Pythia-410M；(W5) Tier-1 prototype 表占用过多篇幅；(W6) Table 22 MF-EN 全 0 列无信息量。本轮工作是在 **不运行实验、不伪造数字** 前提下执行这 9 个补丁。
+最后更新：2026-04-25（Cycle 7 全部可落地修改已完成：Patch A（§6.1 "chunk 288" 歧义消除，明确 288 为连续公式中间值，离散化后为 chunk=256）；Patch B（Table 1 RTX 3090 Static-64 行补入 Speedup-B=0.28×，caption 同步更新枚举所有行）；Patch C（Contributions (2) Tier-2b 改写，以 4.41× 校准结果为首）；Patch D（Table caption 去除误导性 "COREY (default) and COREY (calibrated) are separate runs" 表述）；Patch E（NeurIPS 2026 Checklist 取消注释）。`docs/revision_suggestions.tex` 已覆盖为 Cycle 7 独立评审（7/10 Accept）。）
+**检查完成状态（Cycle 7 — Accept 7/10，所有可落地项完成）**：`docs/revision_suggestions.tex` 已覆盖为 Cycle 7 评审（2026-04-25）。Cycle 7 新落地 5 项纯文本修改，无需新实验。
 
 ---
 
 
 ## 未修改或部分修改
 
-- 【进行中】run_calibrated_chunk512_3090.py：在GPU（如RTX 3090/3070）上运行，补全Table 1/3的chunk=512延迟基线。
-  - 需要你提供/决策：
-    1. 指定可用的GPU硬件环境（如本地或云端）。
-    2. 是否需要自动化脚本集成GPU实验，或手动运行。
+- 【已解决 — Cycle 5 落地】RTX 3090 Static-512 oracle 行：`src/outputs/albation/3090/colab_real_gpu_three_policy.json` 中 `chunk_512` 实测值（0.02233±0.00193 ms）已存在，Cycle 5 直接从该文件回填到 `paper/main.tex` Table 1 RTX 3090 块，同时将 COREY (default) 行的 Speedup-B 从 `---` 改为 `1.00×`。此项已从阻挡列表移入已完成。
 
-- 【进行中】系统级横向对比实验（Mamba-2, RWKV-6, FlashAttention-3等，future work）。
-  - 需要你提供/决策：
-    1. 是否补充相关模型的benchmark脚本。
-    2. 是否有可用的权重和环境。
+- 【已阻挡 — future work】系统级横向对比实验（Mamba-2, RWKV-6, FlashAttention-3 等）。已在 Limitations 中列为 future work，不影响当前投稿。
 
 ---
 ## Patch-to-file mapping
@@ -78,6 +72,35 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 - **P0.1/P0.2/P0.3（2026-04-16）**：Title 改为 "Kernel-Level Scheduling"，Theorem 1 Remark 加分布适用性警告，`tab:ablation_tau` 加 proxy circularity note
 
 ## 已全部修改
+
+- **任务 88 (2026-04-25)：Cycle 7 独立评审 + 全部 Cycle 7 可落地 patches 应用。**
+  - 核查 `## 未修改或部分修改` 确认无剩余可执行项（仅有【已解决】和【已阻挡 — future work】条目）；按工作流规则触发 Cycle 7 新鲜独立评审。
+  - `docs/revision_suggestions.tex` 已覆盖为 Cycle 7 评审（英文 LaTeX，含 W1–W5、m1–m3、Q1–Q2、R1–R5、Patches A–E）。评分：7/10（Accept）。
+  - 核心发现：(1) §6.1 "chunk 288" 与离散公式不一致（连续中间值 vs 离散化后 chunk=256）；(2) RTX 3090 Static-64 行缺少 Speedup-B；(3) Contributions (2) Tier-2b 以 legacy 3.24× 开头，应以 calibrated 4.41× 开头；(4) Table caption "COREY (default) and COREY (calibrated) are separate runs" 误导性（当前表中只有一行 COREY default）；(5) NeurIPS 2026 checklist 被注释。
+  - **Patch A (W1 — §6.1 chunk 288 歧义消除)**：将两处 "recommends chunk 288" 改写为明确说明 "288 是连续公式中间值，离散化后为 chunk=256"；同样更新 80 prompt 实时分布段的措辞。
+  - **Patch B (W2 — RTX 3090 Static-64 Speedup-B 补入)**：RTX 3090 Static-64 行 Speedup-B 从 `---` 改为 `$0.28\times$`（computed: 0.022/0.078≈0.28）；caption 同步枚举所有 non-TPU/T4 行的 Speedup-B 值（Static-64: 0.21/0.28×；COREY legacy: 0.68/0.73×；COREY default: 1.00×）。
+  - **Patch C (W3 — Contributions (2) Tier-2b 改写)**：Tier-2b 子句改为以 "COREY (calibrated default) achieves 4.41×" 开头，legacy 3.24× 作为第二点。
+  - **Patch D (W4 — Table caption 清理)**：移除 "COREY (default) and COREY (calibrated) are separate runs" 措辞，改为 "The COREY (default) row uses the paper default calibration... it was measured in a dedicated 30-repeat timing run (bold)"。
+  - **Patch E (W5 — NeurIPS Checklist 取消注释)**：将 main.tex 末尾的 checklist 块从注释状态（`%` 前缀）改为正式内容。
+  - `paper/main.tex` 已修改；所有 5 项 patch 均通过文本校验；sandbox TeX 缺少 algorithm.sty，文本校验替代 PDF 验证。
+
+- **任务 87 (2026-04-25)：Cycle 6 独立评审 + 全部 Cycle 6 可落地 patches 应用。**
+  - 核查 `## 未修改或部分修改` 后确认无剩余可执行项（仅有【已解决】和【已阻挡 — future work】条目）；按工作流规则触发 Cycle 6 新鲜独立评审。
+  - `docs/revision_suggestions.tex` 已覆盖为 Cycle 6 评审（英文 LaTeX，含 W1–W3、m1–m2、Q1–Q2、R1–R3、Patches A–C）。评分：6→7/10（Weak Accept → Accept，条件性 on R1–R2）。
+  - 核心发现：Conclusion 最终段以 legacy COREY（chunk=256，16 calls，3.24×）作为 headline kernel 结果，与正文其他部分一致以 calibrated default（chunk=512，8 calls，4.41×）为主要贡献相矛盾；RTX 3090 COREY legacy 行的 Speedup-B 为 `---`，与 RTX 3070 块不一致。
+  - **Patch A (R1 — Conclusion 结尾段 headline 修正)**：将 "entropy-guided chunk selection (COREY, chunk=256, 16 kernel calls) achieves 3.24×..." 替换为 "entropy-guided chunk selection with the principled calibration H_ref=log K (COREY default, chunk=512, 8 kernel calls) achieves 4.41× lower latency than static chunk-64...---matching the one-time-profile oracle without an offline sweep."
+  - **Patch B (R2 — Table 1 RTX 3090 COREY legacy Speedup-B)**：RTX 3090 COREY (legacy, H_ref=8.0) 行的 Speedup-B 从 `---` 改为 `$0.73\times$`（computed: 0.022/0.030≈0.73）；caption 同步更新说明所有非 TPU/T4 行的 Speedup-B 均已填充。
+  - **Patch C (可选 — legacy 行移至附录)**：推迟，不影响本轮接收条件，在下一轮如评审要求则执行。
+  - `paper/main.tex` 已修改；两项 patch 均通过文本校验（old string 已消失，new string 已存在）；build.bat 在 Windows 侧可正常编译（sandbox TeX 缺少 algorithm.sty，文本校验替代 PDF 验证）。
+
+- **任务 86 (2026-04-25)：Cycle 5 独立评审 + 全部 Cycle 5 可落地 patches 应用。**
+  - 对当前稿件（Cycle 4 patches A–D 已落地）重新进行全文独立评审，覆盖 `paper/main.tex` 和 `paper/appendix.tex`，按 NeurIPS 2026 主轨道标准评分：6→7/10（Weak Accept → Accept，条件性）。
+  - `docs/revision_suggestions.tex` 已覆盖为 Cycle 5 评审（英文 LaTeX，含 W1–W3、m1–m3、Q1–Q3、R1–R4、Patches A–D）。
+  - **Patch A (R1 — Static-512 oracle row for RTX 3090)**：从 `src/outputs/albation/3090/colab_real_gpu_three_policy.json` 读取实测 `chunk_512` 数据（0.022±0.002 ms），在 Table 1 RTX 3090 块新增 `Static-512 (oracle)` 行（Speedup-A=3.55×，Speedup-B=1.00×）；COREY (default) 行的 Speedup-B 从 `---` 改为 `1.00×`；表格 caption 同步说明 Speedup-B 现已在两块平台均填充。
+  - **Patch B (R2 — passive/active mode 区分 + τ₀ 描述修正)**：§5.2 中在 `τ_0=5.0` 旁边新增明确段落，区分 passive mode（τ₀ 作为日志门控）与 active mode（每层均执行 entropy 计算与 chunk 推荐，与 τ₀ 无关）；同时修正 "above the theoretical maximum $\log K≈4.16$" 措辞，澄清该最大值对应 Tier-1 原型 K=64 的量纲，而非 checkpoint hook K=256（后者最大值为 5.55 nats）。
+  - **Patch C (R3 — Conclusion 数据并行括注)**：Conclusion 中 "Data-parallel sharding yields 2.11×/3.45×" 句改为 "Data-parallel sharding of the LongBench evaluation harness (sample-level parallelism, independent of COREY's chunk scheduler) yields..."，避免被误读为 COREY 自身的调度加速。
+  - **Patch D (R4 — §6.3 层级熵 vs 提示级熵澄清)**：chunk distribution 列表中 "H=2.5-3.5 nats" 改为明确标注"per-layer post-convolution H=2.5-3.5 nats（层级 hook 时刻测量值，不同于 Appendix Table 中的提示级平均熵 4.02±0.09 nats）"，消除两处数值之间的表观矛盾。
+
 1. 【已完成】集成 RTX 3090 (src/outputs/albation/3090) 的最新实验结果到 main.tex 表格和正文。
   - 已将 colab_real_gpu_three_policy.json 的 measured latency, std, calls 等数据自动填充进 Table~\ref{tab:real-gpu-three-policy}。
   - 替换了原有的 [TODO] 占位符，正文“Calibrated latency”段落同步更新。
@@ -485,6 +508,30 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
   **构建验证**：`main.pdf` 34 页，0 undefined references；`appendix_only.pdf` 22 页，0 undefined references。
   推进状态：✅ 已完成（V5 评审全部可落地修订项）。
+
+- 任务 86（2026-04-25，自动化 Cycle 3 收口）：针对 `docs/revision_suggestions.tex` Cycle 3（Borderline Reject 4/10）完成所有可落地 manuscript 修订：
+  (1) **W1/R1 Critical — §6.5 移除**：删除 `\subsection{End-to-End Integrated Measurement}` (`sec:integrated`) 及其 `tab:integrated` 表格（含 [TODO] 行）。整合协议描述移入 Limitations bullet 7（保留实验设计说明，不再声明"camera-ready 前执行"）。
+  (2) **W2/R2 Critical — §6.6 移除**：删除 `\subsection{Heterogeneous Real-Workload Evaluation}` (`sec:heterogeneous`) 及其 `tab:heterogeneous` 表格（含15格 [TODO] 单元）。Limitations bullet 4 更新为"future evaluation on a mixed corpus"的前瞻性说明，不再有"measurements are pending"等未完成承诺。
+  (3) **W4/R5 — Limitations bullet 7 与 Conclusion 修正**：bullet 7 标题从"End-to-end integration gap (targeted for camera-ready)"改为"End-to-end integration gap"；移除"scaffolded and targeted for camera-ready"措辞；Conclusion 中"the protocol is scaffolded in §6.5 and will be executed before camera-ready"改写为"remains the next engineering step and is the central open gap of this submission"。
+  (4) **Cross-ref audit**：验证 main.tex 中所有 `\ref{}` 目标均在 main.tex 或 appendix.tex 中有对应 `\label{}`，0 broken references；main.tex 不含任何 [TODO] marker。
+  (5) **Patches A–G 状态确认**：Patch D（Algorithm 1 caption）、Patch E（stale build comment）、Patch F（passive hook footnote）、Patch G（K disambiguation）均已在前轮落地，无需重复修改。
+  (6) **R3 状态确认**：Table 1 COREY (default) RTX 3070 行已有实测值 0.013±0.006 ms（前轮已落地），Cycle 3 所述 [TODO] 不适用于当前稿件。
+  **尚未处理（低优先级）**：R9/m5（MF-EN 全零列，tab:policy\_compare\_n5）因属 Low 优先级且 caption 已说明原因，暂不修改；两项 GPU 实验（run\_calibrated\_chunk512、系统级横向对比）为 hardware-blocked future work。
+  推进状态：✅ Cycle 3 全部 Critical/High 可落地项已完成；paper/main.tex 无 [TODO]，无对已删除节的引用。
+
+- 任务 87（2026-04-25，Cycle 4 独立评审 + Patches A–D）：Cycle 3 可落地项全部完成后，按仓库规则启动新一轮独立评审。
+  (1) **新独立评审**：覆盖重写 `docs/revision_suggestions.tex` 为全新 Cycle 4 英文 LaTeX 评审（Borderline Accept 5→6 conditional）。核心发现：W1（T2a overhead 当前 inference-negative，无 T2b routing）、W2（headline speedups 对 Static-64 而非 oracle）、W3（实际 prompts 全落同一 chunk bucket）；4 项 minor（reviewer-response language 移除、Abstract 重构、Contributions 说明、实际工况说明）。
+  (2) **Patch A — Abstract T2a/2b 重构**：Tier-2a 不再写成"能跑"的正面结果，而是"overhead cost measurement"；Tier-2b 明确为"speedup potential once routing is wired"；最后一句明确"COREY (calibrated) matches Static-512 (oracle) latency --- contribution is oracle-free auto-selection"。
+  (3) **Patch B — Contributions speedup clarification**：item (2) 中括号内补充"both speedups measured relative to Static-64；COREY (calibrated) matches Static-512 (oracle) latency by construction；contribution is oracle-free auto-selection"。
+  (4) **Patch C — Real-workload cross-regime framing**：\$6.1 中明确"all 80 prompts map to the same chunk bucket (256), operating identically to a static chunk=256 policy；dynamic switching demonstrated only in synthetic perturbation sweep"。
+  (5) **Patch D — Reviewer-response language 移除**：\$6.1 "To address the reviewer request" → "To characterize the entropy distribution of real inference workloads"；\$6.2 "To address the reviewer concern" → "To provide genuine kernel-level evidence"。
+  (6) **Cross-ref & TODO audit**：0 [TODO]，0 broken refs，0 reviewer-response 语言。
+  推进状态：✅ Cycle 4 全部可落地 Patches A–D 已写入 main.tex；revision_suggestions.tex 已更新。
+
+- 任务 88（2026-04-25，Cycle 4 Low-priority 收口 R5+R6）：在 Patches A–D 已落地的基础上，继续完成 revision_suggestions.tex 中剩余两个 Low 优先级项。
+  (1) **R5/m2 — SimpleTransformer 行移除（`paper/main.tex`）**：`tab:real-gpu-three-policy` 中 Tesla T4 分组下的 `SimpleTransformer (T4, Colab)` 行（MSE: 0.50/0.47/1.04，无延迟数据）已删除。该行报告 MSE 而非 latency，不符合表格的 chunk-policy 对比目的；Tesla T4 的 Static-512 延迟行（0.385±0.009 ms）保留，与 T4 result 段落一致。
+  (2) **R6/m5 — MF-EN 零列删除（`paper/appendix.tex`）**：`tab:policy_compare_n5` 中 MF-EN exact-match 列（全部为 0.000）已删除。列规格从 `{llccccccc}`（9列）更改为 `{llcccccc}`（8列）；表头去掉 `MF-EN &`；各数据行删去 0.000 值；pending 行的 `\multicolumn{7}` 更新为 `\multicolumn{6}`；表格标题的 `MF-EN: exact match;` 引用同步删除。`tab:checkpoint_baseline`（不同表，标题已说明零值原因）不做修改。
+  推进状态：✅ 两项 Low-priority 编辑均已应用，revision_suggestions.tex 全部可执行项清零。
 
 ---
 
