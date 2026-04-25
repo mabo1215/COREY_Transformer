@@ -12,6 +12,8 @@
 
 - 【已阻挡 — future work】系统级横向对比实验（Mamba-2, RWKV-6, FlashAttention-3 等）。已在 Limitations 中列为 future work，不影响当前投稿。
 
+- 【已阻挡 — data pending】Mamba-2.8B policy_static / policy_corey n≥20 rerun（Cycle 7 m3 / Q2）。appendix tab:policy_compare_n5 中该行仍为 pending；仅当 n≥20 实验数据可得时方可填入。当前无可行动项，保留原状。
+
 ---
 ## Patch-to-file mapping
 
@@ -72,6 +74,13 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 - **P0.1/P0.2/P0.3（2026-04-16）**：Title 改为 "Kernel-Level Scheduling"，Theorem 1 Remark 加分布适用性警告，`tab:ablation_tau` 加 proxy circularity note
 
 ## 已全部修改
+
+- **任务 89 (2026-04-26)：Cycle 7 minor issues m1–m2 落地。**
+  - 确认 Cycle 7 五项 Required Revisions（Patches A–E）在任务 88 中已全部应用。
+  - **m1（Section 6.2 → tab:w1_triplet_smoke 交叉引用）**：在 `paper/main.tex` §5.2 Scheduler Configuration 末尾新增句子：``A real-checkpoint off/static/corey consistency check using the W1 triplet is provided in Appendix Table~\ref{tab:w1_triplet_smoke} for completeness.''，将附录中 W1 triplet smoke 表格从主文连接起来，强化证据链（Cycle 7 m1）。
+  - **m2（A.14 与 A.10 熵值差异脚注）**：在 `paper/appendix.tex` §A.14 Real-Checkpoint Entropy Validation 第二句末尾（histogram estimator 句之后）新增 `\footnote{...}`，明确说明该节 per-layer 熵（2.27–3.61 nats，post-conv hidden state，42-token prompt）与 §A.10 prompt-level 分布（4.02±0.09 nats，80 LongBench prompts）在测量点上的差异：前者测的是单 prompt 各层 post-convolution hidden state，后者是跨 80 prompt 的 runtime hook 输入熵均值（Cycle 7 m2）。
+  - **m3（Mamba-2.8B policy_static pending note）**：确认无 n≥20 rerun 数据（仅有 n=1 off 和 n=1 corey 运行），appendix pending 注释保留原状；已在 Q2 回应中记录状态。
+  - 文本校验通过（grep 确认两处新增内容存在）；sandbox 无 algorithm.sty 不影响逻辑正确性（build.bat 在用户 Windows 侧正常）。
 
 - **任务 88 (2026-04-25)：Cycle 7 独立评审 + 全部 Cycle 7 可落地 patches 应用。**
   - 核查 `## 未修改或部分修改` 确认无剩余可执行项（仅有【已解决】和【已阻挡 — future work】条目）；按工作流规则触发 Cycle 7 新鲜独立评审。
