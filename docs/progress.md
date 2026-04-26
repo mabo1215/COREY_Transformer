@@ -1,6 +1,19 @@
 # 论文进度
 
-最后更新：2026-04-26（**4×RTX 3090 实验全部完成**）。
+最后更新：2026-04-26（**Cycle 10 所有可落地项已完成；无剩余 TODO**）。
+
+**Cycle 10 minor item m1（tab:tpu_corey_benchmark footnote）— 已落地**：
+- appendix.tex `tab:tpu_corey_benchmark` RTX 3070 行追加 `$^\dagger$` 脚注，说明 0.748ms 来自 chunk-sweep harness，孤立 Triton kernel 时序为 0.013ms（Tab. real-gpu-three-policy）。表格现已自包含。
+
+**实验结论汇总（2026-04-26，最终状态）**：
+- Mamba2-2.7B NLP scores（tab:external_baseline_extended）：NarrQA F1=0.098, Qasper F1=0.106, GovRpt ROUGE-L=0.044（32-token 限制），MF-EN EM=0（32-token 限制），延迟=1,820ms。已填入。WT103 PPL 需单独 perplexity pass，标注为 "WT103 PPL not evaluated"。
+- Quamba INT4：永久阻挡（需 sm_89，RTX 3090/3070 均为 sm_86）。FP16 基线（Mamba-1.4B, tab:quamba_fp16）已填入。
+- Mamba-2.8B policy ablation（tab:policy_compare_n5）：RTX 3090 n=20 warm mean，static=2068ms, corey=2082ms。已填入。WT103 PPL anomaly（n=5 采样伪影）在 n=20 下消失，caption 中已说明。
+
+**剩余 open items（不影响投稿）**：
+- m2：Mamba-2.8B rows in tab:policy_compare_n5 — revision guidance 明确 "no text change is needed"，已在 caption 中正确记录。
+- m3：Conclusion 中 data-parallel speedup 数值 → sec:ckpt_status cross-ref — 纯 cosmetic，revision guidance 明确 "not required for acceptance"；sec:ckpt_status label 不存在，暂不处理。
+- Mamba2-2.7B WT103 PPL：需在 adama-cuda128（transformers 5.5.1）环境中单独运行 perplexity pass，未纳入当前 revision cycle。
 
 **4GPU 服务器实验进度（2026-04-26，已全部完成）**：
 - Exp A（fused kernel）：✓ 已完成，11 配置实测数据已填入 tab:fused_kernel_sweep
