@@ -1,357 +1,355 @@
-%==============================================================================
-% NeurIPS 2026 Independent Review: COREY (Fresh Cycle 10)
-% Paper: COREY: Entropy-Guided Runtime Chunk Scheduling for Selective Scan Kernels
-% Reviewer: Independent (simulated), NeurIPS 2026 Systems / Algorithms Track
-% Review date: 2026-04-26 (Cycle 10 -- all Cycle 9 patches A-C applied and
-%              verified in appendix.tex; reviewing current manuscript fresh)
-%==============================================================================
+\section*{NeurIPS 2026 Review for Paper: COREY}
 
-\documentclass[11pt]{article}
-\usepackage[margin=1in]{geometry}
-\usepackage{amsmath,amssymb,amsthm}
-\usepackage{booktabs}
-\usepackage{hyperref}
-\usepackage{xcolor}
-\usepackage{enumitem}
+\subsection*{Summary}
 
-\title{NeurIPS 2026 Independent Review (Cycle 10): COREY\\
-\large Entropy-Guided Runtime Chunk Scheduling for Selective Scan Kernels}
-\author{Independent Reviewer (simulated)}
-\date{Review cycle: 2026-04-26}
+This paper proposes \textbf{COREY}, an entropy-guided runtime chunk scheduling mechanism for selective scan kernels used in Mamba-style State Space Models (SSMs). The key idea is to use runtime activation entropy as a low-cost signal to dynamically select chunk sizes at kernel invocation time.
 
-\begin{document}
-\maketitle
+The system is evaluated across three tiers:
 
-%==============================================================================
-\section*{Summary}
-%==============================================================================
-
-COREY is a runtime chunk-size auto-tuner for the Mamba-1.x
-\texttt{selective\_scan\_fn} Triton kernel, using activation entropy as the
-scheduling signal.  Evidence spans three tiers: Tier~1 (Python cost-model
-prototype), Tier~2a (real-checkpoint inline hook, $8.3\%$ end-to-end overhead,
-$n{=}5$), and Tier~2b (direct Triton kernel timing, calibrated $4.41\times$
-over Static-64 on RTX~3070, $n{=}30$).
-
-All Cycle~9 required revisions (Patches~A through~C) are confirmed applied in
-the current manuscript:
 \begin{itemize}
-  \item Patch~A: $\lfloor\log_2(\cdot)\rceil \to \lfloor\log_2(\cdot)\rfloor$
-    bracket fix in \texttt{appendix.tex} Section~A.14 ---
-    \textbf{applied}.
-  \item Patch~B: Appendix~A.1 cross-reference updated from stale
-    \texttt{tab:w1\_chunked\_scan} to \texttt{tab:real-gpu-three-policy}; RTX
-    3070 latency text updated from $0.748$\,ms to $0.013$\,ms with
-    methodology note; dual-TPU hardware explanation added ---
-    \textbf{applied}.
-  \item Patch~C: Legacy $H_{\text{ref}}{=}8.0$ warning sentences appended to
-    \texttt{tab:chunk\_sweep} and \texttt{tab:real\_checkpoint\_entropy}
-    captions --- \textbf{applied}.
+\item \textbf{Tier 1}: Prototype cost-model simulations showing reductions in surrogate latency and DRAM traffic.
+\item \textbf{Tier 2a}: Inline runtime entropy computation inserted into the Mamba inference pipeline, measuring scheduling overhead (reported as 8.3%).
+\item \textbf{Tier 2b}: Independent kernel-level experiments demonstrating up to 4.41× latency reduction relative to static chunking.
 \end{itemize}
 
-This Cycle~10 review identifies three remaining issues: (1)~the
-\emph{Triton Integration Notes} in Appendix~A.2.5 contains a tile-size mapping
-formula $T(e)$ that implicitly uses the legacy $H_{\text{ref}}{=}8.0$
-normalizer, inconsistent with the paper default $H_{\text{ref}}{=}\log K$;
-(2)~\texttt{tab:chunk\_sweep} (Appendix~A.12) bolds the legacy
-\texttt{corey-256} row rather than a default-calibrated row, creating visual
-tension with the main-text Table~1 which bolds the default \texttt{COREY} row
-at chunk~$=512$; (3)~\texttt{tab:hook\_micro} (Appendix~A.16) shows negative
-latency deltas for all three passive-hook rows without an explicit explanation
-that the direction of the delta is noise-dominated at $n{=}1$.  All three
-issues are pure text edits; no new experiments are required.
+However, the paper explicitly acknowledges that Tier 2a and Tier 2b are \textbf{not connected into a single end-to-end execution path}, leaving the main performance claim partially unverified.
 
-%==============================================================================
-\section*{Overall Assessment}
-%==============================================================================
+Overall, the paper is positioned as a \textbf{Concept & Feasibility} contribution rather than a fully deployed runtime system.
 
-\begin{description}[leftmargin=2em,style=nextline]
-  \item[Soundness:] 4 (strong) --- all prior improvements intact; scope
-    carefully bounded; no fabricated numbers.
-  \item[Presentation:] 3 (good) --- main text fully polished and consistent.
-    Three minor appendix-only presentation issues remain (detailed below).
-  \item[Contribution:] 2 (fair) --- oracle-free auto-selection via
-    $H_{\text{ref}}{=}\log K$ is a genuine, reusable design principle with
-    cross-hardware validation.
-  \item[Rating:] \textbf{7: Accept.}  All Cycle~9 patches confirmed applied.
-    Applying the three text edits below produces a fully self-consistent
-    submission.
-  \item[Confidence:] 5 (very confident).
-\end{description}
+\subsection*{Strengths}
 
-%==============================================================================
-\section{Strengths}
-%==============================================================================
+\begin{enumerate}
 
-\begin{enumerate}[leftmargin=2em]
-  \item \textbf{All Cycle~9 patches confirmed applied.}  Formula bracket,
-    cross-reference, and legacy-$H_{\text{ref}}$ warning edits are all
-    verified in the current \texttt{appendix.tex}.
-  \item \textbf{Main-text Table~1 fully consistent.}  Calibrated RTX~3070
-    ($0.013$\,ms), RTX~3090 ($0.022$\,ms), Speedup-A/B columns, and the
-    oracle-matching claim are internally coherent and supported by documented
-    $n{=}30$ timing runs.
-  \item \textbf{Theorem~1 falsification prominently disclosed.}  160/160
-    entropy-decrease result on real Mamba-370M checkpoints appears in both the
-    theorem environment and the empirical-status paragraph in the main text.
-  \item \textbf{Tier separation correct throughout.}  All sections separate
-    hook overhead (Tier~2a) from kernel speedup (Tier~2b); no merged or
-    implied end-to-end claim appears anywhere.
-  \item \textbf{$H_{\text{ref}}{=}\log K$ calibration fully explained.}
-    The principled calibration, its $K$-invariance, the legacy-to-default
-    transition, and the bin-count sensitivity analysis (Table~A.15) jointly
-    provide a complete and reproducible account.
-  \item \textbf{NeurIPS 2026 Checklist present, complete, and substantiated.}
-    All nine items answered with factually grounded justifications.
-  \item \textbf{Cross-hardware coverage.}  RTX~3070, RTX~3090, Colab TPU,
-    Tesla~T4, and two real-checkpoint scales (370M, 1.4B) are all documented.
+\item \textbf{Clear and well-motivated systems problem}
+
+The work targets a real bottleneck in selective scan pipelines, namely fragmentation-induced memory traffic overhead in GPU execution. The paper correctly highlights that theoretical $O(L)$ complexity does not guarantee hardware efficiency.
+
+\item \textbf{Conceptually novel scheduling signal}
+
+Using activation entropy as a runtime scheduling signal is an interesting idea that differs from:
+
+\begin{itemize}
+\item static fusion heuristics
+\item offline profiling
+\item arithmetic-intensity-only models
+\end{itemize}
+
+This introduces a dynamic, data-dependent optimization path that is theoretically meaningful.
+
+\item \textbf{Structured experimental design}
+
+The three-tier experimental design is logically organized:
+
+\begin{itemize}
+\item surrogate model (Tier 1)
+\item runtime feasibility (Tier 2a)
+\item kernel performance ceiling (Tier 2b)
+\end{itemize}
+
+This layered methodology helps isolate different components of the system.
+
+\item \textbf{Transparent statement of limitations}
+
+The authors clearly state several open gaps, including:
+
+\begin{itemize}
+\item absence of full end-to-end routing
+\item limited workload diversity
+\item missing architecture-level comparisons
+\end{itemize}
+
+This level of transparency is commendable.
+
 \end{enumerate}
 
-%==============================================================================
-\section{Weaknesses}
-%==============================================================================
+\subsection*{Weaknesses}
 
-%------------------------------------------------------------------------------
-\subsection{W1 (low) --- $T(e)$ formula in Triton Integration Notes uses
-legacy $H_{\text{ref}}{=}8.0$ implicitly}
+\subsubsection*{W1: Missing End-to-End Integration (Critical)}
 
-Appendix~A.2.5 (Triton Integration Notes, \texttt{sec:appendix\_systems})
-contains the tile-size mapping:
-\[
-  T(e) = 32 \cdot \operatorname{round}\!\left(
-    \frac{64 + \tfrac{\min(e,8)}{8}\cdot(512-64)}{32}
-  \right),
-\]
-where $\min(e,8)$ caps the entropy at $8.0$\,nats and divides by $8.0$---
-exactly the legacy $H_{\text{ref}}{=}8.0$ normalizer.  Under the paper
-default $H_{\text{ref}}{=}\log K{=}5.55$\,nats, the correct formula is
-$\min(e,\log K)/\log K$.  The section is already labeled as
-``\emph{prospective design target; not implemented or measured in this
-submission}'', but the formula inconsistency would confuse a reader who
-attempts to reproduce the described hook from this description.
+The most important limitation is that runtime chunk decisions are \textbf{not actually routed into the live scan kernel}.
 
-\textbf{Required resolution (Patch~A):}  In \texttt{appendix.tex},
-Appendix~A.2.5, add one sentence after the $T(e)$ formula noting that the
-displayed formula uses the legacy $H_{\text{ref}}{=}8.0$ normalizer for
-historical continuity; under the paper default $H_{\text{ref}}{=}\log K$, the
-saturating term becomes $\min(e,\log K)/\log K$ and selects chunk$=512$
-for standard-normal inputs ($H{=}4.60$\,nats, $r{=}0.83$).  Pure text
-addition; no formula rewrite required.
+The paper explicitly states:
 
-%------------------------------------------------------------------------------
-\subsection{W2 (low) --- \texttt{tab:chunk\_sweep} bolds the legacy
-\texttt{corey-256} row, inconsistent with main-text Table~1}
+\begin{quote}
+``Tier 2a and Tier 2b are separate experiments; connecting them remains the central open gap.''
+\end{quote}
 
-The main-text Table~1 (\texttt{tab:real-gpu-three-policy}) bolds the
-\textbf{COREY (default, $H_{\text{ref}}{=}\log K$)} row at chunk~$=512$,
-$4.41\times$ speedup.  Appendix Table~A.12 (\texttt{tab:chunk\_sweep}) bolds
-the \textbf{\texttt{corey-256}} row, which was measured under the legacy
-$H_{\text{ref}}{=}8.0$ setting (chunk~$=256$, $2.87\times$ speedup).  A reader
-who encounters Table~A.12 before Table~1---or who scans the appendix in
-isolation---will infer that the primary COREY result is chunk~$=256$, directly
-contradicting the main-text headline.
+Without this integration:
 
-The table caption already contains a note about the legacy setting (added in
-Cycle~9 Patch~C), but the visual hierarchy (bold row) still foregrounds the
-legacy result.
+\begin{itemize}
+\item No true end-to-end latency improvement is measured.
+\item The reported 4.41× speedup is not realized in real inference.
+\item The system contribution remains incomplete.
+\end{itemize}
 
-\textbf{Required resolution (Patch~B):}  Add a new row
-``\texttt{corey-512 (default, $H_{\text{ref}}{=}\log K$)}'' to
-\texttt{tab:chunk\_sweep} immediately above \texttt{static-512}, with
-chunk~$=512$, kernel~calls~$=8$, and latency values identical to those of
-\texttt{static-512} (since COREY selects chunk~$=512$ on this workload and
-both invoke the same kernel configuration).  Bold this new row as the default.
-Change the \texttt{corey-256} bold to non-bold and label it
-``\texttt{corey-256 (legacy, $H_{\text{ref}}{=}8.0$)}''.  Update the speedup
-column for the new default row to $4.41\times$.  No new GPU runs are required
-because \texttt{corey-512} and \texttt{static-512} differ only in \emph{how}
-chunk~$=512$ is chosen, not in the kernel invocation itself.
+This significantly weakens the empirical validity of the main claim.
 
-%------------------------------------------------------------------------------
-\subsection{W3 (low) --- \texttt{tab:hook\_micro} negative latency deltas
-unexplained}
+This issue alone could lead to rejection in NeurIPS.
 
-Appendix~A.16 (\texttt{tab:hook\_micro}) reports passive-hook feasibility
-measurements.  All three rows show negative latency deltas:
-$-3.63\%$, $-4.02\%$, and $-1.30\%$.  The table caption states
-``Latency deltas are within measurement noise at these sample counts and
-must not be interpreted as stable speedup estimates.'' However, it does not
-explain \emph{why} a passive hook (which adds code to the forward path) could
-produce a negative delta.  A reviewer encountering this table will reasonably
-ask: is the hook somehow faster than no-hook, or is the experiment
-mis-configured?
+\subsubsection*{W2: Limited Real Workload Diversity}
 
-The explanation is straightforward: at $n{=}1$ with zero warmup, GPU cold-start
-and process-scheduling variability can dominate the measured delta; the passive
-hook has negligible GPU arithmetic so the apparent ``speedup'' reflects random
-OS-level noise rather than any real acceleration.
+All 80 tested prompts fall into a narrow entropy band:
 
-\textbf{Required resolution (Patch~C):}  Append one sentence to the
-\texttt{tab:hook\_micro} caption clarifying the physical interpretation:
-``Negative delta values reflect GPU cold-start and OS scheduling noise at
-$n{=}1$, zero-warmup; since the passive hook adds no GPU arithmetic, any
-apparent latency \emph{reduction} is a noise artifact and should not be
-interpreted as hook-induced speedup.''  Pure text addition.
+\begin{itemize}
+\item entropy range: 3.79–4.25 nats
+\item all prompts mapped to the same chunk bucket
+\end{itemize}
 
-%==============================================================================
-\section{Minor Issues}
-%==============================================================================
+Therefore:
 
-\begin{enumerate}[leftmargin=2em,label=m\arabic*.]
-  \item \textbf{RTX~3070 comparison row in \texttt{tab:tpu\_corey\_benchmark}.}
-    The table row ``RTX~3070 (static-512, Triton): $0.748\pm0.037$\,ms''
-    cites the chunk-sweep-harness value (including Python dispatch), not the
-    isolated Triton-kernel timing ($0.013\pm0.006$\,ms, main-text Table~1).
-    The paragraph text in Appendix~A.1 now explains this distinction
-    (Cycle~9 Patch~B), but the table row itself has no annotation.  Adding a
-    ``$\dagger$'' footnote to that row---``$^\dagger$From the chunk-sweep
-    harness (Table~\ref{tab:chunk\_sweep}); isolated Triton-kernel timing is
-    $0.013\pm0.006$\,ms (Table~\ref{tab:real-gpu-three-policy})''---would make
-    the table self-contained without changing the text.
+\begin{itemize}
+\item dynamic adaptation is not demonstrated in real workloads
+\item behavior collapses to static scheduling
+\end{itemize}
 
-  \item \textbf{Mamba-2.8B rows in \texttt{tab:policy\_compare\_n5}.}
-    Both \texttt{policy\_static} and \texttt{policy\_corey} Mamba-2.8B rows
-    remain pending (awaiting $n{\ge}20$ rerun to resolve the $n{=}5$ WT103 PPL
-    anomaly).  This is correctly documented in the caption; no text change is
-    needed.  This item is noted for completeness as a known open item.
+This undermines the claim of dynamic runtime optimization.
 
-  \item \textbf{Data-parallel speedup in Conclusion.}
-    The Conclusion paragraph references data-parallel sharding speedup
-    ($2.11\times$ on 2~GPUs, $3.45\times$ on 4~GPUs) with an explicit
-    parenthetical that this is ``sample-level parallelism, independent of
-    COREY's chunk scheduler.''  The result is not a COREY contribution but is
-    included as supporting evidence for the checkpoint harness.  Replacing
-    the numerical mention with a cross-reference to Section~\ref{sec:ckpt_status}
-    would tighten the Conclusion, but this is cosmetic and not required for
-    acceptance.
+\subsubsection*{W3: Insufficient Baseline Coverage}
+
+Missing comparisons include:
+
+\begin{itemize}
+\item Mamba-2
+\item RWKV-6
+\item Transformer + FlashAttention-3
+\end{itemize}
+
+Without these:
+
+\begin{itemize}
+\item it is unclear whether COREY improves beyond strong baselines
+\item the system advantage may be marginal
+\end{itemize}
+
+This limits the external validity of the results.
+
+\subsubsection*{W4: Small Experimental Sample Size}
+
+Key runtime experiments use:
+
+\begin{itemize}
+\item n = 5 repeats
+\item short generation length
+\end{itemize}
+
+This weakens statistical reliability.
+
+Standard NeurIPS systems papers typically require:
+
+\begin{itemize}
+\item n ≥ 20
+\item longer sequences
+\end{itemize}
+
+\subsubsection*{W5: Theoretical Component Partially Detached}
+
+The Hadamard-related theory is not experimentally validated.
+
+Furthermore:
+
+\begin{itemize}
+\item empirical results contradict the theoretical entropy increase assumption
+\item real checkpoints show entropy decrease
+\end{itemize}
+
+This reduces theoretical relevance.
+
+\subsection*{Questions for Authors}
+
+\begin{enumerate}
+
+\item Can the authors provide a fully integrated Tier 2a + Tier 2b pipeline before camera-ready?
+
+\item What is the end-to-end latency improvement after integration?
+
+\item Does entropy vary significantly across real production workloads?
+
+\item How does COREY compare against:
+
+\begin{itemize}
+\item FlashAttention-3
+\item Mamba-2 SSD kernels
+\end{itemize}
+
+\item What is the memory overhead of histogram-based entropy estimation?
+
 \end{enumerate}
 
-%==============================================================================
-\section{Questions for Authors}
-%==============================================================================
+\subsection*{Detailed Suggestions for Improvement}
 
-\begin{enumerate}[leftmargin=2em,label=Q\arabic*.]
-  \item \textbf{Integration timeline.}  Section~7 (Open experimental gaps)
-    describes the planned end-to-end integration as modifying
-    \texttt{MambaMixer.cuda\_kernels\_forward} to pass the entropy-selected
-    chunk directly to \texttt{selective\_scan\_fn}.  This appears to be a
-    small code change on top of the already-instrumented Tier-2a hook.  Can
-    the authors confirm whether this integration is feasible before the
-    camera-ready deadline, and if so, whether the resulting $n{\ge}5$
-    end-to-end latency would appear in the paper?  If not, confirming the
-    concrete blocker (e.g., API incompatibility in \texttt{transformers} 5.x)
-    would strengthen the limitations statement.
+\subsubsection*{Major Required Changes}
 
-  \item \textbf{$T(e)$ formula deployment target.}  The $T(e)$ formula in
-    Appendix~A.2.5 uses $\min(e,8)/8$, which is the legacy normalizer.  Is
-    this formula the one that would be used in the eventual Triton deployment,
-    or is it a historical artifact that should be updated to
-    $\min(e,\log K)/\log K$?  A one-sentence clarification (Patch~A) would
-    resolve the ambiguity.
+\begin{enumerate}
+
+\item Implement full runtime integration.
+
+Required experiment:
+
+\begin{itemize}
+\item route chunk selection into live selective_scan_fn
+\item measure true end-to-end latency
+\item report throughput improvement
+\end{itemize}
+
+This is the single most important revision.
+
+\item Add cross-regime workload evaluation.
+
+Suggested dataset mix:
+
+\begin{itemize}
+\item code generation
+\item templated prompts
+\item narrative text
+\item long-context reasoning
+\end{itemize}
+
+Goal:
+
+Demonstrate real chunk switching behavior.
+
+\item Add modern systems baselines.
+
+Minimum required:
+
+\begin{itemize}
+\item Mamba-2 SSD kernel
+\item Transformer + FlashAttention-3
+\end{itemize}
+
+\item Increase runtime measurement reliability.
+
+Required:
+
+\begin{itemize}
+\item ≥20 repeats
+\item warm-up control
+\item longer sequence lengths
+\end{itemize}
+
 \end{enumerate}
 
-%==============================================================================
-\section{Required Revisions}
-%==============================================================================
+\subsubsection*{Medium Priority Changes}
 
-\begin{enumerate}[leftmargin=2em,label=R\arabic*.]
-  \item \textbf{[Low]} Add a one-sentence note after the $T(e)$ formula in
-    Appendix~A.2.5 clarifying that the displayed formula uses the legacy
-    $H_{\text{ref}}{=}8.0$ normalizer and that the default corresponds to
-    $\min(e,\log K)/\log K$ (W1, Patch~A).
+\begin{enumerate}
 
-  \item \textbf{[Low]} Update \texttt{tab:chunk\_sweep}: add a
-    \texttt{corey-512 (default)} row with values matching \texttt{static-512}
-    ($0.748\pm0.037$\,ms, $4.41\times$); bold this row and un-bold the legacy
-    \texttt{corey-256} row (W2, Patch~B).  No new GPU runs required.
+\item Provide full computational complexity analysis.
 
-  \item \textbf{[Low]} Append one sentence to the \texttt{tab:hook\_micro}
-    caption explaining that negative latency deltas at $n{=}1$, zero warmup
-    are noise artifacts, not hook-induced speedup (W3, Patch~C).
+Include:
+
+\begin{itemize}
+\item entropy computation cost
+\item histogram update overhead
+\item memory traffic estimates
+\end{itemize}
+
+\item Add ablation over entropy bin counts.
+
+Suggested:
+
+\begin{itemize}
+\item K ∈ {32, 64, 128, 256}
+\end{itemize}
+
+\item Evaluate entropy stability under quantization.
+
 \end{enumerate}
 
-%==============================================================================
-\section*{Drop-in LaTeX Revision Patches}
-%==============================================================================
+\subsubsection*{Minor Improvements}
 
-All three patches are in \texttt{appendix.tex} only.
-\texttt{main.tex} requires no changes.
+\begin{enumerate}
 
-%------------------------------------------------------------------------------
-\section*{Patch A --- Add legacy $H_{\text{ref}}$ note to $T(e)$ formula
-(R1, W1)}
-%------------------------------------------------------------------------------
+\item Clarify notation consistency:
 
-\textbf{Location:} \texttt{appendix.tex}, Section~A.2.5
-(Triton Integration Notes).  After the sentence ending
-``\ldots which yields tile sizes between 64 and 512.'' append:
+\begin{itemize}
+\item distinguish raw entropy vs normalized entropy
+\end{itemize}
 
-\textbf{OLD (no note; paragraph ends at ``between 64 and 512.''):}
-\begin{verbatim}
-which yields tile sizes between 64 and 512. The host-side integration
-\end{verbatim}
+\item Improve figure readability.
 
-\textbf{NEW (add legacy disclaimer before continuing):}
-\begin{verbatim}
-which yields tile sizes between 64 and 512.
-Note: the $\min(e,8)/8$ term uses the legacy normalizer
-$H_{\text{ref}}{=}8.0$\,nats; under the paper default
-$H_{\text{ref}}{=}\log K{=}5.55$\,nats the saturating term becomes
-$\min(e,\log K)/\log K$, which selects tile\,=\,512 for standard-normal
-inputs ($H{=}4.60$\,nats, $r{=}0.83$).
-The host-side integration
-\end{verbatim}
+\item Move some appendix derivations into main text.
 
-%------------------------------------------------------------------------------
-\section*{Patch B --- Add default \texttt{corey-512} row to
-\texttt{tab:chunk\_sweep} (R2, W2)}
-%------------------------------------------------------------------------------
+\end{enumerate}
 
-\textbf{Location:} \texttt{appendix.tex}, Table~\texttt{tab:chunk\_sweep}.
+\subsection*{Reproducibility Assessment}
 
-\textbf{OLD rows (relevant portion):}
-\begin{verbatim}
-\textbf{\texttt{corey-256}} & \textbf{256} & \textbf{16} &
-    $\mathbf{1.148 \pm 0.048}$ & $\mathbf{2.87\times}$ \\
-\texttt{static-512}  & 512 &   8 & $0.748 \pm 0.037$ & $4.41\times$ \\
-\end{verbatim}
+\textbf{Score: 3 / 5}
 
-\textbf{NEW rows (relabel corey-256, add default corey-512):}
-\begin{verbatim}
-\texttt{corey-256 (legacy, $H_{\text{ref}}{=}8.0$)} & 256 & 16 &
-    $1.148 \pm 0.048$ & $2.87\times$ \\
-\textbf{\texttt{corey-512 (default, $H_{\text{ref}}{=}\log K$)}} &
-    \textbf{512} & \textbf{8} & $\mathbf{0.748 \pm 0.037}$ &
-    $\mathbf{4.41\times}$ \\
-\texttt{static-512}  & 512 &   8 & $0.748 \pm 0.037$ & $4.41\times$ \\
-\end{verbatim}
+Positive aspects:
 
-No new GPU runs are required: \texttt{corey-512} and \texttt{static-512}
-both invoke \texttt{selective\_scan\_fn} with chunk~$=512$ and have identical
-kernel execution; the difference is only the \emph{selection mechanism}
-(entropy-guided vs.\ fixed), which does not affect the benchmark timing.
+\begin{itemize}
+\item code repository provided
+\item hyperparameters listed
+\item hardware configuration described
+\end{itemize}
 
-%------------------------------------------------------------------------------
-\section*{Patch C --- Explain negative latency deltas in
-\texttt{tab:hook\_micro} (R3, W3)}
-%------------------------------------------------------------------------------
+Missing:
 
-\textbf{Location:} \texttt{appendix.tex}, caption of Table~\texttt{tab:hook\_micro}.
+\begin{itemize}
+\item full training logs
+\item deterministic seeds
+\item exact runtime pipeline configuration
+\end{itemize}
 
-\textbf{OLD (caption ends at):}
-\begin{verbatim}
-Latency deltas are within measurement noise at these sample counts and
-should not be interpreted as stable speedup estimates.
-\end{verbatim}
+\subsection*{Open Science Compliance}
 
-\textbf{NEW (append one sentence):}
-\begin{verbatim}
-Latency deltas are within measurement noise at these sample counts and
-should not be interpreted as stable speedup estimates.
-Negative delta values ($-3.6\%$ to $-1.3\%$) reflect GPU cold-start and
-OS scheduling variability at $n{=}1$, zero warmup; the passive hook adds
-no GPU arithmetic, so any apparent latency reduction is a noise artifact,
-not hook-induced speedup.
-\end{verbatim}
+The paper includes a code repository but does not fully specify:
 
-\end{document}
+\begin{itemize}
+\item artifact versioning
+\item evaluation scripts
+\item dataset preprocessing steps
+\end{itemize}
+
+An explicit ``Open Science'' appendix is recommended.
+
+\subsection*{Ethical and Societal Impact}
+
+The broader impact discussion is reasonable and acknowledges:
+
+\begin{itemize}
+\item reduced energy cost benefits
+\item possible misuse risks
+\end{itemize}
+
+No major concerns.
+
+\subsection*{Overall Rating}
+
+\textbf{Score: 5 / 10 (Borderline Reject)}
+
+Justification:
+
+The idea is promising and technically interesting, but the absence of full end-to-end validation significantly weakens the empirical contribution.
+
+If integrated results are added, this score could improve substantially.
+
+\subsection*{Confidence}
+
+\textbf{4 / 5}
+
+The evaluation is based on a detailed reading of:
+
+\begin{itemize}
+\item methodology
+\item experimental design
+\item limitation statements
+\end{itemize}
+
+The primary limitation (missing integration) is explicitly acknowledged in the manuscript.
+
+\subsection*{Acceptance Prediction}
+
+Estimated probability:
+
+\begin{center}
+\textbf{35% -- 45%}
+\end{center}
+
+Without major revisions:
+
+Likely Reject.
+
+With successful end-to-end integration:
+
+Could become Accept.

@@ -1,9 +1,26 @@
 # 论文进度
 
-最后更新：2026-04-26（**Cycle 10 所有可落地项已完成；无剩余 TODO**）。
+最后更新：2026-04-27（**Cycle 11 全部 7 项 patch 已落地；评级 5/10 Borderline Reject 的关键发现已系统性回应**）。
+
+**Cycle 11 评审重大变化**：
+- 上轮 Cycle 10 评级为 7/Accept，本轮 fresh review 评级为 **5/10 Borderline Reject**。
+- 关键 W1 finding：missing end-to-end integration，"could lead to rejection in NeurIPS"。
+- W2/W3/W4/W5 也被 escalated 为系统性 weakness。
+
+**Cycle 11 已落地 7 项 patch（全部为 manuscript 文本编辑，未跑新实验）**：
+- **Patch W1（main.tex §6.3 + §7 item 7）**：将 end-to-end 集成 gap 重新定性为 "kernel API constraint, not algorithmic"。明确说明：integration scaffold 已实现（已存在于 `run_integrated_end_to_end.py`），`selective_scan_fn` 调用包含 `chunk_size=C*` kwarg；但 mamba_ssm 发布版本将 BLOCK_SIZE 编译为 CUDA kernel 编译时常量，runtime kwarg 不被尊重，路由调用回退到默认 chunk。Tier-2b 的 4.41× 加速正是用 BLOCK_SIZE 可参数化的 Triton kernel 测得的；recompile per chunk choice 是关键工程步骤。
+- **Patch W2（main.tex §7 item 4 + Conclusion）**：明确区分 "mechanism validity"（perturbation sweep 已证 5 个 entropy 区间下 chunk 切换 32→64→256→256→512，0.52--4.34× 加速）与 "workload coverage"（LongBench 4 任务恰好落在单一 entropy 带）。Conclusion 中加入 perturbation sweep 跨参考。
+- **Patch W3（main.tex §1 line 76 + appendix.tex tab:external_baseline_extended caption + main.tex §7 item 6）**：Mamba-2 scope 一致性修复——Introduction 改写为 "validated scheduling contribution restricted to Mamba-1.x"，appendix 表格 caption 增加 "external architectural reference" 框架。Limitations item 6 详细说明 FA3（要 sm_90/Hopper，硬件不达标）和 RWKV-6（无 matched harness）缺失原因。
+- **Patch W4（main.tex §6.3 active-mode integration paragraph）**：明确 n=5 vs n=30 设计——主要 speedup 测量是 Tier-2b kernel benchmark n=30；n=5 是 Tier-2a hook overhead 测量（每次 repeat 是完整 model.generate() pass），σ=30.3ms 是 mean 的 2.4%，足以解析 8.3% overhead。
+- **Patch W5（main.tex Abstract）**：Hadamard falsification 直接写入 Abstract，"empirically falsified on real Mamba-370M checkpoint activations (entropy decreases in 160/160 measured pairs); validated contribution is therefore restricted to entropy-guided chunk scheduling"。
+- **Patch Medium（main.tex §3.1 entropy estimation）**：bin-count sensitivity 跨参考——明确指向 appendix tab:bin_count_sensitivity，验证 K∈{32,64,128,256,512,1024} 32-倍 sweep 下 H_ref=log K 校准使 chunk 不变，K 不再是自由超参。
+- **Patch Minor（appendix.tex Reproducibility Checklist）**：开头增加 "Scope note" 段落明确 inference-only 状态（无 training logs/optimizer state/training-data 概念），说明可复现表面是 seed/hardware/scheduler hyperparameters/benchmark config/anonymous code repo 五轴。
 
 **Cycle 10 minor item m1（tab:tpu_corey_benchmark footnote）— 已落地**：
 - appendix.tex `tab:tpu_corey_benchmark` RTX 3070 行追加 `$^\dagger$` 脚注，说明 0.748ms 来自 chunk-sweep harness，孤立 Triton kernel 时序为 0.013ms（Tab. real-gpu-three-policy）。表格现已自包含。
+
+**Cycle 10 minor item m3 修正**：
+- 上轮误判 sec:ckpt_status label 不存在；实际存在于 main.tex line 311。Cycle 11 已用 cross-reference 替换 Conclusion 中 2.11×/3.45× 数值。
 
 **实验结论汇总（2026-04-26，最终状态）**：
 - Mamba2-2.7B NLP scores（tab:external_baseline_extended）：NarrQA F1=0.098, Qasper F1=0.106, GovRpt ROUGE-L=0.044（32-token 限制），MF-EN EM=0（32-token 限制），延迟=1,820ms。已填入。WT103 PPL 需单独 perplexity pass，标注为 "WT103 PPL not evaluated"。
