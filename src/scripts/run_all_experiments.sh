@@ -21,7 +21,7 @@ for subset in narrativeqa qasper gov_report multifieldqa_en; do
 done
 
 # 3. End-to-end Fused Kernel Benchmark（不依赖数据集）
-python src/experiments/run_fused_kernel_benchmark.py --num-ops 8 --device cuda
+python3 src/experiments/run_fused_kernel_benchmark.py --num-ops 8 --device cuda
 
 # 4. policy_corey/mamba-2.7B Ablation Sweep (LongBench四子集)
 for subset in narrativeqa qasper gov_report multifieldqa_en; do

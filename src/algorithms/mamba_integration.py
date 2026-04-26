@@ -68,7 +68,7 @@ class ModelSpec:
 class RuntimeConfig:
     device: str = "cuda"
     dtype: str = "float16"
-    max_length: int = 8192
+    max_length: int = 2048
     batch_size: int = 1
     quantization: QuantizationConfig = field(default_factory=QuantizationConfig)
 
@@ -337,6 +337,9 @@ class HuggingFaceMambaBackend(MambaBackend):
             max_length=self.runtime_config.max_length,
         )
         encoded = {key: value.to(self.runtime_config.device) for key, value in encoded.items()}
+        # Ensure input_ids are Long (some tokenizers return float for very long inputs)
+        if "input_ids" in encoded:
+            encoded["input_ids"] = encoded["input_ids"].long()
 
         entropy_before: float | None = None
         entropy_after: float | None = None
@@ -405,6 +408,8 @@ class HuggingFaceMambaBackend(MambaBackend):
             max_length=self.runtime_config.max_length,
         )
         encoded = {key: value.to(self.runtime_config.device) for key, value in encoded.items()}
+        if "input_ids" in encoded:
+            encoded["input_ids"] = encoded["input_ids"].long()
 
         max_new_tokens = max(request.max_new_tokens for request in requests)
         do_sample = any(request.do_sample for request in requests)
@@ -475,6 +480,8 @@ class HuggingFaceMambaBackend(MambaBackend):
             max_length=self.runtime_config.max_length,
         )
         encoded = {key: value.to(self.runtime_config.device) for key, value in encoded.items()}
+        if "input_ids" in encoded:
+            encoded["input_ids"] = encoded["input_ids"].long()
         with self.torch.no_grad():
             outputs = self.model(**encoded, labels=encoded["input_ids"])
         return float(self.torch.exp(outputs.loss).item())

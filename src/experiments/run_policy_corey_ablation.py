@@ -15,6 +15,7 @@ def main():
     parser = argparse.ArgumentParser(description="Ablation sweep for policy_corey/policy_static on Mamba-2.8B.")
     parser.add_argument("--model-id", type=str, default="benchang1110/mamba2-2.7b-hf", help="Model ID.")
     parser.add_argument("--n", type=int, default=20, help="Number of ablation runs (only used if --prompt is given).")
+    parser.add_argument("--max-prompts", type=int, default=None, help="Cap on prompts loaded from --data-file (default: all).")
     parser.add_argument("--policy", type=str, choices=["corey", "static"], default="corey", help="Policy to test.")
     parser.add_argument("--prompt", type=str, default=None, help="Prompt text (overridden by --data-file if provided).")
     parser.add_argument("--data-file", type=str, default=None, help="Path to JSONL file with prompts (LongBench test set).")
@@ -43,14 +44,23 @@ def main():
         with open(args.data_file, "r", encoding="utf-8") as f:
             for line in f:
                 item = json.loads(line)
-                # Try to extract the prompt field (LongBench format)
-                if "input" in item:
-                    prompt = item["input"]
+                # Build prompt from LongBench fields; gov_report-style tasks have
+                # an empty "input" with the document in "context".
+                input_text = item.get("input", "").strip()
+                context_text = item.get("context", "").strip()
+                if input_text:
+                    prompt = input_text
+                elif context_text:
+                    prompt = context_text
                 elif "question" in item:
                     prompt = item["question"]
                 else:
                     prompt = str(item)
+                if not prompt.strip():
+                    continue
                 prompts.append(prompt)
+        if args.max_prompts is not None:
+            prompts = prompts[:args.max_prompts]
         print(f"[INFO] Loaded {len(prompts)} prompts from {args.data_file}")
     elif args.prompt is not None:
         prompts = [args.prompt] * args.n

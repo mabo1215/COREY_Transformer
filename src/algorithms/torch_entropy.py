@@ -24,6 +24,8 @@ def activation_entropy(
 
 
 def _hist_entropy(values: torch.Tensor, num_bins: int, eps: float) -> torch.Tensor:
+    if values.numel() == 0:
+        return torch.tensor(0.0, dtype=torch.float32)
     value_min = values.min()
     value_max = values.max()
     if (value_max - value_min).abs() < eps:

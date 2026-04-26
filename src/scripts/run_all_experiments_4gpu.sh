@@ -35,9 +35,9 @@ PYTHONPATH_ROOT="${PYTHONPATH_ROOT:-src}"
 
 # Micromamba / conda env for the 4-card server (override if needed).
 # Set USE_MICROMAMBA=0 to skip micromamba activation (use current env instead).
-USE_MICROMAMBA="${USE_MICROMAMBA:-0}"
-MAMBA_ROOT_PREFIX="${MAMBA_ROOT_PREFIX:-/home/mabo1215/.adama-micromamba}"
-ENV_NAME="${ENV_NAME:-adama-cuda128}"
+USE_MICROMAMBA="${USE_MICROMAMBA:-1}"
+MAMBA_ROOT_PREFIX="${MAMBA_ROOT_PREFIX:-/home1/mabo1215/.adama-micromamba}"
+ENV_NAME="${ENV_NAME:-quamba-py310}"
 MM_CANDIDATES=(
     "${MM:-}"
     "/home1/mabo1215/.corey-wsl-tools/bin/micromamba"
@@ -61,7 +61,8 @@ _python() {
         if [[ -z "$MM" ]]; then
             echo "[ERROR] micromamba not found; set MM=/path/to/micromamba" >&2; exit 127
         fi
-        MAMBA_ROOT_PREFIX="$MAMBA_ROOT_PREFIX" "$MM" run -n "$ENV_NAME" python "$@"
+        MAMBA_ROOT_PREFIX="$MAMBA_ROOT_PREFIX" PYTHONPATH="${REPO_ROOT}/${PYTHONPATH_ROOT}" \
+            "$MM" run -n "$ENV_NAME" python "$@"
     else
         PYTHONPATH="${REPO_ROOT}/${PYTHONPATH_ROOT}" python "$@"
     fi
@@ -129,6 +130,7 @@ run_exp3() {
                 "${REPO_ROOT}/src/experiments/run_policy_corey_ablation.py" \
                 --model-id "$MODEL_ID" \
                 --n "$MAX_SAMPLES" \
+                --max-prompts "$MAX_SAMPLES" \
                 --policy "$policy" \
                 --data-file "${REPO_ROOT}/${DATA_BASE}/${subset}/test.jsonl" \
                 --device cuda \

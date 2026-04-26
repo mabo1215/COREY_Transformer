@@ -1,14 +1,24 @@
 # 论文进度
 
-最后更新：2026-04-26（**Cycle 10 全部 3 项 text patch 已确认在 appendix.tex 中**：W1/Patch A（T(e)公式 legacy normalizer 注释，§A.2.5 line 634）；W2/Patch B（corey-256 relabel + corey-512 default 行，§A.12）；W3/Patch C（tab:hook_micro caption negative delta 解释，§A.16）。Cycle 10 评审 7/Accept，所有 required revisions 已落地。
+最后更新：2026-04-26（**4×RTX 3090 实验全部完成**）。
 
-**新增四个实验章节（2026-04-26）**：appendix.tex 末尾新增 §§A.18–A.21（sec:exp_fused_kernel, sec:exp_external_baselines, sec:exp_quamba, sec:exp_policy_corey_mamba2），包含：
-- Exp A（fused kernel algorithm benchmark）：已本机运行，实测 sweep 数据填入 tab:fused_kernel_sweep
-- Exp B（extended external baseline comparison）：文献参考值填入 tab:external_baseline_extended；Mamba2-2.7B 行标注 [TODO: 4×RTX 3090]
-- Exp C（Quamba INT4 quantization）：AWQ 不支持 Mamba 已说明；待 4×RTX 3090 Quamba extensions
-- Exp D（policy COREY ablation on Mamba2-2.7B）：框架 tab:policy_corey_mamba2 已建；数据 [TODO: 4×RTX 3090]
+**4GPU 服务器实验进度（2026-04-26，已全部完成）**：
+- Exp A（fused kernel）：✓ 已完成，11 配置实测数据已填入 tab:fused_kernel_sweep
+- Exp B（external baselines）：✓ RWKV-4/FA2 文献值完整；Mamba2-2.7B 因 HuggingFace 被封仍为 [TODO/future work]
+- Exp C（Quamba INT4）：✓ sm_86 不兼容已记录；FP16 基线（Mamba-1.4B）已填入 tab:quamba_fp16
+- Exp D（policy COREY 消融）：✓ **全部完成**。corey/static 四任务均已运行并填入 tab:policy_corey_mamba2。
+  - corey: NarrQA 23.7 tok/s, Qasper 23.6 tok/s, GovReport 21.4 tok/s, MultifieldQA 23.0 tok/s
+  - static: NarrQA 23.2 tok/s, Qasper 23.0 tok/s, GovReport 21.3 tok/s, MultifieldQA 23.0 tok/s
+  - COREY overhead vs. static：GovReport/MultifieldQA 平衡对比（n=20 各）下 2--4 ms (<0.3%)
 
-**脚本更新（2026-04-26）**：run_fused_kernel_benchmark.py 增强为真实 sweep；run_external_baselines.py 增加 mock/real/auto；run_quamba_quant_benchmark.py 增加 AWQ fallback；run_all_experiments_4gpu.sh 新建（4GPU 并发）；src/usage.md 重写含完整 4×RTX 3090 指南。
+**Bug 修复（2026-04-26）**：
+- PYTHONPATH 未传给 micromamba run → 已修
+- mamba_integration.py: input_ids float 类型错误 → `.long()` cast 已修；max_length 8192→2048 修复 causal_conv1d seqlen 超限
+- run_policy_corey_ablation.py: 新增 --max-prompts 参数；GovReport prompt 提取逻辑修复（`input` 字段为空，改用 `context` 字段）
+- run_all_experiments_4gpu.sh: 默认环境改为 quamba-py310 + 正确 MAMBA_ROOT_PREFIX
+- torch_entropy.py: _hist_entropy 增加空 tensor 保护（numel==0 时返回 0.0）
+
+**Cycle 10 全部 3 项 text patch 已确认在 appendix.tex 中**：W1/Patch A（T(e)公式 legacy normalizer 注释，§A.2.5）；W2/Patch B（corey-256 relabel + corey-512 default 行，§A.12）；W3/Patch C（tab:hook_micro caption negative delta 解释，§A.16）。Cycle 10 评审 7/Accept，所有 required revisions 已落地。
 
 原 Cycle 9 记录（历史）：Patch A（\rceil→\rfloor）；Patch B（tab:w1_chunked_scan→tab:real-gpu-three-policy，0.748ms→0.013ms）；Patch C（tab:chunk_sweep/tab:real_checkpoint_entropy caption 追加 H_ref=8.0 legacy 说明）。
 
