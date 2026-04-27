@@ -634,6 +634,17 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 未修改或部分修改（新一轮独立评审 / Borderline Reject）
 
+**NeurIPS 2026 三大硬性要求未完成项：**
+
+1. **Tier-2a → Tier-2b end-to-end 闭环与 speedup**  
+  - 当前仅实现了分离的 inline scheduling（Tier-2a）和 kernel-level chunked scan（Tier-2b），未将 runtime chunk 选择真正路由进 scan kernel，未测量真实 end-to-end speedup。主文和附录均已声明该 gap 为 future work，需补充工程闭环和端到端加速测量。
+
+2. **真实 workload entropy diversity / dynamic scheduling**  
+  - 80 条 LongBench prompt entropy 全部落在 chunk=256，未出现 low/medium/high entropy regime 切换。dynamic chunk switching 仅在 synthetic sweep 中观测到，未在真实 workload 观测到。主文和附录均已声明该 gap，需补充跨 regime 的真实 workload 实验。
+
+3. **现代 baseline（Mamba-2 SSD, FlashAttention-3）**  
+  - 缺少 Mamba-2 SSD、FlashAttention-3 等现代 baseline 的同台对比，主文 Limitations 已声明该 gap，需补充 matched benchmark 或在主文更明确声明。
+
 （本节已清空——所有 79–83 及 V5 T1–T6 任务均已落地，见下方已全部修改区。）
 
 '''bash
