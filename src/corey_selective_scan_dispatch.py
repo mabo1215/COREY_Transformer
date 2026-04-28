@@ -55,6 +55,7 @@ def _runtime_cuda_support() -> tuple[bool, str | None]:
     """
 
     try:
+        import torch  # noqa: F401
         import selective_scan_cuda  # type: ignore
     except Exception as exc:  # pragma: no cover - depends on remote CUDA env
         return False, f"selective_scan_cuda import failed: {exc!r}"

@@ -1,6 +1,6 @@
 ﻿# 论文进度
 
-最后更新：2026-04-28（H800 有卡 smoke / full closure / enhancement runs 已完成并同步回本地；论文已回填 H800 n=20 integration、164-prompt diversity negative result、50-sample FA3/Mamba2 baselines；Borderline Reject 剩余项已重分类）。
+最后更新：2026-04-29（H800 有卡 smoke / full closure / enhancement runs 已完成并同步回本地；论文已回填 H800 n=20 integration、164-prompt diversity negative result、50-sample FA3/Mamba2 baselines、H800 W1 kernel supplement；Borderline Reject 剩余项已重分类为“唯一硬阻塞 + future work”）。
 
 ## 2026-04-28 H800 有卡实验完成与论文回填
 
@@ -13,6 +13,7 @@
 - **H800 Tier-2a integration overhead（替换旧 n=5）**：Mamba-370M，NVIDIA H800 PCIe，CUDA 12.8，PyTorch 2.8.0，122-token prompt，32 new tokens，warmup=2，`n=20`。Passive `875.0±8.7 ms`；active hook only `895.5±4.6 ms`（+2.3%）；active+routed-call scaffold `893.1±5.0 ms`（+2.1%）。`chunk_size_kwarg_supported=false`，仍是 integration overhead，不是端到端 speedup。
 - **H800 workload diversity 增强负结果**：正式 closure 84 prompts 仍基本坍缩到 `chunk=256`；增强 run 扩到 164 prompts，其中额外 80 prompts（code/log/table/repetition 各 20）共 7680 layer calls 全部选择 `chunk=256`。已在 main Limitations 与 appendix 新表 `tab:h800_diversity_extra` 回填，作为 workload coverage limitation 的更强证据。
 - **H800 modern baseline 50-sample repeat**：Pythia-410M+FA3（50 samples/task）NarrQA `0.010640`, Qasper `0.021142`, GovReport `0.015915`, MF-EN `0.0`; latency `2313.7 / 1691.9 / 4574.5 / 1136.2 ms`，mean `2429 ms`。Mamba2-2.7B SSD（50 samples/task）NarrQA `0.034621`, Qasper `0.026696`, GovReport `0.037223`, MF-EN `0.0`; latency `4245.5 / 2620.6 / 7463.9 / 2192.8 ms`，mean `4131 ms`。Appendix external-baseline table 已改用 50-sample H800 行。
+- **H800 W1 kernel supplement（2026-04-29 回填）**：新增 Appendix `sec:h800_w1_kernel_supplement` / `tab:h800_w1_supplement`，并在 main abstract、Contributions、W1 结果段、Limitations、Conclusion 中引用。单卡 H800 上 COREY chunk-256 相对 Static-64：FP16 L=4096 为 `3.915×`，BF16 L=4096 为 `4.035×`，FP16 L=8192 为 `3.898×`；Static-512 仍是 sweep oracle。此项增强 Hopper-class kernel-level evidence，但不替代 true end-to-end speedup。
 
 `docs/revision_suggestions.tex` 对应状态复核：
 - W1 Missing end-to-end integration：**仍未完成 / 唯一硬阻塞**。没有真实 `DISPATCH_MODULE`，`multiblock_dispatch` probe 仍为 blocked；没有 chunk-parameterized live scan kernel 的端到端 speedup。
@@ -21,12 +22,12 @@
 - W4 Small experimental sample size：**部分改善**。H800 integration 从 n=5 提升到 n=20；modern baselines 从 20 samples/task 提升到 50 samples/task；kernel benchmark仍 n=100。
 - W5 Theoretical component partially detached：**维持已处理状态**。Hadamard 已明确 falsified/prospective，不再作为系统贡献。
 
-## H800 可扩展实验计划（仅列计划，未执行）
+## H800 可扩展实验计划与执行状态
 
 检查 `paper/main.tex` 与 `paper/appendix.tex` 后，仍主要依赖 RTX 3070/3090/T4 的实验如下；若后续再次租 H800，可按优先级扩展：
 
-1. **Tier-2b W1 三策略 selective-scan / chunk-sweep / perturbation sweep 上 H800**  
-   当前主表 `tab:real-gpu-three-policy`、`tab:chunk_sweep`、`tab:perturbation` 主要是 RTX 3070/3090/T4。H800 可补同一 `seq_len=4096, dim=1024, d_state=16, FP16/BF16, n=30` 的 Static-64 / COREY legacy / COREY calibrated / Static-512 timing，形成 Hopper-class kernel-level evidence。对应脚本候选：`src/experiments/run_w1_triton_triplet.py`、`src/experiments/run_w1_chunk_sweep.py`、`src/experiments/run_w1_perturbation.py`、`src/experiments/run_triton_selective_scan_benchmark.py`。
+1. **Tier-2b W1 三策略 selective-scan / chunk-sweep / perturbation sweep 上 H800 — 已完成并回填**  
+   已补 `seq_len=4096/8192, dim=1024, d_state=16, FP16/BF16, n=30` 的 Static-64 / COREY chunk-256 / Static-512 oracle timing，并回填到 `paper/main.tex` 与 `paper/appendix.tex`。对应输出：`src/outputs/h800_single_w1_20260428_200216/`、`src/outputs/h800_single_w1_extra_20260428_201044/`。
 2. **H800 hook microbenchmark 替代 n=1 RTX 3070/3090 feasibility row**  
    Appendix `tab:hook_micro` 仍是 RTX 3070 n=1 / RTX 3090 n=1/3 feasibility check。H800 可用 `run_active_hook_real_benchmark.py` 或 `run_active_hook_integration.py` 做 n≥20 micro/inline split，减少“measurement noise”措辞。
 3. **Checkpoint baseline Mamba-1.x 迁移到 H800**  
@@ -54,6 +55,23 @@
 2. 将 `n_chunks = (seqlen + chunk_size - 1) / chunk_size`，并把 launch 分支改为按 `chunk_size` 而非 `seqlen` 选择 `selective_scan_fwd_launch<...>`；候选映射：128 -> `<32,4>`，256 -> `<32,8>`，512 -> `<32,16>`，1024 -> `<64,16>`，2048 -> `<128,16>`。
 3. 暴露 patched symbol 为 `selective_scan_cuda.fwd_with_chunk_size(...)`，使 `src.corey_selective_scan_dispatch` 的 `runtime_cuda` backend 自动接管。
 4. 在 H800 上先跑 `run_integrated_multiblock_dispatch.py --dispatch-module src.corey_selective_scan_dispatch`，确认 `eligible_for_w1_speedup=true` 后再跑 full `run_integrated_end_to_end.py`。
+
+## 2026-04-28 H800 单卡 W1 增强实验
+
+远端 H800 有卡模式下新增输出已同步回本地：
+- `src/outputs/h800_single_w1_20260428_200216/`
+- `src/outputs/h800_single_w1_extra_20260428_201044/`
+
+结论：
+- **DISPATCH_MODULE probe**：`src.corey_selective_scan_dispatch` 可加载，但 `selective_scan_cuda` 仍未暴露 `fwd_with_chunk_size` / `fwd_chunked` / `fwd_runtime_chunk`；`eligible_for_w1_speedup=false`，W1 端到端闭环仍 blocked。probe 不会把 emulation 误记为可用 speedup。
+- **Integrated wrapper**：`run_integrated_end_to_end.py` 与 `run_active_hook_integration.py` 在本次有卡实例中进入模型加载阶段后长期无 GPU 占用/无日志，已手动终止以避免 H800 空转；此前已有 H800 n=20 integration overhead 结果可继续使用。
+- **H800 FP16 4096 triplet**：Static-64 `2.2994±0.0609 ms`；COREY chunk-256 `0.5874±0.0055 ms`；COREY vs Static-64 `3.915×`，vs policy-off `485.8×`。
+- **H800 BF16 4096 triplet**：Static-64 `2.3427±0.1101 ms`；COREY chunk-256 `0.5806±0.0041 ms`；COREY vs Static-64 `4.035×`，vs policy-off `560.8×`。
+- **H800 FP16 8192 triplet**：Static-64 `4.5480±0.0165 ms`；COREY chunk-256 `1.1669±0.0046 ms`；COREY vs Static-64 `3.898×`，vs policy-off `511.6×`。
+- **H800 static oracle sweeps**：在 FP16/BF16 4096 与 FP16 8192 上，Static-512 仍是 sweep oracle（约 `0.2996 ms`, `0.3020 ms`, `0.5862 ms`）；COREY chunk-256 比 oracle 慢约 `90--94%`，但稳定比 Static-64 快约 `3.9--4.0×`。
+- **H800 perturbation sweeps**：FP16/BF16 均复现 entropy-to-chunk 单调性：Uniform 选 512，Normal/Laplace 选 256，Sparse10 选 64，Sparse2 选 32；Uniform 相对 Static-64 约 `7.45×`，Normal/Laplace 约 `3.9×`，Sparse10 约持平，Sparse2 因保守选 32 慢于 Static-64。
+
+这些结果可以增强 H800/Hopper-class kernel-level evidence，但仍不能替代 W1 的 true end-to-end speedup。真正消除 W1 blocker 仍需 patched CUDA/C++ `selective_scan_cuda.fwd_with_chunk_size(...)`。
 
 ## 2026-04-28 后续闭环实验代码准备
 
@@ -739,15 +757,25 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 未修改或部分修改（新一轮独立评审 / Borderline Reject）
 
-**NeurIPS 2026 三大硬性要求复核状态：**
+**NeurIPS 2026 硬性要求复核状态：**
 
 1. **Tier-2a → Tier-2b end-to-end 闭环与 speedup**  
   - **仍未完成 / 保留为唯一硬阻塞。** 当前已完成 H800 inline scheduling scaffold、active+routed-call overhead（n=20）和 multi-BLOCK dispatch probe；但未提供真实 recurrence-preserving `DISPATCH_MODULE`，runtime chunk 选择仍未真正路由进 live scan kernel，未测量真实 end-to-end speedup。主文和附录均已声明该 gap 为 future work，需补充 chunk-parameterized live scan kernel 或真实 multi-BLOCK dispatch module。
 
-当前本节唯一保留的硬性未完成项是 **W1 chunk-parameterized live scan kernel / true end-to-end speedup**。
+已从本节移出的完成项：W2 real workload diversity（H800 84/164 prompt negative result）、W3 modern baselines（H800 FA3 / Mamba2 SSD / FA3 raw kernel）、W4 sample-size improvement（integration n=20、baselines 50 samples/task）、H800 W1 kernel supplement（FP16/BF16 triplet、oracle、perturbation）。
+
+当前本节唯一保留的硬性未完成项是 **W1 chunk-parameterized live scan kernel / true end-to-end speedup**。其余未扩展项均属于 broader future work，不再作为 Borderline Reject 本轮阻塞项跟踪。
 
 ---
 
 ## 遗留问题
 
-唯一剩余阻塞项：真实 chunk-routed live scan kernel。没有 `DISPATCH_MODULE` 或可 runtime/compile-time 参数化的 selective-scan kernel 前，不能声称 Tier-2a/Tier-2b 已闭环。其余 W2/W3/W4 已有 H800 结果回填论文；后续 H800 可扩展实验计划见文件顶部“2026-04-28 H800 可扩展实验计划”。
+**已完成 / 已移出本节：**
+- W2 real workload diversity：已完成 H800 84-prompt closure 与 164-prompt stress mix，结论为负（真实 prompts 仍集中到 chunk-256）；论文已作为 limitation 写入。
+- W3 modern baselines：已完成 H800 FA3 raw-kernel、Pythia-410M+FA3 50-sample/task、Mamba2-2.7B SSD 50-sample/task；RWKV-6 / 更大 harmonized suite 保留为 broader future work，不再是本轮硬阻塞。
+- W4 sample size：已将 H800 integration 提升到 `n=20`，modern baselines 提升到 `50 samples/task`；kernel sweeps 保持 `n=30`。
+- H800 W1 kernel supplement：已完成单卡 H800 FP16/BF16 4096 与 FP16 8192 triplet / oracle / perturbation，并回填论文。
+
+**仍 block：**
+- 唯一剩余硬阻塞项是真实 chunk-routed live scan kernel。没有 `DISPATCH_MODULE` 或可 runtime/compile-time 参数化的 selective-scan kernel 前，不能声称 Tier-2a/Tier-2b 已闭环，也不能声称 full checkpoint-inference speedup。
+- 当前 `src.corey_selective_scan_dispatch` wrapper 已能加载并安全探测，但远端 stock `selective_scan_cuda` 没有 `fwd_with_chunk_size` / `fwd_chunked` / `fwd_runtime_chunk` 符号，probe 输出 `eligible_for_w1_speedup=false`。因此缺的是 patched CUDA/C++ extension，不是数据。
