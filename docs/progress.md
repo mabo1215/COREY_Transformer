@@ -15,6 +15,15 @@
 - W1 端到端 speedup 仍依赖 H800 环境中实际提供 multi-BLOCK selective-scan dispatch module；当前仓库已把 `run_integrated_end_to_end.py` 接上 `--selective-scan-dispatch-module`，但不会把无状态 chunk slicing 作为有效 speedup。
 - W2/W3 的 H800/4090 可执行 harness 已就绪，下一步是远端运行并回填输出。
 
+远端 H800 运行状态（2026-04-28 11:14 CST，同步到 `src/outputs/h800_closure_remote/`）：
+- `multiblock_dispatch`：完成 probe，但状态为 `blocked`；未提供 `DISPATCH_MODULE`，因此没有真实 multi-BLOCK selective-scan 端到端 speedup。
+- `real_workload_diversity`：运行成功，H800 / torch 2.8.0+cu128 / 84 prompts。四个 LongBench regime 仍全部坍缩到 chunk=256；structured repetition 仅 1/48 layer calls 选到 chunk=128，其余 structured code/logs/tables 仍为 chunk=256。结论：扩展真实 workload 后仍未形成强 dynamic switching 证据。
+- `transformer_fa3_longbench`：初始 blocked（远端直连 HuggingFace 报 `Network is unreachable`）。改用 `HF_ENDPOINT=https://hf-mirror.com` 后，`EleutherAI/pythia-1.4b` 可加载但因 head_dim>64 被 FA3 forward 拒绝；随后改用 `EleutherAI/pythia-410m`（FA3-compatible）完成 full LongBench baseline，4 tasks × 20 samples 均为 `ok`。结果：NarrQA F1 `0.007688`, Qasper F1 `0.022975`, GovReport ROUGE-L `0.012775`, MF-EN EM `0.0`; latency 分别 `2252.1 / 1677.7 / 4485.0 / 1100.0 ms`，约 `56--57 tok/s`。
+- `mamba2_ssd_longbench`：初始 blocked（远端直连 HuggingFace 报 `Network is unreachable`）。改用 `hf-mirror.com` 后先遇到大权重下载中断；用 `snapshot_download(max_workers=1)` 成功续传完整 `benchang1110/mamba2-2.7b-hf` snapshot。随后遇到 transformers 生成输出类旧 API 兼容问题，已在 `run_hf_longbench_baseline.py` 加 shim（`GreedySearchDecoderOnlyOutput` / `SampleDecoderOnlyOutput` alias 到新版 `GenerateDecoderOnlyOutput`）。最终完成 H800 Mamba-2 SSD LongBench baseline，4 tasks × 20 samples 均为 `ok`。结果：NarrQA F1 `0.038231`, Qasper F1 `0.038616`, GovReport ROUGE-L `0.036443`, MF-EN EM `0.0`; latency 分别 `4484.9 / 2822.7 / 8308.6 / 2198.4 ms`，约 `24.7--28.2 tok/s`。
+- 已修正 `run_h800_closure_experiments.sh`：baseline 若 metadata 为 `status=blocked`，写 `.stage_blocked` 而不是 `.stage_done`，便于模型缓存/网络恢复后重跑。
+- 当前 `src/outputs/h800_closure_remote/` 最新同步状态：`multiblock_dispatch`、`real_workload_diversity`、`transformer_fa3_longbench`、`mamba2_ssd_longbench` 四个 stage 均有 `.stage_done`；其中 W1 仍只是 blocked probe，不是端到端 speedup。
+- 论文回写状态：已将 H800 full Pythia-410M+FA3 baseline、H800 Mamba2-2.7B SSD baseline、84-prompt workload-diversity negative result 回写到 `paper/main.tex` 与 `paper/appendix.tex`。主文仍保留 W1 端到端 speedup 和 W2 真实 dynamic switching 为 open/negative，不夸大为完成。
+
 ## 2026-04-28 H800 远端实验回填状态
 
 结果来源：

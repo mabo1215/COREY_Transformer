@@ -70,9 +70,30 @@ def _dtype(torch: Any, name: str) -> Any:
     return {"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}[name]
 
 
+def _patch_transformers_generation_compat() -> None:
+    """Bridge older hub-kernel imports against newer Transformers generation names."""
+    try:
+        import transformers.generation as generation
+    except Exception:
+        return
+
+    decoder_output = getattr(generation, "GenerateDecoderOnlyOutput", None)
+    encoder_decoder_output = getattr(generation, "GenerateEncoderDecoderOutput", None)
+    if decoder_output is not None:
+        for name in ("GreedySearchDecoderOnlyOutput", "SampleDecoderOnlyOutput"):
+            if not hasattr(generation, name):
+                setattr(generation, name, decoder_output)
+    if encoder_decoder_output is not None:
+        for name in ("GreedySearchEncoderDecoderOutput", "SampleEncoderDecoderOutput"):
+            if not hasattr(generation, name):
+                setattr(generation, name, encoder_decoder_output)
+
+
 def _load_model(args: argparse.Namespace) -> tuple[Any, Any, Any]:
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    _patch_transformers_generation_compat()
 
     kwargs: dict[str, Any] = {
         "trust_remote_code": args.trust_remote_code,

@@ -35,6 +35,21 @@ mark_done() {
   touch "$1/.stage_done"
 }
 
+mark_blocked() {
+  mkdir -p "$1"
+  touch "$1/.stage_blocked"
+}
+
+mark_done_unless_blocked_metadata() {
+  local out_dir="$1"
+  local metadata_path="$2"
+  if [[ -f "$metadata_path" ]] && grep -q '"status"[[:space:]]*:[[:space:]]*"blocked"' "$metadata_path"; then
+    mark_blocked "$out_dir"
+  else
+    mark_done "$out_dir"
+  fi
+}
+
 run_logged() {
   local log_file="$1"
   shift
@@ -99,7 +114,7 @@ if [[ "$RUN_FA3_BASELINE" == "1" ]]; then
       --dtype bfloat16 \
       --attn-implementation flash_attention_3 \
       --output-dir "$out_dir"
-    mark_done "$out_dir"
+    mark_done_unless_blocked_metadata "$out_dir" "$out_dir/$TRANSFORMER_MODEL_NAME/metadata.json"
   fi
 fi
 
@@ -117,7 +132,7 @@ if [[ "$RUN_MAMBA2_BASELINE" == "1" ]]; then
       --dtype bfloat16 \
       --trust-remote-code \
       --output-dir "$out_dir"
-    mark_done "$out_dir"
+    mark_done_unless_blocked_metadata "$out_dir" "$out_dir/mamba2-ssd-2.7b/metadata.json"
   fi
 fi
 

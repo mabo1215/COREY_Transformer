@@ -6,6 +6,30 @@ in parallel on the remote 4× RTX 3090 server.
 
 ---
 
+## Local Shell Policy
+
+Always run local orchestration from WSL. If the current terminal is
+PowerShell, wrap commands with `wsl.exe --% bash -lc "..."` so PowerShell does
+not reinterpret pipes, quotes, backslashes, or UTF-8 log output from the H800
+node. This avoids Windows console encoding failures when remote logs contain
+Unicode progress bars or non-ASCII error text.
+
+Example:
+
+```powershell
+wsl.exe --% bash -lc "cd /mnt/c/source/Corey_Transformer && MAX_ITERATIONS=1 bash src/scripts/watch_h800_results_wsl.sh"
+```
+
+For multi-line or long-running local commands, open a WSL shell first:
+
+```powershell
+wsl
+cd /mnt/c/source/Corey_Transformer
+bash src/scripts/watch_h800_results_wsl.sh
+```
+
+---
+
 ## Experiment Overview
 
 | # | Script | What it tests | Requires |
