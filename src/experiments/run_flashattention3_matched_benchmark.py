@@ -120,14 +120,27 @@ def _call_fa3(
     causal: bool,
     softmax_scale: float | None,
 ) -> Any:
-    out = flash_attn_func(
-        q,
-        k,
-        v,
-        dropout_p=0.0,
-        softmax_scale=softmax_scale,
-        causal=causal,
-    )
+    try:
+        out = flash_attn_func(
+            q,
+            k,
+            v,
+            dropout_p=0.0,
+            softmax_scale=softmax_scale,
+            causal=causal,
+        )
+    except TypeError as exc:
+        if "dropout_p" not in str(exc):
+            raise
+        # FlashAttention-3 hopper interface has no dropout_p parameter; dropout
+        # is implicitly disabled for this eval-only benchmark.
+        out = flash_attn_func(
+            q,
+            k,
+            v,
+            softmax_scale=softmax_scale,
+            causal=causal,
+        )
     return out[0] if isinstance(out, tuple) else out
 
 

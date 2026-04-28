@@ -57,6 +57,7 @@ FA3_CAUSAL="${FA3_CAUSAL:-1}"
 OUTPUT_BASE="${OUTPUT_BASE:-src/outputs/neurips_required}"
 DATA_BASE="${DATA_BASE:-src/data/longbench_subset}"
 PYTHON_BIN="${PYTHON_BIN:-python}"
+FORCE_RERUN="${FORCE_RERUN:-0}"
 
 LOG_DIR="${REPO_ROOT}/${OUTPUT_BASE}/logs"
 mkdir -p "$LOG_DIR"
@@ -80,6 +81,11 @@ mark_done() {
   touch "${output_dir}/.stage_done"
 }
 
+stage_done() {
+  local output_dir="$1"
+  [[ "$FORCE_RERUN" != "1" && -f "${output_dir}/.stage_done" ]]
+}
+
 # ------------------------------------------------------------------------------
 # Experiment 1: integrated end-to-end benchmark.
 # ------------------------------------------------------------------------------
@@ -88,6 +94,10 @@ run_integrated() {
   if [[ "$USE_8GPU" == "1" ]]; then
     out_dir="${REPO_ROOT}/${OUTPUT_BASE}/integrated_end_to_end_8gpu"
     log_file="${LOG_DIR}/01_integrated_end_to_end_8gpu.log"
+    if stage_done "$out_dir"; then
+      log "Experiment 1/3 already complete; skipping -> $out_dir"
+      return 0
+    fi
     mkdir -p "$out_dir"
     log "Experiment 1/3: integrated end-to-end benchmark (8GPU)"
     run_cmd "$log_file" torchrun --nproc_per_node="$NPROC_PER_NODE" \
@@ -101,6 +111,10 @@ run_integrated() {
   else
     out_dir="${REPO_ROOT}/${OUTPUT_BASE}/integrated_end_to_end"
     log_file="${LOG_DIR}/01_integrated_end_to_end.log"
+    if stage_done "$out_dir"; then
+      log "Experiment 1/3 already complete; skipping -> $out_dir"
+      return 0
+    fi
     mkdir -p "$out_dir"
     log "Experiment 1/3: integrated end-to-end benchmark"
     run_cmd "$log_file" "$PYTHON_BIN" -m src.experiments.run_integrated_end_to_end \
@@ -123,6 +137,10 @@ run_heterogeneous() {
   if [[ "$USE_8GPU" == "1" ]]; then
     out_dir="${REPO_ROOT}/${OUTPUT_BASE}/heterogeneous_corpus_8gpu"
     log_file="${LOG_DIR}/02_heterogeneous_corpus_8gpu.log"
+    if stage_done "$out_dir"; then
+      log "Experiment 2/3 already complete; skipping -> $out_dir"
+      return 0
+    fi
     mkdir -p "$out_dir"
     log "Experiment 2/3: heterogeneous corpus chunk switching (8GPU)"
     run_cmd "$log_file" torchrun --nproc_per_node="$NPROC_PER_NODE" \
@@ -135,6 +153,10 @@ run_heterogeneous() {
   else
     out_dir="${REPO_ROOT}/${OUTPUT_BASE}/heterogeneous_corpus"
     log_file="${LOG_DIR}/02_heterogeneous_corpus.log"
+    if stage_done "$out_dir"; then
+      log "Experiment 2/3 already complete; skipping -> $out_dir"
+      return 0
+    fi
     mkdir -p "$out_dir"
     log "Experiment 2/3: heterogeneous corpus chunk switching"
     run_cmd "$log_file" "$PYTHON_BIN" -m src.experiments.run_heterogeneous_corpus \
@@ -165,6 +187,10 @@ run_external_baselines() {
       exit 2
     fi
     mkdir -p "$out_dir"
+    if stage_done "$out_dir"; then
+      log "External baselines subset=${subset} already complete; skipping -> $out_dir"
+      continue
+    fi
     log "External baselines subset=${subset}"
     run_cmd "$log_file" "$PYTHON_BIN" "${REPO_ROOT}/src/experiments/run_external_baselines.py" \
       --models $BASELINE_MODELS \
@@ -184,6 +210,10 @@ run_flashattention3_matched() {
   local log_file="${LOG_DIR}/03b_flashattention3_matched.log"
   local out_dir="${REPO_ROOT}/${OUTPUT_BASE}/flashattention3_matched"
   local causal_args=()
+  if stage_done "$out_dir"; then
+    log "Experiment 3b already complete; skipping -> $out_dir"
+    return 0
+  fi
   if [[ "$FA3_CAUSAL" == "1" ]]; then
     causal_args+=(--causal)
   fi
