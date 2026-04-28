@@ -84,8 +84,10 @@ pinned to one GPU via `CUDA_VISIBLE_DEVICES`; all four run in parallel.
 
 ## Remote H800 -- nohup launch, status, and WSL result watcher
 
-For the H800 rental node, keep final outputs on the system disk so they are
-included when saving the machine image, but keep large caches on the data disk:
+For a fresh H800 rental node, keep final outputs on the system disk so they are
+included when saving the machine image. The older default below uses the data
+disk for large caches; if restoring the saved image, use the system-cache
+restart checklist in the next section instead:
 
 ```bash
 cd /root/Corey_Transformer
@@ -102,6 +104,93 @@ export TORCH_HOME=/root/autodl-tmp/cache/torch
 export TRITON_CACHE_DIR=/root/autodl-tmp/cache/triton
 export OUTPUT_BASE=src/outputs/neurips_required
 ```
+
+### H800 saved-image restart checklist
+
+After restoring the saved H800 image, first re-enable the model cache copied to
+the system disk. This cache is kept under the repo so it is preserved with the
+image and avoids re-downloading the same models on the next rental session:
+
+```bash
+cd /root/Corey_Transformer
+source ./use_system_cache.sh
+```
+
+The helper exports:
+
+```bash
+HF_HOME=/root/Corey_Transformer/system_cache/huggingface
+TRANSFORMERS_CACHE=/root/Corey_Transformer/system_cache/huggingface
+TORCH_HOME=/root/Corey_Transformer/system_cache/torch
+TRITON_CACHE_DIR=/root/Corey_Transformer/system_cache/triton
+HF_ENDPOINT=https://hf-mirror.com
+```
+
+The system-disk HF cache was created from
+`/root/autodl-tmp/cache/huggingface` and currently contains the model/kernel
+snapshots used by the H800 closure runs, including:
+
+- `EleutherAI/pythia-410m`
+- `EleutherAI/pythia-1.4b`
+- `benchang1110/mamba2-2.7b-hf`
+- `state-spaces/mamba-370m-hf`
+- `kernels-community/mamba-ssm`
+- `kernels-community/causal-conv1d`
+
+Optional offline smoke test after restart:
+
+```bash
+cd /root/Corey_Transformer
+source ./use_system_cache.sh
+export HF_HUB_OFFLINE=1
+
+/root/miniconda3/bin/python - <<'PY'
+from transformers import AutoConfig, AutoTokenizer
+
+for model_id in [
+    "EleutherAI/pythia-410m",
+    "EleutherAI/pythia-1.4b",
+    "benchang1110/mamba2-2.7b-hf",
+    "state-spaces/mamba-370m-hf",
+]:
+    cfg = AutoConfig.from_pretrained(model_id, local_files_only=True, trust_remote_code=True)
+    tok = AutoTokenizer.from_pretrained(model_id, local_files_only=True, trust_remote_code=True)
+    print("offline_ok", model_id, type(cfg).__name__, type(tok).__name__)
+PY
+```
+
+If this prints `offline_ok` for all four models, the saved-image cache is ready.
+Then launch the H800 closure run with the system cache:
+
+```bash
+cd /root/Corey_Transformer
+source ./use_system_cache.sh
+
+mkdir -p src/outputs/h800_closure/logs
+nohup bash -lc '
+  source ./use_system_cache.sh
+  PYTHON_BIN=/root/miniconda3/bin/python \
+  OUTPUT_BASE=src/outputs/h800_closure \
+  MAX_SAMPLES=20 \
+    bash src/scripts/run_h800_closure_experiments.sh
+' > src/outputs/h800_closure/nohup_main.log 2>&1 &
+
+echo $! > src/outputs/h800_closure/nohup_main.pid
+```
+
+Resume/status commands:
+
+```bash
+cd /root/Corey_Transformer
+tail -n 120 src/outputs/h800_closure/nohup_main.log
+find src/outputs/h800_closure -name .stage_done -o -name .stage_blocked
+find src/outputs/h800_closure -maxdepth 3 -type f | sort | tail -50
+watch -n 5 nvidia-smi
+```
+
+Use `HF_HUB_OFFLINE=1` only when the cache smoke test passes. Otherwise leave
+network enabled; `use_system_cache.sh` already prefers `https://hf-mirror.com`
+for missing files.
 
 ### H800 background run with nohup
 
