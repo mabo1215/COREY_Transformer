@@ -1,6 +1,19 @@
 ﻿# 论文进度
 
-最后更新：2026-04-28（H800 远端结果已回填论文；`revision_suggestions.tex` 新一轮 Borderline Reject 项已复核）。
+最后更新：2026-04-28（新增 H800 closure / 4x4090 subset 实验入口；H800 远端结果已回填论文；`revision_suggestions.tex` 新一轮 Borderline Reject 项已复核）。
+
+## 2026-04-28 后续闭环实验代码准备
+
+已新增可直接推到远端运行的实验入口：
+- `src/scripts/run_h800_closure_experiments.sh`：H800 总入口，串起 multi-BLOCK selective-scan dispatch probe、扩展真实 workload diversity、Transformer+FA3 full LongBench baseline、Mamba-2 SSD LongBench baseline。
+- `src/experiments/run_integrated_multiblock_dispatch.py`：只接受真实 recurrence-preserving dispatch module（需暴露 `selective_scan_fn(..., chunk_size=...)`）；若没有 `DISPATCH_MODULE`，明确输出 blocked，不用错误的 chunked sequence emulation 冒充端到端 speedup。
+- `src/experiments/run_hf_longbench_baseline.py`：通用 HF causal-LM LongBench baseline，可用于 H800 `attn_implementation=flash_attention_3` Transformer baseline，以及 Mamba-2 SSD baseline。
+- `src/experiments/run_real_workload_diversity_h800.py`：在 LongBench 之外加入 structured logs / tables / code / repetition regimes，重新测真实 prompt entropy 和 chunk distribution。
+- `src/scripts/run_4x4090_closure_subset.sh`：4 卡 4090 可先完成的子集；并行跑 Mamba-2 SSD LongBench baseline 与扩展 workload diversity。FA3 full baseline 不放入 4090 路线，因为 4090 是 sm_89，FA3 仍应在 H800/Hopper 上跑。
+
+重要状态：
+- W1 端到端 speedup 仍依赖 H800 环境中实际提供 multi-BLOCK selective-scan dispatch module；当前仓库已把 `run_integrated_end_to_end.py` 接上 `--selective-scan-dispatch-module`，但不会把无状态 chunk slicing 作为有效 speedup。
+- W2/W3 的 H800/4090 可执行 harness 已就绪，下一步是远端运行并回填输出。
 
 ## 2026-04-28 H800 远端实验回填状态
 

@@ -30,6 +30,7 @@ import math
 import platform
 import statistics
 import time
+import os
 from pathlib import Path
 from typing import Any
 
@@ -286,6 +287,7 @@ def _prefer_installed_mamba_kernels() -> None:
     """Make HF Mamba use locally installed CUDA kernels when available."""
     try:
         from types import SimpleNamespace
+        import importlib
 
         from causal_conv1d import causal_conv1d_fn, causal_conv1d_update
         from mamba_ssm.ops.selective_scan_interface import mamba_inner_fn, selective_scan_fn
@@ -297,6 +299,12 @@ def _prefer_installed_mamba_kernels() -> None:
 
     original_lazy_load = getattr(_mm, "lazy_load_kernel", None)
     original_resolve = getattr(_mm, "resolve_internal_import", None)
+    dispatch_module = os.environ.get("COREY_SELECTIVE_SCAN_DISPATCH_MODULE", "").strip()
+    if dispatch_module:
+        dispatch = importlib.import_module(dispatch_module)
+        selective_scan_fn = getattr(dispatch, "selective_scan_fn")
+        print(f"[integrated] Using selective_scan_fn from dispatch module: {dispatch_module}")
+
     mamba_kernel = SimpleNamespace(
         selective_scan_fn=selective_scan_fn,
         selective_state_update=selective_state_update,
@@ -325,6 +333,11 @@ def _prefer_installed_mamba_kernels() -> None:
 
     _mm.lazy_load_kernel = lazy_load_kernel
     _mm.resolve_internal_import = resolve_internal_import
+    _mm.selective_scan_fn = selective_scan_fn
+    _mm.selective_state_update = selective_state_update
+    _mm.mamba_inner_fn = mamba_inner_fn
+    _mm.causal_conv1d_fn = causal_conv1d_fn
+    _mm.causal_conv1d_update = causal_conv1d_update
     print("[integrated] Using installed mamba_ssm / causal_conv1d CUDA kernels.")
 
 
@@ -393,6 +406,14 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--warmup",     type=int,   default=2)
     p.add_argument("--repeats",    type=int,   default=5)
     p.add_argument("--num-bins",   type=int,   default=256)
+    p.add_argument(
+        "--selective-scan-dispatch-module",
+        default=None,
+        help=(
+            "Optional module that exposes selective_scan_fn(..., chunk_size=...). "
+            "Use this for H800 multi-BLOCK dispatch builds."
+        ),
+    )
     p.add_argument("--output-dir", type=Path,  default=Path("src/outputs/integrated_end_to_end"))
     return p.parse_args()
 
@@ -419,9 +440,10 @@ def main() -> None:
 
     import torch
     import json
-    import os
     # Set HF_TOKEN from env file if available
     _set_hf_token_from_envfile()
+    if args.selective_scan_dispatch_module:
+        os.environ["COREY_SELECTIVE_SCAN_DISPATCH_MODULE"] = args.selective_scan_dispatch_module
     # Intermediate state file
     args.output_dir.mkdir(parents=True, exist_ok=True)
     partial_path = args.output_dir / "summary_partial.json"

@@ -136,6 +136,66 @@ Typical total:                       2-4 hours
 Conservative total:                  4-8 hours
 ```
 
+### H800 closure run for the Borderline-Reject hard items
+
+Use this newer entrypoint when the goal is to close the remaining W1/W2/W3
+items instead of only reproducing the prior partial evidence:
+
+```bash
+cd /root/Corey_Transformer
+export PATH=/root/miniconda3/bin:$PATH
+export HF_HOME=/root/autodl-tmp/cache/huggingface
+export TRANSFORMERS_CACHE=/root/autodl-tmp/cache/huggingface
+export TORCH_HOME=/root/autodl-tmp/cache/torch
+export TRITON_CACHE_DIR=/root/autodl-tmp/cache/triton
+
+nohup bash -lc '
+  PYTHON_BIN=/root/miniconda3/bin/python \
+  OUTPUT_BASE=src/outputs/h800_closure \
+  MAX_SAMPLES=20 \
+    bash src/scripts/run_h800_closure_experiments.sh
+' > src/outputs/h800_closure/nohup_main.log 2>&1 &
+```
+
+This runs:
+
+- `run_real_workload_diversity_h800.py`: LongBench plus structured log/table/code/repetition regimes.
+- `run_hf_longbench_baseline.py` with `attn_implementation=flash_attention_3`: full Transformer+FA3 LongBench baseline on Hopper/H800.
+- `run_hf_longbench_baseline.py` with `benchang1110/mamba2-2.7b-hf`: real Mamba-2 SSD LongBench baseline when the installed stack can load it.
+- `run_integrated_multiblock_dispatch.py`: verifies whether a real multi-BLOCK selective-scan dispatch module is available.
+
+For the final W1 speedup run, provide a recurrence-preserving selective-scan
+dispatch module that exposes `selective_scan_fn(..., chunk_size=...)`:
+
+```bash
+DISPATCH_MODULE=my_h800_mamba_multiblock_dispatch \
+PYTHON_BIN=/root/miniconda3/bin/python \
+OUTPUT_BASE=src/outputs/h800_closure \
+  bash src/scripts/run_h800_closure_experiments.sh
+```
+
+Without `DISPATCH_MODULE`, the script records W1 as blocked instead of
+pretending that chunked emulation is a valid end-to-end scan speedup.
+
+### 4x RTX 4090 closure subset
+
+RTX 4090 can run the real workload-diversity expansion and Mamba-2 SSD
+LongBench baseline. It should not be used for the FA3 full baseline because
+FA3 requires Hopper/sm_90-class hardware.
+
+```bash
+cd ~/Corey_Transformer
+nohup bash -lc '
+  PYTHON_BIN=python \
+  OUTPUT_BASE=src/outputs/rtx4090_closure_subset \
+  MAX_SAMPLES=20 \
+    bash src/scripts/run_4x4090_closure_subset.sh
+' > src/outputs/rtx4090_closure_subset/nohup_main.log 2>&1 &
+```
+
+The 4090 script shards the four LongBench tasks across GPUs for Mamba-2 and
+runs the expanded workload-diversity pass on GPU 0.
+
 ### Local WSL watcher, every 10 minutes
 
 ```bash
