@@ -1,3 +1,34 @@
+﻿# 论文进度
+
+最后更新：2026-04-28（H800 远端结果已回填论文；`revision_suggestions.tex` 新一轮 Borderline Reject 项已复核）。
+
+## 2026-04-28 H800 远端实验回填状态
+
+结果来源：
+- 远端完整备份：`src/outputs/neurips_required_h800_full/`
+- 本地 summary 备份：`src/outputs/neurips_required_h800_latest/`
+- 论文回填文件：`paper/main.tex`、`paper/appendix.tex`
+
+已回填到论文：
+- **Tier-2a / integrated scaffold on H800**：Mamba-370M，NVIDIA H800 PCIe，CUDA 12.8，PyTorch 2.8.0，32 new tokens，n=5。Passive `868.6±4.7 ms`；active hook only `883.6±2.9 ms`（+1.7%）；active+routed-call scaffold `891.9±2.8 ms`（+2.7%）。论文已明确：`chunk_size_kwarg_supported=false`，所以这是集成路径 overhead 结果，不是端到端 speedup 结果。
+- **真实 mixed workload / heterogeneous corpus on H800**：60 prompts（low/medium/high 各 20）。Low `H=3.193±0.030`，chunk counts `128:4, 256:952, 512:4`；medium `H=3.107±0.045`，`256:960`；high `H=3.100±0.036`，`256:960`。论文已回填为 negative/limitation evidence：真实 workload 仍基本坍缩到 chunk=256，未形成强跨 regime switching。
+- **FlashAttention-3 H800 matched raw-kernel benchmark**：真实 FA3 kernel 已跑通并回填附录。Causal BF16，batch=1，heads=16，head_dim=64，n=100。Seq 1024/2048/4096/8192 latency 分别为 `0.103±0.009 / 0.099±0.003 / 0.171±0.002 / 0.421±0.010 ms`，nominal TFLOP/s 为 `20.8 / 86.3 / 200.5 / 326.3`。论文已明确：这是 raw attention kernel reference，不是完整 Transformer+FA3 LongBench baseline。
+- **External baseline auto harness**：远端已完成并保存 JSON，但 `rwkv` / `flashattention` / `mamba2` 均为 mock/reference 或 pending 模式；未作为真实 Mamba-2 SSD / FA3 full model baseline 回填。论文中已注明 H800 auto-harness 不更新 external baseline table。
+
+`docs/revision_suggestions.tex` 对应检查：
+- W1 Missing end-to-end integration：**部分完成**。软件 scaffold 和 H800 end-to-end overhead 已完成；真正 runtime chunk routed scan kernel speedup 未完成，仍为 future work。
+- W2 Limited real workload diversity：**部分完成 / 负结果已回填**。新增 H800 mixed corpus，但真实 entropy 仍集中，dynamic switching 证据仍弱；论文已如实写成 limitation。
+- W3 Insufficient baseline coverage：**部分完成**。FA3 H800 raw kernel benchmark 完成；完整 Transformer+FA3 matched LongBench baseline、Mamba-2 SSD matched benchmark、RWKV-6 matched benchmark 仍未完成。
+- W4 Small experimental sample size：**部分改善**。FA3 kernel n=100；H800 integrated 仍 n=5，heterogeneous 每 regime n=20 prompts。
+- W5 Theoretical component partially detached：**已在前序 revision 中处理**。Hadamard falsification/范围收窄仍保留。
+
+当前判断：
+- 现有 H800 结果已经全部从远端拉回并回填论文。
+- 论文没有把未完成项写成已解决；对 W1/W2/W3 均保持准确的 partial/limitation framing。
+- 若要真正消除 Borderline Reject 三大硬伤，仍需要后续新增：chunk-parameterized live scan kernel 的真实端到端 speedup、能产生真实跨 regime switching 的 workload/entropy calibration、完整 Mamba-2 SSD 与 Transformer+FA3 matched baseline。
+
+---
+
 # 论文进度
 
 最后更新：2026-04-27（**Cycle 11 全部 7 项 patch 已落地；评级 5/10 Borderline Reject 的关键发现已系统性回应**）。
@@ -674,4 +705,3 @@ gcloud compute tpus tpu-vm delete tpu-exp2 --zone=europe-west4-a --async
 ## 遗留问题
 
 （当前无未完成实验或阻塞项。所有已完成项已回填论文，唯一剩余 kernel-level chunk routing 已在 Limitations 作为 future work 声明，无需重复跟踪。）
-

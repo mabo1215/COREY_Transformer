@@ -117,7 +117,7 @@ run_integrated() {
     fi
     mkdir -p "$out_dir"
     log "Experiment 1/3: integrated end-to-end benchmark"
-    run_cmd "$log_file" "$PYTHON_BIN" -m src.experiments.run_integrated_end_to_end \
+    run_cmd "$log_file" "$PYTHON_BIN" "${REPO_ROOT}/src/experiments/run_integrated_end_to_end.py" \
       --model "$MODEL" \
       --new-tokens "$NEW_TOKENS" \
       --warmup "$WARMUP" \
@@ -159,7 +159,7 @@ run_heterogeneous() {
     fi
     mkdir -p "$out_dir"
     log "Experiment 2/3: heterogeneous corpus chunk switching"
-    run_cmd "$log_file" "$PYTHON_BIN" -m src.experiments.run_heterogeneous_corpus \
+    run_cmd "$log_file" "$PYTHON_BIN" "${REPO_ROOT}/src/experiments/run_heterogeneous_corpus.py" \
       --model "$MODEL" \
       --num-bins "$NUM_BINS" \
       --warmup "$HETERO_WARMUP" \
@@ -220,7 +220,7 @@ run_flashattention3_matched() {
 
   mkdir -p "$out_dir"
   log "Experiment 3b: FlashAttention-3 matched H800/H100 benchmark"
-  run_cmd "$log_file" "$PYTHON_BIN" -m src.experiments.run_flashattention3_matched_benchmark \
+  run_cmd "$log_file" "$PYTHON_BIN" "${REPO_ROOT}/src/experiments/run_flashattention3_matched_benchmark.py" \
     --seq-lens $FA3_SEQ_LENS \
     --batch-size 1 \
     --n-heads $FA3_N_HEADS \

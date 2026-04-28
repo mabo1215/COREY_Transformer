@@ -552,9 +552,12 @@ def _build_corpus() -> list[dict[str, str]]:
         ),
     ]
 
-    assert len(low) == 20, f"Expected 20 low-entropy prompts, got {len(low)}"
-    assert len(medium) == 20, f"Expected 20 medium-entropy prompts, got {len(medium)}"
-    assert len(high) == 20, f"Expected 20 high-entropy prompts, got {len(high)}"
+    assert len(low) >= 20, f"Expected at least 20 low-entropy prompts, got {len(low)}"
+    assert len(medium) >= 20, f"Expected at least 20 medium-entropy prompts, got {len(medium)}"
+    assert len(high) >= 20, f"Expected at least 20 high-entropy prompts, got {len(high)}"
+    low = low[:20]
+    medium = medium[:20]
+    high = high[:20]
 
     corpus = []
     for text in low:
@@ -733,6 +736,52 @@ def _set_hf_token_from_envfile(env_path="/home/amabo1215/source/.env"):
     except Exception as e:
         print(f"[hetero] Failed to set HF_TOKEN from {env_path}: {e}")
 
+def _prefer_installed_mamba_kernels() -> None:
+    """Make HF Mamba use locally installed CUDA kernels when available."""
+    try:
+        from types import SimpleNamespace
+
+        from causal_conv1d import causal_conv1d_fn, causal_conv1d_update
+        from mamba_ssm.ops.selective_scan_interface import mamba_inner_fn, selective_scan_fn
+        from mamba_ssm.ops.triton.selective_state_update import selective_state_update
+        from transformers.models.mamba import modeling_mamba as _mm
+    except Exception as exc:
+        print(f"[hetero] Installed mamba kernels unavailable: {exc}")
+        return
+
+    original_lazy_load = getattr(_mm, "lazy_load_kernel", None)
+    original_resolve = getattr(_mm, "resolve_internal_import", None)
+    mamba_kernel = SimpleNamespace(
+        selective_scan_fn=selective_scan_fn,
+        selective_state_update=selective_state_update,
+        mamba_inner_fn=mamba_inner_fn,
+    )
+    conv_kernel = SimpleNamespace(
+        causal_conv1d_fn=causal_conv1d_fn,
+        causal_conv1d_update=causal_conv1d_update,
+    )
+
+    def lazy_load_kernel(name: str, *args: Any, **kwargs: Any) -> Any:
+        if name == "mamba-ssm":
+            return mamba_kernel
+        if name == "causal-conv1d":
+            return conv_kernel
+        if original_lazy_load is not None:
+            return original_lazy_load(name, *args, **kwargs)
+        return None
+
+    def resolve_internal_import(module: Any, chained_path: str, *args: Any, **kwargs: Any) -> Any:
+        if module is mamba_kernel and chained_path.endswith("selective_state_update"):
+            return selective_state_update
+        if original_resolve is not None:
+            return original_resolve(module, chained_path, *args, **kwargs)
+        return None
+
+    _mm.lazy_load_kernel = lazy_load_kernel
+    _mm.resolve_internal_import = resolve_internal_import
+    print("[hetero] Using installed mamba_ssm / causal_conv1d CUDA kernels.")
+
+
 def main() -> None:
     args = _parse_args()
     _set_hf_token_from_envfile()
@@ -746,6 +795,7 @@ def main() -> None:
 
     model_id = MODEL_REGISTRY.get(args.model, args.model)
     print(f"[hetero] Loading {model_id} …")
+    _prefer_installed_mamba_kernels()
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
