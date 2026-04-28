@@ -290,6 +290,31 @@ OUTPUT_BASE=src/outputs/h800_closure \
 Without `DISPATCH_MODULE`, the script records W1 as blocked instead of
 pretending that chunked emulation is a valid end-to-end scan speedup.
 
+The repository also includes a conservative dispatch wrapper for H800 bring-up:
+
+```bash
+DISPATCH_MODULE=src.corey_selective_scan_dispatch \
+PYTHON_BIN=/root/miniconda3/bin/python \
+OUTPUT_BASE=src/outputs/h800_closure_dispatch_probe \
+  bash src/scripts/run_h800_closure_experiments.sh
+```
+
+By default this wrapper uses `COREY_SELECTIVE_SCAN_BACKEND=auto`: it will call a
+patched runtime-chunk CUDA extension if the H800 image exposes one, otherwise it
+falls back to the stock `mamba_ssm` path and the W1 probe remains blocked.  This
+is deliberate.  For debugging only, you can force chunked sequence emulation:
+
+```bash
+COREY_SELECTIVE_SCAN_BACKEND=chunked_emulation \
+python -m src.experiments.run_integrated_multiblock_dispatch \
+  --dispatch-module src.corey_selective_scan_dispatch \
+  --allow-nonpreserving-debug
+```
+
+Do not use the emulation backend as W1 paper evidence: it slices the sequence
+and calls the stock kernel per chunk, so recurrence state is reset at chunk
+boundaries.
+
 ### 4x RTX 4090 closure subset
 
 RTX 4090 can run the real workload-diversity expansion and Mamba-2 SSD
@@ -575,5 +600,3 @@ Summarize the following government report in two sentences: [report text]
 ```
 
 Use `--prompt "Your test prompt here"` to override data-file loading for smoke tests.
-
-

@@ -103,6 +103,7 @@ class SchedulerState:
         self.num_bins: int = 256
         self.min_seq_len: int = 16
         self.chunk_size_kwarg_supported: bool | None = None
+        self.dispatch_info: dict[str, Any] | None = None
 
 
 STATE = SchedulerState()
@@ -231,7 +232,12 @@ def _make_active_forward(original_forward: Any) -> Any:
                         chunk_size=selected_chunk,
                         **scan_kwargs,
                     )
-                    STATE.chunk_size_kwarg_supported = True
+                    if STATE.dispatch_info is not None:
+                        STATE.chunk_size_kwarg_supported = bool(
+                            STATE.dispatch_info.get("chunk_size_honored", False)
+                        )
+                    else:
+                        STATE.chunk_size_kwarg_supported = True
                 except TypeError:
                     scan_out_pair = selective_scan_fn(
                         u_post_conv,
@@ -303,7 +309,10 @@ def _prefer_installed_mamba_kernels() -> None:
     if dispatch_module:
         dispatch = importlib.import_module(dispatch_module)
         selective_scan_fn = getattr(dispatch, "selective_scan_fn")
+        info_fn = getattr(dispatch, "get_dispatch_info", None)
+        STATE.dispatch_info = info_fn() if callable(info_fn) else {"module": dispatch_module}
         print(f"[integrated] Using selective_scan_fn from dispatch module: {dispatch_module}")
+        print(f"[integrated] Dispatch info: {STATE.dispatch_info}")
 
     mamba_kernel = SimpleNamespace(
         selective_scan_fn=selective_scan_fn,
@@ -594,6 +603,12 @@ def main() -> None:
             "h_ref": f"log({args.num_bins})={math.log(args.num_bins):.4f}",
             "platform": platform.platform(),
             "chunk_size_kwarg_supported": kwarg_supported,
+            "dispatch_module": args.selective_scan_dispatch_module,
+            "dispatch_info": STATE.dispatch_info,
+            "eligible_for_w1_speedup": bool(
+                STATE.dispatch_info.get("eligible_for_w1_speedup", kwarg_supported)
+                if STATE.dispatch_info is not None else kwarg_supported
+            ),
             "passive": passive,
             "active_only": active_only,
             "integrated": integrated,

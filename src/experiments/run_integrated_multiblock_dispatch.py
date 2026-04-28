@@ -22,11 +22,19 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--warmup", type=int, default=2)
     parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument("--num-bins", type=int, default=256)
+    parser.add_argument(
+        "--allow-nonpreserving-debug",
+        action="store_true",
+        help="Allow debug-only dispatch modules such as chunked emulation to report ready.",
+    )
     return parser.parse_args()
 
 
 def _probe_dispatch(dispatch_fn: Any) -> dict[str, Any]:
-    import torch
+    try:
+        import torch
+    except Exception as exc:
+        return {"ok": False, "error": f"torch unavailable: {exc!r}"}
 
     if not torch.cuda.is_available():
         return {"ok": False, "error": "CUDA unavailable"}
@@ -78,16 +86,30 @@ def main() -> None:
     try:
         module = importlib.import_module(args.dispatch_module)
         dispatch_fn = getattr(module, "selective_scan_fn")
+        info_fn = getattr(module, "get_dispatch_info", None)
+        dispatch_info = info_fn() if callable(info_fn) else {"module": args.dispatch_module}
     except Exception as exc:
         result["error"] = f"Unable to import dispatch module: {exc!r}"
         (args.output_dir / "summary.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
         print(json.dumps(result, indent=2))
         return
 
+    result["dispatch_info"] = dispatch_info
     probe = _probe_dispatch(dispatch_fn)
     result["probe"] = probe
     if not probe.get("ok"):
         result["error"] = "Dispatch probe failed."
+        (args.output_dir / "summary.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+        print(json.dumps(result, indent=2))
+        return
+
+    eligible = bool(dispatch_info.get("eligible_for_w1_speedup", False))
+    if not eligible and not args.allow_nonpreserving_debug:
+        result["status"] = "blocked"
+        result["error"] = (
+            "Dispatch module executed, but it is not eligible for W1 speedup evidence. "
+            "It must both preserve recurrence and honor runtime chunk_size in the real kernel."
+        )
         (args.output_dir / "summary.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
         print(json.dumps(result, indent=2))
         return
