@@ -56,6 +56,111 @@ The 4-card server (`ubuntu-4card`, 4× RTX 3090 24 GiB, CUDA 12.1) is the
 recommended target for all GPU-intensive experiments.  Each experiment is
 pinned to one GPU via `CUDA_VISIBLE_DEVICES`; all four run in parallel.
 
+---
+
+## Remote H800 -- nohup launch, status, and WSL result watcher
+
+For the H800 rental node, keep final outputs on the system disk so they are
+included when saving the machine image, but keep large caches on the data disk:
+
+```bash
+cd /root/Corey_Transformer
+export PATH=/root/miniconda3/bin:$PATH
+
+mkdir -p /root/autodl-tmp/cache/huggingface
+mkdir -p /root/autodl-tmp/cache/torch
+mkdir -p /root/autodl-tmp/cache/triton
+mkdir -p src/outputs/neurips_required/logs
+
+export HF_HOME=/root/autodl-tmp/cache/huggingface
+export TRANSFORMERS_CACHE=/root/autodl-tmp/cache/huggingface
+export TORCH_HOME=/root/autodl-tmp/cache/torch
+export TRITON_CACHE_DIR=/root/autodl-tmp/cache/triton
+export OUTPUT_BASE=src/outputs/neurips_required
+```
+
+### H800 background run with nohup
+
+```bash
+cd /root/Corey_Transformer
+nohup bash -lc '
+  export PATH=/root/miniconda3/bin:$PATH
+  export HF_HOME=/root/autodl-tmp/cache/huggingface
+  export TRANSFORMERS_CACHE=/root/autodl-tmp/cache/huggingface
+  export TORCH_HOME=/root/autodl-tmp/cache/torch
+  export TRITON_CACHE_DIR=/root/autodl-tmp/cache/triton
+  export OUTPUT_BASE=src/outputs/neurips_required
+  RUN_FA3_MATCHED=1 BASELINE_MODE=auto PYTHON_BIN=/root/miniconda3/bin/python \
+    bash src/scripts/run_neurips_required_experiments.sh
+' > src/outputs/neurips_required/logs/nohup_main.log 2>&1 &
+
+echo $! > src/outputs/neurips_required/nohup_main.pid
+```
+
+### H800 status checks
+
+If the PID file does not exist, or `ps` prints nothing, the background job is
+not running. Check the last log lines and completed stages:
+
+```bash
+cd /root/Corey_Transformer
+tail -n 120 src/outputs/neurips_required/logs/nohup_main.log
+find src/outputs/neurips_required -name .stage_done -print
+```
+
+General status checks:
+
+```bash
+cd /root/Corey_Transformer
+ps -ef | grep run_neurips_required | grep -v grep
+ps -ef | grep python | grep -v grep
+watch -n 5 nvidia-smi
+find src/outputs/neurips_required -name .stage_done -print
+find src/outputs/neurips_required -maxdepth 3 -type f | sort | tail -50
+cat src/outputs/neurips_required/flashattention3_matched/summary.json
+```
+
+If the run stopped, rerun the same `nohup` command. Completed stages are
+skipped by default because each successful stage writes `.stage_done`; use
+`FORCE_RERUN=1` only when intentionally recomputing.
+
+Expected H800 wall time after FA3 has already been built:
+
+```text
+FA3 matched benchmark:              < 1 minute
+Integrated end-to-end benchmark:     5-30 minutes
+Heterogeneous corpus benchmark:      20-90 minutes
+External baselines, auto mode:       minutes if mock/fallback; 2-6 hours if Mamba2 real runs
+
+Typical total:                       2-4 hours
+Conservative total:                  4-8 hours
+```
+
+### Local WSL watcher, every 10 minutes
+
+```bash
+sudo apt-get update
+sudo apt-get install -y sshpass rsync openssh-client
+
+cd /mnt/c/source/Corey_Transformer
+bash src/scripts/watch_h800_results_wsl.sh
+```
+
+One-shot sync:
+
+```bash
+cd /mnt/c/source/Corey_Transformer
+MAX_ITERATIONS=1 bash src/scripts/watch_h800_results_wsl.sh
+```
+
+The watcher syncs `src/outputs` and `fa3_h800_run.log` by default. To pull
+additional remote paths, override `REMOTE_PATHS`:
+
+```bash
+REMOTE_PATHS='src/outputs fa3_h800_run.log /root/autodl-tmp/outputs' \
+bash src/scripts/watch_h800_results_wsl.sh
+```
+
 ### Prerequisites on the server
 
 ```bash
