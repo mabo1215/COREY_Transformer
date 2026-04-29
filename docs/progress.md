@@ -1,6 +1,38 @@
 ﻿# 论文进度
 
-最后更新：2026-04-29（H800 有卡 smoke / full closure / enhancement runs 与 runtime chunk dispatch 真正 routed live-scan 测量均已完成并同步回本地；论文已回填 H800 n=20 integration、164-prompt diversity negative result、50-sample FA3/Mamba2 baselines、H800 W1 kernel supplement，以及 runtime-chunk routed closure。默认 full histogram routed path 的 n=50 结果为 3.5% overhead；优化后的 `sampled_hist --entropy-stride 8` 在 n=50 为 `0.9905x` latency，约 0.95% small end-to-end gain，应按 near-parity / small gain 谨慎表述。）
+最后更新：2026-04-29（H800 runtime chunk dispatch 真正 routed live-scan 测量已完成；默认 full histogram routed path 的 n=50 结果为 3.5% overhead，`sampled_hist --entropy-stride 8` 为 `0.9905x` latency，约 0.95% small gain。最新 `docs/revision_suggestions.tex` 仍判定为 Weak Reject：核心未解决点是缺少足够大的真实 end-to-end gain、entropy 在真实 workload 中作用弱、以及尚未给出 best static oracle vs adaptive 的正式 H800 表。已新增 static chunk sweep -> best static oracle -> adaptive scheduler -> summary table 实验入口，并在 4 卡 RTX 3090 上完成最小 smoke。）
+
+## 2026-04-29 Static Oracle vs Adaptive 实验入口与 4 卡 3090 smoke
+
+为回应最新 `docs/revision_suggestions.tex` 中“必须证明 adaptive 值得用，而不是等价于固定 chunk”的核心意见，已补齐正式 H800 killer experiment 的脚本入口：
+
+- `src/experiments/run_static_oracle_adaptive.py`：新增 orchestration 层，按 `static chunk sweep -> best static oracle -> adaptive scheduler -> summary table` 顺序调用 `run_integrated_end_to_end.py`。每个 chunk 子实验单独保存 `summary.json` / `run.log`，最后聚合 `summary.json`、`summary_table.md`、`summary_table.csv`。
+- 默认 static sweep chunks 为 `128,256,512,1024,2048`；adaptive 默认 `sampled_hist --entropy-stride 8`；oracle 选择 `integrated.lat_mean_ms` 最低的 static row。
+- `src/experiments/run_integrated_end_to_end.py` 新增 cache API 兼容层：同时支持新版 transformers 的 `cache_params.layers/update_*` API 和旧版 `conv_states/ssm_states/seqlen_offset` API。该补丁由 4 卡 RTX 3090 smoke 暴露的 `MambaCache.has_previous_state` 缺失问题触发。
+
+4 卡 RTX 3090 远端 smoke 状态：
+
+- 远端：`mabo1215@10.147.20.176`，4 张 RTX 3090 均空闲；使用 `/home1/mabo1215/.adama-micromamba/envs/quamba-py310/bin/python`。
+- 已同步并运行最小 smoke：`--sweep-chunks 128,256 --new-tokens 2 --warmup 0 --repeats 1 --adaptive-scheduler-mode sampled_hist --adaptive-entropy-stride 8`。
+- 本地已拉回输出：`src/outputs/static_oracle_adaptive_3090_smoke/summary_table.md`（该目录被 `.gitignore` 忽略，不进入提交）。
+- Smoke 结果只用于链路验证：Static-128 `113.91 ms`，Static-256 `96.47 ms`（best static oracle），adaptive sampled-hist s8 `117.25 ms`。3090 环境的 `selective_scan_cuda` 只有 stock `fwd`，没有 H800 patched `fwd_with_chunk_size`，因此该结果不能作为论文性能结论。
+
+下一步正式 H800 命令应使用真实 dispatch：
+
+```bash
+python -m src.experiments.run_static_oracle_adaptive \
+  --model mamba-370m \
+  --prompt-repeat 8 \
+  --max-prompt-length 4096 \
+  --new-tokens 32 \
+  --warmup 3 \
+  --repeats 50 \
+  --sweep-chunks 128,256,512,1024,2048 \
+  --adaptive-scheduler-mode sampled_hist \
+  --adaptive-entropy-stride 8 \
+  --selective-scan-dispatch-module src.corey_selective_scan_dispatch \
+  --output-dir src/outputs/static_oracle_adaptive_h800
+```
 
 ## 2026-04-29 H800 W1 runtime chunk dispatch 调试结果
 
@@ -779,19 +811,48 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ---
 
-## 未修改或部分修改（新一轮独立评审 / Borderline Reject）
+## 未修改或部分修改（最新 `docs/revision_suggestions.tex` / Weak Reject）
 
-**NeurIPS 2026 硬性要求复核状态：**
+**NeurIPS 2026 硬性要求复核状态（2026-04-29 最新评审）：**
 
-1. **Tier-2a → Tier-2b end-to-end 闭环与 speedup**  
-  - **已收口为 small gain / near-parity 结论。** 已在 H800 上提供真实 recurrence-preserving `DISPATCH_MODULE`，runtime chunk 选择已路由进 live scan kernel，`multiblock_dispatch` probe 为 `ready`。默认 full histogram scheduler 的 routed path 仍为负：n=50 为 `1.035x` latency（约 `+3.5%` overhead）。针对用户提出的“优化 entropy→chunk 策略 / 扩大 regime / 更长上下文”方向，已验证更长上下文和强制大 chunk 不能稳定转正；真正有效的改动是降低 entropy 统计成本：`--scheduler-mode sampled_hist --entropy-stride 8` 在 prompt_len=976、n=50 上得到 Passive `902.14±29.45 ms`、active+routed `893.56±18.58 ms`、`0.9905x` latency（约 `0.95%` small end-to-end gain），chunk distribution `{256: 2332, 512: 212}`。论文已据此改为：真实 runtime-chunk 闭环完成，但只声明 small gain / near-parity，不声明 robust large speedup。
+1. **Demonstrate real end-to-end speedup（未解决）**  
+  - 当前 best routed H800 结果仍只有 `sampled_hist --entropy-stride 8` 的 `0.9905x` latency（约 0.95% small gain），没有达到评审要求的 `>=10%` latency/throughput gain。
+  - 已完成工程准备：真实 H800 runtime chunk dispatch 可用；新增 `run_static_oracle_adaptive.py` 可正式跑 static sweep / oracle / adaptive summary。
+  - 仍需数据：在 H800 上运行正式 `static_oracle_adaptive_h800`，判断 adaptive 是否能接近或超过 best static oracle。若不能，论文必须改成“near-oracle / profiling-free adaptation”而非“beats optimal static”。
 
-已从本节移出的完成项：W2 real workload diversity（H800 84/164 prompt negative result）、W3 modern baselines（H800 FA3 / Mamba2 SSD / FA3 raw kernel）、W4 sample-size improvement（integration n=20、baselines 50 samples/task）、H800 W1 kernel supplement（FP16/BF16 triplet、oracle、perturbation）。
+2. **Improve entropy signal effectiveness（部分完成，仍偏弱）**  
+  - 已尝试并验证：full histogram、sampled histogram、cheap moment proxy、长上下文、强制固定 chunk。当前唯一 n=50 正向配置是 sampled histogram stride=8。
+  - 仍未完成：variance / kurtosis / token-level entropy 等替代统计没有形成正式实验；真实 LongBench/H800 stress prompts 仍大多坍缩到同一 chunk bucket，entropy-driven switching 证据不足。
 
-当前本节不再保留 Borderline Reject 级别的硬阻塞项；剩余表述风险是 **W1 speedup is small and scheduler-sensitive**。其余未扩展项均属于 broader future work，不再作为本轮阻塞项跟踪。
+3. **Expand workload diversity（部分完成，但结论为负）**  
+  - 已完成：LongBench、H800 84/164 prompt stress、code/log/table/repetition、长上下文诊断。
+  - 仍未完成或不适合当前论文：multimodal inputs 未覆盖；更关键的是尚未构造出真实 mixed regime，使不同 prompt/sequence/kernel-work 区间需要不同最优 static chunk。
+
+4. **Compare against stronger baselines（部分完成）**  
+  - 已完成：H800 FA3 full-model baseline、Mamba2 SSD full-model baseline、FA3 raw kernel、H800 W1 static oracle kernel sweep。
+  - 新完成脚本准备：`run_static_oracle_adaptive.py` 可生成 end-to-end best static oracle 表。
+  - 仍未完成：正式 H800 end-to-end static oracle vs adaptive 表；learned scheduler baseline；XLA/nvFuser/compiler fusion baseline。
+
+5. **Ablation on scheduler design（部分完成）**  
+  - 已完成：constant force-chunk route-only、cheap_proxy、sampled_hist、full_hist 对比的零散 H800 run。
+  - 仍未完成：统一表格中的 remove-entropy / random policy / constant policy / adaptive policy 对照；新增 oracle 脚本已覆盖 constant sweep，但 random/no-entropy 还没有正式 row。
+
+6. **Evaluate model quality impact（未形成正式表）**  
+  - 理论上 recurrence-preserving chunk dispatch 应保持输出等价，但论文仍缺少显式 perplexity 或 LongBench quality row 来证明 COREY routed path 与 baseline 质量一致。
+  - 仍需作者决定：是否补 WT103/PG19 perplexity 或 LongBench small subset quality under passive vs adaptive routed path。
+
+Minor suggestions 状态：
+- Tier-1 / Tier-2 claim 区分：主文已大幅收窄并区分，基本完成。
+- Appendix redundancy：未系统清理。
+- Entropy normalization vs raw nats 记号一致性：已部分处理，但最新评审仍认为可继续收紧。
 
 ---
 
 ## 遗留问题
 
-硬性遗留问题已清零。真实 chunk-routed live scan kernel 已完成并测量；默认 full histogram 的 n=50 仍是 `+3.5%` overhead，但优化后的 sampled histogram stride=8 已在 n=50 给出 `0.9905x` latency（约 `0.95%` small end-to-end gain）。论文当前应保持谨慎写法：runtime-chunk 闭环完成，sampled histogram 是小幅正向/near-parity 配置，不是 robust large speedup。其余 W2/W3/W4 已有 H800 结果回填论文；后续 H800 可扩展实验计划见文件顶部“2026-04-28 H800 可扩展实验计划”。
+最新 Weak Reject 评审下，工程硬阻塞已不再是“无法路由 chunk”，而是“路由后是否值得用”的证据不足。当前遗留问题如下：
+
+1. **H800 正式 static oracle vs adaptive killer experiment 尚未运行。** 4 卡 RTX 3090 已完成最小 smoke，证明脚本链路可用；但 3090 没有 patched `fwd_with_chunk_size`，不能作为性能结论。下一步必须在 H800 上跑 `static_oracle_adaptive_h800`。
+2. **真实收益仍太小。** 当前最好 H800 routed result 是 `0.9905x` latency，约 0.95% gain；达不到 `docs/revision_suggestions.tex` 要求的 `>=10%` gain。
+3. **entropy 作用仍未充分证明。** 真实 workload 多数落到相同 chunk bucket；需要 alternative statistics 或 mixed regime 让 adaptive 的选择真正区别于最优静态 chunk。
+4. **缺少统一 ablation / quality 表。** 需要把 constant/no-entropy/random/adaptive 与 quality-preservation 结果放入同一组可审计实验，否则 reviewer 仍会认为机制像 prototype。

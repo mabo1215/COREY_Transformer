@@ -134,6 +134,42 @@ STATE = SchedulerState()
 # Monkey patch
 # ---------------------------------------------------------------------------
 
+def _cache_has_previous_state(cache_params: Any, layer_idx: int) -> bool:
+    if cache_params is None:
+        return False
+    has_previous_state = getattr(cache_params, "has_previous_state", None)
+    if callable(has_previous_state):
+        return bool(has_previous_state(layer_idx))
+    return bool(getattr(cache_params, "seqlen_offset", 0) > 0)
+
+
+def _cache_conv_state(cache_params: Any, layer_idx: int) -> Any:
+    if hasattr(cache_params, "layers"):
+        return cache_params.layers[layer_idx].conv_states
+    return cache_params.conv_states[layer_idx]
+
+
+def _cache_recurrent_state(cache_params: Any, layer_idx: int) -> Any:
+    if hasattr(cache_params, "layers"):
+        return cache_params.layers[layer_idx].recurrent_states
+    return cache_params.ssm_states[layer_idx]
+
+
+def _cache_update_conv_state(cache_params: Any, layer_idx: int, state: Any) -> None:
+    update = getattr(cache_params, "update_conv_state", None)
+    if callable(update):
+        update(state, layer_idx)
+    else:
+        _cache_conv_state(cache_params, layer_idx).copy_(state)
+
+
+def _cache_update_recurrent_state(cache_params: Any, layer_idx: int, state: Any) -> None:
+    update = getattr(cache_params, "update_recurrent_state", None)
+    if callable(update):
+        update(state, layer_idx)
+    else:
+        _cache_recurrent_state(cache_params, layer_idx).copy_(state)
+
 def _make_active_forward(original_forward: Any) -> Any:
     import torch
     import torch.nn as nn
@@ -161,7 +197,7 @@ def _make_active_forward(original_forward: Any) -> Any:
         if attention_mask is not None:
             hidden_proj = hidden_proj * attention_mask.unsqueeze(1)
 
-        is_decoding = cache_params is not None and cache_params.has_previous_state(self.layer_idx)
+        is_decoding = _cache_has_previous_state(cache_params, self.layer_idx)
         conv_weights = self.conv1d.weight.view(
             self.conv1d.weight.size(0), self.conv1d.weight.size(2)
         )
@@ -169,7 +205,7 @@ def _make_active_forward(original_forward: Any) -> Any:
         if is_decoding:
             hidden_proj = causal_conv1d_update(
                 hidden_proj.squeeze(-1),
-                cache_params.layers[self.layer_idx].conv_states,
+                _cache_conv_state(cache_params, self.layer_idx),
                 conv_weights,
                 self.conv1d.bias,
                 self.activation,
@@ -180,7 +216,7 @@ def _make_active_forward(original_forward: Any) -> Any:
                 conv_pad = nn.functional.pad(
                     hidden_proj, (self.conv_kernel_size - hidden_proj.shape[-1], 0)
                 )
-                cache_params.update_conv_state(conv_pad, self.layer_idx)
+                _cache_update_conv_state(cache_params, self.layer_idx, conv_pad)
             u_post_conv = causal_conv1d_fn(
                 hidden_proj, conv_weights, self.conv1d.bias, activation=self.activation
             )
@@ -236,7 +272,7 @@ def _make_active_forward(original_forward: Any) -> Any:
 
         if is_decoding:
             scan_outputs = selective_state_update(
-                cache_params.layers[self.layer_idx].recurrent_states,
+                _cache_recurrent_state(cache_params, self.layer_idx),
                 u_post_conv[..., 0],
                 discrete_time_step[..., 0],
                 A,
@@ -306,7 +342,7 @@ def _make_active_forward(original_forward: Any) -> Any:
 
             scan_outputs, ssm_state = scan_out_pair
             if ssm_state is not None and cache_params is not None:
-                cache_params.update_recurrent_state(ssm_state, self.layer_idx)
+                _cache_update_recurrent_state(cache_params, self.layer_idx, ssm_state)
 
         return self.out_proj(scan_outputs.transpose(1, 2))
 
