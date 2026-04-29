@@ -1,355 +1,263 @@
-\section*{NeurIPS 2026 Review for Paper: COREY}
+\section*{Paper Review: COREY — Entropy-Guided Runtime Chunk Scheduling for Selective Scan Kernels}
 
 \subsection*{Summary}
 
-This paper proposes \textbf{COREY}, an entropy-guided runtime chunk scheduling mechanism for selective scan kernels used in Mamba-style State Space Models (SSMs). The key idea is to use runtime activation entropy as a low-cost signal to dynamically select chunk sizes at kernel invocation time.
+This paper proposes \textbf{COREY}, a runtime scheduler for selective state space models (SSMs), particularly Mamba-1.x, that dynamically selects chunk sizes for selective scan kernels based on \textbf{activation entropy}. The method is positioned as a \textit{Concept \& Feasibility} contribution, aiming to demonstrate that entropy can serve as a lightweight runtime signal for kernel scheduling.
 
-The system is evaluated across three tiers:
-
+The empirical evaluation is organized into three tiers:
 \begin{itemize}
-\item \textbf{Tier 1}: Prototype cost-model simulations showing reductions in surrogate latency and DRAM traffic.
-\item \textbf{Tier 2a}: Inline runtime entropy computation inserted into the Mamba inference pipeline, measuring scheduling overhead (reported as 8.3%).
-\item \textbf{Tier 2b}: Independent kernel-level experiments demonstrating up to 4.41× latency reduction relative to static chunking.
+    \item Tier-1: Python cost-model simulations showing reduced surrogate latency and DRAM traffic.
+    \item Tier-2a: Real-checkpoint runtime hook measuring overhead (2.3\%–8.3\%).
+    \item Tier-2b: Kernel-level benchmarks showing up to 4.41$\times$ speedup over static chunking.
 \end{itemize}
 
-However, the paper explicitly acknowledges that Tier 2a and Tier 2b are \textbf{not connected into a single end-to-end execution path}, leaving the main performance claim partially unverified.
-
-Overall, the paper is positioned as a \textbf{Concept & Feasibility} contribution rather than a fully deployed runtime system.
+The paper also includes a theoretical exploration of Hadamard-based entropy smoothing, although this component is explicitly marked as unvalidated and empirically falsified on real checkpoints.
 
 \subsection*{Strengths}
 
-\begin{enumerate}
-
-\item \textbf{Clear and well-motivated systems problem}
-
-The work targets a real bottleneck in selective scan pipelines, namely fragmentation-induced memory traffic overhead in GPU execution. The paper correctly highlights that theoretical $O(L)$ complexity does not guarantee hardware efficiency.
-
-\item \textbf{Conceptually novel scheduling signal}
-
-Using activation entropy as a runtime scheduling signal is an interesting idea that differs from:
-
 \begin{itemize}
-\item static fusion heuristics
-\item offline profiling
-\item arithmetic-intensity-only models
+    \item \textbf{Novel perspective:} Introduces entropy as a runtime scheduling signal, which is conceptually simple and potentially generalizable.
+    
+    \item \textbf{Strong systems intuition:} Clearly identifies memory bandwidth and kernel fragmentation as bottlenecks in SSM inference.
+    
+    \item \textbf{Careful claim scoping:} The authors explicitly distinguish validated vs. unvalidated contributions, which aligns well with NeurIPS transparency expectations.
+    
+    \item \textbf{Multi-tier evaluation:} The separation into cost-model, kernel-level, and real-checkpoint experiments is well structured.
+    
+    \item \textbf{Reproducibility awareness:} Detailed appendix includes hardware, parameters, and experimental setup.
+    
+    \item \textbf{Negative result honesty:} The empirical falsification of Hadamard entropy gain is a strong scientific contribution.
 \end{itemize}
-
-This introduces a dynamic, data-dependent optimization path that is theoretically meaningful.
-
-\item \textbf{Structured experimental design}
-
-The three-tier experimental design is logically organized:
-
-\begin{itemize}
-\item surrogate model (Tier 1)
-\item runtime feasibility (Tier 2a)
-\item kernel performance ceiling (Tier 2b)
-\end{itemize}
-
-This layered methodology helps isolate different components of the system.
-
-\item \textbf{Transparent statement of limitations}
-
-The authors clearly state several open gaps, including:
-
-\begin{itemize}
-\item absence of full end-to-end routing
-\item limited workload diversity
-\item missing architecture-level comparisons
-\end{itemize}
-
-This level of transparency is commendable.
-
-\end{enumerate}
 
 \subsection*{Weaknesses}
 
-\subsubsection*{W1: Missing End-to-End Integration (Critical)}
+\begin{itemize}
 
-The most important limitation is that runtime chunk decisions are \textbf{not actually routed into the live scan kernel}.
+\item \textbf{Lack of real end-to-end speedup:}
 
-The paper explicitly states:
+The most critical issue is that COREY does not demonstrate meaningful end-to-end improvement on real workloads. The best reported result is near-parity:
+
+\begin{itemize}
+    \item Only $0.9905\times$ latency (≈0.95\% improvement) in routed H800 setup
+\end{itemize}
+
+This significantly weakens the practical impact.
+
+\item \textbf{Entropy signal lacks variability:}
+
+Across real workloads (LongBench, H800 stress tests):
+
+\begin{itemize}
+    \item Entropy is tightly concentrated (≈4.0 nats)
+    \item All prompts map to the same chunk (256)
+\end{itemize}
+
+Thus, COREY effectively degenerates to a static scheduler in practice.
+
+\item \textbf{No true system-level comparison:}
+
+Missing comparisons against:
+
+\begin{itemize}
+    \item FlashAttention-3 (end-to-end)
+    \item Mamba-2 optimized kernels
+    \item Other runtime scheduling or autotuning systems
+\end{itemize}
+
+Current comparisons are limited to synthetic or kernel-level benchmarks.
+
+\item \textbf{Prototype-heavy evaluation:}
+
+A significant portion of results are based on:
+
+\begin{itemize}
+    \item Python cost model (not real GPU)
+    \item Synthetic activations
+\end{itemize}
+
+This weakens the empirical credibility.
+
+\item \textbf{Limited novelty in mechanism:}
+
+The core idea reduces to:
 
 \begin{quote}
-``Tier 2a and Tier 2b are separate experiments; connecting them remains the central open gap.''
+Use a scalar statistic (entropy) to select chunk size
 \end{quote}
 
-Without this integration:
+This is relatively incremental compared to existing runtime autotuning methods.
+
+\item \textbf{Hyperparameter sensitivity not fully explored:}
+
+Key parameters:
 
 \begin{itemize}
-\item No true end-to-end latency improvement is measured.
-\item The reported 4.41× speedup is not realized in real inference.
-\item The system contribution remains incomplete.
+    \item $H_{ref}$
+    \item histogram bins $K$
+    \item thresholds $\tau$
 \end{itemize}
 
-This significantly weakens the empirical validity of the main claim.
+are not systematically optimized or justified.
 
-This issue alone could lead to rejection in NeurIPS.
+\item \textbf{No impact on model quality:}
 
-\subsubsection*{W2: Limited Real Workload Diversity}
-
-All 80 tested prompts fall into a narrow entropy band:
+The method does not evaluate:
 
 \begin{itemize}
-\item entropy range: 3.79–4.25 nats
-\item all prompts mapped to the same chunk bucket
+    \item perplexity changes
+    \item downstream task accuracy
 \end{itemize}
 
-Therefore:
+Thus, trade-offs between efficiency and quality remain unclear.
+
+\end{itemize}
+
+\subsection*{Technical Soundness}
+
+\textbf{Rating: 6/10 (Moderate)}
 
 \begin{itemize}
-\item dynamic adaptation is not demonstrated in real workloads
-\item behavior collapses to static scheduling
+    \item The entropy formulation is mathematically valid.
+    \item The scheduling heuristic is reasonable but not theoretically optimal.
+    \item Theoretical claims (Hadamard) are explicitly invalidated on real data.
+    \item Kernel-level results are convincing, but system-level conclusions are weak.
 \end{itemize}
 
-This undermines the claim of dynamic runtime optimization.
+\subsection*{Empirical Evaluation}
 
-\subsubsection*{W3: Insufficient Baseline Coverage}
+\textbf{Rating: 5/10 (Weak)}
 
-Missing comparisons include:
+Major concerns:
 
 \begin{itemize}
-\item Mamba-2
-\item RWKV-6
-\item Transformer + FlashAttention-3
+    \item Lack of diverse real workloads
+    \item No ablation on entropy usefulness vs. simpler heuristics
+    \item No comparison to learned or RL-based schedulers
+    \item End-to-end gains are negligible
 \end{itemize}
 
-Without these:
+\subsection*{Clarity}
+
+\textbf{Rating: 8/10 (Strong)}
 
 \begin{itemize}
-\item it is unclear whether COREY improves beyond strong baselines
-\item the system advantage may be marginal
+    \item Well-written and structured
+    \item Clear separation of claims vs. limitations
+    \item Extensive appendix improves transparency
 \end{itemize}
 
-This limits the external validity of the results.
+\subsection*{Reproducibility}
 
-\subsubsection*{W4: Small Experimental Sample Size}
-
-Key runtime experiments use:
+\textbf{Rating: 8/10}
 
 \begin{itemize}
-\item n = 5 repeats
-\item short generation length
+    \item Code and data provided
+    \item Detailed hardware and configuration descriptions
+    \item Experimental protocols are explicit
 \end{itemize}
 
-This weakens statistical reliability.
+\subsection*{Broader Impact \& Ethics}
 
-Standard NeurIPS systems papers typically require:
+\textbf{Rating: Adequate}
 
 \begin{itemize}
-\item n ≥ 20
-\item longer sequences
+    \item Discusses energy efficiency benefits
+    \item Mentions potential misuse (e.g., surveillance scaling)
+    \item No major ethical concerns
 \end{itemize}
 
-\subsubsection*{W5: Theoretical Component Partially Detached}
-
-The Hadamard-related theory is not experimentally validated.
-
-Furthermore:
+\subsection*{Overall Score}
 
 \begin{itemize}
-\item empirical results contradict the theoretical entropy increase assumption
-\item real checkpoints show entropy decrease
+    \item \textbf{Score: 5 / 10}
+    \item \textbf{Confidence: 4 / 5}
+    \item \textbf{Recommendation: Weak Reject}
 \end{itemize}
 
-This reduces theoretical relevance.
+\subsection*{Main Reasons for Rejection}
 
-\subsection*{Questions for Authors}
+\begin{enumerate}
+    \item No convincing end-to-end performance gain
+    \item Entropy signal lacks real-world variability
+    \item Heavy reliance on synthetic/prototype evaluation
+    \item Limited novelty relative to existing autotuning methods
+\end{enumerate}
+
+\subsection*{Suggestions for Improvement (Critical)}
+
+\textbf{Must Fix for NeurIPS Acceptance:}
 
 \begin{enumerate}
 
-\item Can the authors provide a fully integrated Tier 2a + Tier 2b pipeline before camera-ready?
-
-\item What is the end-to-end latency improvement after integration?
-
-\item Does entropy vary significantly across real production workloads?
-
-\item How does COREY compare against:
+\item \textbf{Demonstrate real end-to-end speedup}
 
 \begin{itemize}
-\item FlashAttention-3
-\item Mamba-2 SSD kernels
+    \item Integrate COREY into full inference pipeline
+    \item Show $\geq 10\%$ latency or throughput gain
 \end{itemize}
 
-\item What is the memory overhead of histogram-based entropy estimation?
-
-\end{enumerate}
-
-\subsection*{Detailed Suggestions for Improvement}
-
-\subsubsection*{Major Required Changes}
-
-\begin{enumerate}
-
-\item Implement full runtime integration.
-
-Required experiment:
+\item \textbf{Improve entropy signal effectiveness}
 
 \begin{itemize}
-\item route chunk selection into live selective_scan_fn
-\item measure true end-to-end latency
-\item report throughput improvement
+    \item Explore alternative statistics:
+    \begin{itemize}
+        \item variance
+        \item kurtosis
+        \item token-level entropy
+    \end{itemize}
 \end{itemize}
 
-This is the single most important revision.
-
-\item Add cross-regime workload evaluation.
-
-Suggested dataset mix:
+\item \textbf{Expand workload diversity}
 
 \begin{itemize}
-\item code generation
-\item templated prompts
-\item narrative text
-\item long-context reasoning
+    \item Include:
+    \begin{itemize}
+        \item code generation
+        \item multimodal inputs
+        \item long-context reasoning
+    \end{itemize}
 \end{itemize}
 
-Goal:
-
-Demonstrate real chunk switching behavior.
-
-\item Add modern systems baselines.
-
-Minimum required:
+\item \textbf{Compare against stronger baselines}
 
 \begin{itemize}
-\item Mamba-2 SSD kernel
-\item Transformer + FlashAttention-3
+    \item Static optimal tuning (oracle)
+    \item Learned schedulers
+    \item Compiler-based fusion (e.g., XLA, nvFuser)
 \end{itemize}
 
-\item Increase runtime measurement reliability.
-
-Required:
+\item \textbf{Ablation on scheduler design}
 
 \begin{itemize}
-\item ≥20 repeats
-\item warm-up control
-\item longer sequence lengths
+    \item Remove entropy → measure impact
+    \item Replace entropy with random/constant policy
+\end{itemize}
+
+\item \textbf{Evaluate model quality impact}
+
+\begin{itemize}
+    \item Perplexity
+    \item LongBench scores under COREY vs. baseline
 \end{itemize}
 
 \end{enumerate}
 
-\subsubsection*{Medium Priority Changes}
-
-\begin{enumerate}
-
-\item Provide full computational complexity analysis.
-
-Include:
+\subsection*{Minor Suggestions}
 
 \begin{itemize}
-\item entropy computation cost
-\item histogram update overhead
-\item memory traffic estimates
+    \item Clarify distinction between Tier-1 and Tier-2 claims earlier
+    \item Reduce appendix redundancy
+    \item Improve notation consistency (entropy normalization vs. raw nats)
 \end{itemize}
 
-\item Add ablation over entropy bin counts.
+\subsection*{Rebuttal Guidance (Very Important)}
 
-Suggested:
+To overturn this decision, authors must:
 
 \begin{itemize}
-\item K ∈ {32, 64, 128, 256}
+    \item Provide \textbf{new experimental evidence} showing real gains
+    \item Demonstrate entropy-driven switching on real workloads
+    \item Justify why entropy is better than simpler heuristics
 \end{itemize}
 
-\item Evaluate entropy stability under quantization.
-
-\end{enumerate}
-
-\subsubsection*{Minor Improvements}
-
-\begin{enumerate}
-
-\item Clarify notation consistency:
-
-\begin{itemize}
-\item distinguish raw entropy vs normalized entropy
-\end{itemize}
-
-\item Improve figure readability.
-
-\item Move some appendix derivations into main text.
-
-\end{enumerate}
-
-\subsection*{Reproducibility Assessment}
-
-\textbf{Score: 3 / 5}
-
-Positive aspects:
-
-\begin{itemize}
-\item code repository provided
-\item hyperparameters listed
-\item hardware configuration described
-\end{itemize}
-
-Missing:
-
-\begin{itemize}
-\item full training logs
-\item deterministic seeds
-\item exact runtime pipeline configuration
-\end{itemize}
-
-\subsection*{Open Science Compliance}
-
-The paper includes a code repository but does not fully specify:
-
-\begin{itemize}
-\item artifact versioning
-\item evaluation scripts
-\item dataset preprocessing steps
-\end{itemize}
-
-An explicit ``Open Science'' appendix is recommended.
-
-\subsection*{Ethical and Societal Impact}
-
-The broader impact discussion is reasonable and acknowledges:
-
-\begin{itemize}
-\item reduced energy cost benefits
-\item possible misuse risks
-\end{itemize}
-
-No major concerns.
-
-\subsection*{Overall Rating}
-
-\textbf{Score: 5 / 10 (Borderline Reject)}
-
-Justification:
-
-The idea is promising and technically interesting, but the absence of full end-to-end validation significantly weakens the empirical contribution.
-
-If integrated results are added, this score could improve substantially.
-
-\subsection*{Confidence}
-
-\textbf{4 / 5}
-
-The evaluation is based on a detailed reading of:
-
-\begin{itemize}
-\item methodology
-\item experimental design
-\item limitation statements
-\end{itemize}
-
-The primary limitation (missing integration) is explicitly acknowledged in the manuscript.
-
-\subsection*{Acceptance Prediction}
-
-Estimated probability:
-
-\begin{center}
-\textbf{35% -- 45%}
-\end{center}
-
-Without major revisions:
-
-Likely Reject.
-
-With successful end-to-end integration:
-
-Could become Accept.
+Without these, the paper is unlikely to be accepted.
