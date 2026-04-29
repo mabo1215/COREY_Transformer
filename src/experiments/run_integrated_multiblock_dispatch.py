@@ -48,7 +48,7 @@ def _probe_dispatch(dispatch_fn: Any) -> dict[str, Any]:
     C = torch.randn(batch, d_state, seq, device=device, dtype=dtype)
     D = torch.randn(dim, device=device, dtype=torch.float32)
     try:
-        out = dispatch_fn(u, delta, A, B, C, D=D, delta_softplus=True, chunk_size=64)
+        out = dispatch_fn(u, delta, A, B, C, D=D, delta_softplus=True, chunk_size=128)
         if isinstance(out, tuple):
             out = out[0]
         torch.cuda.synchronize()

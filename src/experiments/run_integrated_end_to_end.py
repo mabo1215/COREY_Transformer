@@ -80,7 +80,23 @@ def _hist_entropy(values: Any, num_bins: int = 256) -> float:
     return float(-(prob * log_prob).sum().item())
 
 
-def _entropy_to_chunk(H: float, *, c_min: int = 32, c_max: int = 512,
+def _cheap_entropy_proxy(values: Any, num_bins: int = 256) -> float:
+    """Low-cost entropy proxy using only first/second moments.
+
+    The proxy is not an information-theoretic entropy estimate; it is a
+    scheduling surrogate scaled into the same rough [0, log(K)] range so we can
+    measure whether reducing scheduler work changes end-to-end latency.
+    """
+
+    import torch
+    flat = values.detach().float().reshape(-1)
+    mean_abs = torch.mean(torch.abs(flat))
+    rms = torch.sqrt(torch.mean(flat * flat) + 1e-8)
+    ratio = torch.clamp(mean_abs / (rms + 1e-8), 0.0, 1.0)
+    return float(ratio.item() * math.log(num_bins))
+
+
+def _entropy_to_chunk(H: float, *, c_min: int = 128, c_max: int = 512,
                       h_ref: float | None = None, num_bins: int = 256) -> int:
     if h_ref is None:
         h_ref = math.log(num_bins)
@@ -104,6 +120,11 @@ class SchedulerState:
         self.min_seq_len: int = 16
         self.chunk_size_kwarg_supported: bool | None = None
         self.dispatch_info: dict[str, Any] | None = None
+        self.force_chunk: int | None = None
+        self.chunk_min: int = 128
+        self.chunk_max: int = 512
+        self.scheduler_mode: str = "hist"
+        self.entropy_stride: int = 1
 
 
 STATE = SchedulerState()
@@ -171,16 +192,34 @@ def _make_active_forward(original_forward: Any) -> Any:
         seq_len = u_post_conv.shape[-1]
         selected_chunk: int | None = None
         if seq_len >= STATE.min_seq_len:
-            H = _hist_entropy(u_post_conv, num_bins=STATE.num_bins)
-            selected_chunk = _entropy_to_chunk(
-                H, h_ref=STATE.h_ref, num_bins=STATE.num_bins
-            )
+            if STATE.scheduler_mode == "constant":
+                H = None
+            else:
+                entropy_input = u_post_conv
+                if STATE.scheduler_mode == "sampled_hist" and STATE.entropy_stride > 1:
+                    entropy_input = u_post_conv[..., ::STATE.entropy_stride]
+                if STATE.scheduler_mode == "cheap_proxy":
+                    H = _cheap_entropy_proxy(entropy_input, num_bins=STATE.num_bins)
+                else:
+                    H = _hist_entropy(entropy_input, num_bins=STATE.num_bins)
+
+            if STATE.force_chunk is not None:
+                selected_chunk = STATE.force_chunk
+            else:
+                selected_chunk = _entropy_to_chunk(
+                    H if H is not None else 0.0,
+                    c_min=STATE.chunk_min,
+                    c_max=STATE.chunk_max,
+                    h_ref=STATE.h_ref,
+                    num_bins=STATE.num_bins,
+                )
             STATE.records.append({
                 "layer_idx":    int(self.layer_idx),
                 "seq_len":      int(seq_len),
-                "entropy_nats": round(H, 6),
+                "entropy_nats": round(H, 6) if H is not None else None,
                 "chunk":        int(selected_chunk),
                 "routed":       STATE.route_chunk,
+                "scheduler_mode": STATE.scheduler_mode,
             })
 
         # --- SSM scan ---
@@ -370,9 +409,15 @@ def _load(model_name: str, device: Any) -> tuple[Any, Any]:
     return model, tokenizer
 
 
-def _time_generate(model, tokenizer, prompt, new_tokens, device, warmup, repeats) -> dict[str, Any]:
+def _time_generate(model, tokenizer, prompt, new_tokens, device, warmup, repeats,
+                   max_prompt_length: int) -> dict[str, Any]:
     import torch
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=1024).to(device)
+    inputs = tokenizer(
+        prompt,
+        return_tensors="pt",
+        truncation=True,
+        max_length=max_prompt_length,
+    ).to(device)
     prompt_len = int(inputs["input_ids"].shape[-1])
     for _ in range(warmup):
         with torch.no_grad():
@@ -411,10 +456,30 @@ def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--model",      default="mamba-370m", choices=list(MODEL_REGISTRY))
     p.add_argument("--prompt",     default=DEFAULT_PROMPT)
+    p.add_argument("--prompt-repeat", type=int, default=1)
+    p.add_argument("--max-prompt-length", type=int, default=1024)
     p.add_argument("--new-tokens", type=int,   default=32)
     p.add_argument("--warmup",     type=int,   default=2)
     p.add_argument("--repeats",    type=int,   default=5)
     p.add_argument("--num-bins",   type=int,   default=256)
+    p.add_argument("--chunk-min",  type=int,   default=128)
+    p.add_argument("--chunk-max",  type=int,   default=512)
+    p.add_argument(
+        "--scheduler-mode",
+        choices=("hist", "sampled_hist", "cheap_proxy", "constant"),
+        default="hist",
+        help=(
+            "Chunk scheduler used in active modes. 'constant' skips entropy "
+            "measurement and requires --force-chunk for route-only diagnostics."
+        ),
+    )
+    p.add_argument("--entropy-stride", type=int, default=1)
+    p.add_argument(
+        "--force-chunk",
+        type=int,
+        default=None,
+        help="Force a fixed scheduler chunk for active+routed diagnostics.",
+    )
     p.add_argument(
         "--selective-scan-dispatch-module",
         default=None,
@@ -503,6 +568,12 @@ def main() -> None:
 
         STATE.num_bins = args.num_bins
         STATE.h_ref = None  # use log(num_bins) = log K
+        STATE.chunk_min = args.chunk_min
+        STATE.chunk_max = args.chunk_max
+        STATE.force_chunk = args.force_chunk
+        STATE.scheduler_mode = args.scheduler_mode
+        STATE.entropy_stride = max(args.entropy_stride, 1)
+        prompt = " ".join([args.prompt] * max(args.prompt_repeat, 1))
 
         # --- Condition 1: Passive baseline ---
         if "passive" not in partial:
@@ -510,8 +581,9 @@ def main() -> None:
             STATE.route_chunk = False
             STATE.records.clear()
             print("[integrated] (1/3) Timing passive baseline …")
-            passive = _time_generate(model, tokenizer, args.prompt, args.new_tokens,
-                                     device, args.warmup, args.repeats)
+            passive = _time_generate(model, tokenizer, prompt, args.new_tokens,
+                                     device, args.warmup, args.repeats,
+                                     args.max_prompt_length)
             print(f"  passive: {passive['lat_mean_ms']:.2f} ± {passive['lat_std_ms']:.2f} ms "
                   f"(prompt_len={passive['prompt_len']})")
             partial["passive"] = passive
@@ -528,14 +600,16 @@ def main() -> None:
                 STATE.route_chunk = False
                 STATE.records.clear()
                 print("[integrated] (2/3) Timing active-hook-only (chunk selected, not routed) …")
-                active_only = _time_generate(model, tokenizer, args.prompt, args.new_tokens,
-                                             device, args.warmup, args.repeats)
+                active_only = _time_generate(model, tokenizer, prompt, args.new_tokens,
+                                             device, args.warmup, args.repeats,
+                                             args.max_prompt_length)
                 chunk_dist_active = {}
                 for rec in STATE.records:
                     chunk_dist_active[rec["chunk"]] = chunk_dist_active.get(rec["chunk"], 0) + 1
                 print(f"  active-only: {active_only['lat_mean_ms']:.2f} ± {active_only['lat_std_ms']:.2f} ms")
                 print(f"  chunk distribution: {dict(sorted(chunk_dist_active.items()))}")
-                partial["active_only"] = {**active_only, "chunk_dist": chunk_dist_active}
+                active_only = {**active_only, "chunk_dist": chunk_dist_active}
+                partial["active_only"] = active_only
                 with open(partial_path, "w") as f:
                     json.dump(partial, f, indent=2)
             else:
@@ -547,14 +621,16 @@ def main() -> None:
                 STATE.route_chunk = True
                 STATE.records.clear()
                 print("[integrated] (3/3) Timing active+routed (chunk selected AND routed into scan) …")
-                integrated = _time_generate(model, tokenizer, args.prompt, args.new_tokens,
-                                            device, args.warmup, args.repeats)
+                integrated = _time_generate(model, tokenizer, prompt, args.new_tokens,
+                                            device, args.warmup, args.repeats,
+                                            args.max_prompt_length)
                 chunk_dist_routed = {}
                 for rec in STATE.records:
                     chunk_dist_routed[rec["chunk"]] = chunk_dist_routed.get(rec["chunk"], 0) + 1
                 print(f"  active+routed: {integrated['lat_mean_ms']:.2f} ± {integrated['lat_std_ms']:.2f} ms")
                 print(f"  chunk distribution: {dict(sorted(chunk_dist_routed.items()))}")
-                partial["integrated"] = {**integrated, "chunk_dist": chunk_dist_routed}
+                integrated = {**integrated, "chunk_dist": chunk_dist_routed}
+                partial["integrated"] = integrated
                 with open(partial_path, "w") as f:
                     json.dump(partial, f, indent=2)
             else:
@@ -597,10 +673,17 @@ def main() -> None:
             "torch": torch.__version__,
             "model": args.model,
             "prompt_len": passive["prompt_len"],
+            "prompt_repeat": args.prompt_repeat,
+            "max_prompt_length": args.max_prompt_length,
             "new_tokens": args.new_tokens,
             "warmup": args.warmup,
             "repeats": args.repeats,
             "h_ref": f"log({args.num_bins})={math.log(args.num_bins):.4f}",
+            "chunk_min": args.chunk_min,
+            "chunk_max": args.chunk_max,
+            "scheduler_mode": args.scheduler_mode,
+            "entropy_stride": args.entropy_stride,
+            "force_chunk": args.force_chunk,
             "platform": platform.platform(),
             "chunk_size_kwarg_supported": kwarg_supported,
             "dispatch_module": args.selective_scan_dispatch_module,

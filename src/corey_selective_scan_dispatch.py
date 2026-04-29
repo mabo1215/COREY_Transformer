@@ -26,7 +26,7 @@ import os
 from typing import Any
 
 
-VALID_CHUNKS = (32, 64, 128, 256, 512, 1024, 2048)
+VALID_CHUNKS = (128, 256, 512, 1024, 2048)
 
 
 def _backend_name() -> str:

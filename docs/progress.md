@@ -1,6 +1,30 @@
 ﻿# 论文进度
 
-最后更新：2026-04-29（H800 有卡 smoke / full closure / enhancement runs 已完成并同步回本地；论文已回填 H800 n=20 integration、164-prompt diversity negative result、50-sample FA3/Mamba2 baselines、H800 W1 kernel supplement；Borderline Reject 剩余项已重分类为“唯一硬阻塞 + future work”）。
+最后更新：2026-04-29（H800 有卡 smoke / full closure / enhancement runs 与 runtime chunk dispatch 真正 routed live-scan 测量均已完成并同步回本地；论文已回填 H800 n=20 integration、164-prompt diversity negative result、50-sample FA3/Mamba2 baselines、H800 W1 kernel supplement。当前唯一剩余风险已从“工程硬阻塞”转为“真实 end-to-end speedup 不稳健”，n=50 结果约为 3.5% overhead）。
+
+## 2026-04-29 H800 W1 runtime chunk dispatch 调试结果
+
+本轮已在远端 H800 有卡环境中把 vendored Mamba selective-scan CUDA extension 改为可接受 runtime `chunk_size`，并通过 `src.corey_selective_scan_dispatch` 接入 `run_integrated_end_to_end.py`：
+- `Quamba/3rdparty/mamba/csrc/selective_scan/selective_scan.cpp/.h` 与 `selective_scan_fwd_kernel.cuh`：新增 `fwd_with_chunk_size` / `fwd_chunked` / `fwd_runtime_chunk` binding，支持 128/256/512/1024/2048 chunk 模板分派，保持 recurrence-preserving scan。
+- `src/corey_selective_scan_dispatch.py`：`runtime_cuda` backend 可检测 patched CUDA symbol，并报告 `chunk_size_honored=true`、`recurrence_preserving=true`、`eligible_for_w1_speedup=true`。
+- `src/experiments/run_integrated_end_to_end.py`：summary 现在保留 active-only 与 active+routed 的 `chunk_dist`，避免只在 stdout 出现。
+
+H800 验证产物已同步：
+- `src/outputs/runtime_chunk_build_gpu/multiblock_dispatch_probe_v2/summary.json`：`status=ready`，`runtime_cuda_available=true`，`runtime_cuda_reason=fwd_with_chunk_size`，`eligible_for_w1_speedup=true`。
+- `src/outputs/runtime_chunk_build_gpu/integrated_end_to_end_n20_v2/summary.json`：Mamba-370M，122-token prompt，32 new tokens，warmup=2，n=20。Passive `897.46±23.26 ms`；active hook only `911.11±13.24 ms`；active+routed `910.20±24.72 ms`；chunk distribution `{256: 836, 512: 220}`。
+- `src/outputs/runtime_chunk_build_gpu/integrated_end_to_end_n50/summary.json`：warmup=3，n=50。Passive `898.14±30.98 ms`；active hook only `889.63±13.42 ms`；active+routed `929.16±26.64 ms`；chunk distribution `{256: 2014, 512: 530}`；相对 passive 为 `1.035x` latency，即 `+31.01 ms / +3.5%` overhead。
+- 长上下文诊断实验已同步到 `src/outputs/runtime_chunk_build_gpu/long*_prompt_*`：prompt_len=976 默认策略 n=20 曾出现 `-0.31%` near-parity 假阳性，但 n=50 为 `+5.5%` overhead；强制 chunk=128/512/2048 的 n=20 分别为 `+11.6% / +4.0% / +4.5%` overhead；prompt_len=1952 默认策略 n=20 为 `+11.9%` overhead。
+
+结论更新：W1 的“无真实 DISPATCH_MODULE / runtime chunk 未路由进 live scan kernel”硬阻塞已解除；但当前默认 entropy→chunk 策略在真实 Mamba-370M end-to-end generate 上没有稳定 speedup，n=50 显示为 overhead。因此论文可以声明真实闭环和负/近持平 end-to-end 测量，不能声明 Tier-2a→Tier-2b 已带来端到端加速。
+
+追加诊断结论：继续拉长 prefill 或强制大 chunk 没有把 routed live kernel 变成稳定正向收益。主要原因更像是 HF Mamba generate 路径里 inline entropy 统计和 monkey-patched forward 的系统开销高于 patched selective-scan chunk 模板带来的 kernel-level收益；不是单纯“prompt 太短”或“chunk 选得太小”。
+
+2026-04-29 继续调试两条降开销路线：
+- **降低 entropy 统计成本**：`run_integrated_end_to_end.py` 新增 `--scheduler-mode sampled_hist --entropy-stride 8`，只在时间维每 8 个位置采样后做 histogram。H800 prompt_len=976、n=50 结果：Passive `902.14±29.45 ms`；active hook only `929.71±22.10 ms`；active+routed `893.56±18.58 ms`；chunk distribution `{256: 2332, 512: 212}`；相对 passive 为 `0.9905x`，约 `0.95%` end-to-end speedup。n=20 同配置为 `0.9768x`，约 `2.32%` speedup。产物：`src/outputs/runtime_chunk_build_gpu/scheduler_cost_sampled_hist_s8_n50/summary.json`。
+- **更低层调度/融合上界近似**：`--scheduler-mode constant --force-chunk 512` 跳过 Python entropy 统计，仅测 route-only 固定 chunk 的 live-kernel 路由成本。H800 prompt_len=976、n=50 结果：Passive `910.00±31.31 ms`；active+routed `911.68±32.19 ms`；相对 passive 为 `1.0018x`，约 `0.18%` overhead。产物：`src/outputs/runtime_chunk_build_gpu/scheduler_cost_constant_force512_n50/summary.json`。这说明单纯去掉 entropy 统计只能把系统推到 near-parity；正向收益来自 sampled histogram 在保留动态 chunk 分布的同时降低统计成本。
+- **cheap moment proxy**：`--scheduler-mode cheap_proxy` n=20 为 `1.057x`，约 `5.7%` overhead，不作为主路线。
+
+更新后的可用结论：原始 full histogram routed path 为负结果；sampled histogram stride=8 是目前唯一经 n=50 保持正向的真实 runtime chunk-routed live-kernel 配置，但幅度约 1%，仍应谨慎表述为 small end-to-end gain / near-parity improvement，而不是大幅 speedup。
 
 ## 2026-04-28 H800 有卡实验完成与论文回填
 
@@ -16,7 +40,7 @@
 - **H800 W1 kernel supplement（2026-04-29 回填）**：新增 Appendix `sec:h800_w1_kernel_supplement` / `tab:h800_w1_supplement`，并在 main abstract、Contributions、W1 结果段、Limitations、Conclusion 中引用。单卡 H800 上 COREY chunk-256 相对 Static-64：FP16 L=4096 为 `3.915×`，BF16 L=4096 为 `4.035×`，FP16 L=8192 为 `3.898×`；Static-512 仍是 sweep oracle。此项增强 Hopper-class kernel-level evidence，但不替代 true end-to-end speedup。
 
 `docs/revision_suggestions.tex` 对应状态复核：
-- W1 Missing end-to-end integration：**仍未完成 / 唯一硬阻塞**。没有真实 `DISPATCH_MODULE`，`multiblock_dispatch` probe 仍为 blocked；没有 chunk-parameterized live scan kernel 的端到端 speedup。
+- W1 Missing end-to-end integration：**2026-04-29 已解除工程硬阻塞，但结果不是 speedup**。真实 `DISPATCH_MODULE` / runtime chunk-routed live scan kernel 已在 H800 编译并接入，probe 为 ready；n=50 end-to-end active+routed 为 `929.16±26.64 ms` vs passive `898.14±30.98 ms`，当前应写作负结果/近持平而非 speedup。
 - W2 Limited real workload diversity：**实验已完成，结论为负**。已从“未做”改为“做过且未观察到真实跨 regime switching”；论文中保留 limitation framing。
 - W3 Insufficient baseline coverage：**最低要求已完成**。H800 上已有 FA3 full-model baseline、Mamba2 SSD full-model baseline、FA3 raw-kernel benchmark；RWKV-6 仍是 broader future work，不再属于本轮三大硬性未完成项。
 - W4 Small experimental sample size：**部分改善**。H800 integration 从 n=5 提升到 n=20；modern baselines 从 20 samples/task 提升到 50 samples/task；kernel benchmark仍 n=100。
@@ -760,22 +784,14 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 **NeurIPS 2026 硬性要求复核状态：**
 
 1. **Tier-2a → Tier-2b end-to-end 闭环与 speedup**  
-  - **仍未完成 / 保留为唯一硬阻塞。** 当前已完成 H800 inline scheduling scaffold、active+routed-call overhead（n=20）和 multi-BLOCK dispatch probe；但未提供真实 recurrence-preserving `DISPATCH_MODULE`，runtime chunk 选择仍未真正路由进 live scan kernel，未测量真实 end-to-end speedup。主文和附录均已声明该 gap 为 future work，需补充 chunk-parameterized live scan kernel 或真实 multi-BLOCK dispatch module。
+  - **工程闭环已完成 / speedup 结论为负或不稳健。** 已在 H800 上提供真实 recurrence-preserving `DISPATCH_MODULE`，runtime chunk 选择已路由进 live scan kernel，`multiblock_dispatch` probe 为 `ready`。端到端 n=20 曾出现约 1.6% 正向噪声；修正 summary 后 n=20 为约 1.4% overhead，n=50 为约 3.5% overhead。因此可以移除“没有真实 dispatch module”的硬阻塞表述，但不能声称真实 end-to-end speedup。
 
 已从本节移出的完成项：W2 real workload diversity（H800 84/164 prompt negative result）、W3 modern baselines（H800 FA3 / Mamba2 SSD / FA3 raw kernel）、W4 sample-size improvement（integration n=20、baselines 50 samples/task）、H800 W1 kernel supplement（FP16/BF16 triplet、oracle、perturbation）。
 
-当前本节唯一保留的硬性未完成项是 **W1 chunk-parameterized live scan kernel / true end-to-end speedup**。其余未扩展项均属于 broader future work，不再作为 Borderline Reject 本轮阻塞项跟踪。
+当前本节剩余问题已从“硬性未实现”变为 **W1 speedup not robust / current routed live-kernel measurement is negative**。其余未扩展项均属于 broader future work，不再作为 Borderline Reject 本轮阻塞项跟踪。
 
 ---
 
 ## 遗留问题
 
-**已完成 / 已移出本节：**
-- W2 real workload diversity：已完成 H800 84-prompt closure 与 164-prompt stress mix，结论为负（真实 prompts 仍集中到 chunk-256）；论文已作为 limitation 写入。
-- W3 modern baselines：已完成 H800 FA3 raw-kernel、Pythia-410M+FA3 50-sample/task、Mamba2-2.7B SSD 50-sample/task；RWKV-6 / 更大 harmonized suite 保留为 broader future work，不再是本轮硬阻塞。
-- W4 sample size：已将 H800 integration 提升到 `n=20`，modern baselines 提升到 `50 samples/task`；kernel sweeps 保持 `n=30`。
-- H800 W1 kernel supplement：已完成单卡 H800 FP16/BF16 4096 与 FP16 8192 triplet / oracle / perturbation，并回填论文。
-
-**仍 block：**
-- 唯一剩余硬阻塞项是真实 chunk-routed live scan kernel。没有 `DISPATCH_MODULE` 或可 runtime/compile-time 参数化的 selective-scan kernel 前，不能声称 Tier-2a/Tier-2b 已闭环，也不能声称 full checkpoint-inference speedup。
-- 当前 `src.corey_selective_scan_dispatch` wrapper 已能加载并安全探测，但远端 stock `selective_scan_cuda` 没有 `fwd_with_chunk_size` / `fwd_chunked` / `fwd_runtime_chunk` 符号，probe 输出 `eligible_for_w1_speedup=false`。因此缺的是 patched CUDA/C++ extension，不是数据。
+唯一剩余风险项：真实 chunk-routed live scan kernel 已完成并测量，但当前 H800 end-to-end 没有稳定 speedup，n=50 为 `+3.5%` overhead。后续若要争取正向结果，应优化 entropy→chunk 策略、扩大 prompt/sequence regime，或用更长上下文让 chunk 模板选择对 kernel work 更敏感；在此之前论文应按负结果/near-parity 写法处理。其余 W2/W3/W4 已有 H800 结果回填论文；后续 H800 可扩展实验计划见文件顶部“2026-04-28 H800 可扩展实验计划”。
