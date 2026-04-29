@@ -220,6 +220,7 @@ def _make_active_forward(original_forward: Any) -> Any:
                 "chunk":        int(selected_chunk),
                 "routed":       STATE.route_chunk,
                 "scheduler_mode": STATE.scheduler_mode,
+                "entropy_stride": int(STATE.entropy_stride),
             })
 
         # --- SSM scan ---
@@ -682,7 +683,7 @@ def main() -> None:
             "chunk_min": args.chunk_min,
             "chunk_max": args.chunk_max,
             "scheduler_mode": args.scheduler_mode,
-            "entropy_stride": args.entropy_stride,
+            "entropy_stride": STATE.entropy_stride,
             "force_chunk": args.force_chunk,
             "platform": platform.platform(),
             "chunk_size_kwarg_supported": kwarg_supported,

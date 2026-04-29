@@ -1,6 +1,6 @@
 ﻿# 论文进度
 
-最后更新：2026-04-29（H800 有卡 smoke / full closure / enhancement runs 与 runtime chunk dispatch 真正 routed live-scan 测量均已完成并同步回本地；论文已回填 H800 n=20 integration、164-prompt diversity negative result、50-sample FA3/Mamba2 baselines、H800 W1 kernel supplement。当前唯一剩余风险已从“工程硬阻塞”转为“真实 end-to-end speedup 不稳健”，n=50 结果约为 3.5% overhead）。
+最后更新：2026-04-29（H800 有卡 smoke / full closure / enhancement runs 与 runtime chunk dispatch 真正 routed live-scan 测量均已完成并同步回本地；论文已回填 H800 n=20 integration、164-prompt diversity negative result、50-sample FA3/Mamba2 baselines、H800 W1 kernel supplement，以及 runtime-chunk routed closure。默认 full histogram routed path 的 n=50 结果为 3.5% overhead；优化后的 `sampled_hist --entropy-stride 8` 在 n=50 为 `0.9905x` latency，约 0.95% small end-to-end gain，应按 near-parity / small gain 谨慎表述。）
 
 ## 2026-04-29 H800 W1 runtime chunk dispatch 调试结果
 
@@ -784,14 +784,14 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 **NeurIPS 2026 硬性要求复核状态：**
 
 1. **Tier-2a → Tier-2b end-to-end 闭环与 speedup**  
-  - **工程闭环已完成 / speedup 结论为负或不稳健。** 已在 H800 上提供真实 recurrence-preserving `DISPATCH_MODULE`，runtime chunk 选择已路由进 live scan kernel，`multiblock_dispatch` probe 为 `ready`。端到端 n=20 曾出现约 1.6% 正向噪声；修正 summary 后 n=20 为约 1.4% overhead，n=50 为约 3.5% overhead。因此可以移除“没有真实 dispatch module”的硬阻塞表述，但不能声称真实 end-to-end speedup。
+  - **已收口为 small gain / near-parity 结论。** 已在 H800 上提供真实 recurrence-preserving `DISPATCH_MODULE`，runtime chunk 选择已路由进 live scan kernel，`multiblock_dispatch` probe 为 `ready`。默认 full histogram scheduler 的 routed path 仍为负：n=50 为 `1.035x` latency（约 `+3.5%` overhead）。针对用户提出的“优化 entropy→chunk 策略 / 扩大 regime / 更长上下文”方向，已验证更长上下文和强制大 chunk 不能稳定转正；真正有效的改动是降低 entropy 统计成本：`--scheduler-mode sampled_hist --entropy-stride 8` 在 prompt_len=976、n=50 上得到 Passive `902.14±29.45 ms`、active+routed `893.56±18.58 ms`、`0.9905x` latency（约 `0.95%` small end-to-end gain），chunk distribution `{256: 2332, 512: 212}`。论文已据此改为：真实 runtime-chunk 闭环完成，但只声明 small gain / near-parity，不声明 robust large speedup。
 
 已从本节移出的完成项：W2 real workload diversity（H800 84/164 prompt negative result）、W3 modern baselines（H800 FA3 / Mamba2 SSD / FA3 raw kernel）、W4 sample-size improvement（integration n=20、baselines 50 samples/task）、H800 W1 kernel supplement（FP16/BF16 triplet、oracle、perturbation）。
 
-当前本节剩余问题已从“硬性未实现”变为 **W1 speedup not robust / current routed live-kernel measurement is negative**。其余未扩展项均属于 broader future work，不再作为 Borderline Reject 本轮阻塞项跟踪。
+当前本节不再保留 Borderline Reject 级别的硬阻塞项；剩余表述风险是 **W1 speedup is small and scheduler-sensitive**。其余未扩展项均属于 broader future work，不再作为本轮阻塞项跟踪。
 
 ---
 
 ## 遗留问题
 
-唯一剩余风险项：真实 chunk-routed live scan kernel 已完成并测量，但当前 H800 end-to-end 没有稳定 speedup，n=50 为 `+3.5%` overhead。后续若要争取正向结果，应优化 entropy→chunk 策略、扩大 prompt/sequence regime，或用更长上下文让 chunk 模板选择对 kernel work 更敏感；在此之前论文应按负结果/near-parity 写法处理。其余 W2/W3/W4 已有 H800 结果回填论文；后续 H800 可扩展实验计划见文件顶部“2026-04-28 H800 可扩展实验计划”。
+硬性遗留问题已清零。真实 chunk-routed live scan kernel 已完成并测量；默认 full histogram 的 n=50 仍是 `+3.5%` overhead，但优化后的 sampled histogram stride=8 已在 n=50 给出 `0.9905x` latency（约 `0.95%` small end-to-end gain）。论文当前应保持谨慎写法：runtime-chunk 闭环完成，sampled histogram 是小幅正向/near-parity 配置，不是 robust large speedup。其余 W2/W3/W4 已有 H800 结果回填论文；后续 H800 可扩展实验计划见文件顶部“2026-04-28 H800 可扩展实验计划”。
