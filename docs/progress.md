@@ -1,6 +1,6 @@
 ﻿# 论文进度
 
-最后更新：2026-04-29（H800 runtime chunk dispatch 真正 routed live-scan 测量已完成；默认 full histogram routed path 的 n=50 结果为 3.5% overhead，`sampled_hist --entropy-stride 8` 为 `0.9905x` latency，约 0.95% small gain。最新 `docs/revision_suggestions.tex` 仍判定为 Weak Reject：核心未解决点是缺少足够大的真实 end-to-end gain、entropy 在真实 workload 中作用弱、以及尚未给出 best static oracle vs adaptive 的正式 H800 表。已新增 static chunk sweep -> best static oracle -> adaptive scheduler -> summary table 实验入口，并在 4 卡 RTX 3090 上完成最小 smoke。）
+最后更新：2026-04-29（H800 runtime chunk dispatch 真正 routed live-scan 测量已完成；默认 full histogram routed path 的 n=50 结果为 3.5% overhead，`sampled_hist --entropy-stride 8` 相对 passive 为 `0.9905x` latency，属于约 1% near-parity。正式 H800 static oracle vs adaptive killer experiment 已完成：full sweep 中 best static oracle 为 `static_chunk_128`，`876.55±26.55 ms`；adaptive sampled-hist stride=8 为 `905.55±18.24 ms`，相对 best static 为 `1.0331x` latency / `0.9680x` speedup。随后 128/1024/adaptive confirm run 出现相反方向：best static `static_chunk_1024` 为 `901.98±33.12 ms`，adaptive 为 `886.95±15.77 ms`，相对 best static 为 `0.9833x` latency / `1.0170x` speedup。结论应收窄为：routed adaptive 结果噪声大、scheduler-sensitive，不能声明 robust oracle-beating 或 `>=10%` gain。最新 `docs/revision_suggestions.tex` 仍判定为 Weak Reject：核心未解决点是缺少足够大的真实 end-to-end gain、entropy 在真实 workload 中作用弱、以及缺少统一 ablation / quality 表。）
 
 ## 2026-04-29 Static Oracle vs Adaptive 实验入口与 4 卡 3090 smoke
 
@@ -34,6 +34,16 @@ python -m src.experiments.run_static_oracle_adaptive \
   --output-dir src/outputs/static_oracle_adaptive_h800
 ```
 
+正式 H800 run 已完成（远端 `ssh h800`，单卡 NVIDIA H800 PCIe，CUDA 12.8 / torch 2.8.0+cu128；HuggingFace 使用本地 `system_cache`，后续缺失下载应统一设置 `HF_ENDPOINT=https://hf-mirror.com`）：
+
+- 运行前 probe：`src/outputs/static_oracle_adaptive_h800_probe/summary.json`，`runtime_cuda_available=true`，`runtime_cuda_reason=fwd_with_chunk_size`，`chunk_size_honored=true`，`eligible_for_w1_speedup=true`。
+- 正式输出：`src/outputs/static_oracle_adaptive_h800/summary.json`、`summary_table.md`、`summary_table.csv` 已同步回本地。
+- Static sweep integrated latency：chunk-128 `876.55±26.55 ms`；chunk-256 `914.34±22.64 ms`；chunk-512 `881.78±36.80 ms`；chunk-1024 `899.81±21.74 ms`；chunk-2048 `910.09±28.69 ms`。
+- Best static oracle：`static_chunk_128`，`876.55 ms`。
+- Adaptive sampled-hist stride=8：`905.55±18.24 ms`，chunk distribution `{1024: 2544}`；相对 best static 为 `1.0331x` latency / `0.9680x` speedup。
+- 追加 confirm run：`src/outputs/static_oracle_adaptive_h800_confirm_128_1024/summary_table.md` 只复跑 chunk-128、chunk-1024、adaptive。该 run 中 best static 为 chunk-1024（`901.98±33.12 ms`），adaptive 为 `886.95±15.77 ms`，相对 best static 为 `0.9833x` latency / `1.0170x` speedup，chunk distribution `{512: 2544}`。
+- 结论：killer experiment 没有给出稳定正结果。Full sweep 下 adaptive 比 best static 慢约 `3.3%`，confirm subset 下 adaptive 又快约 `1.7%`；两者都远小于 `>=10%`，且误差条较大。论文应写成 scheduler-sensitive / not robustly oracle-beating，而不是“adaptive beats static oracle”。
+
 ## 2026-04-29 H800 W1 runtime chunk dispatch 调试结果
 
 本轮已在远端 H800 有卡环境中把 vendored Mamba selective-scan CUDA extension 改为可接受 runtime `chunk_size`，并通过 `src.corey_selective_scan_dispatch` 接入 `run_integrated_end_to_end.py`：
@@ -56,7 +66,7 @@ H800 验证产物已同步：
 - **更低层调度/融合上界近似**：`--scheduler-mode constant --force-chunk 512` 跳过 Python entropy 统计，仅测 route-only 固定 chunk 的 live-kernel 路由成本。H800 prompt_len=976、n=50 结果：Passive `910.00±31.31 ms`；active+routed `911.68±32.19 ms`；相对 passive 为 `1.0018x`，约 `0.18%` overhead。产物：`src/outputs/runtime_chunk_build_gpu/scheduler_cost_constant_force512_n50/summary.json`。这说明单纯去掉 entropy 统计只能把系统推到 near-parity；正向收益来自 sampled histogram 在保留动态 chunk 分布的同时降低统计成本。
 - **cheap moment proxy**：`--scheduler-mode cheap_proxy` n=20 为 `1.057x`，约 `5.7%` overhead，不作为主路线。
 
-更新后的可用结论：原始 full histogram routed path 为负结果；sampled histogram stride=8 是目前唯一经 n=50 保持正向的真实 runtime chunk-routed live-kernel 配置，但幅度约 1%，仍应谨慎表述为 small end-to-end gain / near-parity improvement，而不是大幅 speedup。
+更新后的可用结论：原始 full histogram routed path 为负结果；sampled histogram stride=8 在 passive baseline 上约 1% near-parity，但 static-oracle confirm 显示方向不稳定，仍应谨慎表述为 scheduler-sensitive near-parity routed measurement，而不是大幅 speedup 或 oracle-beating gain。
 
 ## 2026-04-28 H800 有卡实验完成与论文回填
 
@@ -816,9 +826,10 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 **NeurIPS 2026 硬性要求复核状态（2026-04-29 最新评审）：**
 
 1. **Demonstrate real end-to-end speedup（未解决）**  
-  - 当前 best routed H800 结果仍只有 `sampled_hist --entropy-stride 8` 的 `0.9905x` latency（约 0.95% small gain），没有达到评审要求的 `>=10%` latency/throughput gain。
-  - 已完成工程准备：真实 H800 runtime chunk dispatch 可用；新增 `run_static_oracle_adaptive.py` 可正式跑 static sweep / oracle / adaptive summary。
-  - 仍需数据：在 H800 上运行正式 `static_oracle_adaptive_h800`，判断 adaptive 是否能接近或超过 best static oracle。若不能，论文必须改成“near-oracle / profiling-free adaptation”而非“beats optimal static”。
+  - 当前 best routed H800 result 相对 passive 只有 `sampled_hist --entropy-stride 8` 的 `0.9905x` latency（约 1% near-parity），没有达到评审要求的 `>=10%` latency/throughput gain。
+  - 已完成正式 H800 oracle 对比：`static_oracle_adaptive_h800` 显示 best static oracle 为 chunk-128（`876.55±26.55 ms`），adaptive sampled-hist stride=8 为 `905.55±18.24 ms`，相对 best static 为 `1.0331x` latency / `0.9680x` speedup。
+  - 已完成 confirm subset：`static_oracle_adaptive_h800_confirm_128_1024` 显示 best static 为 chunk-1024（`901.98±33.12 ms`），adaptive 为 `886.95±15.77 ms`，相对 best static 为 `0.9833x` latency / `1.0170x` speedup。
+  - 结论：adaptive vs static oracle 方向不稳定，幅度只有约 `-3.3%` 到 `+1.7%`，远低于 `>=10%`；论文必须改成“scheduler-sensitive / not robustly oracle-beating”，不能写成“beats optimal static”。
 
 2. **Improve entropy signal effectiveness（部分完成，仍偏弱）**  
   - 已尝试并验证：full histogram、sampled histogram、cheap moment proxy、长上下文、强制固定 chunk。当前唯一 n=50 正向配置是 sampled histogram stride=8。
@@ -830,8 +841,8 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 4. **Compare against stronger baselines（部分完成）**  
   - 已完成：H800 FA3 full-model baseline、Mamba2 SSD full-model baseline、FA3 raw kernel、H800 W1 static oracle kernel sweep。
-  - 新完成脚本准备：`run_static_oracle_adaptive.py` 可生成 end-to-end best static oracle 表。
-  - 仍未完成：正式 H800 end-to-end static oracle vs adaptive 表；learned scheduler baseline；XLA/nvFuser/compiler fusion baseline。
+  - 新完成：正式 H800 end-to-end static oracle vs adaptive 表已生成并同步到 `src/outputs/static_oracle_adaptive_h800/summary_table.md`。
+  - 仍未完成：learned scheduler baseline；XLA/nvFuser/compiler fusion baseline。
 
 5. **Ablation on scheduler design（部分完成）**  
   - 已完成：constant force-chunk route-only、cheap_proxy、sampled_hist、full_hist 对比的零散 H800 run。
@@ -852,7 +863,7 @@ Minor suggestions 状态：
 
 最新 Weak Reject 评审下，工程硬阻塞已不再是“无法路由 chunk”，而是“路由后是否值得用”的证据不足。当前遗留问题如下：
 
-1. **H800 正式 static oracle vs adaptive killer experiment 尚未运行。** 4 卡 RTX 3090 已完成最小 smoke，证明脚本链路可用；但 3090 没有 patched `fwd_with_chunk_size`，不能作为性能结论。下一步必须在 H800 上跑 `static_oracle_adaptive_h800`。
-2. **真实收益仍太小。** 当前最好 H800 routed result 是 `0.9905x` latency，约 0.95% gain；达不到 `docs/revision_suggestions.tex` 要求的 `>=10%` gain。
+1. **H800 正式 static oracle vs adaptive killer experiment 已运行，结论是不稳定/非强正。** 4 卡 RTX 3090 已完成最小 smoke，证明脚本链路可用；正式 H800 `static_oracle_adaptive_h800` 已完成并同步。Full sweep 中 best static 是 `static_chunk_128`（`876.55±26.55 ms`），adaptive sampled-hist stride=8 为 `905.55±18.24 ms`，相对 best static 为 `1.0331x` latency / `0.9680x` speedup。Confirm subset 中 best static 是 chunk-1024（`901.98±33.12 ms`），adaptive 为 `886.95±15.77 ms`，相对 best static 为 `0.9833x` latency / `1.0170x` speedup。
+2. **真实收益仍太小，且 adaptive 未稳定赢 oracle。** 先前最好 H800 routed result 相对 passive 是 `0.9905x` latency，约 1% near-parity；oracle 对比下 adaptive 相对 best static 在 `-3.3%` 到 `+1.7%` 间波动，远达不到 `docs/revision_suggestions.tex` 要求的 `>=10%` gain。
 3. **entropy 作用仍未充分证明。** 真实 workload 多数落到相同 chunk bucket；需要 alternative statistics 或 mixed regime 让 adaptive 的选择真正区别于最优静态 chunk。
 4. **缺少统一 ablation / quality 表。** 需要把 constant/no-entropy/random/adaptive 与 quality-preservation 结果放入同一组可审计实验，否则 reviewer 仍会认为机制像 prototype。
