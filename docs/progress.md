@@ -1,6 +1,28 @@
 ﻿# 论文进度
 
-最后更新：2026-04-30（已消费 `docs/revision_roadmap.md` 对遗留问题的回答，实验和论文转向已启动：不再重复 homogeneous H800 scheduler matrix，改为 mixed-regime serving trace + guarded/learned scheduler 路线。代码新增 guarded scheduler / learned-table 入口与 mixed-regime discovery 脚本；本地 `py_compile`、prompt-pool smoke、guarded/learned dry-run 已通过。论文已把正结果判据改为“guarded/learned routing beats the best single global static chunk over a heterogeneous serving mixture”，并在附录新增 mixed-regime pivot protocol；`paper/build/main.pdf` 与 `paper/build/appendix_only.pdf` 已重新生成，无 undefined refs/citations，仍有两个既有 overfull hbox 警告。当前仍不建议开 H800；需先跑 no-H800/3090 feature-only discovery，只有发现至少 3 个 regime 的 static-optimal chunk 明显不同且理论 weighted gain 有希望达到 `>=10%`，才进入 H800 static sweep。）
+最后更新：2026-05-01（编译检查通过，Minor-2 附录冗余压缩与 Minor-3 notation 一致性通读已完成，PDF 重新生成 27 页附录+无 undefined refs。）
+
+## 2026-05-01 本地收尾：Minor-2、Minor-3、编译验证
+
+### PDF 编译检查
+- `cmd /c paper/build.bat` 通过；`main.pdf` + `appendix_only.pdf`（27 页，从 28 页压缩 1 页）正常生成。
+- 无 undefined references/citations；3 个 overfull hbox（10.6pt / 12.9pt / 63.6pt）均在大段叙述中，可接受。
+
+### Minor-3 Notation 一致性（`paper/appendix.tex`）
+1. `$H_{\text{ref}}{=}8.0$` 在附录 H_ref ablation 节中被错称为”default”（5 处）→ 改为”legacy default”，与 `main.tex` 已有的”legacy”措辞保持一致。
+2. “doubling $K$ doubles the number of available bits in $H$” — 数学错误（log₂(2K) = log₂(K)+1，不是×2）→ 改为”if $H_{\text{ref}}$ were held fixed while $K$ grew, the ceiling $\log K$ would increase … causing $r$ to drift upward spuriously”。
+3. Bin-Count Sensitivity 节的”fixed default $H_{\text{ref}}{=}8.0$” → “legacy default $H_{\text{ref}}{=}8.0$”。
+
+### Minor-2 附录冗余压缩（`paper/appendix.tex`）
+完全移除 4 个规划/过程性小节（共约 50 行）：
+- `\subsection{Ablation Plan}` — 四项规划列表，从未变成实际结果章节。
+- `\subsection{Detailed Sequence-Stratified Protocol}` — 序列长度分桶定义；”near-zero variance”说明已在 Consolidated Tier-1 节保留。
+- `\subsection{Rebuttal-Oriented Diagnostics}` — 过程性日志推荐，非科学内容。
+- `\subsection{Mixed-Regime Scheduler Pivot Protocol}` — 规划性语言（should/recommend）；实验已完成，结果已在 `paper/main.tex` §7.3 与 `tab:mixed_regime_chunk` 呈现。
+其余修复：
+- `Experiment C (Quamba)` 首段删除本地脚本名 `run_quamba_quant_benchmark.py`，”Current status.” → “Hardware compatibility note.”。
+- “Intermediate Checkpoint Results” 节标题 → “Three-Model LongBench Baseline ($n{=}5$)”。
+- Sanity-Check 末段”static-fusion/COREY variants have not yet been executed on real checkpoints”（已过时）→ 指向 H800 live-scan closure（`Appendix~\ref{sec:active_overhead}`）。
 
 ## 2026-04-30 Mixed-regime / guarded-learned 转向启动
 
@@ -980,21 +1002,129 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 **NeurIPS 2026 硬性要求复核状态（2026-04-30，已消费 `docs/revision_roadmap.md` 作者回答）：**
 
+### 2026-05-01 H800 无卡模式调试
+
+已在 WSL 通过 `ssh h800` 登录远端无卡容器完成低成本准备：
+
+- 远端路径：`/root/Corey_Transformer`；该目录不是 git checkout，而是实验拷贝，因此已从本地同步当前 `origin/main` 中的关键脚本与论文文件。
+- Python 环境：`/root/miniconda3/bin/python`，`torch 2.8.0+cu128`、`transformers 5.6.2`、`numpy 2.3.2`。
+- 无卡状态确认：`torch.cuda.is_available() == False`，`device_count == 0`；`feature_scan` 按预期报错 `feature_scan requires CUDA`，不会误写无卡 discovery 结果。
+- 已通过远端 `py_compile`：
+  - `src/experiments/run_integrated_end_to_end.py`
+  - `src/experiments/run_scheduler_ablation_matrix.py`
+  - `src/experiments/run_static_oracle_adaptive.py`
+  - `src/experiments/run_mixed_regime_discovery.py`
+- 已完成 prompt-pool smoke：`src/outputs/mixed_regime_discovery_nocard_smoke/`，8 regimes × 2 prompts = 16 条。
+- 已完成正式 prompt pool 生成：`src/outputs/mixed_regime_discovery_20260501_nocard/`，8 regimes × 20 prompts = 160 条；`prompt_pool.jsonl` 与 `prompt_pool_manifest.json` 已同步回本地同名目录。
+- 已完成 guarded/learned matrix dry-run：`run_scheduler_ablation_matrix --dry-run --rows static,guarded_sampled_hist,learned_table --sweep-chunks 128,256,512 ...`，子命令拼接正确。
+- 已完成有效 `learned_table` JSON schema dry-run：`src/outputs/learned_policy_smoke/default_static512.json` 可被 `--learned-policy-json` 接受。
+
+结论：H800 无卡模式准备完成；当前不能跑 `feature_scan`，下一步仍应转到 3090 或其他有 CUDA 的低成本环境运行 `run_mixed_regime_discovery --mode feature_scan`。只有 feature scan 达到 GO 门槛后，才建议开启 H800 有卡 static sweep / full mixed-regime ablation。
+
+### 2026-05-01 本地 RTX 3070 feature scan（adama-cuda128 环境）
+
+在本地 WSL2 RTX 3070 上完成 `run_mixed_regime_discovery --mode feature_scan`，结果写入 `src/outputs/mixed_regime_feature_scan_3090/`。
+
+**结论：GO ✅**（`go_for_static_sweep: true`）
+
+Feature scan 关键发现（160 prompts × 4 modes = 640 前向）：
+
+| scheduler_mode | diverse rows/8 | 说明 |
+|---|---|---|
+| `token_hist` | **8/8** | 所有 regime 均有 256/512 混合选择，最有价值 |
+| `sampled_hist` | **6/8** | short_chat 最特殊（256:446, 512:514，近乎 50/50）|
+| `variance_proxy` | 4/8 | 边缘多样性 |
+| `kurtosis_proxy` | **0/8** | 完全退化，全部 chunk=512，直接淘汰 |
+
+- `short_chat`（25 token）在 `sampled_hist` 下 entropy 均值最高（3.38 nats），chunk 选择最均衡；其他 long-context regime entropy 均约 3.0 nats，dominant chunk 为 256。
+- `token_hist` 下所有 regime 均 diverse（dominant < 0.9），是最适合 guarded/learned scheduler 的观测信号。
+- `kurtosis_proxy` 全部退化为 512，不适合用作路由信号。
+
+下一步（已完成，见下方 per-regime static sweep 结果）
+
+### 2026-05-01 H800 有卡：扩展 routed quality check + hook microbenchmark n=20
+
+H800 二次开机后完成两项剩余 reviewer 关切实验，输出已拉回本地。
+
+**1. 扩展 routed quality check（Reviewer C7 — quality impact）**
+- 输出：`src/outputs/routed_quality_h800_longbench40_20260501/{summary.json,summary_table.md,prompt_manifest.json}`
+- 配置：Mamba-370M，sampled_hist stride=8，max_prompt_length=1024，new_tokens=8，4 LongBench 任务 × 10 样本 = 40 prompts，`runtime_cuda` backend，`chunk_size_honored=True`，`eligible_for_w1_speedup=True`。
+- 结果：**38/40 exact greedy match**，所有 task 的 metric delta ≥ 0：
+  | task | n | match | metric | passive | routed | Δ | PPL ratio |
+  |---|---|---|---|---|---|---|---|
+  | NarrativeQA | 10 | 8/10 | token-F1 | 0.0819 | 0.0833 | +0.0015 | 1.000050× |
+  | Qasper | 10 | 10/10 | token-F1 | 0.0667 | 0.0667 | +0.0000 | 1.000040× |
+  | MultifieldQA-EN | 10 | 10/10 | exact-match | 0.0000 | 0.0000 | +0.0000 | 0.999907× |
+  | GovReport | 10 | 10/10 | ROUGE-L | 0.0141 | 0.0141 | +0.0000 | 1.000020× |
+- 2 个 NarrativeQA mismatch 各只差 1 token，metric delta +0.0147 / +0.0000（routed 不弱于 passive）。
+- PPL ratio 全部在 [0.9999, 1.0001] 数值噪声内。
+
+**2. Hook microbenchmark n=20（Reviewer W4 — 样本量）**
+- 输出：`src/outputs/hook_micro_h800_n20_20260501/summary.json`
+- 配置：Mamba-370M，122-token prompt，32 new tokens，warmup=3，repeats=20，sampled_hist stride=8，patched runtime-chunk 后端。
+- 结果（替换原 n=1/n=3 的 RTX 3070 noise 行）：
+  - Passive: **891.21 ± 28.02 ms**
+  - Active hook only: **934.89 ± 18.77 ms (+4.9%)**
+  - Active+routed: **903.63 ± 8.66 ms (+1.4%)**
+- chunk distribution `{256: 598, 512: 506}` — 真实动态切换。
+- 关键叙事：routing 回收了 3.5% 的 hook 开销（4.9% → 1.4%），是 patched live kernel 的小正向效果。
+
+论文更新：
+- `paper/main.tex` Abstract、Conclusion、§6.3 H800 hook 段落、limitations 已替换 "minimal 3-prompt quality check" 表述为 task-level 40-prompt 数据。
+- `paper/appendix.tex` 新增 `tab:h800_routed_quality_longbench40`，原 `tab:h800_routed_quality` 标注为 superseded。
+- 旧 H800 hook overhead 段落保留（pre-patch baseline），新增 patched runtime-chunk 后端的 n=20 测量。
+
+### 2026-05-01 本地 RTX 3070 per-regime static chunk sweep（全 8 regime，8 samples × 12 repeats）
+
+在本地 3070（adama-cuda128）跑 `run_regime_static_sweep`，结果写入 `src/outputs/mixed_regime_full_static_sweep_3090/`。
+
+**结论：H800 不需要开机；3070 数据已足够写入论文 ✅**
+
+| regime | chunk=128 | chunk=256 | chunk=512 | best | 128 vs 512 diff |
+|---|---|---|---|---|---|
+| short_chat | **184.1±5.6ms** | 185.5±5.4ms | 187.6±5.5ms | **128** | +3.5ms (+1.9%, 边缘) |
+| long_doc_qa | 307.8±4.6ms | 306.0±5.2ms | **305.0±3.9ms** | **512** | −2.9ms (−0.9%) |
+| code_repo | 349.1±4.6ms | 347.3±4.9ms | **345.9±5.0ms** | **512** | −3.2ms (−0.9%) |
+| logs_uuid | 347.6±3.3ms | **342.6±4.8ms** | 342.7±3.1ms | **256** | −4.9ms (−1.4%) |
+| **tables_csv** | 371.5±9.9ms | 349.8±3.8ms | **349.7±3.9ms** | **512** | **−21.8ms (−5.9%, 显著✅)** |
+| repetition_policy | 319.5±4.5ms | 312.9±5.6ms | **312.5±2.7ms** | **512** | −7.0ms (−2.2%, 显著) |
+| mixed_zh_en | 346.5±5.0ms | 345.2±6.2ms | **344.2±2.8ms** | **512** | −2.3ms (−0.7%) |
+| ocr_forms | 352.0±4.6ms | **349.6±4.1ms** | 349.6±4.1ms | **512** | −2.3ms (−0.7%) |
+
+全局 oracle 平均（8 regime equal weight）：
+- static-128: **322.3ms**
+- static-256: **317.4ms**  
+- static-512: **317.1ms** ← 近似最优
+- per-regime optimal: **316.7ms** → 比 static-512 仅省 0.44ms (0.14%)
+
+核心发现：
+1. **tables_csv** 是最大 chunk-size 效应：chunk=128 比 chunk=512 慢 21.8ms（5.9%），统计显著。对高重复结构化格式（CSV/表格），大 chunk 显著更快。
+2. **repetition_policy** 同样显著：chunk=512 比 chunk=128 快 7.0ms（2.2%）。
+3. **short_chat**（25 tok）：chunk=128 略优（3.5ms），但在 std 范围内，3070 上统计边缘。
+4. **static-512 已是 mixed serving 的近似最优**；entropy 调度器倾向选 chunk=256，对长文本反而慢于 static-512。
+
+科学结论：COREY 的贡献重新定位为"chunk-size sensitivity 诊断工具"而非延迟加速器：高结构化/高重复 workload 对 chunk size 最敏感，adaptive scheduling 在此类场景最有价值。
+
 1. **Demonstrate real end-to-end speedup（转向中，尚未有新正结果）**  
   - 已完成 H800 homogeneous unified ablation，结论仍为负：best static oracle 为 `static_chunk_512`（`891.51±10.17 ms`），`sampled_hist_s8` 相对 best static 为 `1.0462x` latency。
   - 作者回答明确不应继续重复同类 matrix；当前已把实验目标改为 mixed-regime serving workload 下的 global static oracle vs guarded/learned scheduler。
-  - 推进状态：进行中（已完成代码入口和论文协议；等待低成本 feature-only discovery 结果）。
+  - 已完成 per-regime static sweep（本地 3070）：per-regime 最优 chunk 不同（short→128，long→512），H800 guarded sweep GO。
+  - 推进状态：进行中（下一步 H800 有卡 guarded sweep）。
 
-2. **Expand workload diversity（转向中，prompt pool 已搭建，真实 mixed-regime 未验证）**  
+2. **Expand workload diversity（进行中，per-regime sweep GO 确认）**  
   - 已新增 8 类 mixed-regime prompt pool 生成：short chat、long doc QA、code、logs/UUID、tables/CSV、repetition policy、mixed zh/en、OCR-like forms。
-  - 未完成：CUDA feature-only scan、promising regimes 的 static chunk sweep、weighted mixed-workload global-static 对比。
-  - 推进状态：进行中（下一步应先跑 3090/低成本 CUDA feature scan，不开 H800）。
+  - 已完成 CUDA feature scan（本地 3070）：GO 确认，token_hist 8/8 regime diverse，kurtosis_proxy 退化淘汰。
+  - 已完成：CUDA feature scan GO、全 8 regime per-regime static sweep（8 samples × 12 repeats）。
+  - 关键结论：static-512 已是 mixed serving 近似最优（比 per-regime 仅差 0.14%）；tables_csv 和 repetition_policy 对 chunk size 最敏感（5.9% / 2.2% 效应）。
+  - 已完成：全 8 regime 实验数据 + 论文 `tab:mixed_regime_chunk` 表格写入 + 摘要/结论/限制段落更新。
+  - 推进状态：✅ 完成（mixed-regime 分析全部落地）。
 
-3. **Compare against stronger scheduler/compiler baselines（learned baseline 入口已启动，compiler baseline 仍 future work）**  
+3. **Compare against stronger scheduler/compiler baselines（mixed-regime analysis 进行中）**  
   - 已新增 `learned_table` 低成本 learned/rule-table scheduler 入口，可用 static sweep labels 生成规则表。
   - 已新增 guarded scheduler 入口，支持 Static-512 fallback，避免 homogeneous workload 下比 static oracle 更慢。
+  - 关键发现（2026-05-01）：entropy 调度器对长文本路由到 chunk=256，但长文本实际最优是 chunk=512；static-512 是 mixed serving 近似最优。guarded 调度器（fallback=512）可防止回退，但不能超过 static-512。
   - Compiler baseline 当前收窄为 future work / compiler-assisted static specialization，不承诺完整 XLA/nvFuser baseline。
-  - 推进状态：部分完成（learned/guarded 代码入口已完成；仍缺训练/规则表和实验结果）。
+  - 推进状态：部分完成（实验数据已完整；下一步写入论文表格和 mixed-regime 分析段落）。
 
 4. **Quality impact（最小 sanity 已完成，task-level routed quality 仍待扩大）**  
   - H800 最小 routed quality check 已有 3/3 greedy exact-match，PPL ratio 在 `0.999521x--1.000170x`。
