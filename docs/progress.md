@@ -1,6 +1,45 @@
 ﻿# 论文进度
 
-最后更新：2026-04-30（H800 付费有卡任务已收尾，可关机/保持关机；当前不需要继续占用 H800。正式 H800 runtime-chunk routed 条件下，统一 scheduler ablation、static oracle 对比、最小 routed quality check 均已完成并拉回本地。统一 ablation 结论为负：best static oracle 为 `static_chunk_512`，`891.51±10.17 ms`；`sampled_hist_s8` 为 `932.69±20.70 ms`，相对 best static 为 `1.0462x` latency；`hist` 为 `1.0883x`，`variance_proxy` 为 `1.0486x`，`kurtosis_proxy` 为 `1.0353x`，`token_hist_s8` 为 `1.1213x`。质量检查为正向 sanity：H800 最小 routed check 为 3/3 prompts greedy generation exact-match，PPL ratio 在 `0.999521x--1.000170x`；低成本 3090 LongBench subset sanity 也已完成，4 tasks × 2 samples 共 8 条全部 passive/routed generation exact-match、metric delta=0、PPL ratio=1.0。论文已回填 `paper/main.tex` 与 `paper/appendix.tex`：主文声明收窄为“runtime routing technically closed but performance-negative”，附录新增统一 H800 ablation 表与 routed quality 表；`paper/build/main.pdf` 与 `paper/build/appendix_only.pdf` 已重新生成。）
+最后更新：2026-04-30（已消费 `docs/revision_roadmap.md` 对遗留问题的回答，实验和论文转向已启动：不再重复 homogeneous H800 scheduler matrix，改为 mixed-regime serving trace + guarded/learned scheduler 路线。代码新增 guarded scheduler / learned-table 入口与 mixed-regime discovery 脚本；本地 `py_compile`、prompt-pool smoke、guarded/learned dry-run 已通过。论文已把正结果判据改为“guarded/learned routing beats the best single global static chunk over a heterogeneous serving mixture”，并在附录新增 mixed-regime pivot protocol；`paper/build/main.pdf` 与 `paper/build/appendix_only.pdf` 已重新生成，无 undefined refs/citations，仍有两个既有 overfull hbox 警告。当前仍不建议开 H800；需先跑 no-H800/3090 feature-only discovery，只有发现至少 3 个 regime 的 static-optimal chunk 明显不同且理论 weighted gain 有希望达到 `>=10%`，才进入 H800 static sweep。）
+
+## 2026-04-30 Mixed-regime / guarded-learned 转向启动
+
+来自 `docs/revision_roadmap.md` 的作者决策已消费：不接受单纯负结果叙事时，唯一可行正结果路线是从“同一 workload 上 adaptive 是否打败 best static”转成“heterogeneous serving mixture 上 guarded/learned adaptive 是否打败 best single global static oracle”。
+
+已完成代码：
+- `src/experiments/run_integrated_end_to_end.py`
+  - 新增 scheduler modes：`guarded_hist`、`guarded_sampled_hist`、`guarded_variance_proxy`、`guarded_kurtosis_proxy`、`learned_table`。
+  - guarded scheduler 支持 `--guard-fallback-chunk`（默认 512）与 `--guard-min-delta-buckets`（默认 2），只有预测 chunk 与 fallback 相差足够 bucket 时才切换，否则退回 Static-512。
+  - `learned_table` 支持 `--learned-policy-json` 规则表，可按 `layer_idx`、`seq_len`、`entropy_nats` 范围返回 chunk；未命中时退回默认 chunk。
+  - scheduler records 现在记录 `raw_chunk`、`guarded_fallback`、`policy_rule`，便于后续分析 guard 是否只是退回 static。
+- `src/experiments/run_scheduler_ablation_matrix.py`
+  - 新增 rows：`guarded_sampled_hist`、`guarded_variance_proxy`、`learned_table`。
+  - `--learned-policy-json` 只传给 `learned_table` 子实验，static rows 不读取 policy。
+- `src/experiments/run_static_oracle_adaptive.py`
+  - `--adaptive-scheduler-mode` 扩展到 guarded / learned-table modes，并透传 guard / learned policy 参数。
+- `src/experiments/run_mixed_regime_discovery.py`
+  - 新增 mixed-regime discovery 入口。
+  - `--mode prompt_pool` 无需 GPU，生成 8 类候选 serving trace：short chat、long document QA、code、logs/UUID、tables/CSV、repetition policy、mixed zh/en、OCR-like forms。
+  - `--mode feature_scan` 需要 CUDA，但不路由 chunk，只跑 feature-only scan，按 regime/scheduler 汇总 entropy、chunk counts、dominant chunk share，并输出是否值得进入 H800 static sweep 的 STOP/GO 判断。
+
+论文修改：
+- `paper/main.tex`
+  - Abstract / Scope / Method / Results / Static profiling comparison / Limitations / Conclusion 已转向 mixed-regime global-static-oracle 叙事。
+  - 明确当前 homogeneous H800 matrix 是负结果；新的正结果判据是 guarded/learned scheduler 在 heterogeneous serving mixture 上超过 best single global static chunk。
+- `paper/appendix.tex`
+  - 新增 `Mixed-Regime Scheduler Pivot Protocol`：候选 regimes、feature-only scan、static sweep gate、global static vs adaptive 比较、quality gate。
+
+本地验证：
+- `python -m py_compile src/experiments/run_integrated_end_to_end.py src/experiments/run_scheduler_ablation_matrix.py src/experiments/run_static_oracle_adaptive.py src/experiments/run_mixed_regime_discovery.py`：通过。
+- `python -m src.experiments.run_mixed_regime_discovery --mode prompt_pool --samples-per-regime 2 --output-dir src/outputs/mixed_regime_discovery_smoke`：通过，生成 16 条 smoke prompt。
+- `python -m src.experiments.run_mixed_regime_discovery --mode prompt_pool --samples-per-regime 20 --output-dir src/outputs/mixed_regime_discovery_20260430`：通过，生成 8 regimes × 20 prompts = 160 条完整候选 serving trace。
+- `python -m src.experiments.run_scheduler_ablation_matrix --dry-run --rows static,guarded_sampled_hist,learned_table --sweep-chunks 128,256,512 ...`：通过，子命令拼接正确。
+- `cmd /c build.bat`：已生成 `paper/build/main.pdf`、`paper/build/appendix_only.pdf` 并复制到 `paper/main.pdf`、`paper/appendix.pdf`；日志未见 undefined references/citations，仍有两个既有 overfull hbox 警告。
+
+下一步建议：
+1. 先在 3090 或其他低成本 CUDA 环境跑 `run_mixed_regime_discovery --mode feature_scan`，不要开 H800。
+2. 若 summary 显示至少 3 个 regime 的 chunk/proxy 分布有真实差异，再对 promising regimes 做 static chunk sweep。
+3. 只有当 weighted per-regime oracle 上界显示相对 global static oracle 有 `>=10%` 潜力时，才开 H800 跑 guarded/learned full mixed-regime ablation。
 
 ## 2026-04-30 Scheduler ablation / quality 代码准备
 
@@ -425,6 +464,12 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 - **P0.1/P0.2/P0.3（2026-04-16）**：Title 改为 "Kernel-Level Scheduling"，Theorem 1 Remark 加分布适用性警告，`tab:ablation_tau` 加 proxy circularity note
 
 ## 已全部修改
+
+- **任务 94 (2026-04-30)：遗留问题消费与最新负结果收口清理。**
+  - 未发现新的 `A:` 作者回答；本轮按当前产物继续推进可自动处理项。
+  - 最新 H800 full unified scheduler ablation、static oracle/adaptive 对比、H800 routed quality check 均已确认完成并回填论文；`docs/progress.md` 最新“未修改或部分修改”区已从“缺表/待跑”更新为“已完成但结论为负”，只保留需要作者决策或新资源的阻塞项。
+  - `paper/appendix.tex` 同步弱化旧表述：W1 standalone chunk-latency speedup 不再被描述为可直接推广到 full-checkpoint generation；明确 routed H800 ablation 才是相关端到端测试且结果为 performance-negative。
+  - 推进状态：✅ 已完成。
 
 - **任务 93 (2026-04-26)：Cycle 10 新鲜独立评审 + 全部 3 项可落地 patches 应用。**
   - **触发原因**：Cycle 9 三项 patches（A-C）已全部确认应用于 `appendix.tex`（`tab:chunk_sweep` 和 `tab:real_checkpoint_entropy` legacy 说明、§A.1 引用更新、§A.15 公式括号修复）。按工作流规则触发 Cycle 10 新鲜独立评审。
@@ -933,52 +978,53 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 未修改或部分修改（最新 `docs/revision_suggestions.tex` / Weak Reject）
 
-**NeurIPS 2026 硬性要求复核状态（2026-04-29 最新评审）：**
+**NeurIPS 2026 硬性要求复核状态（2026-04-30，已消费 `docs/revision_roadmap.md` 作者回答）：**
 
-1. **Demonstrate real end-to-end speedup（未解决）**  
-  - 当前 best routed H800 result 相对 passive 只有 `sampled_hist --entropy-stride 8` 的 `0.9905x` latency（约 1% near-parity），没有达到评审要求的 `>=10%` latency/throughput gain。
-  - 已完成正式 H800 oracle 对比：`static_oracle_adaptive_h800` 显示 best static oracle 为 chunk-128（`876.55±26.55 ms`），adaptive sampled-hist stride=8 为 `905.55±18.24 ms`，相对 best static 为 `1.0331x` latency / `0.9680x` speedup。
-  - 已完成 confirm subset：`static_oracle_adaptive_h800_confirm_128_1024` 显示 best static 为 chunk-1024（`901.98±33.12 ms`），adaptive 为 `886.95±15.77 ms`，相对 best static 为 `0.9833x` latency / `1.0170x` speedup。
-  - 2026-04-30 新完成 H800 unified ablation：best static oracle 为 chunk-512（`891.51±10.17 ms`）；sampled-hist stride=8 为 `932.69±20.70 ms`，相对 best static 为 `1.0462x` latency / `0.9559x` speedup。该结果进一步支持“没有真实 >=10% gain”的结论。
-  - 结论：adaptive vs static oracle 方向不稳定，最新统一表进一步显示 sampled-hist 慢约 `4.6%`；整体远低于 `>=10%` 正收益要求。论文必须改成“scheduler-sensitive / not robustly oracle-beating”，不能写成“beats optimal static”。
+1. **Demonstrate real end-to-end speedup（转向中，尚未有新正结果）**  
+  - 已完成 H800 homogeneous unified ablation，结论仍为负：best static oracle 为 `static_chunk_512`（`891.51±10.17 ms`），`sampled_hist_s8` 相对 best static 为 `1.0462x` latency。
+  - 作者回答明确不应继续重复同类 matrix；当前已把实验目标改为 mixed-regime serving workload 下的 global static oracle vs guarded/learned scheduler。
+  - 推进状态：进行中（已完成代码入口和论文协议；等待低成本 feature-only discovery 结果）。
 
-2. **Improve entropy signal effectiveness（部分完成，仍偏弱）**  
-  - 已尝试并验证：full histogram、sampled histogram、cheap moment proxy、长上下文、强制固定 chunk。当前唯一 n=50 正向配置是 sampled histogram stride=8。
-  - 2026-04-30 代码已准备：`variance_proxy`、`kurtosis_proxy`、`token_hist` 已接入 integrated harness，并可通过 unified ablation matrix 一键跑。
-  - 2026-04-30 H800 正式数据已完成，替代统计均未改善：`variance_proxy` `1.0486x`、`kurtosis_proxy` `1.0353x`、`token_hist_s8` `1.1213x` vs best static。真实 workload 仍大多坍缩到 1024/2048 bucket，entropy-driven switching 证据不足。
+2. **Expand workload diversity（转向中，prompt pool 已搭建，真实 mixed-regime 未验证）**  
+  - 已新增 8 类 mixed-regime prompt pool 生成：short chat、long doc QA、code、logs/UUID、tables/CSV、repetition policy、mixed zh/en、OCR-like forms。
+  - 未完成：CUDA feature-only scan、promising regimes 的 static chunk sweep、weighted mixed-workload global-static 对比。
+  - 推进状态：进行中（下一步应先跑 3090/低成本 CUDA feature scan，不开 H800）。
 
-3. **Expand workload diversity（部分完成，但结论为负）**  
-  - 已完成：LongBench、H800 84/164 prompt stress、code/log/table/repetition、长上下文诊断。
-  - 仍未完成或不适合当前论文：multimodal inputs 未覆盖；更关键的是尚未构造出真实 mixed regime，使不同 prompt/sequence/kernel-work 区间需要不同最优 static chunk。
+3. **Compare against stronger scheduler/compiler baselines（learned baseline 入口已启动，compiler baseline 仍 future work）**  
+  - 已新增 `learned_table` 低成本 learned/rule-table scheduler 入口，可用 static sweep labels 生成规则表。
+  - 已新增 guarded scheduler 入口，支持 Static-512 fallback，避免 homogeneous workload 下比 static oracle 更慢。
+  - Compiler baseline 当前收窄为 future work / compiler-assisted static specialization，不承诺完整 XLA/nvFuser baseline。
+  - 推进状态：部分完成（learned/guarded 代码入口已完成；仍缺训练/规则表和实验结果）。
 
-4. **Compare against stronger baselines（部分完成）**  
-  - 已完成：H800 FA3 full-model baseline、Mamba2 SSD full-model baseline、FA3 raw kernel、H800 W1 static oracle kernel sweep。
-  - 新完成：正式 H800 end-to-end static oracle vs adaptive 表已生成并同步到 `src/outputs/static_oracle_adaptive_h800/summary_table.md`。
-  - 仍未完成：learned scheduler baseline；XLA/nvFuser/compiler fusion baseline。
+4. **Quality impact（最小 sanity 已完成，task-level routed quality 仍待扩大）**  
+  - H800 最小 routed quality check 已有 3/3 greedy exact-match，PPL ratio 在 `0.999521x--1.000170x`。
+  - 3090 LongBench subset 8 条也已 exact-match / metric delta=0 / PPL ratio=1.0，但 stock backend 只算低成本 sanity。
+  - 未完成：mixed-regime 或 LongBench 20×4 task-level routed quality subset。
+  - 推进状态：等待性能路线筛出后再补，不建议先烧 H800。
 
-5. **Ablation on scheduler design（已完成，结果为负）**  
-  - 已完成：constant force-chunk route-only、cheap_proxy、sampled_hist、full_hist 对比的零散 H800 run。
-  - 2026-04-30 代码已准备：新增 `run_scheduler_ablation_matrix.py`，可统一生成 static sweep / no-entropy / random / hist / sampled_hist / cheap_proxy / variance_proxy / kurtosis_proxy / token_hist 表格；本地 `--dry-run` 通过。
-  - 2026-04-30 H800 正式 unified ablation 已完成并回填论文：static sweep、no-entropy、random、hist、sampled_hist、cheap_proxy、variance_proxy、kurtosis_proxy、token_hist 均有同平台 n=50 表格。该项从“缺表”转为“表已完成但结果为负”。
-  - 论文位置：`paper/appendix.tex` 新增 `tab:h800_unified_scheduler_ablation`；`paper/main.tex` 的 abstract / H800 routed paragraph / conclusion 已同步引用负结果。
-
-6. **Evaluate model quality impact（最小表已完成并回填）**  
-  - 理论上 recurrence-preserving chunk dispatch 应保持输出等价；当前已补显式 greedy-token exact-match 与 perplexity sanity row。
-  - 2026-04-30 代码已准备：新增 `run_routed_quality_check.py`，可记录 passive vs routed 的 greedy generation token exact-match，并可加 `--include-perplexity` 输出 loss/PPL/PPL ratio。
-  - 2026-04-30 H800 最小 quality check 已完成并回填论文：3/3 prompts greedy generation exact-match，0 token mismatches；PPL ratio `0.999521x`、`1.000125x`、`1.000170x`。若评审要求 task-level quality，仍可补 LongBench small subset；当前最小 quality-preservation 表已经进入 `paper/appendix.tex` 的 `tab:h800_routed_quality`。
-
-Minor suggestions 状态：
-- Tier-1 / Tier-2 claim 区分：主文已大幅收窄并区分，基本完成。
-- Appendix redundancy：未系统清理。
-- Entropy normalization vs raw nats 记号一致性：已部分处理，但最新评审仍认为可继续收紧。
+5. **Minor suggestions（可本地继续清理）**  
+  - Appendix redundancy：未系统清理。
+  - Entropy normalization vs raw nats 记号一致性：已部分处理；仍可继续通读清理。
+  - 推进状态：待处理，低优先级。
 
 ---
 
 ## 遗留问题
 
-最新 Weak Reject 评审下，工程硬阻塞已不再是“无法路由 chunk”，而是“路由后是否值得用”的证据不足。当前遗留问题如下：
+当前作者决策已足够启动下一阶段；不再等待“是否转向”的回答。新的阻塞项变为实验结果门控：
 
-1. **H800 正式 static oracle vs adaptive killer experiment 已运行，结论是不稳定/非强正。** 4 卡 RTX 3090 已完成最小 smoke，证明脚本链路可用；正式 H800 `static_oracle_adaptive_h800` 已完成并同步。Full sweep 中 best static 是 `static_chunk_128`（`876.55±26.55 ms`），adaptive sampled-hist stride=8 为 `905.55±18.24 ms`，相对 best static 为 `1.0331x` latency / `0.9680x` speedup。Confirm subset 中 best static 是 chunk-1024（`901.98±33.12 ms`），adaptive 为 `886.95±15.77 ms`，相对 best static 为 `0.9833x` latency / `1.0170x` speedup。
-2. **真实收益仍太小，且 adaptive 未稳定赢 oracle。** 先前最好 H800 routed result 相对 passive 是 `0.9905x` latency，约 1% near-parity；oracle 对比下 adaptive 相对 best static 在 `-3.3%` 到 `+1.7%` 间波动，远达不到 `docs/revision_suggestions.tex` 要求的 `>=10%` gain。
-3. **entropy 作用仍未充分证明。** 真实 workload 多数落到相同 chunk bucket；alternative statistics 的 H800 正式数据已完成但为负，未形成真实 mixed-regime switching。
-4. **统一 ablation / quality 表已补齐并回填，但结论不利。** H800 full unified ablation 与 H800 quality-preservation 最小表均已完成；ablation 证明 adaptive/proxy 不赢 best static oracle，quality check 证明 recurrence-preserving routed path 基本不改变输出。当前无需继续开 H800，下一步若要加码，应优先做本地文字清理或低成本 LongBench small quality subset 设计，而不是继续付费跑同类 scheduler matrix。
+1. **低成本 feature-only discovery 尚未运行。**  
+   - 需要在 3090 或其他 CUDA 环境运行 `run_mixed_regime_discovery --mode feature_scan`。
+   - 通过门槛：至少 3 个 regime/mode row 显示非退化 chunk/proxy 差异，否则不进入 H800。
+
+2. **promising regimes 的 static chunk sweep 尚未运行。**  
+   - 只有 feature scan 通过后才跑。
+   - 通过门槛：不同 regime 的 best static chunk 至少相差一个 bucket，且相对 Static-512 或 global static 有 `>5%` regime-level gap。
+
+3. **是否开 H800 的门控尚未满足。**  
+   - 当前明确不建议开 H800。
+   - 只有 weighted per-regime oracle 上界显示相对 best single global static chunk 有 `>=10%` 潜力时，才开 H800 full mixed-regime ablation。
+
+4. **learned scheduler 规则表尚未生成。**  
+   - 需要 static sweep labels 后生成 `learned_table` policy。
+   - 若 static labels 不呈现 regime 差异，则 learned baseline 只能退回 Static-512，应写入负结果/limitations。

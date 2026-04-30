@@ -246,6 +246,11 @@ def _parse_args() -> argparse.Namespace:
             "cheap_proxy",
             "variance_proxy",
             "kurtosis_proxy",
+            "guarded_hist",
+            "guarded_sampled_hist",
+            "guarded_variance_proxy",
+            "guarded_kurtosis_proxy",
+            "learned_table",
             "no_entropy",
             "random",
         ),
@@ -255,6 +260,9 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--random-seed", type=int, default=0)
     p.add_argument("--adaptive-chunk-min", type=int, default=None)
     p.add_argument("--adaptive-chunk-max", type=int, default=None)
+    p.add_argument("--guard-fallback-chunk", type=int, default=512)
+    p.add_argument("--guard-min-delta-buckets", type=int, default=2)
+    p.add_argument("--learned-policy-json", type=Path, default=None)
     p.add_argument(
         "--selective-scan-dispatch-module",
         default=None,
@@ -310,7 +318,11 @@ def main() -> None:
         "--entropy-stride", str(max(args.adaptive_entropy_stride, 1)),
         "--chunk-min", str(adaptive_min),
         "--chunk-max", str(adaptive_max),
+        "--guard-fallback-chunk", str(args.guard_fallback_chunk),
+        "--guard-min-delta-buckets", str(args.guard_min_delta_buckets),
     ])
+    if args.learned_policy_json:
+        adaptive_args.extend(["--learned-policy-json", str(args.learned_policy_json)])
     adaptive_name = f"adaptive_{args.adaptive_scheduler_mode}_s{max(args.adaptive_entropy_stride, 1)}"
     adaptive_dir = args.output_dir / adaptive_name
     adaptive_summary = _run_child(

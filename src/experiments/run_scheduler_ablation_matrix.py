@@ -60,6 +60,9 @@ VALID_ROWS = (
     "cheap_proxy",
     "variance_proxy",
     "kurtosis_proxy",
+    "guarded_sampled_hist",
+    "guarded_variance_proxy",
+    "learned_table",
 )
 
 
@@ -72,6 +75,8 @@ class RowSpec:
     entropy_stride: int = 1
     chunk_min: int | None = None
     chunk_max: int | None = None
+    guard_fallback_chunk: int | None = None
+    guard_min_delta_buckets: int | None = None
 
 
 def _parse_chunks(raw: str) -> list[int]:
@@ -173,6 +178,42 @@ def _build_specs(args: argparse.Namespace) -> list[RowSpec]:
                     chunk_max=adaptive_max,
                 )
             )
+        elif row == "guarded_sampled_hist":
+            specs.append(
+                RowSpec(
+                    name=f"guarded_sampled_hist_s{max(args.entropy_stride, 1)}",
+                    kind="guarded",
+                    scheduler_mode="guarded_sampled_hist",
+                    entropy_stride=max(args.entropy_stride, 1),
+                    chunk_min=adaptive_min,
+                    chunk_max=adaptive_max,
+                    guard_fallback_chunk=args.guard_fallback_chunk,
+                    guard_min_delta_buckets=args.guard_min_delta_buckets,
+                )
+            )
+        elif row == "guarded_variance_proxy":
+            specs.append(
+                RowSpec(
+                    name="guarded_variance_proxy",
+                    kind="guarded",
+                    scheduler_mode="guarded_variance_proxy",
+                    chunk_min=adaptive_min,
+                    chunk_max=adaptive_max,
+                    guard_fallback_chunk=args.guard_fallback_chunk,
+                    guard_min_delta_buckets=args.guard_min_delta_buckets,
+                )
+            )
+        elif row == "learned_table":
+            specs.append(
+                RowSpec(
+                    name="learned_table",
+                    kind="learned",
+                    scheduler_mode="learned_table",
+                    entropy_stride=max(args.entropy_stride, 1),
+                    chunk_min=adaptive_min,
+                    chunk_max=adaptive_max,
+                )
+            )
         else:
             specs.append(
                 RowSpec(
@@ -214,6 +255,12 @@ def _run_child(
         child_args.extend(["--chunk-min", str(spec.chunk_min)])
     if spec.chunk_max is not None:
         child_args.extend(["--chunk-max", str(spec.chunk_max)])
+    if spec.guard_fallback_chunk is not None:
+        child_args.extend(["--guard-fallback-chunk", str(spec.guard_fallback_chunk)])
+    if spec.guard_min_delta_buckets is not None:
+        child_args.extend(["--guard-min-delta-buckets", str(spec.guard_min_delta_buckets)])
+    if args.learned_policy_json and spec.scheduler_mode == "learned_table":
+        child_args.extend(["--learned-policy-json", str(args.learned_policy_json)])
 
     cmd = [
         sys.executable,
@@ -363,6 +410,9 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--adaptive-chunk-min", type=int, default=None)
     p.add_argument("--adaptive-chunk-max", type=int, default=None)
     p.add_argument("--random-seed", type=int, default=0)
+    p.add_argument("--guard-fallback-chunk", type=int, default=512)
+    p.add_argument("--guard-min-delta-buckets", type=int, default=2)
+    p.add_argument("--learned-policy-json", type=Path, default=None)
     p.add_argument(
         "--selective-scan-dispatch-module",
         default=None,

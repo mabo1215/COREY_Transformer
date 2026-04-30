@@ -154,6 +154,10 @@ def _entropy_to_chunk(H: float, *, c_min: int = 128, c_max: int = 512,
     return max(c_min, min(c_max, rounded))
 
 
+def _chunk_bucket_distance(a: int, b: int) -> int:
+    return abs(round(math.log2(max(a, 1))) - round(math.log2(max(b, 1))))
+
+
 def _valid_scheduler_chunks(c_min: int, c_max: int) -> list[int]:
     chunks: list[int] = []
     value = 1
@@ -186,12 +190,45 @@ class SchedulerState:
         self.entropy_stride: int = 1
         self.random_seed: int = 0
         self.random = random.Random(self.random_seed)
+        self.guard_fallback_chunk: int = 512
+        self.guard_min_delta_buckets: int = 2
+        self.learned_policy: dict[str, Any] | None = None
 
     def reset_random(self) -> None:
         self.random = random.Random(self.random_seed)
 
 
 STATE = SchedulerState()
+
+
+def _match_policy_rule(rule: dict[str, Any], features: dict[str, Any]) -> bool:
+    checks = (
+        ("layer_idx", "min_layer_idx", "max_layer_idx"),
+        ("seq_len", "min_seq_len", "max_seq_len"),
+        ("entropy_nats", "min_entropy", "max_entropy"),
+    )
+    for key, low_key, high_key in checks:
+        value = features.get(key)
+        if value is None:
+            if low_key in rule or high_key in rule:
+                return False
+            continue
+        if low_key in rule and float(value) < float(rule[low_key]):
+            return False
+        if high_key in rule and float(value) > float(rule[high_key]):
+            return False
+    return True
+
+
+def _select_learned_policy_chunk(features: dict[str, Any]) -> tuple[int, str | None]:
+    policy = STATE.learned_policy or {}
+    default_chunk = int(policy.get("default_chunk", STATE.guard_fallback_chunk))
+    for idx, rule in enumerate(policy.get("rules", [])):
+        if not isinstance(rule, dict):
+            continue
+        if _match_policy_rule(rule, features):
+            return int(rule.get("chunk", default_chunk)), str(rule.get("name", f"rule_{idx}"))
+    return default_chunk, "default"
 
 
 # ---------------------------------------------------------------------------
@@ -299,31 +336,38 @@ def _make_active_forward(original_forward: Any) -> Any:
         # --- COREY scheduler: entropy + chunk selection ---
         seq_len = u_post_conv.shape[-1]
         selected_chunk: int | None = None
+        raw_chunk: int | None = None
+        policy_rule: str | None = None
+        guarded_fallback = False
         if seq_len >= STATE.min_seq_len:
-            if STATE.scheduler_mode in {"constant", "no_entropy", "random"}:
+            effective_mode = STATE.scheduler_mode
+            if effective_mode.startswith("guarded_"):
+                effective_mode = effective_mode[len("guarded_"):]
+
+            if effective_mode in {"constant", "no_entropy", "random"}:
                 H = None
             else:
                 entropy_input = u_post_conv
-                if STATE.scheduler_mode in {"sampled_hist", "token_hist"} and STATE.entropy_stride > 1:
+                if effective_mode in {"sampled_hist", "token_hist", "learned_table"} and STATE.entropy_stride > 1:
                     entropy_input = u_post_conv[..., ::STATE.entropy_stride]
-                if STATE.scheduler_mode == "cheap_proxy":
+                if effective_mode == "cheap_proxy":
                     H = _cheap_entropy_proxy(entropy_input, num_bins=STATE.num_bins)
-                elif STATE.scheduler_mode == "variance_proxy":
+                elif effective_mode == "variance_proxy":
                     H = _variance_entropy_proxy(entropy_input, num_bins=STATE.num_bins)
-                elif STATE.scheduler_mode == "kurtosis_proxy":
+                elif effective_mode == "kurtosis_proxy":
                     H = _kurtosis_entropy_proxy(entropy_input, num_bins=STATE.num_bins)
-                elif STATE.scheduler_mode == "token_hist":
+                elif effective_mode == "token_hist":
                     H = _token_hist_entropy(entropy_input, num_bins=STATE.num_bins)
                 else:
                     H = _hist_entropy(entropy_input, num_bins=STATE.num_bins)
 
             if STATE.force_chunk is not None:
                 selected_chunk = STATE.force_chunk
-            elif STATE.scheduler_mode == "random":
+            elif effective_mode == "random":
                 selected_chunk = STATE.random.choice(
                     _valid_scheduler_chunks(STATE.chunk_min, STATE.chunk_max)
                 )
-            elif STATE.scheduler_mode == "no_entropy":
+            elif effective_mode == "no_entropy":
                 selected_chunk = _entropy_to_chunk(
                     0.5 * math.log(STATE.num_bins),
                     c_min=STATE.chunk_min,
@@ -331,6 +375,12 @@ def _make_active_forward(original_forward: Any) -> Any:
                     h_ref=STATE.h_ref,
                     num_bins=STATE.num_bins,
                 )
+            elif effective_mode == "learned_table":
+                selected_chunk, policy_rule = _select_learned_policy_chunk({
+                    "layer_idx": int(self.layer_idx),
+                    "seq_len": int(seq_len),
+                    "entropy_nats": H,
+                })
             else:
                 selected_chunk = _entropy_to_chunk(
                     H if H is not None else 0.0,
@@ -339,14 +389,26 @@ def _make_active_forward(original_forward: Any) -> Any:
                     h_ref=STATE.h_ref,
                     num_bins=STATE.num_bins,
                 )
+                raw_chunk = selected_chunk
+
+            if STATE.scheduler_mode.startswith("guarded_") and selected_chunk is not None:
+                raw_chunk = selected_chunk
+                distance = _chunk_bucket_distance(selected_chunk, STATE.guard_fallback_chunk)
+                if distance < STATE.guard_min_delta_buckets:
+                    selected_chunk = STATE.guard_fallback_chunk
+                    guarded_fallback = True
+
             STATE.records.append({
                 "layer_idx":    int(self.layer_idx),
                 "seq_len":      int(seq_len),
                 "entropy_nats": round(H, 6) if H is not None else None,
                 "chunk":        int(selected_chunk),
+                "raw_chunk":    int(raw_chunk) if raw_chunk is not None else None,
                 "routed":       STATE.route_chunk,
                 "scheduler_mode": STATE.scheduler_mode,
                 "entropy_stride": int(STATE.entropy_stride),
+                "guarded_fallback": guarded_fallback,
+                "policy_rule": policy_rule,
             })
 
         # --- SSM scan ---
@@ -600,6 +662,11 @@ def _parse_args() -> argparse.Namespace:
             "cheap_proxy",
             "variance_proxy",
             "kurtosis_proxy",
+            "guarded_hist",
+            "guarded_sampled_hist",
+            "guarded_variance_proxy",
+            "guarded_kurtosis_proxy",
+            "learned_table",
             "constant",
             "no_entropy",
             "random",
@@ -613,6 +680,17 @@ def _parse_args() -> argparse.Namespace:
     )
     p.add_argument("--entropy-stride", type=int, default=1)
     p.add_argument("--random-seed", type=int, default=0)
+    p.add_argument("--guard-fallback-chunk", type=int, default=512)
+    p.add_argument("--guard-min-delta-buckets", type=int, default=2)
+    p.add_argument(
+        "--learned-policy-json",
+        type=Path,
+        default=None,
+        help=(
+            "Optional JSON rule table for --scheduler-mode learned_table. "
+            "Rules may constrain layer_idx, seq_len, and entropy_nats and return a chunk."
+        ),
+    )
     p.add_argument(
         "--force-chunk",
         type=int,
@@ -713,6 +791,12 @@ def main() -> None:
         STATE.scheduler_mode = args.scheduler_mode
         STATE.entropy_stride = max(args.entropy_stride, 1)
         STATE.random_seed = args.random_seed
+        STATE.guard_fallback_chunk = args.guard_fallback_chunk
+        STATE.guard_min_delta_buckets = max(args.guard_min_delta_buckets, 0)
+        if args.learned_policy_json and args.scheduler_mode == "learned_table":
+            STATE.learned_policy = json.loads(args.learned_policy_json.read_text(encoding="utf-8"))
+        else:
+            STATE.learned_policy = None
         STATE.reset_random()
         prompt = " ".join([args.prompt] * max(args.prompt_repeat, 1))
 
@@ -828,6 +912,9 @@ def main() -> None:
             "entropy_stride": STATE.entropy_stride,
             "random_seed": args.random_seed,
             "force_chunk": args.force_chunk,
+            "guard_fallback_chunk": STATE.guard_fallback_chunk,
+            "guard_min_delta_buckets": STATE.guard_min_delta_buckets,
+            "learned_policy_json": str(args.learned_policy_json) if args.learned_policy_json else None,
             "platform": platform.platform(),
             "chunk_size_kwarg_supported": kwarg_supported,
             "dispatch_module": args.selective_scan_dispatch_module,
