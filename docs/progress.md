@@ -1,6 +1,6 @@
 ﻿# 论文进度
 
-最后更新：2026-04-30（H800 付费有卡任务已收尾，可关机/保持关机；当前不需要继续占用 H800。正式 H800 runtime-chunk routed 条件下，统一 scheduler ablation、static oracle 对比、最小 routed quality check 均已完成并拉回本地。统一 ablation 结论为负：best static oracle 为 `static_chunk_512`，`891.51±10.17 ms`；`sampled_hist_s8` 为 `932.69±20.70 ms`，相对 best static 为 `1.0462x` latency；`hist` 为 `1.0883x`，`variance_proxy` 为 `1.0486x`，`kurtosis_proxy` 为 `1.0353x`，`token_hist_s8` 为 `1.1213x`。质量检查为正向 sanity：3/3 prompts greedy generation exact-match，PPL ratio 在 `0.999521x--1.000170x`。论文已回填 `paper/main.tex` 与 `paper/appendix.tex`：主文声明收窄为“runtime routing technically closed but performance-negative”，附录新增统一 H800 ablation 表与 routed quality 表；`paper/build/main.pdf` 与 `paper/build/appendix_only.pdf` 已重新生成。）
+最后更新：2026-04-30（H800 付费有卡任务已收尾，可关机/保持关机；当前不需要继续占用 H800。正式 H800 runtime-chunk routed 条件下，统一 scheduler ablation、static oracle 对比、最小 routed quality check 均已完成并拉回本地。统一 ablation 结论为负：best static oracle 为 `static_chunk_512`，`891.51±10.17 ms`；`sampled_hist_s8` 为 `932.69±20.70 ms`，相对 best static 为 `1.0462x` latency；`hist` 为 `1.0883x`，`variance_proxy` 为 `1.0486x`，`kurtosis_proxy` 为 `1.0353x`，`token_hist_s8` 为 `1.1213x`。质量检查为正向 sanity：H800 最小 routed check 为 3/3 prompts greedy generation exact-match，PPL ratio 在 `0.999521x--1.000170x`；低成本 3090 LongBench subset sanity 也已完成，4 tasks × 2 samples 共 8 条全部 passive/routed generation exact-match、metric delta=0、PPL ratio=1.0。论文已回填 `paper/main.tex` 与 `paper/appendix.tex`：主文声明收窄为“runtime routing technically closed but performance-negative”，附录新增统一 H800 ablation 表与 routed quality 表；`paper/build/main.pdf` 与 `paper/build/appendix_only.pdf` 已重新生成。）
 
 ## 2026-04-30 Scheduler ablation / quality 代码准备
 
@@ -21,6 +21,7 @@
 - `src/experiments/run_routed_quality_check.py`
   - 新增 passive vs active+routed 质量一致性入口。
   - 输出 greedy generation token exact-match；可加 `--include-perplexity` 记录 passive/routed loss、PPL、PPL ratio。
+  - 2026-04-30 追加 LongBench subset 模式：`--longbench-tasks ... --dataset-root ... --samples-per-task ...` 可直接读取本地 LongBench JSONL，输出每条样本的 passive/routed generation exact-match、任务指标、metric delta、PPL ratio，并生成按任务聚合的 `summary_table.md`。
 
 本地无卡验证：
 - `python -m py_compile src/experiments/run_integrated_end_to_end.py src/experiments/run_static_oracle_adaptive.py src/experiments/run_scheduler_ablation_matrix.py src/experiments/run_routed_quality_check.py`：通过。
@@ -36,6 +37,11 @@
   - 重要限制：3090 probe 显示 `runtime_cuda_available=false` / `eligible_for_w1_speedup=false`，只有 stock `selective_scan_cuda.fwd`，因此这些结果只能作为链路/预实验，不可作为正式 W1 routed speedup 证据。
   - 3090 full matrix（n=50）中 best static 为 `static_chunk_128`，`1393.36±5.02 ms`；adaptive rows 均未超过 best static：`hist` 为 `1471.22±6.27 ms`，`sampled_hist_s8` 为 `1449.39±5.20 ms`，`token_hist_s8` 为 `1442.94±4.54 ms`。`random_seed_0` 为 `1385.10±5.15 ms`，但在 stock backend 下 chunk 未被真实 runtime CUDA honor，不能解释为 chunk policy win。
   - 3090 quality check：3/3 prompts passive vs routed greedy tokens exact-match；PPL ratio 全部 `1.0x`。同样由于 stock backend，仅作为质量检查链路与 recurrence-preserving fallback sanity。
+  - **3090 LongBench quality subset sanity 已完成并拉回**：
+    - 输出：`src/outputs/routed_quality_longbench_subset_3090_8x_20260430/summary.json`、`summary_table.md`、`prompt_manifest.json`。
+    - 配置：Mamba-370M，LongBench `narrativeqa/qasper/multifieldqa_en/gov_report` 各 2 条，`max_prompt_length=512`，`new_tokens=8`，`sampled_hist --entropy-stride 8`，`include_perplexity`。
+    - 结果：8/8 passive vs routed greedy generation exact-match，0 token mismatches；四个任务的 metric delta 全部 `+0.000000`；PPL ratio 全部 `1.000000x`。
+    - 限制：3090 环境仍是 stock backend，`runtime_cuda_available=false`，因此该 LongBench subset 是低成本质量链路 sanity，不作为 H800 runtime-chunk honored 的正式论文证据。
 - **H800 已开机并完成正式 probe**（`root@connect.westb.seetacloud.com -p 39830`，单卡 NVIDIA H800 PCIe，torch `2.8.0+cu128`）：
   - `src.corey_selective_scan_dispatch.get_dispatch_info()` 返回 `resolved_backend=runtime_cuda`，`runtime_cuda_available=true`，`runtime_cuda_reason=fwd_with_chunk_size`，`chunk_size_honored=true`，`eligible_for_w1_speedup=true`。
   - 当前 H800 具备正式 routed W1 证据条件；已同步最新 4 个实验脚本与 `src/corey_selective_scan_dispatch.py` 到 `/root/Corey_Transformer`。
