@@ -1,6 +1,110 @@
 ﻿# 论文进度
 
-最后更新：2026-04-29（H800 runtime chunk dispatch 真正 routed live-scan 测量已完成；默认 full histogram routed path 的 n=50 结果为 3.5% overhead，`sampled_hist --entropy-stride 8` 相对 passive 为 `0.9905x` latency，属于约 1% near-parity。正式 H800 static oracle vs adaptive killer experiment 已完成：full sweep 中 best static oracle 为 `static_chunk_128`，`876.55±26.55 ms`；adaptive sampled-hist stride=8 为 `905.55±18.24 ms`，相对 best static 为 `1.0331x` latency / `0.9680x` speedup。随后 128/1024/adaptive confirm run 出现相反方向：best static `static_chunk_1024` 为 `901.98±33.12 ms`，adaptive 为 `886.95±15.77 ms`，相对 best static 为 `0.9833x` latency / `1.0170x` speedup。结论应收窄为：routed adaptive 结果噪声大、scheduler-sensitive，不能声明 robust oracle-beating 或 `>=10%` gain。最新 `docs/revision_suggestions.tex` 仍判定为 Weak Reject：核心未解决点是缺少足够大的真实 end-to-end gain、entropy 在真实 workload 中作用弱、以及缺少统一 ablation / quality 表。）
+最后更新：2026-04-30（H800 付费有卡任务已收尾，可关机/保持关机；当前不需要继续占用 H800。正式 H800 runtime-chunk routed 条件下，统一 scheduler ablation、static oracle 对比、最小 routed quality check 均已完成并拉回本地。统一 ablation 结论为负：best static oracle 为 `static_chunk_512`，`891.51±10.17 ms`；`sampled_hist_s8` 为 `932.69±20.70 ms`，相对 best static 为 `1.0462x` latency；`hist` 为 `1.0883x`，`variance_proxy` 为 `1.0486x`，`kurtosis_proxy` 为 `1.0353x`，`token_hist_s8` 为 `1.1213x`。质量检查为正向 sanity：3/3 prompts greedy generation exact-match，PPL ratio 在 `0.999521x--1.000170x`。论文已回填 `paper/main.tex` 与 `paper/appendix.tex`：主文声明收窄为“runtime routing technically closed but performance-negative”，附录新增统一 H800 ablation 表与 routed quality 表；`paper/build/main.pdf` 与 `paper/build/appendix_only.pdf` 已重新生成。）
+
+## 2026-04-30 Scheduler ablation / quality 代码准备
+
+目标：先在本地无卡环境把下一批实验入口调通，再用免费 4 卡 RTX 3090 做 smoke，最后等 H800 开机后只跑必要 full run，减少付费 GPU 空转。
+
+已完成代码：
+- `src/experiments/run_integrated_end_to_end.py`
+  - 新增 scheduler modes：`no_entropy`、`random`、`variance_proxy`、`kurtosis_proxy`、`token_hist`。
+  - `random` 使用 `--random-seed` 固定随机序列；active-only 与 active+routed 会重置 RNG，便于对照。
+  - `no_entropy` 不做 histogram，按 chunk range 中点映射到固定 chunk，用于“remove entropy” ablation。
+  - `variance_proxy` / `kurtosis_proxy` / `token_hist` 为替代统计量入口，用于回应 entropy signal effectiveness。
+- `src/experiments/run_static_oracle_adaptive.py`
+  - `--adaptive-scheduler-mode` 扩展到 `token_hist`、`variance_proxy`、`kurtosis_proxy`、`no_entropy`、`random`，可继续复用 static-oracle 对比脚本。
+- `src/experiments/run_scheduler_ablation_matrix.py`
+  - 新增统一 ablation orchestration：`static` sweep、`no_entropy`、`random`、`hist`、`sampled_hist`、`cheap_proxy`、`variance_proxy`、`kurtosis_proxy`、`token_hist`。
+  - 输出 `summary.json`、`summary_table.csv`、`summary_table.md`；自动计算 vs passive、vs best static、speedup over best static。
+  - 支持 `--dry-run`，可无卡检查所有子命令。
+- `src/experiments/run_routed_quality_check.py`
+  - 新增 passive vs active+routed 质量一致性入口。
+  - 输出 greedy generation token exact-match；可加 `--include-perplexity` 记录 passive/routed loss、PPL、PPL ratio。
+
+本地无卡验证：
+- `python -m py_compile src/experiments/run_integrated_end_to_end.py src/experiments/run_static_oracle_adaptive.py src/experiments/run_scheduler_ablation_matrix.py src/experiments/run_routed_quality_check.py`：通过。
+- `run_scheduler_ablation_matrix --dry-run --rows static,no_entropy,random,sampled_hist --sweep-chunks 128,256 ...`：通过，生成 static-128/static-256/no-entropy/random/sampled-hist 子命令。
+- `run_static_oracle_adaptive --dry-run --adaptive-scheduler-mode variance_proxy --sweep-chunks 128,256 ...`：通过，证明 static-oracle 脚本可调替代统计量。
+- 远端探测：`mabo1215@10.147.20.176` 当前 `BatchMode` SSH 返回 `Permission denied`，需要交互密码或新密钥；`h800` alias 当前连接超时，等主机开机后再跑。
+
+2026-04-30 远端 GPU 执行进展：
+- **4 卡 RTX 3090 预实验已完成**（远端 `mabo1215@10.147.20.176`，单卡 GPU0 跑 full matrix；输出已拉回本地）：
+  - `src/outputs/scheduler_ablation_3090_full_20260430/summary.json`
+  - `src/outputs/scheduler_ablation_3090_full_20260430/summary_table.md`
+  - `src/outputs/routed_quality_3090_20260430/summary.json`
+  - 重要限制：3090 probe 显示 `runtime_cuda_available=false` / `eligible_for_w1_speedup=false`，只有 stock `selective_scan_cuda.fwd`，因此这些结果只能作为链路/预实验，不可作为正式 W1 routed speedup 证据。
+  - 3090 full matrix（n=50）中 best static 为 `static_chunk_128`，`1393.36±5.02 ms`；adaptive rows 均未超过 best static：`hist` 为 `1471.22±6.27 ms`，`sampled_hist_s8` 为 `1449.39±5.20 ms`，`token_hist_s8` 为 `1442.94±4.54 ms`。`random_seed_0` 为 `1385.10±5.15 ms`，但在 stock backend 下 chunk 未被真实 runtime CUDA honor，不能解释为 chunk policy win。
+  - 3090 quality check：3/3 prompts passive vs routed greedy tokens exact-match；PPL ratio 全部 `1.0x`。同样由于 stock backend，仅作为质量检查链路与 recurrence-preserving fallback sanity。
+- **H800 已开机并完成正式 probe**（`root@connect.westb.seetacloud.com -p 39830`，单卡 NVIDIA H800 PCIe，torch `2.8.0+cu128`）：
+  - `src.corey_selective_scan_dispatch.get_dispatch_info()` 返回 `resolved_backend=runtime_cuda`，`runtime_cuda_available=true`，`runtime_cuda_reason=fwd_with_chunk_size`，`chunk_size_honored=true`，`eligible_for_w1_speedup=true`。
+  - 当前 H800 具备正式 routed W1 证据条件；已同步最新 4 个实验脚本与 `src/corey_selective_scan_dispatch.py` 到 `/root/Corey_Transformer`。
+  - H800 smoke run 初次 SSH 抖动后已改用 `nohup + PYTHONUNBUFFERED=1` 跑通，输出已拉回：`src/outputs/scheduler_ablation_h800_smoke_20260430/summary.json` 与 `summary_table.md`。Smoke 仅验证链路，不解读性能。
+  - **H800 full unified scheduler ablation 已完成并拉回**：
+    - 输出：`src/outputs/scheduler_ablation_h800_full_20260430/summary.json` 与 `summary_table.md`。
+    - 配置：Mamba-370M，H800 PCIe，torch `2.8.0+cu128`，`prompt-repeat=8`，`max-prompt-length=4096`，`new-tokens=32`，`warmup=3`，`repeats=50`，`src.corey_selective_scan_dispatch`，`eligible_for_w1_speedup=true`。
+    - Best static oracle：`static_chunk_512`，`891.51±10.17 ms`。
+    - Static rows：chunk-128 `892.71±12.11 ms`，chunk-256 `914.43±14.58 ms`，chunk-512 `891.51±10.17 ms`，chunk-1024 `897.66±16.59 ms`，chunk-2048 `907.93±10.60 ms`。
+    - Remove/simple baselines：`no_entropy_mid` `903.77±29.67 ms`（`1.0137x` vs best static），`random_seed_0` `899.17±10.32 ms`（`1.0086x` vs best static）。
+    - Adaptive/proxy rows：`hist` `970.26±27.36 ms`（`1.0883x` vs best static），`sampled_hist_s8` `932.69±20.70 ms`（`1.0462x`），`cheap_proxy` `921.81±20.86 ms`（`1.0340x`），`variance_proxy` `934.80±26.04 ms`（`1.0486x`），`kurtosis_proxy` `922.96±14.96 ms`（`1.0353x`），`token_hist_s8` `999.68±24.35 ms`（`1.1213x`）。
+    - 结论：在正式 H800 runtime-chunk routed 条件下，统一 ablation 仍是负结果；adaptive/proxy 均未超过 best static oracle。`sampled_hist_s8` 相对 best static 慢约 `4.6%`，full `hist` 慢约 `8.8%`，token-level histogram 最慢。
+  - **H800 routed quality check 已完成并拉回**：
+    - 输出：`src/outputs/routed_quality_h800_20260430/summary.json` 与 `summary_table.md`。
+    - 3/3 prompts passive vs routed greedy generation exact-match，0 token mismatches。
+    - PPL ratio 分别为 `0.999521x`、`1.000125x`、`1.000170x`，属于数值噪声级一致。可作为 quality-preservation 表的最小证据。
+  - **H800 关机前收尾已完成**：
+    - 远端确认无 `run_scheduler_ablation` / `run_integrated` / `run_routed_quality` 进程，`nvidia-smi` 显示 H800 `0 MiB` / `0%`。
+    - 完整输出目录已递归拉回本地，共 50 个文件（含每个 child run 的 `summary.json` 与 `run.log`）。
+    - 远端输出归档已拉回：`src/outputs/_archives/h800_20260430_outputs.tgz`，SHA256 `7872E2EA9EC66961A8AA4EE463907677ECBDA4BD243AAE233EB8A3939C3D8D2D`。
+    - 当前不需要继续占用 H800；可关机。后续论文回填、表格整理、文字收窄均可本地完成。
+  - **论文回填与表格整理已完成**：
+    - `paper/main.tex` 已把 abstract、scope、contributions、H800 routed paragraph、limitations、conclusion 收窄为：routed live-scan 工程闭环已完成，最小质量检查保持一致，但统一 H800 ablation 为负，不能声明 robust end-to-end speedup。
+    - `paper/appendix.tex` 已新增统一 H800 scheduler ablation 表（static/no-entropy/random/hist/sampled/moment/token-level proxy）与 H800 routed quality 表；旧 sampled-hist near-parity 表保留为历史 feasibility measurement，并明确被统一 static-oracle ablation 覆盖。
+    - `cmd /c build.bat` 已重新生成 `paper/build/main.pdf`、`paper/build/appendix_only.pdf` 并复制到 `paper/main.pdf`、`paper/appendix.pdf`；最终日志未见 undefined references/citations，仍有两个既有 overfull hbox 警告。
+
+建议 4 卡 RTX 3090 smoke 命令（只验证链路，不作为正式论文结论，除非该环境也有 patched runtime chunk CUDA）：
+
+```bash
+python -m src.experiments.run_scheduler_ablation_matrix \
+  --model mamba-370m \
+  --prompt-repeat 1 \
+  --max-prompt-length 1024 \
+  --new-tokens 2 \
+  --warmup 0 \
+  --repeats 1 \
+  --rows static,no_entropy,random,sampled_hist,variance_proxy,token_hist \
+  --sweep-chunks 128,256 \
+  --output-dir src/outputs/scheduler_ablation_3090_smoke
+```
+
+建议 H800 full run 命令（正式 ablation / 需要 patched `src.corey_selective_scan_dispatch`）：
+
+```bash
+python -m src.experiments.run_scheduler_ablation_matrix \
+  --model mamba-370m \
+  --prompt-repeat 8 \
+  --max-prompt-length 4096 \
+  --new-tokens 32 \
+  --warmup 3 \
+  --repeats 50 \
+  --sweep-chunks 128,256,512,1024,2048 \
+  --selective-scan-dispatch-module src.corey_selective_scan_dispatch \
+  --output-dir src/outputs/scheduler_ablation_h800
+```
+
+建议 H800 quality check 命令（可先小样本，若通过再扩大 prompt set 或接 LongBench subset）：
+
+```bash
+python -m src.experiments.run_routed_quality_check \
+  --model mamba-370m \
+  --max-prompt-length 1024 \
+  --new-tokens 32 \
+  --scheduler-mode sampled_hist \
+  --entropy-stride 8 \
+  --include-perplexity \
+  --selective-scan-dispatch-module src.corey_selective_scan_dispatch \
+  --output-dir src/outputs/routed_quality_h800
+```
 
 ## 2026-04-29 Static Oracle vs Adaptive 实验入口与 4 卡 3090 smoke
 
@@ -829,11 +933,13 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
   - 当前 best routed H800 result 相对 passive 只有 `sampled_hist --entropy-stride 8` 的 `0.9905x` latency（约 1% near-parity），没有达到评审要求的 `>=10%` latency/throughput gain。
   - 已完成正式 H800 oracle 对比：`static_oracle_adaptive_h800` 显示 best static oracle 为 chunk-128（`876.55±26.55 ms`），adaptive sampled-hist stride=8 为 `905.55±18.24 ms`，相对 best static 为 `1.0331x` latency / `0.9680x` speedup。
   - 已完成 confirm subset：`static_oracle_adaptive_h800_confirm_128_1024` 显示 best static 为 chunk-1024（`901.98±33.12 ms`），adaptive 为 `886.95±15.77 ms`，相对 best static 为 `0.9833x` latency / `1.0170x` speedup。
-  - 结论：adaptive vs static oracle 方向不稳定，幅度只有约 `-3.3%` 到 `+1.7%`，远低于 `>=10%`；论文必须改成“scheduler-sensitive / not robustly oracle-beating”，不能写成“beats optimal static”。
+  - 2026-04-30 新完成 H800 unified ablation：best static oracle 为 chunk-512（`891.51±10.17 ms`）；sampled-hist stride=8 为 `932.69±20.70 ms`，相对 best static 为 `1.0462x` latency / `0.9559x` speedup。该结果进一步支持“没有真实 >=10% gain”的结论。
+  - 结论：adaptive vs static oracle 方向不稳定，最新统一表进一步显示 sampled-hist 慢约 `4.6%`；整体远低于 `>=10%` 正收益要求。论文必须改成“scheduler-sensitive / not robustly oracle-beating”，不能写成“beats optimal static”。
 
 2. **Improve entropy signal effectiveness（部分完成，仍偏弱）**  
   - 已尝试并验证：full histogram、sampled histogram、cheap moment proxy、长上下文、强制固定 chunk。当前唯一 n=50 正向配置是 sampled histogram stride=8。
-  - 仍未完成：variance / kurtosis / token-level entropy 等替代统计没有形成正式实验；真实 LongBench/H800 stress prompts 仍大多坍缩到同一 chunk bucket，entropy-driven switching 证据不足。
+  - 2026-04-30 代码已准备：`variance_proxy`、`kurtosis_proxy`、`token_hist` 已接入 integrated harness，并可通过 unified ablation matrix 一键跑。
+  - 2026-04-30 H800 正式数据已完成，替代统计均未改善：`variance_proxy` `1.0486x`、`kurtosis_proxy` `1.0353x`、`token_hist_s8` `1.1213x` vs best static。真实 workload 仍大多坍缩到 1024/2048 bucket，entropy-driven switching 证据不足。
 
 3. **Expand workload diversity（部分完成，但结论为负）**  
   - 已完成：LongBench、H800 84/164 prompt stress、code/log/table/repetition、长上下文诊断。
@@ -844,13 +950,16 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
   - 新完成：正式 H800 end-to-end static oracle vs adaptive 表已生成并同步到 `src/outputs/static_oracle_adaptive_h800/summary_table.md`。
   - 仍未完成：learned scheduler baseline；XLA/nvFuser/compiler fusion baseline。
 
-5. **Ablation on scheduler design（部分完成）**  
+5. **Ablation on scheduler design（已完成，结果为负）**  
   - 已完成：constant force-chunk route-only、cheap_proxy、sampled_hist、full_hist 对比的零散 H800 run。
-  - 仍未完成：统一表格中的 remove-entropy / random policy / constant policy / adaptive policy 对照；新增 oracle 脚本已覆盖 constant sweep，但 random/no-entropy 还没有正式 row。
+  - 2026-04-30 代码已准备：新增 `run_scheduler_ablation_matrix.py`，可统一生成 static sweep / no-entropy / random / hist / sampled_hist / cheap_proxy / variance_proxy / kurtosis_proxy / token_hist 表格；本地 `--dry-run` 通过。
+  - 2026-04-30 H800 正式 unified ablation 已完成并回填论文：static sweep、no-entropy、random、hist、sampled_hist、cheap_proxy、variance_proxy、kurtosis_proxy、token_hist 均有同平台 n=50 表格。该项从“缺表”转为“表已完成但结果为负”。
+  - 论文位置：`paper/appendix.tex` 新增 `tab:h800_unified_scheduler_ablation`；`paper/main.tex` 的 abstract / H800 routed paragraph / conclusion 已同步引用负结果。
 
-6. **Evaluate model quality impact（未形成正式表）**  
-  - 理论上 recurrence-preserving chunk dispatch 应保持输出等价，但论文仍缺少显式 perplexity 或 LongBench quality row 来证明 COREY routed path 与 baseline 质量一致。
-  - 仍需作者决定：是否补 WT103/PG19 perplexity 或 LongBench small subset quality under passive vs adaptive routed path。
+6. **Evaluate model quality impact（最小表已完成并回填）**  
+  - 理论上 recurrence-preserving chunk dispatch 应保持输出等价；当前已补显式 greedy-token exact-match 与 perplexity sanity row。
+  - 2026-04-30 代码已准备：新增 `run_routed_quality_check.py`，可记录 passive vs routed 的 greedy generation token exact-match，并可加 `--include-perplexity` 输出 loss/PPL/PPL ratio。
+  - 2026-04-30 H800 最小 quality check 已完成并回填论文：3/3 prompts greedy generation exact-match，0 token mismatches；PPL ratio `0.999521x`、`1.000125x`、`1.000170x`。若评审要求 task-level quality，仍可补 LongBench small subset；当前最小 quality-preservation 表已经进入 `paper/appendix.tex` 的 `tab:h800_routed_quality`。
 
 Minor suggestions 状态：
 - Tier-1 / Tier-2 claim 区分：主文已大幅收窄并区分，基本完成。
@@ -865,5 +974,5 @@ Minor suggestions 状态：
 
 1. **H800 正式 static oracle vs adaptive killer experiment 已运行，结论是不稳定/非强正。** 4 卡 RTX 3090 已完成最小 smoke，证明脚本链路可用；正式 H800 `static_oracle_adaptive_h800` 已完成并同步。Full sweep 中 best static 是 `static_chunk_128`（`876.55±26.55 ms`），adaptive sampled-hist stride=8 为 `905.55±18.24 ms`，相对 best static 为 `1.0331x` latency / `0.9680x` speedup。Confirm subset 中 best static 是 chunk-1024（`901.98±33.12 ms`），adaptive 为 `886.95±15.77 ms`，相对 best static 为 `0.9833x` latency / `1.0170x` speedup。
 2. **真实收益仍太小，且 adaptive 未稳定赢 oracle。** 先前最好 H800 routed result 相对 passive 是 `0.9905x` latency，约 1% near-parity；oracle 对比下 adaptive 相对 best static 在 `-3.3%` 到 `+1.7%` 间波动，远达不到 `docs/revision_suggestions.tex` 要求的 `>=10%` gain。
-3. **entropy 作用仍未充分证明。** 真实 workload 多数落到相同 chunk bucket；需要 alternative statistics 或 mixed regime 让 adaptive 的选择真正区别于最优静态 chunk。
-4. **缺少统一 ablation / quality 表。** 需要把 constant/no-entropy/random/adaptive 与 quality-preservation 结果放入同一组可审计实验，否则 reviewer 仍会认为机制像 prototype。
+3. **entropy 作用仍未充分证明。** 真实 workload 多数落到相同 chunk bucket；alternative statistics 的 H800 正式数据已完成但为负，未形成真实 mixed-regime switching。
+4. **统一 ablation / quality 表已补齐并回填，但结论不利。** H800 full unified ablation 与 H800 quality-preservation 最小表均已完成；ablation 证明 adaptive/proxy 不赢 best static oracle，quality check 证明 recurrence-preserving routed path 基本不改变输出。当前无需继续开 H800，下一步若要加码，应优先做本地文字清理或低成本 LongBench small quality subset 设计，而不是继续付费跑同类 scheduler matrix。

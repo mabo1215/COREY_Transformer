@@ -28,6 +28,7 @@ import argparse
 import json
 import math
 import platform
+import random
 import statistics
 import time
 import os
@@ -96,6 +97,53 @@ def _cheap_entropy_proxy(values: Any, num_bins: int = 256) -> float:
     return float(ratio.item() * math.log(num_bins))
 
 
+def _variance_entropy_proxy(values: Any, num_bins: int = 256) -> float:
+    import torch
+    flat = values.detach().float().reshape(-1)
+    mean = torch.mean(flat)
+    std = torch.sqrt(torch.mean((flat - mean) * (flat - mean)) + 1e-8)
+    scale = torch.mean(torch.abs(flat)) + std + 1e-8
+    ratio = torch.clamp(std / scale, 0.0, 1.0)
+    return float(ratio.item() * math.log(num_bins))
+
+
+def _kurtosis_entropy_proxy(values: Any, num_bins: int = 256) -> float:
+    import torch
+    flat = values.detach().float().reshape(-1)
+    centered = flat - torch.mean(flat)
+    var = torch.mean(centered * centered) + 1e-8
+    fourth = torch.mean(centered ** 4)
+    excess = torch.clamp(fourth / (var * var) - 3.0, min=0.0)
+    ratio = 1.0 - torch.exp(-excess / 8.0)
+    return float(torch.clamp(ratio, 0.0, 1.0).item() * math.log(num_bins))
+
+
+def _token_hist_entropy(values: Any, num_bins: int = 256) -> float:
+    import torch
+    # Average per-token entropy over the channel dimension. This keeps token
+    # variation visible when the global histogram collapses into one regime.
+    x = values.detach().float()
+    if x.dim() < 3:
+        return _hist_entropy(x, num_bins=num_bins)
+    x = x.transpose(1, 2).reshape(-1, x.shape[1])
+    vmin = x.min(dim=1, keepdim=True).values
+    vmax = x.max(dim=1, keepdim=True).values
+    span = vmax - vmin
+    valid = span.squeeze(1) >= 1e-8
+    if not bool(valid.any()):
+        return 0.0
+    x = x[valid]
+    vmin = vmin[valid]
+    span = span[valid]
+    normalized = (x - vmin) / (span + 1e-8)
+    indices = (normalized * num_bins).long().clamp(0, num_bins - 1)
+    counts = torch.zeros((x.shape[0], num_bins), device=x.device, dtype=torch.float32)
+    counts.scatter_add_(1, indices, torch.ones_like(x, dtype=torch.float32))
+    prob = counts / (counts.sum(dim=1, keepdim=True) + 1e-10)
+    log_prob = torch.where(prob > 1e-10, torch.log(prob + 1e-10), torch.zeros_like(prob))
+    return float((-(prob * log_prob).sum(dim=1)).mean().item())
+
+
 def _entropy_to_chunk(H: float, *, c_min: int = 128, c_max: int = 512,
                       h_ref: float | None = None, num_bins: int = 256) -> int:
     if h_ref is None:
@@ -104,6 +152,17 @@ def _entropy_to_chunk(H: float, *, c_min: int = 128, c_max: int = 512,
     raw = c_min + ratio * (c_max - c_min)
     rounded = int(2 ** round(math.log2(max(raw, 1.0))))
     return max(c_min, min(c_max, rounded))
+
+
+def _valid_scheduler_chunks(c_min: int, c_max: int) -> list[int]:
+    chunks: list[int] = []
+    value = 1
+    while value < c_min:
+        value *= 2
+    while value <= c_max:
+        chunks.append(value)
+        value *= 2
+    return chunks or [c_min]
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +184,11 @@ class SchedulerState:
         self.chunk_max: int = 512
         self.scheduler_mode: str = "hist"
         self.entropy_stride: int = 1
+        self.random_seed: int = 0
+        self.random = random.Random(self.random_seed)
+
+    def reset_random(self) -> None:
+        self.random = random.Random(self.random_seed)
 
 
 STATE = SchedulerState()
@@ -175,6 +239,14 @@ def _make_active_forward(original_forward: Any) -> Any:
     import torch.nn as nn
     from transformers.models.mamba import modeling_mamba as _mm
 
+    def call_original(self: Any, hidden_states: Any, cache_params: Any, attention_mask: Any) -> Any:
+        try:
+            return original_forward(self, hidden_states, cache_params, attention_mask)
+        except TypeError as exc:
+            if "positional" not in str(exc) and "argument" not in str(exc):
+                raise
+            return original_forward(self, hidden_states, cache_params)
+
     def active_forward(
         self: Any,
         hidden_states: Any,
@@ -187,11 +259,11 @@ def _make_active_forward(original_forward: Any) -> Any:
         causal_conv1d_update   = getattr(_mm, "causal_conv1d_update", None)
 
         if not STATE.enabled or selective_scan_fn is None or causal_conv1d_fn is None:
-            return original_forward(self, hidden_states, cache_params, attention_mask)
+            return call_original(self, hidden_states, cache_params, attention_mask)
 
         projected_states = self.in_proj(hidden_states).transpose(1, 2)
         if self.training and cache_params is None:
-            return original_forward(self, hidden_states, cache_params, attention_mask)
+            return call_original(self, hidden_states, cache_params, attention_mask)
 
         hidden_proj, gate = projected_states.chunk(2, dim=1)
         if attention_mask is not None:
@@ -228,19 +300,37 @@ def _make_active_forward(original_forward: Any) -> Any:
         seq_len = u_post_conv.shape[-1]
         selected_chunk: int | None = None
         if seq_len >= STATE.min_seq_len:
-            if STATE.scheduler_mode == "constant":
+            if STATE.scheduler_mode in {"constant", "no_entropy", "random"}:
                 H = None
             else:
                 entropy_input = u_post_conv
-                if STATE.scheduler_mode == "sampled_hist" and STATE.entropy_stride > 1:
+                if STATE.scheduler_mode in {"sampled_hist", "token_hist"} and STATE.entropy_stride > 1:
                     entropy_input = u_post_conv[..., ::STATE.entropy_stride]
                 if STATE.scheduler_mode == "cheap_proxy":
                     H = _cheap_entropy_proxy(entropy_input, num_bins=STATE.num_bins)
+                elif STATE.scheduler_mode == "variance_proxy":
+                    H = _variance_entropy_proxy(entropy_input, num_bins=STATE.num_bins)
+                elif STATE.scheduler_mode == "kurtosis_proxy":
+                    H = _kurtosis_entropy_proxy(entropy_input, num_bins=STATE.num_bins)
+                elif STATE.scheduler_mode == "token_hist":
+                    H = _token_hist_entropy(entropy_input, num_bins=STATE.num_bins)
                 else:
                     H = _hist_entropy(entropy_input, num_bins=STATE.num_bins)
 
             if STATE.force_chunk is not None:
                 selected_chunk = STATE.force_chunk
+            elif STATE.scheduler_mode == "random":
+                selected_chunk = STATE.random.choice(
+                    _valid_scheduler_chunks(STATE.chunk_min, STATE.chunk_max)
+                )
+            elif STATE.scheduler_mode == "no_entropy":
+                selected_chunk = _entropy_to_chunk(
+                    0.5 * math.log(STATE.num_bins),
+                    c_min=STATE.chunk_min,
+                    c_max=STATE.chunk_max,
+                    h_ref=STATE.h_ref,
+                    num_bins=STATE.num_bins,
+                )
             else:
                 selected_chunk = _entropy_to_chunk(
                     H if H is not None else 0.0,
@@ -503,14 +593,26 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--chunk-max",  type=int,   default=512)
     p.add_argument(
         "--scheduler-mode",
-        choices=("hist", "sampled_hist", "cheap_proxy", "constant"),
+        choices=(
+            "hist",
+            "sampled_hist",
+            "token_hist",
+            "cheap_proxy",
+            "variance_proxy",
+            "kurtosis_proxy",
+            "constant",
+            "no_entropy",
+            "random",
+        ),
         default="hist",
         help=(
-            "Chunk scheduler used in active modes. 'constant' skips entropy "
-            "measurement and requires --force-chunk for route-only diagnostics."
+            "Chunk scheduler used in active modes. 'constant' and 'no_entropy' "
+            "skip entropy measurement; 'constant' is intended for explicit "
+            "--force-chunk route-only diagnostics."
         ),
     )
     p.add_argument("--entropy-stride", type=int, default=1)
+    p.add_argument("--random-seed", type=int, default=0)
     p.add_argument(
         "--force-chunk",
         type=int,
@@ -610,6 +712,8 @@ def main() -> None:
         STATE.force_chunk = args.force_chunk
         STATE.scheduler_mode = args.scheduler_mode
         STATE.entropy_stride = max(args.entropy_stride, 1)
+        STATE.random_seed = args.random_seed
+        STATE.reset_random()
         prompt = " ".join([args.prompt] * max(args.prompt_repeat, 1))
 
         # --- Condition 1: Passive baseline ---
@@ -636,6 +740,7 @@ def main() -> None:
                 STATE.enabled = True
                 STATE.route_chunk = False
                 STATE.records.clear()
+                STATE.reset_random()
                 print("[integrated] (2/3) Timing active-hook-only (chunk selected, not routed) …")
                 active_only = _time_generate(model, tokenizer, prompt, args.new_tokens,
                                              device, args.warmup, args.repeats,
@@ -657,6 +762,7 @@ def main() -> None:
                 STATE.enabled = True
                 STATE.route_chunk = True
                 STATE.records.clear()
+                STATE.reset_random()
                 print("[integrated] (3/3) Timing active+routed (chunk selected AND routed into scan) …")
                 integrated = _time_generate(model, tokenizer, prompt, args.new_tokens,
                                             device, args.warmup, args.repeats,
@@ -720,6 +826,7 @@ def main() -> None:
             "chunk_max": args.chunk_max,
             "scheduler_mode": args.scheduler_mode,
             "entropy_stride": STATE.entropy_stride,
+            "random_seed": args.random_seed,
             "force_chunk": args.force_chunk,
             "platform": platform.platform(),
             "chunk_size_kwarg_supported": kwarg_supported,

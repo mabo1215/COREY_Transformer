@@ -66,6 +66,7 @@ def _add_common_child_args(cmd: list[str], args: argparse.Namespace) -> None:
         "--warmup", str(args.warmup),
         "--repeats", str(args.repeats),
         "--num-bins", str(args.num_bins),
+        "--random-seed", str(args.random_seed),
     ])
     if args.selective_scan_dispatch_module:
         cmd.extend([
@@ -238,10 +239,20 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--sweep-chunks", type=_parse_chunks, default=_parse_chunks("128,256,512,1024,2048"))
     p.add_argument(
         "--adaptive-scheduler-mode",
-        choices=("hist", "sampled_hist", "cheap_proxy"),
+        choices=(
+            "hist",
+            "sampled_hist",
+            "token_hist",
+            "cheap_proxy",
+            "variance_proxy",
+            "kurtosis_proxy",
+            "no_entropy",
+            "random",
+        ),
         default="sampled_hist",
     )
     p.add_argument("--adaptive-entropy-stride", type=int, default=8)
+    p.add_argument("--random-seed", type=int, default=0)
     p.add_argument("--adaptive-chunk-min", type=int, default=None)
     p.add_argument("--adaptive-chunk-max", type=int, default=None)
     p.add_argument(
