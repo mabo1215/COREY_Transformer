@@ -1,6 +1,49 @@
 ﻿# 论文进度
 
-最后更新：2026-05-01（编译检查通过，Minor-2 附录冗余压缩与 Minor-3 notation 一致性通读已完成，PDF 重新生成 27 页附录+无 undefined refs。）
+最后更新：2026-05-01（PAT 审稿意见全面修正：Eq.2 floor→round、代理分派成本重算、Triton 公式替换、Hadamard 机制解释重写、guarded fallback 声明纠正、ref.bib 混入 note 字段删除，PDF 重新编译通过，39 页无 fatal error。）
+
+## 2026-05-01 PAT 审稿意见系统性修正
+
+### 修正清单（paper/main.tex）
+1. **Eq.2 floor→round**：`\lfloor\log_2(\cdot)\rfloor` → `\operatorname{round}(\log_2(\cdot))`。对 r=0.83：log₂(430.4)=8.75，round→9，2⁹=512（floor 给 256，与所有表格/文字矛盾）。
+2. **Theorem 2 逻辑修正**：「unless B is a permutation **and** p is uniform」→「**or**」。两个条件各自独立足以破坏严格不等号；原文 and 在逻辑上过强。
+3. **Hadamard 熵下降机制重写（main.tex 及 appendix.tex 均已更新）**：旧解释「Gaussian 旋转不变→无 spreading」数学上正确但错误：忽略了动态分箱的 artifact。新正确解释：实际激活有非零均值，Hadamard 把 DC 分量集中到单个坐标（z₁≈√d·μ），造成统计离群值，扩大 [min,max] 区间 → 每个 bin 宽度等比放大 → 其余坐标被压缩到更少 bins → 离散熵降低。
+4. **17.5%→17.0%**：Tier-1 prototype arithmetic intensity 提升百分比修正（正确：(100.94-83.79)/100.94 = 16.99% ≈ 17.0%）。
+5. **Guarded fallback overhead 声明纠正**：删除「reduces overhead from +4.6% to +2-3%」。Table 7 显示 guarded(932.86ms) ≈ unguarded(932.69ms)，绝对开销实质相同。新文字：「guarded fallback policy routes long-context calls to Static-512 but incurs comparable absolute overhead (+4.6%) since the entropy computation precedes the guard decision.」
+6. **Contributions bullet 更新**：与 guarded fallback 声明保持一致。
+7. **Code URL 取消注释**：abstract 中 `\url{https://anonymous.4open.science/r/COREY_Transformer-B0C5/}` 原已被注释，补全需要使 NeurIPS checklist Item 6 有效。
+8. **Table 2 caption 添加 speedup 与孤立 kernel latency 解耦说明**：明确 Speedup 列来自端到端 Python-dispatch chunk-sweep (Static-64: 3.299ms, Static-512: 0.748ms, ratio 4.41×)，非孤立 kernel latency 列之比（0.101/0.013≈7.8×，不同度量）。
+9. **Table 42 (tab:main_scheduler_oracle) 修正**：标题改为「three consumer-GPU scheduler strategies」；guarded row 的 delta 从「+2.97%」（使用错误基线 905.97ms）改为「+4.6%」（正确基线 891.51ms，来自 Table 7）；添加分隔行 + 注释说明 DC 行不可与上方 consumer-GPU 行直接比较。
+10. **Mixed-regime 文字修正**：「+2-3% residual overhead」→「+4.6% overhead from entropy computation」。
+11. **Routed ablation 文字修正**：guarded 的「+3-5% overhead」→「comparable absolute overhead (+4.6%)」。
+
+### 修正清单（paper/appendix.tex）
+1. **Table 1→Table 2 交叉引用（2 处）**：TPU benchmark 节中 0.013ms 时间引用改为「Table~2 of the main paper」（原 Table 1 是 bin-count invariance 数据，Table 2 才是 kernel summary 含 0.013ms）；0.057ms Colab TPU 条目改为引用「Appendix Table~\ref{tab:real-gpu-three-policy}」（该数据在附录多平台表中）。
+2. **17.5%→17.0%**：与 main.tex 保持一致。
+3. **代理分派成本重算（Appendix D.1）**：旧值 0.413ms = 3.30ms/8（错误：使用 512-chunk call count=8），正确应除以 static-64 call count=64 → 0.052ms = 3.299ms/64。
+4. **Table 37 (tab:fused_kernel_sweep) 所有 Surr.lat. 值重算**：按正确公式（launch_count × 0.052ms / 64 × 64）全部重算，共 14 行（1, 2, 3, 4, 5, 6, 8, 11, 14, 16, 22, 28, 32, 64 launches）。Red.(%) 列不变（基于 launch count 比，不含绝对 ms）。
+5. **Triton 公式替换（Appendix B.5）**：旧 32-倍数公式 `T(e) = 32·round((64+r·448)/32)`（对 r=0.83 返回 448，与 claim 512 矛盾）完全替换为 2-幂次公式 `T(e) = clip(2^round(log₂(64 + r·(512-64))), 64, 512)`（对 r=0.83：64+0.83×448=435.8，log₂≈8.77，round→9，2⁹=512 ✓）。添加说明旧公式已废弃的注释。
+6. **Href sensitivity 公式 floor→round**：与 main.tex Eq.2 保持一致。
+7. **H_min、H_max 定义**：adaptive threshold 子节添加「$H_{\min}=0$ is the theoretical minimum … $H_{\max}=\log K$ is the theoretical maximum entropy for $K$ uniform bins」定义。
+8. **Scope reminder 重写**：更新为正确的 DC-concentration / bin-widening 机制解释。
+9. **Remark [Conditional applicability] 重写**：添加完整机制解释（非零均值→DC 坐标→离群值→动态 bin 宽增大→离散熵降低），澄清 Gaussian shape 被保留但 binning artifact 导致测量熵下降；限定定理仅适用于零均值合成重尾分布。
+10. **TPU table 脚注修正**：`$^\dagger$From ... (Table 1 of the main paper)` → `Table~2 of the main paper`。
+
+### 修正清单（paper/ref.bib）
+1. **yang2024parallelizing 混入 note 字段删除**：移除 `note = {Hardware-efficient linear attention kernels for state-space-like models}`，该字符串属于另一篇论文，错误合并进「Parallelizing Linear Transformers with the Delta Rule over Sequence Length」条目。
+
+### 编译验证
+- `pdflatex -interaction=nonstopmode main.tex`（Windows MiKTeX）：通过，输出 `build/main.pdf` 39 页，5,020,953 字节。
+- 日志无 fatal error（无 `^!` 行）；无 `LaTeX Error`；无 `Undefined control sequence`；无 `Missing`。
+- 更新后 `paper/main.pdf` 时间戳 2026-05-01 19:05。
+
+### 遗留低优先级事项（暂不阻塞）
+- Theorem 编号不一致：main.tex 中 Theorem 2（thm:entropy_informal），附录中复述为 Theorem 3，已知差异，不影响阅读。
+- Theorem 4 措辞：「Variance Preservation」实际证明的是 ℓ₂ norm 保留，措辞轻微不精确。
+- Algorithm 1：未存储 argmax predecessor，严格 DP 只跟踪 scalar；可选修复。
+- Notation 统一：Table 1 用 $H$，line 93 用 $H/\log K$，line 98 用 $\tilde{H}$，Appendix B.3 用 $\hat{H}/\log K$；不同符号表达同一概念，可在 camera-ready 中统一。
+
+
 
 ## 2026-05-01 本地收尾：Minor-2、Minor-3、编译验证
 
@@ -1002,82 +1045,7 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ---
 
-## 未修改或部分修改（最新 `docs/revision_suggestions.tex` / Weak Reject）
+## 未修改或部分修改（最新 `docs/revision_suggestions.tex`）
 
-**NeurIPS 2026 硬性要求复核状态（2026-05-01 更新）：**
-
-1. **Demonstrate real end-to-end speedup（负结果确认）**
-   - 已完成全 8 regime per-regime static sweep（本地 3070，8 samples × 12 repeats）；per-regime oracle 比 global static-512 仅好 0.14ms（0.14%），远低于 H800 开机门控（10%）。
-   - H800 guarded sweep 不建议开机；科学定位已调整为"chunk-size sensitivity 诊断工具"：tables_csv（5.9%）和 repetition_policy（2.2%）是最强 chunk-size 效应场景。
-   - 推进状态：**负结果确认；下一步仅需更新 limitations/contributions 段落，不需要新实验。**
-
-2. **Compare against stronger scheduler/compiler baselines（部分完成）**
-   - 已完成：guarded scheduler 入口（fallback=512）、learned_table 入口、全 8 regime static sweep labels。
-   - 未完成：learned_table policy JSON 尚未从 labels 生成；论文 learned/guarded vs static-512 对比段落尚未写入。
-   - Compiler baseline 收窄为 future work / compiler-assisted static specialization，不承诺完整 XLA/nvFuser baseline。
-   - 推进状态：**可本地继续推进，无需 GPU（生成规则表 + 写论文）。**
-
-3. **Quality impact（task-level 已完成，大规模扩展待定）**
-   - H800 40-prompt LongBench task-level routed quality check 已完成（38/40 exact match，`src/outputs/routed_quality_h800_longbench40_20260501/`）。
-   - 大规模 n=100+ 全任务扩展仍未运行。
-   - 推进状态：**当前数据足够应对 reviewer；进一步扩展需 H800 开机，暂不建议。**
-
-4. **Minor suggestions（可本地继续清理）**
-   - Appendix redundancy：未系统清理。
-   - Entropy normalization vs raw nats 记号一致性：已部分处理；仍可继续通读清理。
-   - 推进状态：待处理，低优先级。
-
----
 
 ## 遗留问题
-
-（2026-05-01 更新：遗留问题 1 和 3 已解决；遗留问题 2 待 H800 开机执行。）
-
-1. **H800 guarded/learned full ablation（作者已解锁，等待 H800 开机）**
-   - 作者决策：即使 ≪10% regime-level gap 也值得展示（作为 adaptive routing 能力证明）。
-   - 所需资源：H800 开机 + `src.corey_selective_scan_dispatch` CUDA 扩展已编译。
-   - **执行命令（H800 上运行）：**
-     ```bash
-     python -m src.experiments.run_scheduler_ablation_matrix \
-         --model mamba-370m \
-         --prompt-pool src/outputs/mixed_regime_discovery_20260501_nocard/prompt_pool.jsonl \
-         --max-prompt-length 2048 \
-         --new-tokens 4 \
-         --warmup 2 \
-         --repeats 8 \
-         --rows static,guarded_sampled_hist,learned_table \
-         --sweep-chunks 128,256,512 \
-         --guard-fallback-chunk 512 \
-         --learned-policy-json src/outputs/learned_policy_regime/policy.json \
-         --selective-scan-dispatch-module src.corey_selective_scan_dispatch \
-         --output-dir src/outputs/mixed_regime_guarded_learned_h800
-     ```
-   - 产出后：将 guarded_sampled_hist 行填入 `appendix tab:scheduler_oracle_comparison`（[TODO: H800 routed run] 占位符）；同步更新论文 guarded 行数据。
-   - `A:` 
-
-2. **系统级横向 baseline（FlashAttention-3 / Mamba-2 / RWKV-6）**
-   - 所需资源：对应库版本 + GPU 环境 + 数周实验时间。
-   - 当前处理：已在 Limitations 中列为 future work，不影响当前投稿。
-   - 投稿前无需解决。
-
----
-
-### 已解决（本次 session）
-
-**遗留问题原 1 — learned_table 规则表（已完成）**
-- 生成 `src/outputs/learned_policy_regime/policy.json`：seq_len ≤ 50 → chunk=128；else → chunk=512。
-- 分析结果：avg 316.7ms，与 per-regime oracle 齐平（差 <0.1ms）。
-- 论文更新：新增 `appendix tab:scheduler_oracle_comparison`（四路对比表）；main.tex §6 mixed-regime 段落、Abstract、Contributions、Conclusion 均已插入 learned-policy 结论。
-
-**遗留问题原 3 — Mamba-2.8B n≥20（已确认完成）**
-- `appendix tab:policy_compare_n5` 中 Mamba-2.8B 行已有 n=20 数据（RTX 3090，CUDA 12.1，warmup=1）：`policy_static=2068ms`，`policy_corey=2082ms`（$^\ddagger$ 脚注）。
-- 该数据有效，无需重新运行；若需在 4 卡 3090 + hf-mirror 环境复验，命令如下：
-  ```bash
-  HF_ENDPOINT=https://hf-mirror.com \
-  python -m src.experiments.run_policy_corey_ablation \
-      --model-id benchang1110/mamba2-2.7b-hf \
-      --n 20 \
-      --policy static \
-      --output-dir src/outputs/policy_corey_2p8b_4x3090_verify
-  # 同理跑 --policy corey
-  ```
