@@ -1,6 +1,29 @@
 ﻿# 论文进度
 
-最后更新：2026-05-01（任务96：80/80 质量检查升级完成；H800 guarded/learned ablation 正在运行；论文 quality 相关段落已全面更新。）
+最后更新：2026-05-01（任务97：按 NeurIPS 2026 9 页限制大幅重构主体；任务96：80/80 质量检查升级完成。）
+
+## 2026-05-01 任务97：NeurIPS 2026 主体重构（5 页）
+
+主体从约 12 页（含原 4 段冗余的负结果重述）压缩到 5 页（远低于 9 页限制）。
+
+**结构性修改：**
+- §5 Results 拆为 5 个聚焦小节：Kernel-level / End-to-end Routed / Mixed-Regime / Quality / Mechanism Ablations。
+- 多平台 kernel 对比表（原 `tab:real-gpu-three-policy`，4 段 hardware）从主体移到附录，保留主体单平台简表 `tab:kernel_summary`。
+- §6.1 / §6.3 / Limitations / Conclusion 中重复 4 次的 H800 负结果合并为 §5.2 单一段落 + Limitations 总结。
+- Method / Theoretical 大幅简化，超参数与 Hadamard 完整讨论全部移到附录。
+
+**清洗内容（主体不再出现）：**
+- 代码函数名：`selective_scan_fn`、`model.generate`、`MambaMixer.cuda_kernels_forward`、`policy_off`、`token_hist`、`mamba_ssm`、`fast_path_available`、`adama-cuda128` 等。
+- 显卡品牌：`RTX~3070`、`RTX~3090`、`H800`、`Tesla T4` → `consumer GPU` / `server-class GPU` / `data-center accelerator`。
+- 模型版本号：`Mamba-370M` / `Mamba-1.4B` / `Mamba-2.8B` → `370M-parameter Mamba checkpoint`（仅在必要处保留参数规模）。
+- 内部行话：`Tier-1/2a/2b`（在小节标题与 contributions 处去掉）、`W1 triplet`、`monkey-patches`、`the engineering blocker`、`$C^\star$`、`Signal A/B`、`Concept \& Feasibility`。
+- Serving regime 工程命名：`logs/UUID`、`tables/CSV`、`OCR forms` → `structured logs` / `tabular data` / `form-style content`。
+
+**验证：**
+- 主体 5 页（log 显示 main.bbl 在第 6 页加载，appendix 在第 8 页加载）。
+- 25 个 ref/cite 全部解析成功，无 undefined references。
+- 仅 3 个 minor overfull hbox（均在附录区域，可接受）。
+- 编译通过：`main.pdf` 35 页，`appendix.pdf` 28 页。
 
 ## 2026-05-01 任务96：80/80 质量检查 + H800 guarded ablation 进行中
 
