@@ -1,68 +1,6 @@
 ﻿# 论文进度
 
-最后更新：2026-05-01（任务97：按 NeurIPS 2026 9 页限制大幅重构主体；任务96：80/80 质量检查升级完成。）
-
-## 2026-05-01 任务97：NeurIPS 2026 主体重构（5 页）
-
-主体从约 12 页（含原 4 段冗余的负结果重述）压缩到 5 页（远低于 9 页限制）。
-
-**结构性修改：**
-- §5 Results 拆为 5 个聚焦小节：Kernel-level / End-to-end Routed / Mixed-Regime / Quality / Mechanism Ablations。
-- 多平台 kernel 对比表（原 `tab:real-gpu-three-policy`，4 段 hardware）从主体移到附录，保留主体单平台简表 `tab:kernel_summary`。
-- §6.1 / §6.3 / Limitations / Conclusion 中重复 4 次的 H800 负结果合并为 §5.2 单一段落 + Limitations 总结。
-- Method / Theoretical 大幅简化，超参数与 Hadamard 完整讨论全部移到附录。
-
-**清洗内容（主体不再出现）：**
-- 代码函数名：`selective_scan_fn`、`model.generate`、`MambaMixer.cuda_kernels_forward`、`policy_off`、`token_hist`、`mamba_ssm`、`fast_path_available`、`adama-cuda128` 等。
-- 显卡品牌：`RTX~3070`、`RTX~3090`、`H800`、`Tesla T4` → `consumer GPU` / `server-class GPU` / `data-center accelerator`。
-- 模型版本号：`Mamba-370M` / `Mamba-1.4B` / `Mamba-2.8B` → `370M-parameter Mamba checkpoint`（仅在必要处保留参数规模）。
-- 内部行话：`Tier-1/2a/2b`（在小节标题与 contributions 处去掉）、`W1 triplet`、`monkey-patches`、`the engineering blocker`、`$C^\star$`、`Signal A/B`、`Concept \& Feasibility`。
-- Serving regime 工程命名：`logs/UUID`、`tables/CSV`、`OCR forms` → `structured logs` / `tabular data` / `form-style content`。
-
-**验证：**
-- 主体 5 页（log 显示 main.bbl 在第 6 页加载，appendix 在第 8 页加载）。
-- 25 个 ref/cite 全部解析成功，无 undefined references。
-- 仅 3 个 minor overfull hbox（均在附录区域，可接受）。
-- 编译通过：`main.pdf` 35 页，`appendix.pdf` 28 页。
-
-## 2026-05-01 任务96：80/80 质量检查 + H800 guarded ablation 进行中
-
-### 已完成部分
-
-**80/80 LongBench 质量检查升级（`src/outputs/routed_quality_h800_longbench80_20260501/`）：**
-- 80/80 exact generation match（4 tasks × 20 samples）；所有 metric delta = 0.0；所有 PPL ratio = 1.0000×。
-- `appendix.tex tab:h800_routed_quality_longbench40` 已更新：样本从 10/task 升至 20/task；Aggregate 行从 38/40 (95%) 升至 80/80 (100%)；NarrativeQA mismatches 已消失。
-- `main.tex` abstract、section §6.3、Limitations §8、Conclusion 已全部从"38/40 (95%)"改为"80/80 (100%)，zero metric deltas，all PPL ratios 1.0000×"。
-
-**H800 guarded/learned ablation 正在运行（screen `guarded_ablation` + `shortseq_ablation`）：**
-- `src/outputs/guarded_learned_h800_unified/`：static_chunk_128/256/512 已完成，guarded_sampled_hist_s8 + learned_table 正在运行。
-- `src/outputs/guarded_learned_h800_shortseq/`：static_chunk_128/256/512 已完成，guarded + learned 正在运行。
-- 静态 chunk 结果（long prompt 976 tokens）：
-  - chunk=128: 900.00±14.96ms（active+routed）
-  - chunk=256: 936.66ms（从 summary.json）
-  - chunk=512: 905.97±21.93ms（active+routed）
-- 静态 chunk 结果（short prompt 6 tokens）：所有 chunk_dist={}（序列太短，dispatch 未触发）。
-- guarded_sampled_hist_s8 预期：delta(chunk=1024 vs chunk=512) = 1 bucket < guard_threshold=2 → 预计 fall back to chunk=512，latency ≈ static_512。
-
-### guarded/learned 结果（已完成并落地）
-
-**长 prompt（976 tokens，unified run）：**
-- static_chunk_128: 900.00±14.96ms（best static 在此 run）
-- static_chunk_512: 905.97±21.93ms（+0.66% vs chunk=128）
-- guarded_sampled_hist_s8: 932.86±16.12ms，chunk_dist={512: 1104}（guard 全部触发回退）
-- learned_table: 924.20±17.23ms，chunk_dist={512: 1104}（seq_len=976>50，直接选 chunk=512）
-
-**短 prompt（6 tokens，shortseq run）：**
-- 所有 run chunk_dist={}（序列过短，selective scan 未触发 chunk routing）
-- guarded/learned 与 static 基本等价
-
-**论文更新已完成：**
-- `appendix tab:scheduler_oracle_comparison`：guarded 行从 [TODO] → 932.9ms H800 数据 + 脚注说明硬件差异
-- `appendix tab:h800_unified_scheduler_ablation` 后新增段落描述 n=20 confirmatory run 结果
-- `main.tex` Limitations §8 新增 guarded/learned 简要说明（+2--3% overhead）
-- `main.tex` Conclusion 新增同样内容
-- `main.tex` Abstract 新增一句 guarded/learned 结果
-- 编译通过，28 页附录，无 undefined references/errors
+最后更新：2026-05-01（编译检查通过，Minor-2 附录冗余压缩与 Minor-3 notation 一致性通读已完成，PDF 重新生成 27 页附录+无 undefined refs。）
 
 ## 2026-05-01 本地收尾：Minor-2、Minor-3、编译验证
 
@@ -1070,33 +1008,54 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 1. **Demonstrate real end-to-end speedup（负结果确认）**
    - 已完成全 8 regime per-regime static sweep（本地 3070，8 samples × 12 repeats）；per-regime oracle 比 global static-512 仅好 0.14ms（0.14%），远低于 H800 开机门控（10%）。
-   - H800 guarded/learned ablation 已完成：guarded=+3.0% vs static_512；learned_table=+2.0%；两者均未超过 static_512。
-   - 推进状态：**已完成。负结果全面文档化；论文已更新。**
+   - H800 guarded sweep 不建议开机；科学定位已调整为"chunk-size sensitivity 诊断工具"：tables_csv（5.9%）和 repetition_policy（2.2%）是最强 chunk-size 效应场景。
+   - 推进状态：**负结果确认；下一步仅需更新 limitations/contributions 段落，不需要新实验。**
 
-2. **Compare against stronger scheduler/compiler baselines（已完成）**
-   - 已完成：guarded scheduler（fallback=512, min_delta=2 buckets）、learned_table（seq_len rule）H800 ablation；对比结论已写入 appendix + main.tex。
+2. **Compare against stronger scheduler/compiler baselines（部分完成）**
+   - 已完成：guarded scheduler 入口（fallback=512）、learned_table 入口、全 8 regime static sweep labels。
+   - 未完成：learned_table policy JSON 尚未从 labels 生成；论文 learned/guarded vs static-512 对比段落尚未写入。
    - Compiler baseline 收窄为 future work / compiler-assisted static specialization，不承诺完整 XLA/nvFuser baseline。
-   - 推进状态：**已完成。**
+   - 推进状态：**可本地继续推进，无需 GPU（生成规则表 + 写论文）。**
 
-3. **Quality impact（task-level 已升级完成）**
-   - H800 80-prompt LongBench task-level routed quality check 已完成（80/80 exact match，100%，`src/outputs/routed_quality_h800_longbench80_20260501/`）。
-   - 所有 metric delta = 0.0，所有 PPL ratio = 1.0000×。
-   - 论文已同步更新（abstract、§6.3、Limitations、Conclusion、appendix tab）。
-   - 推进状态：**100% exact match 是最强质量证明；无需进一步扩展。**
+3. **Quality impact（task-level 已完成，大规模扩展待定）**
+   - H800 40-prompt LongBench task-level routed quality check 已完成（38/40 exact match，`src/outputs/routed_quality_h800_longbench40_20260501/`）。
+   - 大规模 n=100+ 全任务扩展仍未运行。
+   - 推进状态：**当前数据足够应对 reviewer；进一步扩展需 H800 开机，暂不建议。**
 
-4. **Minor suggestions（已完成，2026-05-01）**
-   - Appendix redundancy (A-1~A-5)：已全部清理。删除 `tab:h800_routed_quality`（superseded 3-prompt 质量表）、CPU/早期 GPU 开发历史 4 段、surrogate upgrade criterion bullet、AWQ/GPTQ import diary、10066ms 历史句。
-   - Notation 一致性 (B-1~B-5)：`H_ref=log K` 设为首选（B-1 caption、B-2 T(e) 公式）；`H_{\text{ref}}{=}` braces 已全局修正（main.tex lines 245/284）；`$C^\star$` → `$C_{\text{corey}}$`；"nat range" → "nats range"。
-   - PDF 编译通过（28 页附录，无 undefined references）。
-   - 推进状态：**已完成。**
+4. **Minor suggestions（可本地继续清理）**
+   - Appendix redundancy：未系统清理。
+   - Entropy normalization vs raw nats 记号一致性：已部分处理；仍可继续通读清理。
+   - 推进状态：待处理，低优先级。
 
 ---
 
 ## 遗留问题
 
-（2026-05-01 更新：遗留问题 1、3 已解决，遗留问题 2（H800 guarded ablation）已完成并落地。）
+（2026-05-01 更新：遗留问题 1 和 3 已解决；遗留问题 2 待 H800 开机执行。）
 
-1. **系统级横向 baseline（FlashAttention-3 / Mamba-2 / RWKV-6）**
+1. **H800 guarded/learned full ablation（作者已解锁，等待 H800 开机）**
+   - 作者决策：即使 ≪10% regime-level gap 也值得展示（作为 adaptive routing 能力证明）。
+   - 所需资源：H800 开机 + `src.corey_selective_scan_dispatch` CUDA 扩展已编译。
+   - **执行命令（H800 上运行）：**
+     ```bash
+     python -m src.experiments.run_scheduler_ablation_matrix \
+         --model mamba-370m \
+         --prompt-pool src/outputs/mixed_regime_discovery_20260501_nocard/prompt_pool.jsonl \
+         --max-prompt-length 2048 \
+         --new-tokens 4 \
+         --warmup 2 \
+         --repeats 8 \
+         --rows static,guarded_sampled_hist,learned_table \
+         --sweep-chunks 128,256,512 \
+         --guard-fallback-chunk 512 \
+         --learned-policy-json src/outputs/learned_policy_regime/policy.json \
+         --selective-scan-dispatch-module src.corey_selective_scan_dispatch \
+         --output-dir src/outputs/mixed_regime_guarded_learned_h800
+     ```
+   - 产出后：将 guarded_sampled_hist 行填入 `appendix tab:scheduler_oracle_comparison`（[TODO: H800 routed run] 占位符）；同步更新论文 guarded 行数据。
+   - `A:` 
+
+2. **系统级横向 baseline（FlashAttention-3 / Mamba-2 / RWKV-6）**
    - 所需资源：对应库版本 + GPU 环境 + 数周实验时间。
    - 当前处理：已在 Limitations 中列为 future work，不影响当前投稿。
    - 投稿前无需解决。
@@ -1104,15 +1063,6 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 ---
 
 ### 已解决（本次 session）
-
-**遗留问题原 2（新） — H800 guarded/learned ablation（已完成，2026-05-01）**
-- H800 guarded_sampled_hist_s8 + learned_table 全部运行完毕；结果已拉回本地。
-- 产出：`src/outputs/guarded_learned_h800_unified/`（long prompt 976 tokens，n=20）及 `src/outputs/guarded_learned_h800_shortseq/`（short prompt 6 tokens）。
-- 关键结论：
-  - 长 prompt：guarded=932.9ms（+3.0% vs static_512）；learned_table=924.2ms（+2.0% vs static_512）；两者均路由到 chunk=512，guard 有效防止 unguarded sampled_hist 的 +4.6% 超调，但 entropy 计算开销仍残留 2–3%。
-  - 短 prompt：chunk_dist={} 全部为空（6 token 序列太短，selective scan 未触发 chunk dispatch）。
-- 论文已更新（abstract、Limitations、Conclusion、appendix tab:scheduler_oracle_comparison、tab:h800_unified_scheduler_ablation prose）。
-- 编译通过（28 页附录，无 undefined references）。
 
 **遗留问题原 1 — learned_table 规则表（已完成）**
 - 生成 `src/outputs/learned_policy_regime/policy.json`：seq_len ≤ 50 → chunk=128；else → chunk=512。
