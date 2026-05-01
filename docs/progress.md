@@ -1,6 +1,36 @@
 ﻿# 论文进度
 
-最后更新：2026-05-01（PAT 审稿意见全面修正：Eq.2 floor→round、代理分派成本重算、Triton 公式替换、Hadamard 机制解释重写、guarded fallback 声明纠正、ref.bib 混入 note 字段删除，PDF 重新编译通过，39 页无 fatal error。）
+最后更新：2026-05-01（H800 guarded/learned scheduler 实验完成收口：n=50 warmup=3 H800 PCIe 运行；guarded 903.0±25.4 ms / +1.29%，learned 897.6±7.4 ms / +0.69%，相较旧 n=20 值 932.9 ms / +2.97% 修正。main.tex 6 处 + appendix.tex 表+文字全部回填。PDF 编译通过，main 39 页 / appendix 28 页，无 fatal error。）
+
+## 2026-05-01 PAT 审稿意见 Cycle 2：剩余低优先级文本修正
+
+本轮针对上一轮 task 95 中明示「遗留低优先级事项」的可一次性落地修正，共 6 项 manuscript-only edit，无新实验、无新数据、无作者决策需求。所有修正均在文本/公式层完成，PDF 编译通过。
+
+### 修正清单（paper/appendix.tex）
+1. **Region entropy $H(R)$ 定义锚定（Appendix B.1）**：响应 PAT「Ambiguity in Region Entropy $H(R)$ Definition (Clarity)」。在 utility 公式 $U(R)=\alpha H(R)+\beta AI(R)-\gamma M(R)$ 旁补一句：$H(R){=}\widehat{H}(z_{\mathrm{in}}(R))$，即 region 第一个 operator 的输入张量的 fixed-bin empirical entropy；$AI(R)$ 与 $M(R)$ 在 region 内部 operator 上累加。消除「region entropy 是 input/output/aggregate?」三义歧义。
+2. **Algorithm~1 显式 argmax predecessor 跟踪**：响应 PAT「Algorithm~1 returns 'segmentation recovered from the maximizing predecessors' but inner loop does not store argmax」。新增 `prev[]` 数组、初始化为 $-1$、在更新 `DP[i]` 时同步写入 `prev[i] ← j` 并加 `\Comment{record argmax predecessor for backtracking}`；`\Return` 行改为「walking $\mathrm{prev}[n], \mathrm{prev}[\mathrm{prev}[n]], \ldots, 0$ in reverse」，使 path recovery 步骤完整。
+3. **Theorem 4 重写为 ℓ₂-norm preservation 并形式化随机向量（Appendix C.3）**：响应 PAT 三处问题（标题措辞 / $x$ 未定义为随机向量 / probability 语句基础）。
+   - 标题：`Variance Preservation with Reduced Coordinate Extremes` → `$\ell_2$-norm preservation with reduced coordinate extremes`。
+   - 主体重写：deterministic 部分用小写 $x$ 给出 $\|z\|_2{=}\|x\|_2$ 与 $\|z\|_\infty{\le}\|x\|_1/\sqrt{d}$；probabilistic 部分明确引入大写 $X$ 为随机向量、$Z{=}\mathbf{H}X$，给出 $\Pr(\|Z\|_\infty{>}T){\le}\Pr(\|X\|_1{>}T\sqrt{d})$。
+   - 新增「Terminology note」段落，明确 ℓ₂-norm preservation 与 variance preservation 的关系：仅当 $\mathbb{E}[x]{=}0$ 时两者一致；一般情形下应读作 energy preservation。
+4. **$s_{ji}$ 显式定义（Theorem 4 证明）**：响应 PAT「$s_{ji}$ should be explicitly defined for notational completeness」。$|z_j|=|\frac{1}{\sqrt d}\sum_i s_{ji}x_i|$ 之前补一句：「writing $\mathbf{H}_{ji}=s_{ji}/\sqrt d$ with $s_{ji}\in\{\pm1\}$ the $(j,i)$ entry of the unnormalized Hadamard matrix」。
+5. **Hardy--Littlewood--Pólya majorization 精确 diagnostic 段落（Appendix C.1）**：响应 PAT「Exact verification of Majorization vs.\ Sinkhorn approximation」。在 Sinkhorn approximate fit 段后新增 `\paragraph{Exact majorization test as an alternative diagnostic.}`：说明 $q\prec p$ 等价于 sorted prefix-sum 不等式 $\sum_{i=1}^k q_{(i)}\le\sum_{i=1}^k p_{(i)}$，可在 $O(m\log m)$ 内确定性验证 mixing premise，不带 Sinkhorn 残差。保留 Sinkhorn 为主 diagnostic（暴露 transport 矩阵），将 majorization check 列为 future work 的精确补充。
+
+### 修正清单（paper/main.tex）
+6. **Notation glossary（Section 3.1，preliminaries 末尾）**：响应 PAT「Notation Consistency: Section 3.1 alternates between $H$, $\widehat{H}$, $\widetilde{H}$」。在 $\widetilde{H}{=}\widehat{H}/\log K$ 之后补两句明确角色：(1) 显式声明 $r{:=}\widetilde{H}$ 是驱动 chunk selection 的归一化 scalar；(2) 全文用法约定：$\widehat{H}$ 为 raw nats empirical estimate，$\widetilde{H}$ 为 normalized 形式，$H$ 在表头中作为 $\widehat{H}$ 的简写、列单位会标明 raw vs normalized。同时把后半句的 $r{=}H/\log K$ 改为 $r{=}\widehat{H}/\log K$ 与定义保持一致。
+
+### 编译验证
+- `cmd /c paper/build.bat`（Windows MiKTeX）：通过。`build/main.pdf` 39 页 5,025,967 bytes；`build/appendix_only.pdf` 28 页 4,935,113 bytes；均已复制到 `paper/main.pdf` 与 `paper/appendix.pdf`。
+- 日志无 fatal error（无 `^!` 行）；无 `LaTeX Error`；无 `Undefined control sequence`。
+- 已知 warning（仅为 `h` float specifier changed to `ht`、3 个老 overfull hbox），不影响最终 PDF 质量。
+
+### PAT 审稿意见落地度统计（截至 2026-05-01 Cycle 2）
+- **主要（Weakness）项**（共 7 项）：✅ 全部完成（Eq.2、guarded fallback、Table 15 caption、Theorem 2 logic、Hadamard 机制、surrogate dispatch cost、code URL）。
+- **可改进（Potential Mistakes）项**（共 12 项）：✅ 11 项完成，未完成 1 项见「未修改或部分修改」（Theorem 4 形式 vs 4 informal 的编号统一—两文档独立编号，文本内已用 `Theorem~\ref{thm:...}` 跨引；编号是 LaTeX 自动渲染产物，仅 cosmetic）。
+- **Minor / Typos** 项（共 7 项）：✅ 6 项完成，未完成 1 项见「未修改或部分修改」（main thm:entropy_informal vs appendix thm:entropy 标号顺序 in standalone PDF；与上一项同源，可合并）。
+- **结论**：本轮 PAT 评审的所有 actionable 项均已完成或保留为受控未完成项；下一步建议进入 Pipeline Stage 9' 复核或新一轮独立评审。
+
+
 
 ## 2026-05-01 PAT 审稿意见系统性修正
 
@@ -528,6 +558,21 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 已全部修改
 
+- **任务 98 (2026-05-01)：H800 guarded/learned scheduler 实验收口 — n=50 warmup=3 正式结果回填论文。**
+  - H800 PCIe（`root@connect.westb.seetacloud.com -p 39830`）在线，`run_integrated_end_to_end.py` 以 `guarded_sampled_hist`（guard-fallback=512，guard-min-delta=2）和 `learned_table`（seq_len>50→chunk=512）两个 scheduler mode 各跑 n=50 warmup=3，976-token prompt，Mamba-370M。
+  - 结果写入 `src/outputs/guarded_learned_h800_20260501/summary.json`：
+    - **guarded_sampled_hist**：`903.03 ± 25.35 ms`，chunk_dist `{512: 2544}`（guard 全部触发），vs H800 Static-512 (891.51ms) → **+1.29%**。
+    - **learned_table**：`897.63 ± 7.40 ms`，chunk_dist `{512: 2544}`，vs H800 Static-512 → **+0.69%**。
+  - 旧 n=20 值（guarded 932.9ms/+2.97%，learned 924.2ms/+2.00%）已被 n=50 值取代；+1.29%/+0.69% 源于 n=50 更低方差与更稳定的静态 baseline（891.51ms vs 旧 905.97ms 系列）。
+  - **main.tex 6处更新**（Abstract、Contributions bullet、§6 tab:routed_ablation rows、§6 text line 318/327、tab:main_scheduler_oracle guarded row）：所有 "+4.6%"/"guarded +2-3%" 均已替换为 "+1.3%" (guarded) / "+0.7%" (learned)。
+  - **appendix.tex 更新**（`tab:scheduler_oracle_comparison`）：
+    - guarded 行：932.9ms/+2.97%/n=20 → 903.0ms/+1.29%($+11.5$ms)/n=50；
+    - 新增 learned_table H800 行：897.6ms/+0.69%($+6.1$ms)；
+    - 脚注基线 905.97ms → 891.51ms，n=20 → n=50 warmup=3；
+    - 围绕文字（1104 layer calls → 2544，所有旧百分比 → 新值，结论句 "+2-3%" → "+1.3%/+0.7%"）。
+  - `cmd /c paper/build.bat` 编译通过：main 39 页 / appendix 28 页，无 fatal error，无 undefined reference。
+  - 推进状态：✅ `## 未修改或部分修改` 中的 H800 硬件阻塞项已清零，`tab:scheduler_oracle_comparison` 全部行已填实数据。
+
 - **任务 95 (2026-05-01)：遗留问题作者回答落地 — learned_table 生成 + 论文四路对比表 + Mamba-2.8B 状态确认。**
   - **遗留问题 1（learned_table）**：生成 `src/outputs/learned_policy_regime/policy.json`（seq_len ≤ 50 → chunk=128，else → chunk=512）；分析 avg latency 316.7ms，与 per-regime oracle 齐平（差 <0.1ms）。新增 `appendix tab:scheduler_oracle_comparison`（static-512 / learned-table / per-regime oracle / guarded [TODO]）；main.tex §6、Abstract、Contributions、Conclusion 均已插入 learned-policy 单句结论。
   - **遗留问题 2（H800 guarded/learned）**：作者解锁 10% 门控限制；已在 `## 遗留问题` 中写入完整 H800 执行命令，等待 H800 开机后运行并回填 `tab:scheduler_oracle_comparison` guarded 行。
@@ -1047,5 +1092,11 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 未修改或部分修改（最新 `docs/revision_suggestions.tex`）
 
+- 【部分完成 — cosmetic only】Theorem numbering 一致性：PAT 指出 main 中的 `Theorem 2`（`thm:entropy_informal`）在 appendix 中被编号为 `Theorem 3`（`thm:entropy`），quantization bound 在 appendix 中是 `Theorem 4` 但 main 中没有 Theorem 3。说明：appendix 与 main 是独立编译入口（`appendix_only.pdf`），LaTeX `\newtheorem{theorem}` counter 在 standalone 模式下从 1 重新计数，因此 appendix 的 thm:entropy 实际上是 standalone PDF 中的 Theorem~3（按 `[shared-memory depth bound]`、`[reproduction of doubly-stochastic ...]` 顺序）。若提交方式是 single combined PDF（main+appendix 顺序拼装），编号会自动连续；若提交方式是分开 PDF，则编号本身是各自独立的 1、2、3。所有正文跨引均使用 `\ref{thm:...}` 名字引用，不依赖具体数字。
+  - 当前是否需要作者决策：**否**。仅当目标 venue 强制要求 main 与 appendix 各自独立 self-contained 编号时才需调整，且只是 cosmetic。NeurIPS 2026 不强制。如作者认为有必要，可在 main.tex 中显式写「stated as Theorem~3 in the appendix when compiled standalone」一句，但目前的 `\ref` 引用已能正确解析。
 
 ## 遗留问题
+
+（无；所有 actionable 项已落地或为 cosmetic-only。）
+
+
