@@ -1061,10 +1061,11 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
    - 论文已同步更新（abstract、§6.3、Limitations、Conclusion、appendix tab）。
    - 推进状态：**100% exact match 是最强质量证明；无需进一步扩展。**
 
-4. **Minor suggestions（可本地继续清理）**
-   - Appendix redundancy：未系统清理。
-   - Entropy normalization vs raw nats 记号一致性：已部分处理；仍可继续通读清理。
-   - 推进状态：待处理，低优先级。
+4. **Minor suggestions（已完成，2026-05-01）**
+   - Appendix redundancy (A-1~A-5)：已全部清理。删除 `tab:h800_routed_quality`（superseded 3-prompt 质量表）、CPU/早期 GPU 开发历史 4 段、surrogate upgrade criterion bullet、AWQ/GPTQ import diary、10066ms 历史句。
+   - Notation 一致性 (B-1~B-5)：`H_ref=log K` 设为首选（B-1 caption、B-2 T(e) 公式）；`H_{\text{ref}}{=}` braces 已全局修正（main.tex lines 245/284）；`$C^\star$` → `$C_{\text{corey}}$`；"nat range" → "nats range"。
+   - PDF 编译通过（28 页附录，无 undefined references）。
+   - 推进状态：**已完成。**
 
 ---
 
