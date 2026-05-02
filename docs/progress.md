@@ -1,6 +1,62 @@
 ﻿# 论文进度
 
-最后更新：2026-05-01（H800 guarded/learned scheduler 实验完成收口：n=50 warmup=3 H800 PCIe 运行；guarded 903.0±25.4 ms / +1.29%，learned 897.6±7.4 ms / +0.69%，相较旧 n=20 值 932.9 ms / +2.97% 修正。main.tex 6 处 + appendix.tex 表+文字全部回填。PDF 编译通过，main 39 页 / appendix 28 页，无 fatal error。）
+最后更新：2026-05-02（正文补页完成：按作者要求将重要附录表回迁正文以吃满 9 页；当前状态为正文 9 页 + 附录 28 页 + checklist 1 页，编译通过，可进入投稿准备阶段。）
+
+## 2026-05-02 正文补充解释（8.5页向9页靠齐）
+
+### 本次修改（paper/main.tex）
+1. 在统一 routed ablation（Table~\ref{tab:routed_ablation}）后新增两段解释：明确区分 decision quality 与 decision cost，解释为何 guarded/learned 已恢复正确 chunk 仍慢于 static-512；并给出“何时该启用 entropy routing”的 regime 边界解读。
+2. 在 mixed-regime 结果段新增一段部署解释：强调“先低成本规则、后不确定区间再启用 entropy”的两阶段策略，解释为何 sequence-length rule 已覆盖该混合负载的主要收益。
+3. 在质量保持（Table~\ref{tab:quality}）段新增一段因果解释：指出 latency 负结果与质量退化解耦，slowdown 来源是调度开销而非语义偏移或输出漂移。
+
+### 结果
+- 以上新增内容均为 reader-facing scientific interpretation（非实现细节），用于补足结果可解释性并增加正文有效篇幅。
+- 未改动实验数据、表格数值与结论方向；仅增强论证完整性与可读性。
+
+## 2026-05-02 正文补页：8页→9页（回迁重要附录内容）
+
+### 本次修改（paper/main.tex / paper/appendix.tex）
+1. 将 `tab:perturbation`（Activation-distribution perturbation sweep）从附录回迁至正文 Section 5.1，并将正文引用从「Appendix Table」改为正文表引用。
+2. 将 `tab:mixed_regime_chunk`（Per-regime static chunk sweep）从附录回迁至正文 Section 5.3，并将正文引用从「Appendix Table」改为正文表引用。
+3. 在 `paper/appendix.tex` 删除上述两张重复表，避免 label 冲突与内容冗余；相关文字引用改为 `Table~\ref{tab:perturbation}`（主文表）。
+
+### 编译验证
+- 执行 `pdflatex -interaction=nonstopmode -halt-on-error -output-directory=build main.tex`：通过。
+- 输出：`paper/build/main.pdf` 为 **38 页**（正文 9 页 + 附录 28 页 + checklist 1 页）。
+- 关键结论：正文已吃满 NeurIPS 2026 上限 9 页，无需继续扩容正文。
+
+## 2026-05-02 正文页数压缩：10页→9页
+
+### 背景
+NeurIPS 2026 正文上限 9 页（含参考文献）。原 main.pdf 39 页（正文 10 页 + 附录 28 页 + checklist 1 页），超限 1 页。
+
+### 问题诊断
+pdflatex 日志显示两处 `Underfull \vbox (badness 10000)` 警告——第 7 页两列完全为空。原因：`table*[t]`（tab:routed_ablation，全宽浮动）被安排到第 7 页顶部，但该页面两列下方无文字内容，造成整页浪费约等于 1 个完整正文页。
+
+### 本次修改（paper/main.tex）
+
+本次涉及的所有修改（在此次会话及上一次会话中完成，合并记录）：
+
+1. **tab:mixed_regime_chunk 移至附录**：Section 5.3 原内嵌的「Per-regime static chunk sweep」表（8 行数据）移至 `paper/appendix.tex`（附录 tab:mixed_regime_chunk，置于 tab:scheduler_oracle_comparison 之后），正文改为「Appendix Table~\ref{tab:mixed_regime_chunk}」引用。
+2. **tab:main_entropy_variance 引用重定向**：原内嵌 Prompt-level entropy 分布表删除，正文改为「Appendix Table~\ref{tab:entropy_variance_real}」引用；相关段落压缩约 2–3 行。
+3. **tab:main_prototype 引用重定向**：原内嵌 prototype 5 配置 Tier-1 诊断表删除，正文改为「Appendix Table~\ref{tab:prototype_consolidated}」引用；Section 5.5 段落压缩至 4 行。
+4. **`\section*{Appendix}` 标题移除**：`\clearpage\appendix\section*{Appendix}\input{appendix}` 改为 `\clearpage\appendix\input{appendix}`，避免冗余标题占行。
+5. **tab:routed_ablation 改为 table\***：原 `\begin{table}[t]` + `\resizebox{\linewidth}{!}` 改为 `\begin{table*}[t]`（全宽），以匹配 5 列宽表格的实际内容宽度需求。
+6. **Cross-layer validation 压缩**：原 tab:cross_layer（7 行）表格删除，相关段落压缩至 2 句引用「Appendix Table~\ref{tab:real_checkpoint_entropy}」。
+7. **tab:main_perturbation 移至附录（本次）**：Section 5.1 的 5 行分布扰动表从正文删除，改为「Appendix Table~\ref{tab:perturbation}」引用；相关段落压缩至 3 行。此举消除了 page 7 的双空列问题，修复 Underfull \vbox 警告。
+
+### 编译验证
+- `cmd /c paper/build.bat`（Windows MiKTeX）：通过。
+- 输出：`build/main.pdf` **38 页**（正文 9 页 + 附录 28 页 + checklist 1 页）；`build/appendix_only.pdf` 28 页。
+- 无 `Underfull \vbox` 警告（原有 2 处 badness 10000 已消除）。
+- 无 fatal error，无 undefined references。
+
+### PAT 审稿意见验证（合并确认）
+上一次会话已系统核查 `docs/revision_suggestions.tex`（Google PAT 评审）与 `paper/` 的落地情况：
+- **7 项 Weakness**：全部完成 ✅
+- **12 项 Potential Mistakes**：11 项完成 ✅，1 项（Theorem 编号在独立 appendix PDF 中显示不同—LaTeX 自动编号产物，cosmetic，不阻塞）
+- **7 项 Minor/Typos**：6 项完成 ✅，1 项同上（与编号问题同源）
+- **结论**：所有 actionable 项均已完成；两个 non-actionable 遗留项为 LaTeX 渲染产物，无法在正文层修复。
 
 ## 2026-05-01 PAT 审稿意见 Cycle 2：剩余低优先级文本修正
 
@@ -558,6 +614,12 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 已全部修改
 
+- **遗留问题 1 消费 (2026-05-02)：Stage 9 独立评审重置 — 作者决定不进入。**
+  - 作者回答 `A: 否`，不触发 Pipeline Stage 9 重新评审。
+  - 当前 revision cycle 正式收口，`docs/revision_suggestions.tex` 维持当前 PAT 评审版本。
+  - 论文状态：`paper/main.pdf` 38 页（正文 9 页 + 附录 28 页 + checklist 1 页），编译通过，无 fatal error，无 `Underfull \vbox` 警告，可进入投稿准备阶段。
+  - 推进状态：✅ 已完成。
+
 - **任务 98 (2026-05-01)：H800 guarded/learned scheduler 实验收口 — n=50 warmup=3 正式结果回填论文。**
   - H800 PCIe（`root@connect.westb.seetacloud.com -p 39830`）在线，`run_integrated_end_to_end.py` 以 `guarded_sampled_hist`（guard-fallback=512，guard-min-delta=2）和 `learned_table`（seq_len>50→chunk=512）两个 scheduler mode 各跑 n=50 warmup=3，976-token prompt，Mamba-370M。
   - 结果写入 `src/outputs/guarded_learned_h800_20260501/summary.json`：
@@ -1097,6 +1159,6 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 遗留问题
 
-（无；所有 actionable 项已落地或为 cosmetic-only。）
+（无。所有 actionable 项已落地；Stage 9 决策已消费（作者选择不进入）；论文可进入投稿准备阶段。）
 
 
