@@ -1,376 +1,138 @@
-下面我给你一个**不接受负结果叙事时的可执行转向方案**。核心判断是：**不能再重复现在的 scheduler matrix**。当前 H800 证据已经说明，在同一类 homogeneous real-checkpoint workload 上，adaptive/proxy 很难赢过 best static oracle：Static-512 是最佳固定块，adaptive/proxy 全部更慢；但 routed path 的质量保持基本成立，3/3 greedy exact-match，PPL 只在数值噪声范围变化。
+我先做一个“问题→证据”的对照核查：从 revision_suggestions.tex 的 Potential Issues 条目逐条映射到当前 main.tex、appendix.tex、ref.bib 和 progress.md 的已落地修改，然后给你一份可追溯的清单。
 
-## 总结结论
+Read [](file:///c%3A/source/COREY_Transformer/docs/revision_suggestions.tex#40-40), lines 40 to 128
 
-你要把问题从：
+Searched for regex `round\(|operatorname\{round\}|H_\{\text\{ref\}\}|policy_off|policy_static|policy_corey|Table~\\ref\{tab:routed_ablation\}|Code and data` (`**/paper/main.tex`), 7 results
 
-> “在同一个 workload 上，entropy scheduler 能否打败 best static chunk？”
+Searched for regex `legacy default|H_\{\\min\}|H_\{\\max\}|argmax|prev\[|fwd_with_chunk_size|Table~2|Table~\\ref\{tab:real-gpu-three-policy\}|round\(|operatorname\{round\}|T\(e\)` (`**/paper/appendix.tex`), 19 results
 
-改成：
+Searched for regex `yang2024parallelizing|Hardware-efficient linear attention kernels for state-space-like models` (`**/paper/ref.bib`), 1 result
 
-> “在真实 mixed-regime serving workload 中，单一 static chunk 无法同时适配不同 regime；regime-aware adaptive scheduler 能否超过 global best static oracle？”
+Searched for text `PAT 审稿意见系统性修正` (`**/docs/progress.md`), 1 result
 
-这是唯一比较合理的正结果路线。因为如果 workload 本身很单一，best static oracle 已经是固定 chunk 的最优点，adaptive 除非靠噪声，否则很难稳定超过它。当前论文也已经明确：现有真实 workload 基本坍缩到同一个 chunk bucket，尚未构造出不同 prompt/sequence/kernel-work 区间需要不同最优 static chunk 的真实 mixed regime。
+我继续补充“可核对证据行号”，重点核查你最关心的每条 Potential Issues 是否真的在正文/附录里已改，另外会标出仍未闭环或可能回退的项。
 
----
+Read [](file:///c%3A/source/COREY_Transformer/paper/main.tex#118-118), lines 118 to 140
 
-# 1. 全新 Scheduler / Kernel / Workload 路线
+Read [](file:///c%3A/source/COREY_Transformer/paper/main.tex#48-48), lines 48 to 64
 
-## 路线 A：Regime-aware guarded adaptive scheduler
+Read [](file:///c%3A/source/COREY_Transformer/paper/main.tex#332-332), lines 332 to 350
 
-不要再用单一 entropy → chunk 规则。新 scheduler 应该改成：
+Read [](file:///c%3A/source/COREY_Transformer/paper/appendix.tex#760-760), lines 760 to 840
 
-```text
-features = {
-    sequence_length,
-    batch_size,
-    layer_id,
-    prompt_type_proxy,
-    post_conv_entropy,
-    variance,
-    kurtosis,
-    sparsity_ratio,
-    active_token_ratio,
-    estimated_kernel_time
-}
+Read [](file:///c%3A/source/COREY_Transformer/paper/appendix.tex#862-862), lines 862 to 910
 
-if predicted_gain(best_dynamic_chunk, static_512) > margin:
-    use predicted dynamic chunk
-else:
-    fallback to static_512
-```
+Read [](file:///c%3A/source/COREY_Transformer/paper/ref.bib#120-120), lines 120 to 134
 
-这叫 **guarded adaptive scheduler**。它的好处是：在当前 LongBench 这种单一 regime 下，它自动退回 Static-512，不会比 best static 慢；只有在检测到明显不同 regime 时才切换 chunk。
+Searched for regex `unless .*permutation|Theorem 2|doubly-stochastic|strict inequality` (`**/paper/main.tex`), 4 results
 
-审稿人会更容易接受，因为它不是强行说 entropy always helps，而是说：
+Searched for regex `H\(R\)|U\(R\)|region|input tensor|output tensor|policy_off|policy_static|policy_corey|without explicit warmup|first-call JIT|0\.413|3\.30/64|dispatch cost|Table 37|17\.0|17\.5` (`**/paper/appendix.tex`), 22 results
 
-> adaptive routing is useful only when workload regimes are heterogeneous; otherwise it degenerates safely to the static oracle.
+Read [](file:///c%3A/source/COREY_Transformer/paper/main.tex#140-140), lines 140 to 190
 
-## 路线 B：Learned scheduler baseline
+Read [](file:///c%3A/source/COREY_Transformer/paper/appendix.tex#700-700), lines 700 to 760
 
-可以做一个非常低成本、明确可行的 learned scheduler：
+Read [](file:///c%3A/source/COREY_Transformer/paper/appendix.tex#940-940), lines 940 to 1010
 
-```text
-Input features:
-- prompt length
-- layer id
-- entropy
-- variance
-- kurtosis
-- sparsity
-- batch size
-- first 1--2 layer probe statistics
+Read [](file:///c%3A/source/COREY_Transformer/docs/progress.md#88-88), lines 88 to 180
 
-Label:
-- fastest chunk among {128, 256, 512, 1024, 2048}
+Read [](file:///c%3A/source/COREY_Transformer/paper/appendix.tex#136-136), lines 136 to 190
 
-Model:
-- decision tree
-- random forest
-- small MLP
-- or even a rule table
-```
+Searched for text `Exact majorization test as an alternative diagnostic` (`**/paper/appendix.tex`), 1 result
 
-训练数据不需要很大。每个 regime 取 20–50 prompts，每个 prompt/layer 跑 static chunk sweep，标注最快 chunk。然后比较：
+Read [](file:///c%3A/source/COREY_Transformer/paper/appendix.tex#908-908), lines 908 to 932
 
-```text
-Static-512 global oracle
-vs.
-Entropy rule
-vs.
-Moment proxy
-vs.
-Learned guarded scheduler
-```
+Searched for text `Theorem 编号不一致` (`**/docs/progress.md`), 1 result
 
-关键是 baseline 要设成：
+Searched for text `Algorithm 1：未存储 argmax predecessor` (`**/docs/progress.md`), 1 result
 
-```text
-best single static chunk over the whole mixed workload
-```
+Searched for text `where the distinction between raw and normalized is clear from the column units` (`**/paper/main.tex`), 1 result
 
-不要设成 per-regime oracle。否则 adaptive 永远很难赢。
+Searched for text `The dispatch cost per kernel launch is $\approx0.052$` (`**/paper/appendix.tex`), 1 result
 
-## 路线 C：Kernel 路线必须降 Python overhead
+已做完对照核查。结论是：`# Potential Issues And Suggestions` 里的核心问题大部分已经落地，少数是“部分处理”或“当前文本有回退风险”。
 
-当前 routed 负结果很大原因不是 recurrence-preserving routing 不成立，而是 Python-level entropy / monkey-patch / histogram overhead 太高。论文里也已经写到 full histogram 是负的，sampled histogram 只能在 passive baseline 上接近或小幅快，但 unified static-oracle ablation 仍为负。
+**逐条对应（含证据与修改依据）**
+1. Eq.2 floor/round 矛盾：已解决  
+证据：公式已改为 `round`，见 main.tex。  
+依据：数学一致性，代入 $r=0.83$ 应得到 512 而不是 256。
 
-下一步 kernel 路线应该是：
+2. Triton 映射公式 448 vs 512：已解决  
+证据：附录已改为 2 的幂映射，并明确旧公式废弃，见 appendix.tex、appendix.tex。  
+依据：与主文 Eq.2 保持一致、可复现一致性。
 
-```text
-1. 保留 patched selective_scan_cuda.fwd_with_chunk_size
-2. 把 feature extraction 从 Python histogram 改为 CUDA-side reduction
-3. 只计算 cheap features:
-   - mean
-   - variance
-   - absmax
-   - sparsity ratio
-4. 用 C++/CUDA-side rule table 决定 chunk
-5. 用 CUDA Graph / pre-captured chunk path 降 launch variance
-```
+3. Theorem 2 的 and/or 逻辑错误：已解决  
+证据：主文 informal theorem 已是 “or”，见 main.tex。  
+依据：与概率论/majorization 条件逻辑一致，和 formal proof 对齐。
 
-也就是说，scheduler 不能再是 Python hook 版本。你要把它变成：
+4. Region entropy \(H(R)\) 定义不清：已解决  
+证据：明确写成 \(H(R)=\widehat H(z_{in}(R))\)，见 appendix.tex。  
+依据：可复现性（DP 目标函数必须明确输入张量定义）。
 
-> device-side cheap proxy scheduler
+5. 记号混用（\(H,\widehat H,\widetilde H\)）：已解决  
+证据：主文新增 notation 约定段，见 main.tex。  
+依据：数学可读性与跨章节一致性。
 
-而不是：
+6. Adaptive threshold 中 \(H_{min}, H_{max}\) 未定义：已解决  
+证据：已显式定义 \(H_{min}=0, H_{max}=\log K\)，见 appendix.tex。  
+依据：公式完整性、边界条件明确。
 
-> Python histogram scheduler
+7. Algorithm 1 未记录 argmax predecessor：已解决（代码已修）  
+证据：已加入 `prev[i]` 回溯记录，见 appendix.tex。  
+依据：动态规划路径恢复的正确性。  
+备注：进度文档曾标为遗留，见 progress.md，但源码已修，进度记录略滞后。
 
-优先尝试路线B 
+8. Hadamard 熵下降机制解释不自洽：已解决  
+证据：主文与附录均改为 “非零均值/DC 分量 + 动态分箱范围放大” 机制，见 main.tex、appendix.tex。  
+依据：与观测到的 \(\Delta H<0\) 一致的机制解释。
 
----
+9. “Exact majorization test” 建议：已吸收为补充诊断  
+证据：新增 exact majorization paragraph，见 appendix.tex。  
+依据：理论严谨性增强（从近似 Sinkhorn 扩展到可精确判别条件）。
 
-# 2. 新 mixed-regime workload 大概需要多久？
+10. Surrogate dispatch cost 0.413ms 计算错误：已解决  
+证据：改为约 0.052ms，见 appendix.tex。  
+依据：与 static-64 的 64 calls 一致的算术修正。
 
-分三档：
+11. 17.5% 数值错误：已解决  
+证据：现为 17.0%，见 appendix.tex。  
+依据：按表中数值重算后的正确百分比。
 
-| 目标                                        |            时间 | 是否需要 H800 | 产出                                                    |
-| ----------------------------------------- | ------------: | --------- | ----------------------------------------------------- |
-| **低成本证据筛选**                               |       0.5–1 天 | 不需要       | 找哪些 prompt family 会产生不同 entropy/proxy/chunk bucket    |
-| **3090 smoke + feature scan**             |         1–2 天 | 不需要 H800  | 判断是否值得开 H800                                          |
-| **H800 full mixed-regime ablation**       | 0.5–1 天付费 GPU | 需要        | 表格：global static oracle vs adaptive/learned scheduler |
-| **完整 learned scheduler + quality subset** |         3–5 天 | 需要少量 H800 | 可投稿级补充实验                                              |
-
-我的建议是：
-
-> 先用 1 天做 no-H800 mixed-regime discovery。只有发现至少 3 个 regime 的 static-optimal chunk 明显不同，再开 H800。
-
-成功门槛建议写死：
-
-```text
-A regime is useful only if:
-1. its best static chunk differs from Static-512 by at least one bucket;
-2. the latency gap is > 5%;
-3. the mixed-workload weighted adaptive latency can beat global best static by >= 10%;
-4. routed quality remains unchanged at task level.
-```
-
-如果 1 天内筛不出这样的 regime，就不要继续烧 H800。
-
----
-
-# 3. Learned / Compiler baseline 的明确可行方案
-
-## Learned baseline：可做，建议做
-
-最简单版本：
-
-```text
-Model: DecisionTreeClassifier(max_depth=3)
-Input: [L, layer_id, entropy, variance, kurtosis, sparsity]
-Output: chunk ∈ {128, 256, 512, 1024, 2048}
-Fallback: if predicted margin < 3%, use static_512
-```
-
-这个 baseline 好处是实现快，也容易解释。论文里可以说：
-
-> We compare COREY against a lightweight learned scheduler trained from static chunk-sweep labels.
-
-这比只比较 random / no_entropy / hist / proxy 更强。
-
-## Compiler baseline：只做低成本版本，不要承诺 XLA 完整 baseline
-
-XLA/nvFuser 对 `mamba_ssm` 自定义 CUDA extension 不一定能直接优化 selective scan。更明确可行的 baseline 是：
-
-```text
-Compiler-assisted static specialization:
-1. torch.compile / TorchInductor for surrounding PyTorch graph if supported
-2. CUDA Graph replay for static chunk paths
-3. pre-captured static_128/static_256/static_512/static_1024 graphs
-4. compare:
-   - Python scheduler
-   - CUDA Graph static
-   - CUDA Graph guarded adaptive
-```
-
-XLA 可以暂时写成 future work，因为它主要适合 XLA/HLO 图，不适合直接拿来优化当前 custom CUDA selective_scan path。当前项目记录里也把 learned scheduler、XLA/nvFuser/compiler fusion baseline 标为未完成，需要决定是否 future work 或指定低成本 baseline。
-
----
-
-# 4. 如何探索新的真实 mixed-regime 证据？
-
-现在不能只换几个 LongBench task。因为你已经试过 LongBench、84/164 prompt stress、code/log/table/repetition，仍然多数坍缩到少数 chunk bucket。
-
-建议按下面顺序探索：
-
-## Step 1：构造真实 serving trace，而不是普通 benchmark
-
-候选 regime：
-
-```text
-R1: short chat prompts, 256–512 tokens
-R2: long document QA, 4k–8k tokens
-R3: code repository snippets, 2k–8k tokens
-R4: JSON / CSV / log / stacktrace workloads
-R5: repeated boilerplate / policy documents
-R6: mixed-language Chinese-English prompts
-R7: OCR-like forms / tabular records
-R8: hash / UUID / base64-heavy logs
-```
-
-注意：base64 / UUID / logs 虽然看起来怪，但在真实系统日志、安全审计、RAG indexing 中是合理 workload，比纯 synthetic perturbation 更容易被 reviewer 接受。
-
-## Step 2：先做 feature-only scan
-
-不用先跑完整 generation。先只跑：
-
-```text
-prompt -> selected layers -> feature extraction
-```
-
-记录：
-
-```text
-entropy mean/std
-variance
-kurtosis
-sparsity
-predicted chunk
-layer-wise chunk diversity
-prompt-wise chunk diversity
-```
-
-如果所有 regime 还是 chunk=512 或 chunk=1024，就立即停止。
-
-## Step 3：对候选 regime 做 static chunk sweep
-
-对每个 regime 单独跑：
-
-```text
-static_128
-static_256
-static_512
-static_1024
-static_2048
-```
-
-你要找的不是 “adaptive 现在快不快”，而是：
-
-```text
-不同 regime 的 best static chunk 是否不同
-```
-
-理想结果类似：
-
-```text
-short chat       -> best chunk 128
-long doc QA      -> best chunk 512
-logs/base64      -> best chunk 1024
-code             -> best chunk 256
-```
-
-如果能找到这个表，adaptive 才有机会打败 global static oracle。
-
-## Step 4：构造 mixed workload 的核心表
-
-最终你需要一张 reviewer 看得懂的表：
-
-```text
-Regime        Weight   Best static chunk   Static-512 latency   Regime-oracle latency
-Short chat    25%      128                 ...
-Long QA       25%      512                 ...
-Logs/JSON     25%      1024                ...
-Code          25%      256                 ...
-
-Global best static: chunk = ?
-Guarded adaptive: selected per regime
-Speedup over global static: >=10%
-```
-
-这张表比继续堆 histogram ablation 更有价值。
-
----
-
-# 5. Quality check 怎么“更好”？
-
-这里要改表达：**routing 不应该提高 quality，只应该保持 quality**。所以目标不是 “quality 更好”，而是 “quality evidence 更强”。
-
-当前只有 3 prompts sanity check，论文也承认它不是 task-level LongBench quality study。
-
-建议补：
-
-```text
-LongBench routed quality subset:
-- narrativeqa: 20 samples
-- qasper: 20 samples
-- multifieldqa_en: 20 samples
-- gov_report: 20 samples
-```
-
-报告：
-
-```text
-1. greedy exact-match rate
-2. token mismatch count
-3. task metric delta
-4. PPL ratio mean/std/max
-5. failure case count
-```
-
-通过标准：
-
-```text
-metric delta <= 0.001
-PPL ratio within [0.995, 1.005]
-token exact-match >= 95% if deterministic path is not bitwise identical
-```
-
-如果 exact-match 仍是 100%，这会很强。
-
----
-
-# 6. 推荐执行顺序
-
-我建议按这个顺序推进：
-
-```text
-Day 1:
-  Build mixed-regime prompt pool.
-  Run feature-only scan.
-  Find whether chunk diversity exists.
-
-Day 2:
-  Run static chunk sweep on only promising regimes.
-  Compute theoretical mixed-workload upper bound:
-    global best static vs per-regime oracle.
-
-Day 3:
-  Implement guarded adaptive scheduler.
-  Add learned decision-tree scheduler.
-  Run 3090 smoke if possible.
-
-Day 4:
-  Open H800 only if expected gain >=10%.
-  Run:
-    static global sweep
-    guarded adaptive
-    learned scheduler
-    task-level quality subset
-
-Day 5:
-  If positive:
-    rewrite paper as "regime-aware adaptive routing".
-  If negative:
-    accept negative-result framing and submit elsewhere / workshop / systems feasibility track.
-```
-
----
-
-# 7. 最关键的写作转向
-
-如果你坚持正结果，论文主 claim 不能再是：
-
-```text
-COREY entropy scheduler beats static oracle on Mamba checkpoint inference.
-```
-
-要改成：
-
-```text
-COREY-style runtime routing is beneficial under heterogeneous serving regimes where a single static chunk is suboptimal across the workload mixture.
-```
-
-也就是说，**adaptive/proxy 赢的对象是 global static oracle over a mixed workload**，不是每个单独 regime 的 static oracle。
-
-这个路线是目前最有希望把 Weak Reject 拉回来的方向。当前同类 H800 matrix 已经给出负结论，继续重复跑只会加强负结果；真正有价值的是证明 workload heterogeneity + guarded/learned scheduler 可以把 static oracle 的定义从 “单一 workload 最优” 转成 “混合 workload 全局固定 chunk 最优”。
+12. Table 2/23 latency-speedup 解耦说明缺失：已解决  
+证据：Table 2 caption 已明确 speedup 来源与 isolated kernel latency 区别，见 main.tex。  
+依据：避免“同表不同度量”引发误读。
+
+13. 错误表号引用（Table 1→Table 2 / Appendix 表）：已解决  
+证据：已改为 “Table 2 of the main paper” 与附录正确表，见 appendix.tex、appendix.tex。  
+依据：交叉引用准确性。
+
+14. 混合测量行误导（mixed-regime 表含 H800 单条）：已解决  
+证据：主文表已显式拆分并注明“不同硬件不可直接比较”，见 main.tex。  
+依据：实验可比性与读者防误解。
+
+15. `yang2024parallelizing` 引用条目混入标题：已解决  
+证据：该条目当前无错误 note 混入，见 ref.bib。  
+依据：参考文献准确性。
+
+16. Code URL 缺失：当前未闭环/有回退  
+证据：abstract 的 URL 目前仍被注释，见 main.tex。  
+依据：NeurIPS checklist 与正文一致性要求。  
+说明：这条在进度里写过“已取消注释”，见 progress.md，但当前文件状态显示已注释，建议视为回退项。
+
+17. Table 15 计算口径不一致（warmup/JIT）：部分处理  
+证据：表注已明确口径差异，见 appendix.tex。  
+依据：透明披露已做，但“完全同口径重跑”本身尚未完成，严格来说属于部分修复。
+
+18. Theorem 编号一致性：仍是低优先级遗留  
+证据：进度文件仍记录为遗留，见 progress.md。  
+依据：主要是排版编号层面，不影响当前结论正确性。
+
+**你问的“修改依据”可归纳为 6 类**
+1. 数学一致性：公式代入必须与表格/文字结论一致。  
+2. 可复现性：定义、变量、算法回溯步骤必须可执行。  
+3. 逻辑正确性：定理条件的逻辑连接词与 proof 一致。  
+4. 度量一致性：速度、延迟、基线口径必须同一语义。  
+5. 可比性与公平性：跨硬件/跨流程数据必须显式分栏或注释。  
+6. 学术可追溯性：引用、表号、URL 必须与正文声明一致。
+
+如果你要，我可以下一步直接给你一份“仅剩未闭环项”的最小修复清单（1页以内），按“必须修 / 可留作camera-ready”分组。
