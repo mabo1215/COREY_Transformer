@@ -142,6 +142,30 @@
 2. 提交前去匿名时，启用 `paper/main.tex` 中已注释的 camera-ready `\author{…}` 块与 `IEEEbiographynophoto` 块。
 3. 检查图片分辨率 ≥ 300 dpi（TCSVT 要求 vector 优先），必要时把 `figs/*.jpg` 切换为 PDF/EPS 版本。
 
+## 2026-05-04 Checklist 英文语病微调（main）
+
+### 本次修改（paper/main.tex）
+1. 修正 NeurIPS checklist 中 Code 条目的语病与措辞：
+  - `An supplyment repository zip is provided and uploaded` → `A supplementary repository archive is provided`
+  - `contains` → `includes`（学术写作中更自然）
+
+### 结果
+- 句子语法正确、语义更清晰，符合论文正式措辞。
+
+## 2026-05-04 全文措辞与引用一致性校对（main+appendix）
+
+### 本次修改（paper/main.tex / paper/appendix.tex）
+1. 对 `paper/main.tex` 与 `paper/appendix.tex` 做了逐段校读，重点检查论文是否可被读者独立研读，避免依赖本地工程实现细节。
+2. 完成引用键一致性核查：提取两份 tex 的全部 `\cite{}` 键并与 `paper/ref.bib` 比对，结果为 **无缺失引用键**（不存在未定义引用）。
+3. 重点润色 `paper/appendix.tex`：将多处函数名、路径名、运行标志位和脚本式描述改为 reader-facing scientific prose，保留必要实验条件但弱化代码实现暴露。
+4. 同步修正若干英文表达（如 host-side/dispatch 术语、a priori 拼写、解释句冗长问题），提升 NeurIPS 风格的学术可读性。
+5. 运行语法检查：`paper/main.tex` 与 `paper/appendix.tex` 均无新增错误。
+
+### 结果
+- 引用层面：当前不存在 bib 键缺失导致的 LaTeX 引用错误。
+- 措辞层面：附录中“代码函数/路径驱动”的表述显著减少，读者无需了解本地仓库结构即可理解实验与结论。
+- 结论与数值均未改动；本轮主要为学术表达质量与可读性修订。
+
 ## 2026-05-02 正文补充解释（8.5页向9页靠齐）
 
 ### 本次修改（paper/main.tex）
