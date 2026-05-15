@@ -1,6 +1,26 @@
 ﻿# 论文进度
 
-最后更新：2026-05-15（继续当前 TCSVT revision cycle：基于 `docs/revision_suggestions.tex` 的 Weak Reject / Borderline 意见，完成不依赖新实验的正文修订；合并 PDF 仍为 14 页，独立 appendix 为 4 页。）
+最后更新：2026-05-15（TCSVT submission-facing 文字修订：强化 visual/video token scope，重写 abstract/introduction/contributions/conclusion，减少防御性措辞；不改实验结果，合并 PDF 仍为 14 页，独立 appendix 为 4 页。）
+
+## 2026-05-15 TCSVT 投稿前文字修订（scope + framing）
+
+### 本次修改
+- `paper/main.tex` 标题改为 `COREY: A Runtime Scheduling Diagnostic for Selective Scan Kernels`，避免承诺端到端加速。
+- Abstract 重写为约 218 words，按 problem → method → kernel result → routed finding → quality preservation → visual/video implication 的结构组织，仅保留关键数字：`4.41\times`、`+4.6\%`、`+1.3\%`、`80/80`。
+- Introduction 新增 TCSVT-style motivation：长视觉/视频 token streams、streaming video understanding、video-language pipelines、frame/patch-token sequences 与 selective-scan chunk scheduling 的系统关系。
+- Contributions 改为更中性的贡献列表：calibrated entropy-to-chunk rule、runtime-chunk scan patch、unified scheduler comparison、workload-regime analysis、recurrence-preserving quality validation。
+- Related Work 新增视觉/视频 SSM 相关引用与段落：Vision Mamba / Vim、VMamba、VideoMamba；修正原 `Flash Linear Attention` 误引，改为 Gated Linear Attention / FlashLinearAttention 对应引用。
+- 将 `concept-and-feasibility`、`clean negative result`、`deployment-grade`、`zero-profiling-cost adaptivity` 等防御或矛盾措辞替换为 `runtime scheduling study`、`scheduling-boundary analysis`、`quality-preserving scan-kernel routing`、`online-decision cost analysis` 等系统论文口径。
+- `learned-table` 改为 `length-keyed rule / sequence-length gate`，并明确没有训练神经 policy。
+- Hadamard 主文内容压缩为 scope note，明确 COREY runtime path 不依赖 Hadamard rotation；详细理论仍保留在 appendix。
+- Conclusion 改为 balanced systems message：cheap deterministic gates first，entropy-based routing reserved for genuinely heterogeneous regimes。
+
+### 构建验证
+- 已运行 `paper\build.bat`；fallback 编译成功（latexmk 仍因本机缺 Perl 打印提示）。
+- `paper\main.pdf`：14 页。
+- `paper\appendix.pdf`：4 页。
+- 主文 `main.log` 无 undefined citation/reference；仍保留一个轻微 appendix float-page `Overfull \vbox (4.44687pt)`。
+- 独立 appendix 仍有对主文表格/定理标签的 expected undefined references；合并 PDF 中这些引用可解析。
 
 ## 2026-05-15 当前 revision cycle 续修（TCSVT scope / novelty wording）
 
