@@ -1,6 +1,146 @@
 ﻿# 论文进度
 
-最后更新：2026-05-02（正文补页完成：按作者要求将重要附录表回迁正文以吃满 9 页；当前状态为正文 9 页 + 附录 28 页 + checklist 1 页，编译通过，可进入投稿准备阶段。）
+最后更新：2026-05-15（继续当前 TCSVT revision cycle：基于 `docs/revision_suggestions.tex` 的 Weak Reject / Borderline 意见，完成不依赖新实验的正文修订；合并 PDF 仍为 14 页，独立 appendix 为 4 页。）
+
+## 2026-05-15 当前 revision cycle 续修（TCSVT scope / novelty wording）
+
+### 基线
+- 本轮没有重写 `docs/revision_suggestions.tex`，按现有 TCSVT review 继续执行。
+- 可直接落地的方向：增强 TCSVT/视觉序列关联、澄清 entropy 调度的真实定位、弱化含糊的 "diagnostic scaffold" 表述、修复一个公式行溢出。
+- 需要新实验才能完整回应的方向：video-oriented SSM/VLM 任务、streaming video inference、dynamic batching / online serving instability、RL / compiler / CUDA graph / learned latency predictor 等更强 adaptive baselines。
+
+### 本次修改
+- `paper/main.tex` abstract：将 "validated diagnostic scaffold" 改为更具体的 "quality-preserving scheduling diagnostic and offline-tuning aid"，避免 reviewer 认为表述空泛。
+- `paper/main.tex` introduction：新增视觉/视频 token streams 与 selective-scan kernel scheduling 的关系，同时明确当前证据是 scan primitive 的 systems evidence，不声称已完成 video-task accuracy validation。
+- `paper/main.tex` keywords 与 limitations：补入 visual sequence modeling、video-oriented SSM/VLM workloads、streaming visual-token inference 等 TCSVT scope 相关边界与 future-work 项。
+- `paper/main.tex` Equation `\ref{eq:chunk_rule}`：拆成 `C_raw` 与 `C_corey` 两行，消除原 chunk-rule 公式的 overfull hbox。
+- `paper/main.tex` conclusion：将最终定位改为 "offline tuning diagnostic or a gated fallback for uncertain regimes"，更直接回应 entropy 不应被包装成 static tuning 的 drop-in replacement。
+
+### 构建验证
+- 已运行 `paper\build.bat`；latexmk 因本机 MiKTeX 缺 Perl 仍会报提示，但脚本 fallback 到 pdflatex/bibtex 成功。
+- `paper\main.pdf`：14 页。
+- `paper\appendix.pdf`：4 页。
+- `paper\build\main.log`：原公式 overfull hbox 已消失；仍有一个 appendix float page 的轻微 `Overfull \vbox (4.44687pt too high)`。
+- `paper\build\appendix_only.log`：独立 appendix 仍有对主文表格/定理标签的 undefined reference；合并 `main.pdf` 中这些引用可解析。
+
+## 2026-05-15 IEEE TCSVT 格式第二轮修正（表格/代码/页数）
+
+### 修正背景
+用户在 Windows 端编译 `paper\build.bat` 后反馈以下问题，需逐一修复：
+- `paper/IEEEtran.cls` 与 `paper/IEEEtran.bst` 应移至 `paper/template/`（只存一份，不在 paper 根目录重复）
+- Table IV（`tab:main_inline_overhead`）越界
+- Table VI（`tab:mixed_regime_chunk`）：dagger 脚注在 tabular 外，格式怪异
+- Table VII（`tab:main_scheduler_oracle`）越界
+- Table XI（`tab:quality`）越界
+- 附录几乎所有表格越界（仍为 `table`，应为 `table*`）
+- 出现代码风格字符串（`selective_scan_cuda`、`fwd_with_chunk_size`、`src.corey_selective_scan_dispatch`、`eligible_for_w1_speedup=true`），违反稿件独立性规则
+- 正文可扩到 11 页；附录重要内容可回迁至正文，合并后不超过 14 页
+- 压缩删减的内容存入 `docs/删减部分/` 备用
+
+### 本次修改
+
+#### 1. IEEEtran 类路径整理
+- 将 `paper/IEEEtran.cls`（6343 行）与 `paper/IEEEtran.bst` 移至 `paper/template/`，paper 根目录不再保留副本
+- `paper/main.tex` `\documentclass` 路径改为 `template/IEEEtran`；`\bibliographystyle` 改为 `template/IEEEtran`
+- `paper/build.bat`：
+  - 增加 `set "TEXINPUTS=.;.\template;%TEXINPUTS%"` 与 `set "BSTINPUTS=.;.\template;%BSTINPUTS%"`，使 pdflatex / bibtex 从模板子目录查找类和样式
+  - 增加编译前将 `template\IEEEtran.cls/.bst` 拷贝到 `build\`，供独立附录编译时 `IEEEtran` class 可找到
+  - 删除旧的从 paper 根目录复制类文件的语句
+
+#### 2. 正文表格越界修复（`paper/main.tex`）
+- **Table IV（`tab:main_inline_overhead`）**：改为 `table*`（跨双栏），解决越界
+- **Table VI（`tab:mixed_regime_chunk`）**：改为 `table*`；将 tabular 外的 dagger 脚注（`\vspace{2pt}{\small $\dagger$...}`）改为 tabular 内最后一行 `\multicolumn{5}{l}{\footnotesize $\dagger$...}` 行，修复双栏 floating 环境下文字漂移问题
+- **Table VII（`tab:main_scheduler_oracle`）**：改为 `table*`；两个 `\multicolumn{3}{l}` 脚注行合并为单个 `\multicolumn{3}{p{0.92\linewidth}}{\footnotesize ...}` 行，排版更整洁
+- **Table XI（`tab:quality`）**：改为 `table*`，解决越界
+- 同步将所有其他正文表格（`tab:bin_invariance`、`tab:kernel_summary`、`tab:perturbation`、`tab:routed_ablation`）统一为 `table*`
+
+#### 3. 代码字符串清理（稿件独立性）
+全文（`paper/main.tex` 与原附录）中存在的实现细节字符串一律替换为面向读者的科学语言：
+- `selective_scan_cuda extension exposes fwd_with_chunk_size` → 描述"补丁后的选择性扫描核接受运行时 chunk 参数"
+- `src.corey_selective_scan_dispatch reports eligible_for_w1_speedup=true` → 描述"调度器快速路径可用性检查"
+- `deployment_grade=true`、`fast_path_available=true` → 移除所有布尔标志引用
+- HuggingFace checkpoint 路径（`state-spaces/mamba-*`、`EleutherAI/pythia-*`）→ 改为规范模型名称
+- 数据集路径（`THUDM/LongBench`）→ 改为"LongBench benchmark"
+- `micromamba`、`WSL2` 环境细节 → 移除或改为通用描述
+
+#### 4. 附录全部表格转换为 `table*`（`paper/appendix.tex`）
+原附录 19 张表格（含 `\resizebox{\linewidth}{!}{...}` 宽表）统一由 `table` 改为 `table*`，解决 IEEEtran 双栏布局下的越界问题。
+
+#### 5. 正文扩页 + 附录压缩（14 页预算管理）
+**正文扩充（新增至约 11 页）：**
+- 将附录中的多平台内核结果表（原 `tab:real-gpu-three-policy`，包含 Consumer GPU、Server-class GPU、TPU、Tesla GPU、H800 PCIe 共 5 行数据）回迁至正文 Section 5.1，重命名为 `tab:multi_platform_kernel`
+- 在 Section 5.1 新增段落 `\paragraph{Multi-platform transfer.}` 及对应分析文字，说明校准规则在异构硬件上复现静态 oracle 的一致性
+
+**附录压缩（约 3 页）：**
+- 原 NeurIPS 附录约 1417 行（28 页）大幅压缩为约 200 行精简版
+- 保留节点：Tier-1 prototype 诊断（`tab:prototype_consolidated` + `tab:tiling_depth`）、静态 chunk 扫描（`tab:chunk_sweep`）、H800 W1 补充（`tab:h800_w1_supplement`）、H_ref 灵敏度分析（`sec:href_ablation`、`tab:href_ablation`）、bin-count 灵敏度（`sec:bin_count_sensitivity`、`tab:bin_count_sensitivity`）、真实检查点熵（`sec:real_checkpoint_entropy`、`tab:real_checkpoint_entropy`、`tab:entropy_variance_real`）、主动模式开销预算（`sec:active_overhead`）、定理证明草图（`sec:appendix_proofs`、含 Theorem 1 深度界、Theorem 2 熵 majorization、实证伪证备注、量化稳定性界）
+- 保留所有正文引用的 `\label{...}` 标记，确保交叉引用不断
+
+**删减内容存档：**
+- 完整备份：`docs/删减部分/appendix_full_backup.tex`（原 1417 行 NeurIPS 附录，115,435 字节）
+- 删除内容包括：TPU 基准测试详情、W1 烟雾测试、三模型 LongBench 比较、详细 CUDA Profile、Quamba INT4 节、Policy COREY 消融、优化部署细节、在线 hook 微基准、完整主动模式表格、检查点完整性检查
+
+### 交叉引用验证
+- 所有 `paper/main.tex` 中指向附录的 `\ref{...}` 均在新精简版 `paper/appendix.tex` 有对应 `\label{...}` 定义
+- 已验证：`sec:appendix_details`、`sec:appendix_ablations`、`sec:appendix_proofs`、`sec:href_ablation`、`sec:bin_count_sensitivity`、`sec:real_checkpoint_entropy`、`sec:active_overhead`、`tab:prototype_consolidated`、`tab:tiling_depth`、`tab:chunk_sweep`、`tab:h800_w1_supplement`、`tab:href_ablation`、`tab:bin_count_sensitivity`、`tab:real_checkpoint_entropy`、`tab:entropy_variance_real`
+- 无悬空引用（已 grep 确认无 `sec:appendix_systems`、`sec:appendix_ckpt` 等已删除节的引用）
+- 定理标签（`thm:depth`、`thm:entropy_informal`）均定义于 `paper/main.tex`，附录中 `rem:applicability` 仅在附录内部自引
+
+### 验证状态
+- 本地（WSL2）未安装 LaTeX，需在 Windows 端执行 `paper\build.bat` 验证
+- 预期结果：主文 + 附录 ≤ 14 页（TCSVT Transactions Paper 上限）
+- 下一步：Windows 编译通过后，确认实际页数；如超限，进一步压缩附录或考虑 supplementary material 拆分
+
+## 2026-05-15 IEEE TCSVT 投稿格式切换（NeurIPS → IEEEtran）
+
+### 投稿目标
+按 IEEE Transactions on Circuits and Systems for Video Technology（TCSVT）官方投稿要求重新格式化 `paper/`，参考链接 `https://ieee-cas.org/publication/tcsvt/tcsvt-manuscript-submission-guide`：
+- 双栏 IEEEtran transactions journal 排版（initial submission 与 final 均用同一双栏类）
+- 正文 Transactions Paper 上限 14 页（letter 5 页），含 figures、references
+- 必须给出 Index Terms（IEEE keywords）
+- 引用使用编号制（IEEEtran.bst），不再用 plainnat 作者-年份制
+- 不需要 NeurIPS-style Paper Checklist / Broader Impact 节
+
+### 本次修改
+1. **加入 IEEEtran 类**：从 `paper/build/template/IEEEtran.cls`（6343 行完整版）复制为 `paper/IEEEtran.cls`，并从 `REAEDP/paper/build/template/IEEEtran.bst` 复制 `paper/IEEEtran.bst`；同时同步到 `paper/template/`。
+2. **重写 `paper/main.tex` preamble**：
+   - `\documentclass{article}` + `\usepackage{template/neurips_2026}` → `\documentclass[journal,10pt]{IEEEtran}`
+   - 引入 IEEE 推荐宏包：`cite, graphicx, amsmath, amssymb, amsfonts, amsthm, algorithm, algpseudocode, array, booktabs, multirow, xcolor, url, nicefrac, microtype`
+   - 按 IEEEtran 规范把 `hyperref` 放在 preamble 最末加载
+3. **标题与作者块**：
+   - 切换为 `\author{...\IEEEmembership{...}...\thanks{...}}` 双栏 IEEE 格式
+   - 添加 `\markboth{IEEE Transactions on Circuits and Systems for Video Technology,~Vol.~XX, No.~X, Month~Year}{...}` running header
+   - 保留匿名 author 行（初次投稿走 anonymous review），并将去匿名版本作为注释块保留供 camera-ready 复用
+4. **Abstract / Keywords / 正文起始**：
+   - 在 `\begin{abstract}…\end{abstract}` 后新增 `\begin{IEEEkeywords}…\end{IEEEkeywords}`，列出 8 个关键词
+   - 在 `\IEEEpeerreviewmaketitle` 之后开始 Introduction，并以 `\IEEEPARstart{S}{elective}` 起首字符串
+5. **引用风格**：
+   - `\bibliographystyle{plainnat}` → `\bibliographystyle{IEEEtran}`
+   - 全文 `\citep{…}`/`\citet{…}`（natbib）替换为 `\cite{…}`（共 15 处）
+6. **删除 NeurIPS 专属节**：
+   - 移除文末 `\section*{NeurIPS Paper Checklist}` 与所有 `\answerYes{}` 条目
+   - 移除 `\section{Broader Impact}`（NeurIPS-only；TCSVT 不要求该节，且原文核心讨论已在 Limitations / Conclusion 覆盖）
+   - 将 `\appendix\input{appendix}` 改为 `\appendices\input{appendix}`（IEEEtran 多附录环境）
+   - 在文末加入 IEEE biography 注释块占位，供 camera-ready 时启用
+7. **双栏布局适配**（重要表格保持可读性）：
+   - `paper/main.tex` 内将 `tab:bin_invariance`、`tab:perturbation`、`tab:mixed_regime_chunk`、`tab:quality` 由 `table` 改为 `table*`（跨双栏）；`tab:routed_ablation` 已是 `table*`，无需变更
+   - `paper/appendix.tex` 内 11 张使用 `\resizebox{\linewidth}{!}{…}` 的宽表（原 NeurIPS 单栏宽设计）由 `table` 改为 `table*`，避免被双栏压缩到不可读尺寸
+   - `figs/workflow.png` 所在 figure 改为 `figure*` 双栏，宽度由 `1.0\linewidth` 调为 `0.85\linewidth`，对应双栏 `\linewidth=\textwidth`
+8. **更新构建脚本 `paper/build.bat`**：
+   - `build/appendix_only.tex` wrapper 模板由 NeurIPS sty 切换为 `\documentclass[journal,10pt]{IEEEtran}`
+   - 同步全部 IEEEtran 用 preamble 与 `\bibliographystyle{IEEEtran}`，并将 `\appendix` 改为 `\appendices`
+   - 增加构建前 `IEEEtran.cls/.bst` 拷贝到 `build/`，保证独立编译附录时类与样式可找到
+
+### 验证状态
+- 文件级 grep 已确认无残留 `\citep` / `\citet` / `plainnat` / `neurips` / `answerYes` 标记。
+- 由于 WSL 环境未安装 `pdflatex`，本次未在本地完成 PDF 编译；下一步需在 Windows 端执行 `paper\build.bat` 验证：
+  - `main.pdf` 应为双栏 IEEEtran 排版，正文 + 参考 + 附录均跑通
+  - 页数应满足 TCSVT Transactions Paper ≤ 14 页约束（含 figures、references；附录目前篇幅较大，必要时再做分配）
+
+### 后续待办（不阻塞当前投稿格式切换）
+1. 在 Windows 端执行 `paper\build.bat` 确认编译通过；如有溢出，按 TCSVT 14 页上限再次压缩或拆 supplementary。
+2. 提交前去匿名时，启用 `paper/main.tex` 中已注释的 camera-ready `\author{…}` 块与 `IEEEbiographynophoto` 块。
+3. 检查图片分辨率 ≥ 300 dpi（TCSVT 要求 vector 优先），必要时把 `figs/*.jpg` 切换为 PDF/EPS 版本。
 
 ## 2026-05-02 正文补充解释（8.5页向9页靠齐）
 
@@ -1154,11 +1294,13 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 未修改或部分修改（最新 `docs/revision_suggestions.tex`）
 
-- 【部分完成 — cosmetic only】Theorem numbering 一致性：PAT 指出 main 中的 `Theorem 2`（`thm:entropy_informal`）在 appendix 中被编号为 `Theorem 3`（`thm:entropy`），quantization bound 在 appendix 中是 `Theorem 4` 但 main 中没有 Theorem 3。说明：appendix 与 main 是独立编译入口（`appendix_only.pdf`），LaTeX `\newtheorem{theorem}` counter 在 standalone 模式下从 1 重新计数，因此 appendix 的 thm:entropy 实际上是 standalone PDF 中的 Theorem~3（按 `[shared-memory depth bound]`、`[reproduction of doubly-stochastic ...]` 顺序）。若提交方式是 single combined PDF（main+appendix 顺序拼装），编号会自动连续；若提交方式是分开 PDF，则编号本身是各自独立的 1、2、3。所有正文跨引均使用 `\ref{thm:...}` 名字引用，不依赖具体数字。
-  - 当前是否需要作者决策：**否**。仅当目标 venue 强制要求 main 与 appendix 各自独立 self-contained 编号时才需调整，且只是 cosmetic。NeurIPS 2026 不强制。如作者认为有必要，可在 main.tex 中显式写「stated as Theorem~3 in the appendix when compiled standalone」一句，但目前的 `\ref` 引用已能正确解析。
+- 【需要新实验】TCSVT scope 的强回应仍需要 video-oriented Mamba/SSM/VLM、streaming video inference、long-video token scheduling 或 edge-video analytics 实验。目前正文只完成了 scope framing 与 limitation/future-work 说明，不能替代真实视频任务证据。
+- 【需要新实验/实现】更强 adaptive baseline（RL scheduler、hardware-aware autotuner、TVM/XLA-style cost model、CUDA graph specialization、learned latency predictor）尚未加入。当前稿件只明确承认这一限制，并将 negative result 限定在已测的 entropy/proxy/seq-len policy family。
+- 【已缓解但未完全消除】Hadamard 理论仍在 appendix 中保留，正文已明确其被真实 Mamba activations 证伪且不属于 validated contribution；若之后需要更激进回应 reviewer，可进一步移到 supplementary 或压缩。
+- 【排版残留】合并 PDF 编译通过并保持 14 页，但 `main.log` 仍有轻微 appendix float-page overfull vbox；独立 appendix 仍有引用主文标签导致的 expected undefined references。
 
 ## 遗留问题
 
-（无。所有 actionable 项已落地；Stage 9 决策已消费（作者选择不进入）；论文可进入投稿准备阶段。）
+当前可在无新实验条件下落地的 manuscript-only 修订已完成。若继续冲击 TCSVT 接收率，下一轮优先级应是补视频/视觉序列实验或补强 adaptive baseline，而不是继续微调文字。
 
 

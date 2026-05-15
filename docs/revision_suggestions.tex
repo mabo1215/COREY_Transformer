@@ -1,128 +1,299 @@
-You requested a review of your paper submitted to NeurIPS using the Google Paper Assistant Tool (PAT). The resulting AI Feedback can be found below. Note that this feedback is posted automatically, and is only visible to authors. Importantly, the feedback will **not** be used in the review process. Reviewers, area chairs, and program committee members will **not** have access to the PAT feedback.
+\section*{Review for IEEE Transactions on Circuits and Systems for Video Technology (TCSVT)}
 
-Disclaimer: Please note that the models used by the PAT pipeline are not infallible; they may hallucinate and make mistakes. Authors should treat the generated feedback with the same critical eye they would apply to a human review.
+\subsection*{Summary}
 
+This paper presents COREY, an entropy-guided runtime chunk scheduling framework for selective scan kernels in Mamba-style selective state space models (SSMs). The authors investigate whether fixed-bin activation entropy can serve as a lightweight runtime signal for adaptive chunk-size scheduling during inference. The work includes kernel-level benchmarking, runtime overhead analysis, mixed-regime workload evaluation, and routed end-to-end inference experiments.
 
-# Summary
+The paper is technically well organized and contains unusually thorough negative-result reporting. In particular, the authors explicitly acknowledge that entropy-guided adaptive scheduling does not outperform the best static chunk oracle in routed end-to-end inference. The study carefully separates kernel-level oracle gains from deployment-level runtime overheads, which improves scientific transparency and reproducibility.
 
-The paper investigates dynamic chunk scheduling for memory-bound selective scan kernels in Selective State Space Models (SSMs). The authors introduce COREY, a runtime scheduler that utilizes fixed-bin activation entropy to dynamically select chunk sizes on the fly. Framed as a concept-and-feasibility study, the paper rigorously evaluates this mechanism across prototype cost models, kernel-level timings, and end-to-end routed ablations. Ultimately, the paper presents a highly informative negative result: while the dynamic scheduler can preserve exact bitwise output quality and operate with low inline overhead, the irreducible computational cost of calculating the entropy statistic at runtime outweighs the benefits. A highly tuned static chunk size, or a simple sequence-length rule, outperforms the entropy-guided approach on current Mamba workloads.
+However, several important concerns remain regarding the practical novelty, deployment significance, theoretical depth, and fit to TCSVT. While the paper demonstrates that entropy-guided scheduling is feasible and output-preserving, the final experimental conclusion is fundamentally negative: the adaptive scheduler is consistently inferior to a simple static scheduling policy or even a trivial sequence-length heuristic. This substantially weakens the practical impact of the contribution.
 
-# Strengths
+\subsection*{Overall Recommendation}
 
-* The paper tackles a highly relevant problem (memory bandwidth bottlenecks in SSM inference) with a novel approach, representing the first systems-level exploration of using a dynamic, data-dependent information-theoretic metric (activation entropy) to schedule GPU kernel chunk sizes on the fly.
+\textbf{Recommendation: Weak Reject / Borderline}
 
-* The submission provides a highly significant and rigorous "clean negative result." By demonstrating that the irreducible overhead of runtime statistic computation prevents dynamic scheduling from outperforming a static oracle, the paper acts as a valuable diagnostic scaffold that will save the systems community from pursuing unproductive optimization paths.
+The paper is technically sound and reproducible, but its current form does not yet demonstrate sufficient practical performance benefit, systems novelty, or direct video-technology relevance expected by TCSVT.
 
-* The empirical verification that dynamic runtime chunk routing preserves exact bitwise output quality (zero metric deltas and identical perplexity) is a major systems achievement, proving that adaptive routing in SSMs can be deployed without introducing numerical drift or requiring costly re-tuning.
+\subsection*{Strengths}
 
-* The inclusion of the empirically falsified Hadamard pre-rotation theory provides a valuable mechanistic insight, formally establishing the distributional prerequisites for entropy growth and explaining why the technique fails to amplify entropy on current approximately Gaussian Mamba activations.
+\begin{itemize}
 
+\item The paper is exceptionally transparent about negative experimental findings, which is uncommon and scientifically valuable.
 
+\item The authors carefully separate:
+\begin{itemize}
+    \item kernel-level oracle timing,
+    \item runtime scheduling overhead,
+    \item routed inference cost,
+    \item quality preservation.
+\end{itemize}
 
-# Weaknesses
+\item The empirical evaluation is extensive and methodologically rigorous:
+\begin{itemize}
+    \item kernel-level sweeps,
+    \item cross-layer entropy analysis,
+    \item mixed-regime workload evaluation,
+    \item LongBench quality preservation,
+    \item cross-hardware comparisons.
+\end{itemize}
 
-* Please consider updating the chunk-size selection formula (Equation 2) to accurately reflect the implementation. The equation currently uses a floor function, which mathematically evaluates to 256 for standard-normal inputs (r=0.83). However, the text (Line 102) and Table 1 state that r=0.83 selects a chunk of 512, suggesting a rounding function was actually used. A similar clarification is needed for the Triton integration formula in Appendix B.5, which evaluates to 448 rather than the claimed 512 for r=0.83.
+\item The routed inference experiments preserve exact greedy outputs across all evaluated prompts, demonstrating recurrence-preserving implementation correctness.
 
-* The authors might want to clarify the overhead reduction claims regarding the guarded fallback policy. Table 7 shows the absolute latency of the guarded policy (932.86 ms) is virtually identical to the unguarded policy (932.69 ms). The reported reduction to +2-3% overhead seems to arise from comparing against a slower Static-512 baseline from a separate confirmatory run rather than an absolute latency improvement.
+\item The reproducibility section is unusually detailed and includes implementation boundaries, hardware distinctions, scheduler assumptions, and measurement-layer separation.
 
-* It would be beneficial to ensure compute parity in Table 15. Currently, the table compares policy_corey latencies (measured with explicit warmup) against policy_off and policy_static latencies (measured without warmup, including JIT compilation overhead), which skews the relative performance comparison.
+\item The paper includes useful deployment-oriented analysis discussing why adaptive scheduling fails under low entropy variance regimes.
 
-* Please consider correcting the logical connective in the informal statement of Theorem 2 (Section 4). It asserts strict inequality 'unless B is a permutation and p is uniform,' but this should logically be an 'or' condition to align with the formal proof provided in Appendix C.1.
+\end{itemize}
 
-* The authors should consider revising the mechanistic explanation for the entropy decrease after Hadamard rotation (Section 4). Stating that Gaussianity is preserved does not mathematically explain the observed 1.4 nat drop; if the shape were perfectly preserved, discrete entropy would remain roughly unchanged. The drop is likely an artifact of dynamic histogram binning interacting with a non-zero mean.
+\subsection*{Major Concerns}
 
-* Please review the surrogate dispatch cost calculation in Appendix D.1. The cost is calculated as 0.413 ms by dividing the static-64 latency (3.30 ms) by 8 calls. However, Table 20 indicates the static-64 configuration uses 64 calls. Correcting this would yield a true cost of ~0.05 ms, which significantly impacts the surrogate solver latencies reported in Table 37.
+\subsubsection*{1. The Main Experimental Conclusion is Performance-Negative}
 
-* The NeurIPS Paper Checklist states that an anonymized repository URL is provided in the abstract, but the URL appears to be missing from the manuscript. Please ensure the link is included to facilitate reproducibility.
+The most significant issue is that the paper's primary deployment-level result is negative.
 
+The routed end-to-end experiments in Table VI explicitly show that:
+\begin{itemize}
+    \item the best static chunk policy consistently outperforms all entropy-guided variants,
+    \item even guarded and learned policies remain slower than the static oracle,
+    \item the overhead of entropy computation dominates any scheduling benefit.
+\end{itemize}
 
+The paper honestly reports this limitation, but this substantially weakens the practical contribution. The work therefore becomes:
+\begin{quote}
+``an analysis of why entropy-guided scheduling does not help current Mamba workloads''
+\end{quote}
+rather than a demonstrated systems acceleration framework.
 
-# Potential Issues And Suggestions
+For TCSVT, where practical deployment benefit is important, the paper currently lacks a convincing positive systems outcome.
 
-### [Introduction and Background] (Pages: 1-3)
-### 1. Potential Mistakes and Improvements
+\textbf{Suggestion:}
+The authors should substantially strengthen one of the following:
+\begin{itemize}
+    \item a real deployment scenario where entropy scheduling wins,
+    \item broader workload heterogeneity,
+    \item online serving instability scenarios,
+    \item dynamic batch composition,
+    \item multimodal/video streaming workloads,
+    \item adaptive video-token inference pipelines.
+\end{itemize}
 
-*   **Contradiction in Chunk Size Selection Formula:** In Section 3.2, Equation (2) defines the selected chunk size using a floor operation: $C_{\text{corey}} = \text{clip}\left(2^{\lfloor \log_2(C_{\text{min}} + r(C_{\text{max}} - C_{\text{min}})) \rfloor}, C_{\text{min}}, C_{\text{max}}\right)$. With $C_{\text{min}}=32$ and $C_{\text{max}}=512$, a value of $r=0.83$ (stated on line 102 for standard-normal inputs) mathematically evaluates to $2^{\lfloor \log_2(32 + 0.83 \times 480) \rfloor} = 2^{\lfloor \log_2(430.4) \rfloor} = 2^8 = 256$. However, lines 102-103 explicitly state that $r=0.83$ selects a chunk of 512. This mathematical discrepancy extends to the results in Table 1, where inputs producing values such as $r=0.763$ are also reported to select a chunk of 512 under the $H_{\text{ref}}=\log K$ rule (whereas Equation 2 would evaluate to 256). It is highly likely that the actual implementation relies on a nearest-integer rounding function rather than the floor function ($\lfloor \cdot \rfloor$) presented in the equation. Clarifying the exact mathematical mapping used in the experiments is necessary to ensure the method can be accurately reproduced.
+Without such evidence, the practical significance remains limited.
 
-### 2. Minor Corrections and Typos
+\subsubsection*{2. Limited Relevance to TCSVT Scope}
 
-*   **Notation Consistency:** In Section 3.1, the empirical entropy estimate is formally introduced as $\widehat{H}(Z)$ (Equation 1) and the normalized version as $\tilde{H}$. However, the text subsequently alternates between $H$, $\widehat{H}$, and $\tilde{H}$ without explicit distinction (e.g., Table 1 uses $H$, line 93 uses $H/\log K$, line 98 uses $r=\tilde{H}$, and line 102 uses $H$). Consolidating the notation (e.g., consistently using $\widehat{H}$ for the measured empirical estimate) would improve mathematical clarity.
+The work focuses almost entirely on:
+\begin{itemize}
+    \item kernel scheduling,
+    \item Triton scan execution,
+    \item runtime chunk tuning,
+    \item Mamba systems optimization.
+\end{itemize}
 
-### [COREY Methodology and Algorithms] (Pages: 3-4, 25-27)
-### 1. Potential Mistakes and Improvements
+However, TCSVT primarily emphasizes:
+\begin{itemize}
+    \item video understanding,
+    \item video coding,
+    \item visual representation learning,
+    \item vision systems,
+    \item multimedia intelligence.
+\end{itemize}
 
-*   **Contradiction in Chunk-Size Selection Formula (Correctness):** In Section 3.2, Equation (2) defines the selected chunk size using a floor operation: $C_{\text{corey}} = \text{clip}\left( 2^{\lfloor \log_2(C_{\text{min}} + r (C_{\text{max}} - C_{\text{min}})) \rfloor}, C_{\text{min}}, C_{\text{max}} \right)$. However, the text immediately below states that for $r=0.83$ (with $C_{\text{min}}=32, C_{\text{max}}=512$), the selected chunk is 512. Evaluating the formula directly yields $32 + 0.83(480) = 430.4$, and taking the base-2 logarithm gives $\approx 8.749$. Applying the floor function results in 8, which yields $2^8 = 256$, not 512. It appears the implementation utilizes a rounding operation (e.g., `round`) rather than a floor operation ($\lfloor \cdot \rfloor$). Modifying the equation to reflect the implemented math would resolve this contradiction. This same discrepancy also appears in the uniform distribution rows of Table 1.
+The current manuscript does not convincingly connect COREY to:
+\begin{itemize}
+    \item video tasks,
+    \item video transformers,
+    \item streaming video inference,
+    \item visual sequence modeling,
+    \item edge-video deployment,
+    \item long-video understanding.
+\end{itemize}
 
-*   **Calculation Error in Triton Integration Formula (Correctness):** Appendix B.5 introduces a different mapping formula intended for the fused Triton implementation: $T(e) = 32 \cdot \text{round}\left( \frac{64 + \min(e, \log K)/\log K \cdot (512 - 64)}{32} \right)$. For the provided example where $e = 4.60$ and $\log K = 5.55$ ($r \approx 0.83$), this evaluates to $T(e) = 32 \cdot \text{round}(435.84 / 32) = 32 \cdot \text{round}(13.62) = 32 \times 14 = 448$. However, the accompanying text asserts this gives "tile= 512". It is unclear whether the implementation actually uses 448 (which is a valid Triton block size but conflicts with the text) or adds an unstated step to snap to the nearest power of two (512). Clarifying this formula's intended output is necessary for exact reproducibility.
+This creates a scope mismatch risk.
 
-*   **Logical Error in Theorem 2 Informal Statement (Validity):** In Section 4, the informal statement of Theorem 2 asserts that $H(q) \geq H(p)$ with "strict inequality unless B is a permutation and p is uniform." This condition is logically incorrect. If $B$ is a permutation matrix, equality $H(q) = H(p)$ holds for *any* distribution $p$, not just a uniform one. Similarly, if $p$ is uniform, equality holds for any doubly-stochastic $B$. The condition should logically use "or" instead of "and" (i.e., unless $B$ is a permutation or $p$ is uniform), which aligns correctly with the formal proof provided in Appendix C.1.
+\textbf{Suggestion:}
+The paper would significantly benefit from:
+\begin{itemize}
+    \item experiments on video-oriented Mamba architectures,
+    \item evaluation on visual sequence tasks,
+    \item latency analysis for video streaming inference,
+    \item long-video token scheduling,
+    \item video-language model acceleration,
+    \item edge video analytics deployment.
+\end{itemize}
 
-*   **Ambiguity in Region Entropy $H(R)$ Definition (Clarity):** In Appendix B.1, the utility function for the dynamic programming solver is defined as $U(R) = \alpha H(R) + \beta AI(R) - \gamma M(R)$. While arithmetic intensity $AI(R)$ and memory traffic $M(R)$ are well-defined cumulative metrics for a sequence of operators, $H(R)$ represents entropy, which is a property of a single tensor. The text does not clarify whether $H(R)$ for a multi-operator fusion region $R$ is evaluated on the region's input tensor, its output tensor, or an aggregate of internal activations. This missing detail limits the reproducibility of the DP solver's cost model.
+\subsubsection*{3. Novelty Relative to Existing Runtime Scheduling Literature is Limited}
 
-### 2. Minor Corrections and Typos
+The paper positions entropy as a runtime scheduling signal, but the actual scheduling formulation is relatively simple:
+\[
+r = \frac{H}{\log K}
+\]
+followed by thresholded chunk mapping.
 
-*   **Notation Inconsistency:** In Section 3.1 (Line 91), the normalized entropy is defined as $\tilde{H} = \hat{H} / \log K$. However, the very next sentence (Line 92) defines the ratio as $r = H / \log K$ (dropping the hat/tilde). Later, Appendix B.3 (Line 765) states "the entropy term is therefore $H = \tilde{H} / \log K$". Since $\tilde{H}$ is already normalized by $\log K$, this expression would incorrectly divide by $\log K$ twice. Standardizing the notation for empirical vs. normalized entropy across the main text and appendix would improve readability.
+The scheduler itself is heuristic and does not involve:
+\begin{itemize}
+    \item learned policies,
+    \item reinforcement learning,
+    \item adaptive optimization,
+    \item compiler-assisted scheduling,
+    \item online autotuning,
+    \item predictive latency modeling.
+\end{itemize}
 
-*   **Undefined Variables in Adaptive Thresholding:** In Appendix B.3, the adaptive entropy threshold formula for $\tau_t$ (Line 757) relies on the terms $H_{\min}$ and $H_{\max}$. While a reader can likely infer that these represent theoretical bounds (e.g., $0$ and $\log K$), they are not explicitly defined in the text. Explicitly stating their values or definitions would resolve this minor ambiguity.
+The paper also ultimately concludes that:
+\begin{quote}
+simple sequence-length heuristics perform equally well or better.
+\end{quote}
 
-*   **Algorithm 1 Tracking:** In Appendix B.2, Algorithm 1 returns "the segmentation recovered from the maximizing predecessors" (Line 10), but the inner loop (Lines 4-7) does not explicitly store the `argmax` predecessor indices in a separate tracking array, which is a standard step required to allow for path recovery in dynamic programming.
+This weakens the conceptual novelty of the entropy-guided mechanism.
 
-### [Theoretical Properties and Proofs] (Pages: 4-5, 27-30)
-### 1. Potential Mistakes and Improvements
+\textbf{Suggestion:}
+The authors should better justify:
+\begin{itemize}
+    \item why entropy is fundamentally superior to sequence length,
+    \item when entropy contains unique information,
+    \item why entropy-based scheduling should exist at all if sequence length already captures the same routing behavior.
+\end{itemize}
 
-*   **Contradictory Mechanistic Explanation for Entropy Decrease (Section 4 & Appendix C.1):** The manuscript reports an empirical entropy decrease ($\Delta H = -1.40 \pm 0.37$ nats) after applying the Hadamard transform to real Mamba checkpoint activations. The provided mechanistic explanation states that "the measured activations are approximately Gaussian, and orthogonal transforms preserve Gaussianity, so no histogram spreading occurs." This explanation mathematically contradicts the reported decrease. If the distribution's shape were perfectly preserved and evaluated over the same effective dynamic range, the discrete entropy would remain unchanged ($\Delta H \approx 0$). An entropy drop of 1.4 nats indicates that the post-rotation distribution is substantially more concentrated relative to the histogram bins. A mathematically consistent explanation for this artifact involves the interaction between the activation's DC component (non-zero mean) and the dynamic histogram binning (which relies on a min/max pass, Line 370). The Hadamard transform concentrates a non-zero mean into a single coordinate ($z_1 \approx \sqrt{d}\mu$). This outlier expands the tensor's $[\min, \max]$ range, which proportionally increases the fixed-bin width. This range expansion compresses the remaining zero-mean coordinates into a smaller fraction of the available bins, explaining why the measured discrete entropy drops. The explanation should be revised to account for the observed $\Delta H$.
+\subsubsection*{4. Theoretical Analysis is Weakly Connected to Final Contribution}
 
-*   **Logical Connective Error in Theorem 2 Informal Statement (Section 4):** The informal statement of Theorem 2 asserts that $H(q) \ge H(p)$ holds "with strict inequality unless $B$ is a permutation and $p$ is uniform." This logical formulation implies that if $B$ is a permutation matrix but $p$ is non-uniform, the strict inequality must hold. However, a permutation matrix merely reorders the elements of $p$, resulting in exactly $H(q) = H(p)$ for any $p$. The condition should be updated to use the disjunction "or" (e.g., "unless $B$ is a permutation or $p$ is uniform") to align with the formally correct conditions detailed in Theorem 3 (Appendix C.1).
+The Hadamard entropy majorization analysis occupies substantial space, yet the paper itself repeatedly states:
+\begin{itemize}
+    \item the theorem assumptions fail on real activations,
+    \item the hypothesis is empirically falsified,
+    \item the theory is not part of the validated contribution.
+\end{itemize}
 
-*   **Exact Verification of Majorization vs. Sinkhorn Approximation (Appendix C.1):** To empirically test the doubly-stochastic mixing assumption $q = Bp$, the text applies Sinkhorn normalization to find an approximate doubly-stochastic matrix $B$ and evaluates the residual $\|q - Bp\|_1$ (Lines 825–834). Verifying whether a probability vector $q$ can be expressed as a doubly-stochastic mixing of $p$ is mathematically equivalent to checking if $q$ is majorized by $p$ ($q \prec p$), according to the Hardy-Littlewood-Pólya theorem. This condition can be evaluated exactly and computationally efficiently by sorting both histograms in descending order and checking if the prefix sums of $q$ are bounded by the prefix sums of $p$. Utilizing this exact theoretical test would remove the approximation error of the Sinkhorn fit and definitively establish whether the majorization condition holds, addressing the theoretical gap mentioned in Lines 835–842.
+As a result, a large portion of the theoretical appendix appears disconnected from the actual contribution.
 
-### 2. Minor Corrections and Typos
+\textbf{Suggestion:}
+The paper should either:
+\begin{itemize}
+    \item greatly reduce the Hadamard discussion,
+    \item move it entirely to supplementary material,
+    \item or provide a stronger justification for its inclusion.
+\end{itemize}
 
-*   **Theorem Numbering Consistency:** The doubly-stochastic entropy majorization theorem is labeled "Theorem 2" in Section 4, but is restated and proven as "Theorem 3" in Appendix C.1. Furthermore, the subsequent quantization bound is labeled "Theorem 4," despite there being no third theorem in the main text.
+Currently it creates conceptual distraction.
 
-*   **Undefined Random Vector in Theorem 4 (Appendix C.3):** The theorem introduces $x$ as a deterministic vector to establish the geometric bound $\|z\|_\infty \le \|x\|_1 / \sqrt{d}$, but concludes with a probabilistic inequality $\Pr(\|z\|_\infty > T) \le \Pr(\|x\|_1 > T \sqrt{d})$. To formally support the probability measure, $x$ should be explicitly defined as a random vector in the theorem premise.
+\subsubsection*{5. Lack of Comparison Against Stronger Adaptive Baselines}
 
-*   **Theorem 4 Terminology (Appendix C.3):** The theorem is titled "Variance Preservation," but the proof establishes the preservation of the $\ell_2$ norm ($\|z\|_2 = \|x\|_2$). Preserving the $\ell_2$ norm corresponds to variance preservation only if the input vector $x$ has a mean of zero; otherwise, it is norm or energy preservation.
+The adaptive baselines remain relatively lightweight:
+\begin{itemize}
+    \item histogram entropy,
+    \item moment proxies,
+    \item variance,
+    \item learned lookup tables.
+\end{itemize}
 
-*   **Undefined Variable in Theorem 4 Proof (Appendix C.3):** The variable $s_{ji}$ appears in the sum $|z_j| = |\frac{1}{\sqrt{d}} \sum_{i=1}^d s_{ji} x_i|$ (Line 869). While context implies these are the $\pm 1$ entries of the unnormalized Hadamard matrix, $s_{ji}$ should be explicitly defined for notational completeness.
+Missing comparisons include:
+\begin{itemize}
+    \item RL-based runtime schedulers,
+    \item hardware-aware autotuners,
+    \item TVM/XLA-style online cost models,
+    \item compiler-guided adaptive fusion,
+    \item CUDA graph specialization,
+    \item learned latency prediction networks.
+\end{itemize}
 
-### [Empirical Evaluation and Hardware Benchmarks] (Pages: 4-9, 11-25, 30-37)
-### 1. Potential Mistakes and Improvements
+Without stronger adaptive baselines, it is difficult to assess whether the negative result is specific to entropy or reflects a broader limitation of adaptive scan scheduling.
 
-*   **Miscalculated Surrogate Dispatch Cost (Appendix D.1):** Line 963 states that the dispatch cost per kernel launch is 0.413 ms, derived from "static-64: 3.30 ms / 8 calls, Table 20". However, Table 20 explicitly shows that the `static-64` configuration uses **64 calls**, not 8 (the 512-chunk configuration uses 8 calls). Dividing the 64-chunk latency (3.299 ms) by the 512-chunk call count (8) is mathematically incorrect and overestimates the per-launch dispatch cost by nearly an order of magnitude (the true cost should be $\approx 3.30 / 64 \approx 0.05$ ms). This error artificially inflates the surrogate solver latencies reported in Table 37.
+\subsection*{Minor Concerns}
 
-*   **Invalid Overhead Reduction Claim (Guarded Fallback):** The abstract (Line 13) and main text (Line 47) claim the "guarded fallback policy reduces the residual overhead from +4.6% to +2–3%". However, Table 7 shows the absolute latency of the guarded policy (932.86 ms) is virtually identical to the unguarded "Sampled histogram" policy (932.69 ms). The drop to a ~3% relative overhead reported in the confirmatory run (Line 622) appears to be an artifact of comparing the guarded policy against a slower `Static-512` baseline from a separate run (905.97 ms, Table 42 footnote) rather than the original baseline (891.51 ms). Since the absolute latency of the mechanism did not improve, attributing the percentage drop to the guarded mechanism saving time is empirically invalid.
+\begin{itemize}
 
-*   **Incomparable Latency Baselines (Table 15):** Table 15 compares `policy_corey` latencies (1404 ms and 2354 ms) directly against `policy_off` and `policy_static` latencies that are $>5000$ ms. The text (Lines 414–417) explains that the `policy_corey` timings come from a "stabilized benchmark retest" with warmup. In contrast, the table caption explicitly notes that `policy_off` rows "used $n=5$ without explicit warmup (first-call JIT cost included)." Comparing latencies with and without JIT compilation overhead in the same table violates compute parity and invalidates the latency column for relative performance comparisons.
+\item Some tables are overly dense and difficult to read (especially Tables VI–XVIII).
 
-*   **Mathematical Contradiction in Chunk Selection Formula (Eq. 2):** In Section 3.2, Eq. 2 defines chunk selection as $C_{\text{corey}} = \text{clip}(2^{\lfloor \log_2 (C_{\min} + r(C_{\max} - C_{\min})) \rfloor}, C_{\min}, C_{\max})$. For standard-normal inputs with $r = 0.83$ (Line 102), the inner term is $32 + 0.83 \times 480 = 430.4$. The base-2 logarithm is $\approx 8.75$. Taking the floor ($\lfloor 8.75 \rfloor$) yields 8, resulting in $C_{\text{corey}} = 2^8 = 256$. This mathematically contradicts the text (Line 102), Table 1, Table 2, and Table 24, which state that an $r$-value of 0.83 maps to a chunk size of 512. Replacing the floor function with rounding ($\text{round}(\log_2(\dots))$) would map $8.75 \to 9 \implies 512$, aligning the formula with the empirical tables.
+\item The distinction between:
+\begin{itemize}
+    \item isolated kernel timing,
+    \item routed inference timing,
+    \item surrogate timing,
+    \item Python dispatch timing
+\end{itemize}
+is scientifically correct but makes the paper difficult to follow.
 
-*   **Formula Mismatch for Triton Integration (Appendix B.5):** Appendix B.5 (Line 786) provides an explicit formula for mapping entropy to tile size: $T(e) = 32 \cdot \text{round}( (64 + r \cdot (512-64)) / 32 )$. Evaluating this for $r = 0.83$ yields $32 \cdot \text{round}(435.84 / 32) = 32 \cdot \text{round}(13.62) = 32 \cdot 14 = 448$. This contradicts the text immediately following (Line 788), which claims that $r=0.83$ yields `tile = 512`. Additionally, the formula generates multiples of 32 rather than powers of two, conflicting with Equation 2.
+\item Several sections repeat similar conclusions regarding:
+\begin{quote}
+``entropy overhead dominates adaptive benefit''
+\end{quote}
+which could be consolidated.
 
-*   **Decoupled Latency and Speedup Metrics (Table 2 and Table 23):** The `Latency (ms)` and `Speedup` columns for the Consumer GPU in Tables 2 and 23 are mathematically decoupled. The reported latencies (0.101 ms for Static-64 and 0.013 ms for COREY) yield a ratio of $\approx 7.77\times$. However, the reported speedup is $4.41\times$. The $4.41\times$ figure appears to be derived from the end-to-end Python-dispatch benchmark in Table 20 (3.299 ms vs. 0.748 ms). Presenting isolated kernel latencies adjacent to end-to-end speedups without an explicit explanatory note makes the tables mathematically inconsistent.
+\item The manuscript is unusually appendix-heavy relative to the core contribution.
 
-### 2. Minor Corrections and Typos
+\item Some terminology such as:
+\begin{quote}
+``validated diagnostic scaffold''
+\end{quote}
+is somewhat vague and should be made more concrete.
 
-*   **Misleading Row in Table 8:** Table 8 evaluates 8 serving regimes on an RTX 3070, with the first three rows reporting averages around 317 ms. The final row ("Guarded sampled-histogram") reports a latency of 932.9 ms, which a footnote explains is from a single 976-token prompt executed on an H800 GPU. Including a single-prompt, cross-hardware measurement in a column of mixed-regime consumer GPU averages is structurally confusing and breaks tabular comparability.
+\item The paper would benefit from clearer visual figures illustrating:
+\begin{itemize}
+    \item routing behavior,
+    \item entropy distributions,
+    \item scheduling overhead decomposition,
+    \item chunk selection transitions.
+\end{itemize}
 
-*   **Incorrect Table References:** Multiple instances refer to "Table 1 of the main paper" for latency timings (e.g., Line 344 for the 0.057 ms TPU entry, and the Table 33 caption). Table 1 only contains bin-count invariance data; these references should point to Table 2, Table 20, or Appendix Table 23 as appropriate.
+\end{itemize}
 
-*   **Missing Variable Definitions (Appendix B.3):** The equation for the adaptive threshold $\tau_t$ (Line 757) introduces the variables $H_{\min}$ and $H_{\max}$, but these are not defined in the text, leaving the normalization scale ambiguous.
+\subsection*{Questions for the Authors}
 
-### [Limitations, Impact, and Conclusion] (Pages: 8-11, 37-38)
-**1. Potential Mistakes and Improvements:**
+\begin{enumerate}
 
-*   **Missing Code Repository URL:** In the NeurIPS Paper Checklist (Item 6, Page 38), the response states: "[Yes] An anonymized repository URL is provided in the abstract...". However, there is no URL present in the abstract or anywhere else in the paper text.
+\item Can the authors demonstrate a workload where entropy-guided scheduling actually outperforms the best static chunk policy?
 
-*   **Incorrect Table Cross-References (Appendix A.1):** Multiple references to "Table 1 of the main paper" in Appendix A.1 (Page 11) point to incorrect tables.
-    *   Line 341 states: "The main-text calibrated Triton kernel timing for static-512 on RTX 3070 is 0.013 ms (Table 1 of the main paper)." Table 1 (Page 3) contains no latency timings; this 0.013 ms result is actually reported in **Table 2** (Page 5).
-    *   Line 344 states: "...differs from the Colab TPU entry in Table 1 of the main paper (0.057 ms)." Table 1 does not contain a TPU entry. The 0.057 ms TPU timing is reported in Appendix **Table 23** (Page 18).
-    *   The footnote for Table 12 similarly cites "(Table 1 of the main paper)" for the 0.013 ms isolated Triton-kernel timing, which should also be corrected to **Table 2**.
+\item Why is entropy preferable to sequence length if the mixed-regime study shows sequence length alone matches the oracle?
 
-*   **Inconsistent Presentation in Table 42:** The title of Table 42 (Page 37) states that it reports "Mixed-regime equal-weight average latency for four scheduler strategies." However, the fourth variant ("Guarded sampled-hist") was not evaluated on the mixed-regime workload; its value (932.9 ms) is derived from a *single* 976-token prompt on different hardware (H800 PCIe), as explicitly noted in the footnote. Presenting this single-prompt, different-hardware measurement in the same "Avg Lat. (ms)" column under a "Mixed-regime" title contradicts the table's premise and could easily mislead readers at a glance.
+\item How sensitive are the conclusions to:
+\begin{itemize}
+    \item larger Mamba checkpoints,
+    \item Mamba-2,
+    \item RWKV-style recurrence,
+    \item video-oriented SSM architectures?
+\end{itemize}
 
-*   **Numerical Discrepancy (Section 5.5):** In Section 5.5 (Page 8), the text claims that the combined signal achieves a latency reduction "exceeding the 17.5% from arithmetic intensity alone." Based on the surrogate latency values provided in Table 11 (Page 9), the arithmetic-only latency is 83.79 ms and the no-signal baseline is 100.94 ms. The calculated reduction is $(100.94 - 83.79) / 100.94 \approx 16.99\%$, not $17.5\%$. 
+\item Can the routing mechanism operate entirely inside a fused CUDA/Triton kernel without Python dispatch overhead?
 
-**2. Minor Corrections and Typos:**
+\item Is there any realistic deployment scenario where the entropy estimation cost becomes amortized?
 
-*   **Merged Citation Titles:** In the References (Page 10, Lines 331-333), the citation for Yang et al. appears to inadvertently merge the titles of two distinct papers: "Parallelizing linear transformers with the delta rule over sequence length" and "Hardware-efficient linear attention kernels for state-space-like models." Please verify the BibTeX entry.
+\end{enumerate}
+
+\subsection*{Reproducibility}
+
+The reproducibility quality is strong.
+
+The paper provides:
+\begin{itemize}
+    \item implementation details,
+    \item scheduler hyperparameters,
+    \item hardware descriptions,
+    \item timing-layer separation,
+    \item runtime hook definitions,
+    \item workload construction methodology.
+\end{itemize}
+
+The CodeOcean repository link is appreciated and improves transparency.
+
+\subsection*{Final Assessment}
+
+This paper is scientifically honest and technically careful. The authors deserve credit for transparently reporting negative deployment results rather than overstating practical gains.
+
+However, for TCSVT publication standards, the current manuscript still suffers from several issues:
+\begin{itemize}
+    \item limited video-technology relevance,
+    \item lack of positive deployment advantage,
+    \item relatively modest scheduling novelty,
+    \item heavy reliance on negative findings,
+    \item insufficient comparison against stronger adaptive systems baselines.
+\end{itemize}
+
+The work may become substantially stronger if extended toward:
+\begin{itemize}
+    \item long-video inference,
+    \item streaming visual transformers,
+    \item multimodal sequence systems,
+    \item fused-kernel deployment,
+    \item adaptive edge-video acceleration.
+\end{itemize}
+
+At its current stage, I lean toward \textbf{Weak Reject / Borderline Reject}.
