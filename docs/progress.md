@@ -1,6 +1,19 @@
 ﻿# 论文进度
 
-最后更新：2026-05-15（TCSVT submission-facing 文字修订：强化 visual/video token scope，重写 abstract/introduction/contributions/conclusion，减少防御性措辞；不改实验结果，合并 PDF 仍为 14 页，独立 appendix 为 4 页。）
+最后更新：2026-05-18（修复 Weiqi Yan biography 首行与照片未对齐问题；去除多余空行。）
+
+## 2026-05-18 Biography 尺寸恢复（TCSVT 默认）
+
+### 本次修改
+- 在 `paper/main.tex` 删除了对 `IEEEbiography` 环境的手动重定义（含 `\footnotesize` 与照片框尺寸覆写），恢复为 IEEEtran/TCSVT 类默认 biography 字体与版式。
+- 将三位作者头像参数从 `0.72in × 0.90in` 调整回 IEEE 常用默认 `1in × 1.25in`。
+- 根据先前删除代码中的参数，仅恢复 biography 段间距控制：加入 `\def\@IEEEBIOskipN{0.5\baselineskip}`，缩小作者介绍之间空隙，同时保持字体和照片尺寸默认设置不变。
+- 按最新要求恢复了此前删除的完整 `IEEEbiography` 自定义环境代码，并把照片相关参数设置为正常大小（`\@IEEEBIOphotowidth=1in`，`\@IEEEBIOphotodepth=1.25in`），对应三位作者 `\includegraphics` 也保持 `1in × 1.25in`。
+- 修复第三位作者 biography 对齐问题：删除 `\begin{IEEEbiography} ... {Weiqi Yan}` 后的多余空行，使 `Weiqi Yan is with ...` 首行与头像区域按同一基线起始，避免正文整体下沉。
+
+### 构建验证
+- `paper\build.bat` 首段 `latexmk` 因本机缺少 Perl 提示失败，但脚本 fallback 的 `pdflatex/bibtex` 链路可成功生成 `paper/main.pdf`。
+- 日志未出现 biography 环境错误，也无头像缺失错误。
 
 ## 2026-05-15 TCSVT 投稿前文字修订（scope + framing）
 
