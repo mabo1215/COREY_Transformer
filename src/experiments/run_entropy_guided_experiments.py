@@ -114,7 +114,7 @@ class TileTraceRow:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run entropy-guided fusion experiments.")
-    parser.add_argument("--output-dir", type=Path, default=Path("src/outputs"))
+    parser.add_argument("--output-dir", type=Path, default=Path("/results"))
     parser.add_argument("--tau", type=float, default=0.52)
     parser.add_argument("--repeats", type=int, default=5)
     return parser.parse_args()
