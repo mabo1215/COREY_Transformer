@@ -1,6 +1,53 @@
 ﻿# 论文进度
 
-最后更新：2026-05-02（正文补页完成：按作者要求将重要附录表回迁正文以吃满 9 页；当前状态为正文 9 页 + 附录 28 页 + checklist 1 页，编译通过，可进入投稿准备阶段。）
+最后更新：2026-06-05（venue 定稿 = **IEEE TPDS**。作者就 scope-fit 选择 Path B：维持现有 negative result、改投系统会刊 IEEE TPDS；论文已从一度的 TDSC compsoc 重定位回退为 IEEE TPDS 双栏格式，`docs/revision_suggestions.tex` 已按 IEEE TPDS 要求重写，`paper/build.bat` 编译通过，0 error。）
+
+## 2026-06-05 venue 定稿：IEEE TPDS（Path B 落地，回退 TDSC 重定位）
+
+### 已全部修改
+1. **scope-fit 决策落地**：作者在 `## 遗留问题` 回答 `Path B 投稿 IEEE TPDS`，并要求 `docs/revision_suggestions.tex` 按 IEEE TPDS（而非 TDSC）要求重写。据此：
+   - `USAGE.md` 目标 venue 改为 `IEEE Transactions on Parallel and Distributed Systems (IEEE TPDS)`。
+   - `paper/main.tex` 由一度的 TDSC compsoc 形态回退为 IEEE TPDS：`\documentclass[journal]{IEEEtran}`；`\markboth`/`\thanks` 改回 TPDS 双盲；撤销 compsoc 专用结构（`\IEEEtitleabstractindextext` / `\IEEEdisplaynontitleabstractindextext` / `\IEEEraisesectionheading`），恢复 `\maketitle`→abstract→`\IEEEkeywords`→`\IEEEpeerreviewmaketitle`→`\section{Introduction}`+`\IEEEPARstart` 的标准 IEEE 期刊结构。
+   - 撤销为 TDSC 所做的 dependability 重定位：摘要、关键词、Contributions 中“output preservation = dependability 保证”等措辞还原为原性能取向表述（科学内容、数值、结论完全不变）。
+   - `docs/revision_suggestions.tex` 覆盖重写为 **IEEE TPDS** venue 驱动评审（EIC + 3 Reviewer + Devil's Advocate）：scope 判定为契合，聚焦测量公平性（warmup parity）、公式与实现一致性（Eq.(2) round/floor、tile 448 vs 512）、结论可泛化性（Mamba-2/更宽负载/regime 边界）、与并行扫描/autotuning/dynamic-dispatch 的定位，以及 TPDS 投稿格式 checklist；文件可独立编译（pdflatex，EXIT=0）。
+2. **保留的 venue 无关收益**：两栏宽表适配（`table*` / `\resizebox`）、IEEE 引用（`\citep`→`\cite` + `IEEEtran` bib）、删除 NeurIPS checklist、`\appendices`、附录宽表/宽公式 `\resizebox` 收口等均予保留（对 TPDS 同样适用）。
+
+### 编译验证
+- `paper/build.bat`：`EXITCODE=0`，`[build] Done.`；`main.pdf`（23 页）+ `appendix.pdf` 生成，main/appendix_only 日志 **0 个 LaTeX error**，无 undefined ref/citation。
+- overfull \hbox：1 处（附录行内集合 `\(\{1024,...,65536\}\)`，约 32.95pt，cosmetic）。
+- `docs/revision_suggestions.tex` 独立编译通过（pdflatex，EXIT=0）。
+
+### 历史记录（已被本条目取代的中间态）
+> 2026-06-05 早些时候曾按用户初始指令把 venue 迁到 IEEE TDSC 并完成 compsoc 格式化与 TDSC 独立评审；随后用户确认 scope 不匹配并改选 Path B（IEEE TPDS），上述 TDSC 中间态已按本条目回退。以下为当时的迁移记录，仅作留痕。
+
+## 2026-06-05 目标 venue 迁移：NeurIPS 2026 → IEEE TDSC（已回退，留痕）
+
+### 已全部修改
+1. **venue 配置**：`USAGE.md` 的 `目标会议或期刊` 改为 `IEEE Transactions on Dependable and Secure Computing (IEEE TDSC)`。
+2. **论文模板迁移（`paper/main.tex`）**：
+   - 由 `\documentclass{article}` + `template/neurips_2026.sty` 迁移到 IEEE 期刊模板；最终采用 TDSC 所用的 IEEE Computer Society 双栏格式 `\documentclass[10pt,journal,compsoc]{IEEEtran}`。
+   - 标题页改为 IEEE 形式：`\title`（两行）、双盲 `\author{Anonymous Author(s)}` + TDSC `\thanks`、`\markboth` 改为 TDSC 页眉；保留 camera-ready 真实作者块（注释态）。
+   - 摘要/关键词改用 compsoc 结构：`\IEEEtitleabstractindextext{...}` + `\maketitle` + `\IEEEdisplaynontitleabstractindextext` + `\IEEEpeerreviewmaketitle`；Introduction 用 `\IEEEraisesectionheading` + `\IEEEPARstart`。
+   - 关键词重写为 dependability 取向（dependable ML inference、output-preserving runtime adaptation、correctness/determinism、workload-shift robustness 等）。
+   - 引用体系由 natbib 改为 IEEE：`\citep` → `\cite`，`\bibliographystyle{plainnat}` → `\bibliographystyle{IEEEtran}`（`paper/appendix.tex` 的 `\citep` 同步替换）。
+   - 删除 NeurIPS 专用 Paper Checklist；`\appendix` → `\appendices`。
+   - 如实把“passive vs routed 逐位一致”的 output preservation 重定位为 dependability 保证（摘要 + contributions 各加一句，未改任何数值与结论）。
+3. **两栏排版适配**：
+   - 正文宽表（bin-invariance、perturbation、mixed-regime、quality、scheduler-oracle）改为 `table*` 全宽跨栏；窄表（kernel-summary、inline-overhead）用 `\resizebox{\columnwidth}` 收口；chunk 选择公式 Eq.(2) 用 `\resizebox` 防溢出。
+   - 附录 13 张未包裹的宽表统一用 `\resizebox{\linewidth}` 包裹（脚本按行号自底向上插入）；附录两条过宽行内/行间公式用 `\resizebox` 收口。
+4. **构建脚本（`paper/build.bat`）**：standalone appendix 包装器由 NeurIPS 模板改为 `IEEEtran[journal]` + `IEEEtran` bib 风格 + `\appendices`。
+5. **独立评审（`docs/revision_suggestions.tex`）**：按规则覆盖重写为 **IEEE TDSC** venue 驱动评审（EIC + 3 Reviewer + Devil's Advocate 5-Reviewer），以 scope-fit 为决定性问题，给出 Path A（为 TDSC 重构）/ Path B（改投系统会刊）两条路线与逐节 revision roadmap、TDSC 投稿格式 checklist；文件可独立编译（pdflatex，5 页，EXIT=0）。
+
+### 编译验证
+- `paper/build.bat`：`EXITCODE=0`，`[build] Done.`；`main.pdf`（23 页）与 `appendix.pdf` 均生成，main 与 appendix_only 日志 **0 个 LaTeX error**。
+- overfull \hbox：由迁移初期 20 个降到 1 个（附录一处 32.95pt 行内数学列表，cosmetic，可忽略）。
+- 引用：IEEEtran.bst 解析正常，无 undefined reference / citation。
+- `docs/revision_suggestions.tex` 独立编译通过（5 页 PDF）。
+
+### 未修改或部分修改
+- **TDSC scope-fit 抉择（Path A vs Path B）**：属作者科学方向决策，已在文末「遗留问题」列出待答；在作者选定前不擅自新增 security/dependability 实验或改写论文主线，仅完成无歧义的格式化与如实重定位。
+- **附录残留 1 处 32.95pt overfull**（行内集合 `\(\{1024,...,65536\}\)`）：cosmetic，未强行拆分以免影响可读性；如需消除可后续处理。
+
 
 ## 2026-05-04 Checklist 英文语病微调（main）
 
@@ -1183,6 +1230,8 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 遗留问题
 
-（无。所有 actionable 项已落地；Stage 9 决策已消费（作者选择不进入）；论文可进入投稿准备阶段。）
+（无未决问题。2026-06-05 的 scope-fit 抉择已由作者拍板：选择 **Path B → 改投 IEEE TPDS**，并要求 `docs/revision_suggestions.tex` 按 IEEE TPDS 要求重写；该决策已落地，详见 `## 已全部修改` 顶部「2026-06-05 venue 定稿：IEEE TPDS」条目。NeurIPS 轮次 actionable 项早已落地，Stage 9 决策此前已消费。）
 
+
+The examination of this paper indicates that, despite the interesting concept, the proposed method is not adequately compared with recent literature. The literature review is relatively brief and primarily based on works published before 2025, with the exception of [16–17], which are well-recognized and have each been cited more than 20 times. 
 
