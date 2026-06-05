@@ -1,29 +1,29 @@
-May 15, 2026
+June 5, 2026
 
 Editor-in-Chief
-IEEE Transactions on Circuits and Systems for Video Technology
+IEEE Transactions on Parallel and Distributed Systems
 
 Dear Editor-in-Chief,
 
-We are pleased to submit our manuscript entitled "COREY: Entropy-Guided Runtime Chunk Scheduling for Selective Scan Kernels" for consideration as a regular paper in the IEEE Transactions on Circuits and Systems for Video Technology.
+We are pleased to submit our manuscript entitled "COREY: Entropy-Guided Runtime Chunk Scheduling for Selective Scan Kernels" for consideration as a regular paper in the IEEE Transactions on Parallel and Distributed Systems (TPDS).
 
-Selective state space models such as Mamba provide linear-time sequence modeling, but their selective-scan kernels remain sensitive to runtime scheduling choices such as chunk size and kernel-launch granularity. This manuscript presents COREY, an entropy-guided runtime scheduling prototype that studies whether fixed-bin activation entropy can serve as a low-cost signal for selecting selective-scan chunk sizes. The work is deliberately framed as a concept-and-feasibility study: it validates output-preserving runtime scheduling and reports both positive kernel-level evidence and a clean end-to-end negative result against a strong static oracle.
+Selective state space models such as Mamba provide linear-time sequence modeling, but their selective-scan GPU kernels remain highly sensitive to runtime scheduling choices such as chunk size and per-call kernel-launch granularity, which can change end-to-end latency by an order of magnitude even when the model's mathematical computation is fixed. This manuscript presents COREY, an entropy-guided runtime scheduler that studies whether a low-cost activation statistic (fixed-bin entropy) can replace offline per-shape profiling for selecting selective-scan chunk sizes on modern accelerators. The work is deliberately framed as a concept-and-feasibility study: it validates output-preserving runtime scheduling and reports both positive kernel-level evidence and a rigorous end-to-end negative result against a well-tuned static oracle.
 
 The main contributions of the manuscript are:
 
 1. A calibrated entropy-to-chunk rule using the normalized signal H/log K, which removes histogram-bin sensitivity and reproduces the offline static-chunk oracle at the kernel level.
 
-2. A real-checkpoint inline scheduling hook and patched live scan path that measure the true cost of runtime feature extraction inside the prefill critical path.
+2. A real-checkpoint inline scheduling hook and a patched live scan path that measure the true cost of runtime feature extraction inside the prefill critical path across consumer, server-class, and data-center GPUs.
 
-3. A unified routed ablation showing that the best static chunk outperforms entropy-guided and proxy-based adaptive variants on the measured workloads, while guarded and sequence-length-keyed policies reduce but do not eliminate online scheduling overhead.
+3. A unified routed ablation showing that the best static chunk outperforms entropy-guided and proxy-based adaptive variants on the measured workloads, with a clean decomposition of decision quality versus decision cost; guarded and sequence-length-keyed policies reduce but do not eliminate online scheduling overhead.
 
 4. An 80-prompt LongBench quality-preservation study showing bitwise-identical greedy generations and zero metric deltas between passive and routed inference paths.
 
 5. A mixed-regime workload analysis showing that a simple sequence-length rule matches the per-regime chunk oracle for the evaluated serving mixture, clarifying when entropy-guided routing is useful and when it is redundant.
 
-We believe the manuscript is suitable for TCSVT because it addresses efficient inference for modern sequence models, GPU-aware runtime scheduling, and quality-preserving acceleration mechanisms. Importantly, the paper reports limitations and negative results explicitly: COREY is validated as a scheduling scaffold and diagnostic mechanism, not as a deployment-grade replacement for static chunk tuning on current measured Mamba-1.x checkpoint workloads. We expect this careful accounting to be useful to researchers and practitioners working on efficient long-context inference systems.
+We believe the manuscript is well suited to TPDS because it concerns parallel and accelerator-level systems: GPU kernel scheduling and tiling, runtime adaptivity inside the inference critical path, and reproducible performance characterization of memory-bound workloads across multiple GPU classes. Importantly, the paper reports limitations and negative results explicitly: COREY is validated as a scheduling scaffold and diagnostic mechanism, not as a deployment-grade replacement for static chunk tuning on current measured Mamba-1.x checkpoint workloads. We believe this careful and honest accounting, including a clean negative result and an explicit regime boundary that separates when runtime adaptation helps from when static tuning suffices, is valuable to the parallel and distributed systems community working on efficient long-context inference.
 
-This manuscript is original, has not been published previously, and is not under consideration for publication elsewhere. All authors have approved the submission. To the best of our knowledge, there are no conflicts of interest that would affect the review process. The code and data associated with the manuscript are provided through the anonymous repository link included in the paper.
+This manuscript is original, has not been published previously, and is not under consideration for publication elsewhere. All authors have approved the submission. To the best of our knowledge, there are no conflicts of interest that would affect the review process. In compliance with the double-blind review policy of TPDS, the submitted manuscript and the supplementary source code are anonymized, and the code and data are provided through an anonymized repository link for review.
 
 Thank you for considering our submission. We look forward to receiving the reviewers' comments.
 
@@ -32,7 +32,7 @@ Sincerely,
 Bo Ma
 on behalf of all authors
 
-Bo Ma, Wei Qi Yan, Jinsong Wu
+Bo Ma, Weiqi Yan, Jinsong Wu
 Auckland University of Technology
 Auckland 1010, New Zealand
 Email: rcn4743@aut.ac.nz

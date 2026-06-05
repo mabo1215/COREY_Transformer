@@ -1,6 +1,18 @@
 # 论文进度
 
-最后更新：2026-06-05（venue 定稿 = **IEEE TPDS**。作者就 scope-fit 选择 Path B：维持现有 negative result、改投系统会刊 IEEE TPDS；论文已从一度的 TDSC compsoc 重定位回退为 IEEE TPDS 双栏格式，`docs/revision_suggestions.tex` 已按 IEEE TPDS 要求重写，`paper/build.bat` 编译通过，0 error。）
+最后更新：2026-06-05（评审回应：按 reviewer 意见补强 Related Work 的近期文献对比，新增 6 篇经核实的 2024–2025 文献并显式对比，`paper/build.bat` 0 error / 0 undefined citation；venue 维持 IEEE TPDS。）
+
+## 2026-06-05 评审回应：补强 Related Work 近期文献对比（2024–2025）
+
+### 已全部修改
+- **评审意见**：reviewer 指出文献综述偏简短、主要基于 2025 年之前的工作，缺少与近期文献的充分对比。
+- **处理**（`paper/main.tex` Related Work + `paper/ref.bib`）：
+  - 新增 6 篇经核实的近期文献（均通过 web 检索 + arXiv 作者页核对作者/标题/年份，未杜撰引用）：
+    - 2025：Quamba2（ICML'25，arXiv:2503.22879）、LightMamba（FPGA 量化软硬协同，arXiv:2502.15260）、SpecMamba（FPGA 投机解码，arXiv:2509.19873）
+    - 2024：Vision Mamba（ICML'24）、VMamba（NeurIPS'24）、VideoMamba（ECCV'24）
+  - 在 "Selective state space models" 段补一句：selective-scan 已支撑视觉/视频骨干（Vim/VMamba/VideoMamba），并申明本文用语言 Mamba checkpoint 作为该扫描原语的可复现 proxy（不改 TPDS/systems 定位）。
+  - 新增段落 "Recent SSM acceleration and deployment (2024--2025)"：把 COREY 与近期量化（Quamba/MambaQuant/Quamba2）、软硬件协同（LightMamba）、投机解码（SpecMamba）**显式对比**——它们减少每元素 bit 数或顺序解码步数，但把 scan chunk size 留给离线调参；COREY 正交、专门隔离 chunk-size 杠杆并保持输出逐位不变，以 negative result 界定其何时值得运行时自适应。
+  - 编译核实：`paper/build.bat` EXITCODE=0，main.pdf 23 页，0 error，0 undefined ref/citation，6 条新条目已进入 `.bbl`。
 
 ## 2026-06-05 venue 定稿：IEEE TPDS（Path B 落地，回退 TDSC 重定位）
 
