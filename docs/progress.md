@@ -1,4 +1,4 @@
-﻿# 论文进度
+# 论文进度
 
 最后更新：2026-06-05（venue 定稿 = **IEEE TPDS**。作者就 scope-fit 选择 Path B：维持现有 negative result、改投系统会刊 IEEE TPDS；论文已从一度的 TDSC compsoc 重定位回退为 IEEE TPDS 双栏格式，`docs/revision_suggestions.tex` 已按 IEEE TPDS 要求重写，`paper/build.bat` 编译通过，0 error。）
 
@@ -1225,8 +1225,10 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 未修改或部分修改（最新 `docs/revision_suggestions.tex`）
 
-- 【部分完成 — cosmetic only】Theorem numbering 一致性：PAT 指出 main 中的 `Theorem 2`（`thm:entropy_informal`）在 appendix 中被编号为 `Theorem 3`（`thm:entropy`），quantization bound 在 appendix 中是 `Theorem 4` 但 main 中没有 Theorem 3。说明：appendix 与 main 是独立编译入口（`appendix_only.pdf`），LaTeX `\newtheorem{theorem}` counter 在 standalone 模式下从 1 重新计数，因此 appendix 的 thm:entropy 实际上是 standalone PDF 中的 Theorem~3（按 `[shared-memory depth bound]`、`[reproduction of doubly-stochastic ...]` 顺序）。若提交方式是 single combined PDF（main+appendix 顺序拼装），编号会自动连续；若提交方式是分开 PDF，则编号本身是各自独立的 1、2、3。所有正文跨引均使用 `\ref{thm:...}` 名字引用，不依赖具体数字。
-  - 当前是否需要作者决策：**否**。仅当目标 venue 强制要求 main 与 appendix 各自独立 self-contained 编号时才需调整，且只是 cosmetic。NeurIPS 2026 不强制。如作者认为有必要，可在 main.tex 中显式写「stated as Theorem~3 in the appendix when compiled standalone」一句，但目前的 `\ref` 引用已能正确解析。
+- 【需要新实验】TCSVT scope 的强回应仍需要 video-oriented Mamba/SSM/VLM、streaming video inference、long-video token scheduling 或 edge-video analytics 实验。目前正文只完成了 scope framing 与 limitation/future-work 说明，不能替代真实视频任务证据。
+- 【需要新实验/实现】更强 adaptive baseline（RL scheduler、hardware-aware autotuner、TVM/XLA-style cost model、CUDA graph specialization、learned latency predictor）尚未加入。当前稿件只明确承认这一限制，并将 negative result 限定在已测的 entropy/proxy/seq-len policy family。
+- 【已缓解但未完全消除】Hadamard 理论仍在 appendix 中保留，正文已明确其被真实 Mamba activations 证伪且不属于 validated contribution；若之后需要更激进回应 reviewer，可进一步移到 supplementary 或压缩。
+- 【排版残留】合并 PDF 编译通过并保持 14 页，但 `main.log` 仍有轻微 appendix float-page overfull vbox；独立 appendix 仍有引用主文标签导致的 expected undefined references。
 
 ## 遗留问题
 

@@ -1,0 +1,38 @@
+May 15, 2026
+
+Editor-in-Chief
+IEEE Transactions on Circuits and Systems for Video Technology
+
+Dear Editor-in-Chief,
+
+We are pleased to submit our manuscript entitled "COREY: Entropy-Guided Runtime Chunk Scheduling for Selective Scan Kernels" for consideration as a regular paper in the IEEE Transactions on Circuits and Systems for Video Technology.
+
+Selective state space models such as Mamba provide linear-time sequence modeling, but their selective-scan kernels remain sensitive to runtime scheduling choices such as chunk size and kernel-launch granularity. This manuscript presents COREY, an entropy-guided runtime scheduling prototype that studies whether fixed-bin activation entropy can serve as a low-cost signal for selecting selective-scan chunk sizes. The work is deliberately framed as a concept-and-feasibility study: it validates output-preserving runtime scheduling and reports both positive kernel-level evidence and a clean end-to-end negative result against a strong static oracle.
+
+The main contributions of the manuscript are:
+
+1. A calibrated entropy-to-chunk rule using the normalized signal H/log K, which removes histogram-bin sensitivity and reproduces the offline static-chunk oracle at the kernel level.
+
+2. A real-checkpoint inline scheduling hook and patched live scan path that measure the true cost of runtime feature extraction inside the prefill critical path.
+
+3. A unified routed ablation showing that the best static chunk outperforms entropy-guided and proxy-based adaptive variants on the measured workloads, while guarded and sequence-length-keyed policies reduce but do not eliminate online scheduling overhead.
+
+4. An 80-prompt LongBench quality-preservation study showing bitwise-identical greedy generations and zero metric deltas between passive and routed inference paths.
+
+5. A mixed-regime workload analysis showing that a simple sequence-length rule matches the per-regime chunk oracle for the evaluated serving mixture, clarifying when entropy-guided routing is useful and when it is redundant.
+
+We believe the manuscript is suitable for TCSVT because it addresses efficient inference for modern sequence models, GPU-aware runtime scheduling, and quality-preserving acceleration mechanisms. Importantly, the paper reports limitations and negative results explicitly: COREY is validated as a scheduling scaffold and diagnostic mechanism, not as a deployment-grade replacement for static chunk tuning on current measured Mamba-1.x checkpoint workloads. We expect this careful accounting to be useful to researchers and practitioners working on efficient long-context inference systems.
+
+This manuscript is original, has not been published previously, and is not under consideration for publication elsewhere. All authors have approved the submission. To the best of our knowledge, there are no conflicts of interest that would affect the review process. The code and data associated with the manuscript are provided through the anonymous repository link included in the paper.
+
+Thank you for considering our submission. We look forward to receiving the reviewers' comments.
+
+Sincerely,
+
+Bo Ma
+on behalf of all authors
+
+Bo Ma, Wei Qi Yan, Jinsong Wu
+Auckland University of Technology
+Auckland 1010, New Zealand
+Email: rcn4743@aut.ac.nz
