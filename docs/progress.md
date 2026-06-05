@@ -1,6 +1,26 @@
 # 论文进度
 
-最后更新：2026-06-05（评审回应：按 reviewer 意见补强 Related Work 的近期文献对比，新增 6 篇经核实的 2024–2025 文献并显式对比，`paper/build.bat` 0 error / 0 undefined citation；venue 维持 IEEE TPDS。）
+最后更新：2026-06-05（正文扩页：将重要 appendix 内容上移到正文，正文吃满 **12 页**；appendix 标题统一改为 **Supplementary**；生成合并版与独立版 PDF 并同步到 `submit/`；`paper/build.bat` 0 error / 0 undefined citation；submit/ 全包 0 身份标识。）
+
+## 2026-06-05 正文扩页到 12 页 + appendix→Supplementary + submit 同步
+
+### 已全部修改
+1. **正文扩页 8 → 12 页**：将以下 appendix 子节上移到正文新节 `\section{Extended Hardware and Calibration Analysis}`（保持 reader-facing，不暴露本地路径）：
+   - Chunk-Size Sweep（static-oracle 曲线，`tab:chunk_sweep`）
+   - Cross-Hardware Kernel-Level Validation（H800 supplement + multi-platform `tab:h800_w1_supplement` / `tab:real-gpu-three-policy`）
+   - $H_{\text{ref}}$ Sensitivity Ablation（`tab:href_ablation`）
+   - Real-Checkpoint Entropy Validation（`tab:real_checkpoint_entropy`）
+   - Kernel-Level CUDA Profile（`tab:cuda_kernel_profile`）
+   - Real-Checkpoint Input-Entropy Distribution（图 `fig:entropy_variance_real` + `tab:entropy_variance_real` 等）
+   - 3 张宽表（multi-platform / href / CUDA profile）改为全栏 `table*`；正文引用从 “Appendix Table~\ref” 改为 “Table~\ref / Section~\ref”，对应 appendix 内容已删除避免重复 label。
+2. **appendix 标题改为 Supplementary**：`main.tex` 加 `\renewcommand{\appendixname}{Supplementary}`；`paper/build.bat` 独立 appendix wrapper 标题改为 `Supplementary Material` 并加同样 renew；正文/附录中所有 “Appendix~\ref / Appendix Table~\ref” 措辞按去向改为 “Section/Table”（已上移）或 “Supplementary”（仍在附录）。两文件 “Appendix” 字面量均为 0。
+3. **双盲源码清理**：从仓库 `paper/main.tex` 删除注释态 camera-ready 作者块与 github 链接，使 build.bat 自动同步到 `submit/MainManuscript` 的源码保持匿名。
+4. **编译与同步**：`paper/build.bat` 生成合并版 `main.pdf`（24 页 = 正文 12 + Supplementary 12）与独立版 `appendix.pdf`，并自动同步到 `submit/MainManuscript`、`submit/LaTeXSupplementaryFile`。
+
+### 验证
+- `paper/build.bat` `EXITCODE=0`；main 与 appendix_only 均 0 error、0 undefined ref/citation；仅 1 处 cosmetic overfull。
+- 正文末页标记法实测正文 = **12 页**（核对后已移除临时标记）。
+- `submit/` 四folder（MainManuscript / LaTeXSupplementaryFile / Image / SupplementaryMaterialForReview）全包匿名扫描 **0 身份标识**。
 
 ## 2026-06-05 评审回应：补强 Related Work 近期文献对比（2024–2025）
 
