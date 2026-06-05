@@ -1,6 +1,23 @@
 # 论文进度
 
-最后更新：2026-06-05（正文扩页：将重要 appendix 内容上移到正文，正文吃满 **12 页**；appendix 标题统一改为 **Supplementary**；生成合并版与独立版 PDF 并同步到 `submit/`；`paper/build.bat` 0 error / 0 undefined citation；submit/ 全包 0 身份标识。）
+最后更新：2026-06-06（`paper/build.bat` 现产出三个 PDF：`main.pdf`(仅正文,12页) / `main_combine.pdf`(合并,24页) / `appendix.pdf`(独立 Supplementary)，正文版用 xr 解析附录交叉引用，全部 0 error / 0 undefined，并自动同步到 `submit/`。）
+
+## 2026-06-06 build.bat 三件套编译（正文/合并/附录）+ 自动同步 submit
+
+### 已全部修改
+- **`paper/main.tex` 增加编译开关**：用 `\ifdefined\BODYONLYMODE` 控制是否内联附录。
+  - 命令行 `\def\BODYONLYMODE{}` → 仅正文；通过 `xr-hyper` + `\externaldocument{build/appendix_only}` 解析对附录的交叉引用（正文 PDF 不含附录页，但引用编号正确）。
+  - 默认（不定义）→ 正文 + 附录合并。
+- **`paper/build.bat` 改为产出三个 PDF 并自动拷贝**：
+  - `main.pdf` = 仅正文（12 页，xr 解析附录引用，0 undefined）。
+  - `main_combine.pdf` = 正文+附录合并（24 页）。
+  - `appendix.pdf` = 独立 Supplementary（13 页）。
+  - 编译顺序：先 appendix_only（产生 `build/appendix_only.aux` 供 xr），再 body-only main，最后 combined。
+  - `sync_submit` 同步：`submit/MainManuscript`（main.pdf + main_combine.pdf + 源码 + main.bbl 用 combined 的超集）、`submit/LaTeXSupplementaryFile`（appendix.pdf + 独立 wrapper + 源码）。
+
+### 验证
+- `paper/build.bat` `EXITCODE=0`；main / main_combine / appendix_only 三者 0 LaTeX error；main、main_combine 均 0 undefined ref/citation；appendix_only 的 7 个 undefined 是独立编译时对正文标签的预期引用。
+- `submit/MainManuscript` 含 main.pdf（12 页正文）与 main_combine.pdf（24 页合并）。
 
 ## 2026-06-05 正文扩页到 12 页 + appendix→Supplementary + submit 同步
 
