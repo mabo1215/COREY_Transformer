@@ -1,213 +1,133 @@
-\section*{Final Pre-Submission Check for AAAI 2027}
+\section*{Final AAAI 2027 Submission Check}
 
-\subsection*{Overall Verdict}
+\subsection*{Decision}
 
-This version is substantially improved and is close to submission-ready.
-The main-paper format appears acceptable for AAAI 2027: the paper is
-anonymous, uses US Letter size, embeds Type-1 fonts, and has 8 pages
-with references on the final page. The supplementary material rendering
-issues observed in the previous version have also been fixed.
+This version is submission-ready for AAAI 2027 after one final global
+typo cleanup. The main paper now has a consistent conservative framing:
+COREY is presented as a quality-preserving runtime scheduling diagnostic,
+not as a deployment-grade speedup over the best static chunk. The abstract
+also correctly separates the calibrated consumer/server GPU result from the
+H800 legacy-reference and routed end-to-end results.
 
-\textbf{Recommendation:} submit after fixing the following three minor
-but important consistency issues. If the deadline is very tight, the paper
-is still submitable, but the first issue below should ideally be fixed before
-upload because it affects the interpretation of the main empirical claim.
+\paragraph{Final verdict.}
+Yes, the paper can be submitted to AAAI 2027 after applying the small
+typo fix below.
 
-\subsection*{Must-Fix 1: Abstract Still Overstates the Data-Center Calibrated Result}
-
-The abstract currently says that the calibrated rule
-\[
-H_{\mathrm{ref}}=\log K
-\]
-matches the one-time-profile static oracle and achieves
-\[
-4.41\times
-\]
-on a consumer GPU and
-\[
-3.90\text{--}4.04\times
-\]
-on a data-center accelerator.
-
-This is potentially confusing because the H800/data-center rows reported
-as \(3.90\text{--}4.04\times\) are now described in the paper as a
-\emph{legacy-reference} \(H_{\mathrm{ref}}=8.0\) diagnostic, not as the
-submitted calibrated default. The calibrated default is cleanly shown for
-the consumer GPU and server-class GPU in Table 5, but the H800 Table 4
-row is explicitly legacy and does not collect the calibrated chunk-512
-COREY point as a COREY row.
-
-\paragraph{Recommended abstract replacement.}
-
-Replace the current abstract sentence:
-
-\begin{quote}
-At the kernel level, the calibrated rule (\(H_{\mathrm{ref}}=\log K\))
-selects the locally optimal chunk size and matches a one-time-profile
-static oracle, achieving \(4.41\times\) lower latency than the unoptimized
-baseline on a consumer GPU and \(3.90\text{--}4.04\times\) on a
-data-center accelerator.
-\end{quote}
-
-with the safer version:
-
-\begin{quote}
-At the kernel level, the calibrated rule
-(\(H_{\mathrm{ref}}=\log K\)) selects the locally optimal chunk size
-and matches a one-time-profile static oracle on the measured
-consumer and server-class GPU sweeps, achieving \(4.41\times\)
-and \(3.55\times\) lower latency than the Static-64 baseline,
-respectively. H800 measurements are reported separately as a
-legacy-reference sensitivity diagnostic and as the platform for the
-routed end-to-end ablation.
-\end{quote}
-
-\paragraph{Even shorter abstract-safe version.}
-
-If space is tight, use:
-
-\begin{quote}
-At the kernel level, the calibrated rule
-(\(H_{\mathrm{ref}}=\log K\)) selects the locally optimal chunk size
-and matches a one-time-profile static oracle on the measured
-consumer and server-class GPU sweeps, while H800 routed
-end-to-end inference remains performance-negative due to online
-scheduling overhead.
-\end{quote}
-
-\subsection*{Must-Fix 2: Remove Remaining \texttt{dinner} Typos}
+\subsection*{Must-Fix Before Upload: Replace Remaining \texttt{dinner} Typos}
 
 There are still several occurrences of \texttt{dinner} in the main paper
-and supplementary material. These are obvious typographical artifacts
-and should be fixed before submission.
+and supplementary material. These are obvious typographical artifacts and
+should be fixed before submission.
 
-\paragraph{Required replacement.}
+\paragraph{Required global replacement.}
 
-Globally replace:
-
+Replace all occurrences of:
 \begin{verbatim}
 dinner
 \end{verbatim}
 
 with:
-
 \begin{verbatim}
 d_{\mathrm{inner}}
 \end{verbatim}
 
-or, in code-style text,
-
+or, in code-style text:
 \begin{verbatim}
 d_inner
 \end{verbatim}
 
-\paragraph{Examples to fix.}
+\paragraph{Examples.}
 
+Replace:
 \begin{quote}
-\(\texttt{dinner}=1024\)
+\texttt{batch=1, dinner=1024, dstate=16}
 \end{quote}
 
-should become:
-
+with:
 \begin{quote}
-\(d_{\mathrm{inner}}=1024\)
+\texttt{batch=1, d\_inner=1024, dstate=16}
 \end{quote}
 
-and
-
+Replace:
 \begin{quote}
-\(u \in \mathbb{R}^{B\times \texttt{dinner}\times L}\)
+\(u \in \mathbb{R}^{B\times \texttt{dinner}\times L}\),
+\(\texttt{dinner}=2048\)
 \end{quote}
 
-should become:
-
+with:
 \begin{quote}
-\(u \in \mathbb{R}^{B\times d_{\mathrm{inner}}\times L}\).
+\(u \in \mathbb{R}^{B\times d_{\mathrm{inner}}\times L}\),
+\(d_{\mathrm{inner}}=2048\).
 \end{quote}
 
-\subsection*{Must-Fix 3: Fix Appendix Figure 2 Caption Bucket Description}
+\subsection*{Optional Risk Note 1: Checklist 4.12}
 
-The appendix now correctly says in Table 18 that the 80 LongBench prompts
-map to a single bucket under both references: chunk 256 under the legacy
-reference and chunk 512 under the calibrated default. However, the Figure 2
-caption still says the distribution is entirely within the chunk-256 band.
-That is only true for the legacy mapper and can conflict with the submitted
-default \(H_{\mathrm{ref}}=\log K\).
+The reproducibility checklist still answers \texttt{no} for statistical
+significance testing. This is acceptable because the paper does not claim
+statistically significant speedups for small differences such as
+\(+0.7\%\), \(+1.3\%\), or \(-0.14\%\). The current paper already frames
+these as diagnostic overhead measurements rather than significant
+improvements.
 
-\paragraph{Recommended caption replacement.}
-
-Replace the final part of the Figure 2 caption with:
-
-\begin{quote}
-The empirical distribution is narrow and maps to a single coarse bucket
-under both references: chunk 256 under the legacy \(H_{\mathrm{ref}}=8.0\)
-mapper and chunk 512 under the submitted calibrated
-\(H_{\mathrm{ref}}=\log K\) mapper. Thus the real-checkpoint workload
-does not exercise broad prompt-level chunk switching, regardless of
-which reference is used.
-\end{quote}
-
-\subsection*{Optional but Recommended: Clarify Table 4 in Section 5.1}
-
-The main text currently discusses the H800 Table 4 result near the
-calibrated default discussion. Because Table 4 is now explicitly labeled
-as legacy \(H_{\mathrm{ref}}=8.0\), it is safer to make this distinction even
-more explicit.
-
-\paragraph{Suggested replacement paragraph for the Table 4 discussion.}
-
-\begin{quote}
-The H800 W1 supplement in Table 4 is retained as a legacy-reference
-sensitivity diagnostic rather than as a calibrated-default COREY row.
-It shows that the older \(H_{\mathrm{ref}}=8.0\) setting under-selects
-chunk 256 while the measured Static-512 row is the per-device static
-oracle. We therefore use Table 4 to validate the monotone
-chunk--latency trend on H800, not to claim a calibrated COREY
-oracle match on that device.
-\end{quote}
-
-\subsection*{Checklist Status}
-
-The reproducibility checklist is acceptable but still has two visible
-risk points:
-
-\begin{enumerate}
-    \item Item 4.12 is answered \texttt{no} for statistical significance tests.
-    \item Item 4.13 is answered \texttt{partial} for final hyperparameters.
-\end{enumerate}
-
-These are not fatal as long as the paper does not claim statistically
-significant speedups for small deltas such as \(+0.7\%\), \(+1.3\%\), or
-\(-0.14\%\). The current main text already states that the smallest
-individual deltas are not claimed to be statistically significant, which
-is appropriate.
-
-\paragraph{Optional checklist-safe statement.}
-
-If space permits, add this sentence near Table 7 or in the limitations:
+\paragraph{Optional sentence to keep near Table 7 or in Limitations.}
 
 \begin{quote}
 We report small latency differences as diagnostic overhead measurements
-rather than as statistically significant improvements; the main empirical
+rather than statistically significant improvements; the main empirical
 conclusion is the consistent negative ordering of adaptive variants
 relative to the best static chunk.
 \end{quote}
 
-\subsection*{Final Submission Decision}
+\subsection*{Optional Risk Note 2: Checklist 4.13}
 
-After the three fixes above, the paper is ready to submit to AAAI 2027.
+The checklist still answers \texttt{partial} for final hyperparameters.
+This is not a submission blocker because the supplementary material lists
+the main scheduler defaults, hardware stacks, warmup counts, repeat counts,
+and benchmark configurations. However, if there is space in the appendix,
+it would be safer to add one compact table titled
+\textit{Final Submitted Scheduler Hyperparameters}.
 
-\paragraph{Submission readiness summary.}
+\paragraph{Optional table.}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+Parameter & Submitted value \\
+\midrule
+Histogram bins \(K\) & 256 for checkpoint hook; 64 for prototype \\
+Entropy reference & \(H_{\mathrm{ref}}=\log K\) \\
+Minimum chunk & 32 \\
+Maximum chunk & 512 \\
+Chunk discretization & nearest power of two \\
+Guard fallback chunk & 512 \\
+Guard margin & 2 power-of-two buckets \\
+Learned-table rule & chunk 128 if prompt length \(\le 50\), else 512 \\
+Decode length & 32 tokens unless otherwise stated \\
+Quality check decode length & 8 greedy tokens \\
+Random seed & 7 where stochastic prototype sampling is used \\
+\bottomrule
+\end{tabular}
+\caption{Final submitted scheduler hyperparameters. Legacy
+\(H_{\mathrm{ref}}=8.0\) rows are retained only as sensitivity diagnostics
+and are not part of the submitted default policy.}
+\end{table}
+
+\subsection*{Submission Readiness Summary}
 
 \begin{enumerate}
-    \item Main-paper format: acceptable.
+    \item Main paper page count: acceptable.
+    \item References-only final page: acceptable.
     \item Anonymous submission: acceptable.
-    \item Page count: acceptable.
-    \item Negative-result framing: acceptable and now clearer.
-    \item Supplementary layout: acceptable after the latest fixes.
-    \item Remaining edits: minor consistency/typo fixes only.
+    \item PDF page size and embedded fonts: acceptable.
+    \item Main claim: now conservative and internally consistent.
+    \item H800 vs calibrated-default distinction: fixed.
+    \item Supplementary layout: acceptable.
+    \item Reproducibility checklist: acceptable, with known non-blocking
+    \texttt{no}/\texttt{partial} items.
+    \item Remaining required edit: globally replace \texttt{dinner}.
 \end{enumerate}
 
-\textbf{Final verdict:} Yes, this version can be submitted to AAAI 2027
-after fixing the abstract/H800 wording, replacing \texttt{dinner}, and
-updating the Figure 2 bucket caption.
+\textbf{Final recommendation:} fix the \texttt{dinner} typo globally,
+recompile once, check that the main PDF remains 8 pages, then submit.
