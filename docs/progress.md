@@ -1,16 +1,34 @@
 ﻿# 论文进度
 
-最后更新：2026-07-04（第二轮：按最新 `docs/revision_suggestions.tex`「AAAI 2027 投稿前终检」完成全部 3 个 Must-Fix 与 2 个可选建议；正文重新精确锁定 7 页整、References 独占第 8 页；详见「2026-07-04（续）投稿前终检修复 + 正文回压 7 页整」条目。上一轮记录：继续按 `docs/revision_suggestions.tex` 检查当前 `paper/main.tex` 与 `paper/appendix.tex`。已将主文标题改为 `COREY: A Runtime Scheduling Diagnostic for Selective Scan Kernels`，与负结果/diagnostic framing 对齐；已同步 legacy `H_ref=8.0` 与默认 `H_ref=\log K` 的叙事，明确 legacy chunk-256 结果只作为敏感性/诊断结果；清理 appendix 中不适合最终匿名稿的仓库/过程措辞；统一 theorem/proposition 编号：appendix 熵定理为 Theorem 2、量化稳定性为 Proposition 1；全面渲染审计 main/appendix 后修复 appendix 表格排版与独立 bibliography：`paper/build.bat` 现在为 appendix wrapper 使用 `\bibliography{ref}` 并在 bibliography 前 `\clearpage` 清空浮动体；Table 23/24/25 已从跨栏整页/半空页改为紧凑单栏非浮动表，去掉 Table 25 后强制换页；Table 27/28 也已改为紧凑单栏非浮动表，Table 28 脚注并入表格宽度内。AAAI 模板恢复后已实跑 `paper/build.bat`：`paper/main.pdf` 成功生成 8 页，正文刚满 7 页、References 从第 8 页开始；`appendix.pdf` 成功生成 19 页，References 位于最后一页且不再为空；`main.log` 和 `appendix_only.log` 均无 Overfull hbox、无 undefined reference/citation、无空 bibliography。)
+最后更新：2026-07-04（第三轮：按当前 `docs/revision_suggestions.tex` 的最终 Must-Fix，彻底清理生成 PDF 文本抽取中的 `dinner` 残留。`paper/main.tex` 与 `paper/appendix.tex` 中会被抽取成 `dinner` 的 `d_{\text{inner}}` / `d_{\mathrm{inner}}` / `d_\text{inner}` 配置与维度说明已改为 `d_inner` 文本式写法；重新构建后 `main.pdf` 仍为 8 页、`appendix.pdf` 仍为 19 页，最终日志无 fatal、undefined、Overfull hbox；PyPDF 抽取验证两份 PDF 均 `dinner=False`、`d_inner=True`。上一轮记录：按最新 `docs/revision_suggestions.tex`「AAAI 2027 投稿前终检」完成全部 3 个 Must-Fix 与 2 个可选建议；正文重新精确锁定 7 页整、References 独占第 8 页；详见「2026-07-04（续）投稿前终检修复 + 正文回压 7 页整」条目。)
 
 ## 遗留问题（当前状态，唯一权威版本——文件后半段历史条目里的同名旧章节均已过期，不再代表当前状态）
 
-需要你决策：
-1. **双盲匿名 vs camera-ready 真实作者信息**：`paper/main.tex` 目前仍是 `\usepackage[submission]{aaai2027}` + `\author{Anonymous Submission}` 占位符。如果 AAAI 2027 这次投稿已到 camera-ready 阶段、或本轮不要求双盲，需要你提供真实作者顺序、单位、corresponding author 信息，我再切换为非匿名 `\author`/`\affiliations` 并去掉 `[submission]` 选项。
-2. **提交前的单文件打包问题**：AAAI 官方规则通常要求最终提交是单一 `.tex`/单一 PDF；当前 `main.tex` 和 `appendix.tex` 是完全独立编译的两份文档（`main.tex` 里没有 `\input{appendix}`，也没有 `\appendix` 命令），`main.pdf` 只有正文 7 页 + references 第 8 页，`appendix.pdf` 是单独的 supplementary 文档。需要你确认这一届 AAAI 2027 投稿系统是否允许"正文 PDF + 单独 supplementary PDF"两文件提交；如果不允许，需要把 `appendix.tex` 内容手动内联进 `main.tex` 合并成单一文件（我可以代做，但需要你先确认官方规则，避免做完又要拆回去）。
+当前无需要继续决策的投稿阻塞项。
+
+已消费决策：
+1. **双盲匿名 vs camera-ready 真实作者信息**：用户已答复 `A: 双盲匿名，不用管作者信息`。因此当前 `paper/main.tex` 保持 `\usepackage[submission]{aaai2027}` + `\author{Anonymous Submission}`，无需切换 camera-ready 作者信息。
+2. **提交前的单文件打包问题**：用户已答复 `A: 是正文 PDF + 单独 supplementary PDF 两文件提交`。因此当前 `main.pdf`（正文 7 页 + references 第 8 页）与独立 `appendix.pdf`（supplementary）两文件结构保持不变，无需把 `appendix.tex` 手动内联进 `main.tex`。
 
 无需你决策、仅记录供参考：
 - 【已核实，无需处理】`paper/figs/` 图片分辨率：`entropy_gain.jpg`（appendix 用，300dpi，2217×1205）、`entropy_distribution.jpg`（appendix 用，220dpi，1392×726，按 `0.92\linewidth` 排版换算实际印刷分辨率仍充足）、`workflow.png`（appendix 用，2752×1186，文件内嵌 dpi 标签是无意义的默认值，按像素数换算实际印刷分辨率远超 300dpi）。三者格式均为 AAAI 允许的 jpg/png，均只在 `appendix.tex` 中被引用，`main.tex` 当前没有任何 `\includegraphics`。此项此前长期挂在"待确认"里，现已核实清楚，标记为已解决。
 - 【低优先级，不阻塞投稿】`appendix.tex` 中存在少量硬编码数字交叉引用（如"Eq.~(1) of the main paper"、"Section~4 of the main paper"，而非可跨文档自动更新的 `\ref{}`——因为 appendix 现在是独立编译文档，做不到跨文档自动引用）。经核对，这些硬编码数字与 `main.tex` 当前实际编号一致，但如果后续再调整正文结构，需要手动同步。
+
+## 2026-07-04（再续）最终 `dinner` 抽取残留清理
+
+### 背景
+当前 `docs/revision_suggestions.tex` 只剩一个提交前 Must-Fix：全局替换生成稿中残留的 `dinner` typo。源码中没有字面量 `dinner`，问题来自 PDF 文本抽取把 LaTeX 下标 `d_{\text{inner}}`、`d_{\mathrm{inner}}` 或 `d_\text{inner}` 拼接成 `dinner`。
+
+### 已全部修改
+1. **主文配置行改为文本式 `d_inner`**：`paper/main.tex` 的 H800 W1 配置从数学下标写法改为 `\texttt{batch=1, d\_inner=1024, dstate=16}`，避免 PDF 抽取生成 `dinner=1024`。
+2. **附录配置与维度说明全部改为可抽取写法**：`paper/appendix.tex` 中 W1 triplet 配置、real-checkpoint tensor shape、Table 18 caption 的 captured tensor 设置均改为 `d_inner` 文本式表达；不再保留会被抽取为 `dinner` 的下标写法。
+3. **验证完成**：重新运行 `paper/build.bat`，最终日志显示 `main.pdf`、`appendix.pdf`、`ReproducibilityChecklist.pdf` 均成功输出；`main.log`、`appendix_only.log`、`ReproducibilityChecklist.log` 中无 fatal、undefined reference/citation、Overfull hbox。用 PyPDF 抽取 `paper/main.pdf` 与 `paper/appendix.pdf` 文本后确认两份 PDF 均 `dinner=False`，且新的 `d_inner` 写法已出现；页数保持 `main.pdf` 8 页、`appendix.pdf` 19 页，References 从 `main.pdf` 第 8 页开始。
+
+### 未修改或部分修改
+无。当前 `docs/revision_suggestions.tex` 的唯一 Must-Fix 已完成并通过源码搜索、构建日志和 PDF 文本抽取三重验证。
+
+### 遗留问题
+无新增。文件顶部「遗留问题」中的两项既有决策已由用户答复：保持双盲匿名，并采用正文 PDF + 单独 supplementary PDF 两文件提交。
 
 ## 2026-07-04（续）投稿前终检修复 + 正文回压 7 页整
 
@@ -30,7 +48,7 @@
 无。本轮 `docs/revision_suggestions.tex`（投稿前终检）中的全部 3 个 Must-Fix 与 2 个可选建议均已落地或核实为误报；评审结论"After the three fixes above, the paper is ready to submit to AAAI 2027"的前置条件已全部满足。
 
 ### 遗留问题
-无新增。文件顶部「遗留问题」中的两项既有决策（双盲 vs camera-ready 作者信息、单文件打包确认）仍待用户答复，不阻塞当前版本作为匿名投稿版使用。
+无新增。文件顶部「遗留问题」中的两项既有决策已由用户答复：保持双盲匿名，并采用正文 PDF + 单独 supplementary PDF 两文件提交。
 
 ## 2026-07-04 继续处理旧版投稿前意见
 
