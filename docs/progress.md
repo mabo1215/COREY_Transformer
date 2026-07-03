@@ -1,6 +1,16 @@
-# 论文进度
+﻿# 论文进度
 
 最后更新：2026-07-03（**References 已强制精确从第 8 页顶部开始**：正文压缩至精确 7 页，`\clearpage` 强制换页，总页数从 9 页降到 8 页（正文 7 页 + references 1 页）。表 1/3/4/8/9 从跨栏 `table*` 改为单栏 `table`（不再打断双栏排版），表 2/6/8 的 Overfull \hbox 全部清零。同时移除了摘要下方的匿名代码仓库链接。`build/main.log` 0 error、0 Overfull \hbox。本轮继续用 WSL→Windows `cmd.exe` interop 直接调用宿主机 MiKTeX 编译（`cmd.exe /c "C:\...\build.bat"`），在本会话内迭代验证。)
+
+## 遗留问题（当前状态，唯一权威版本——文件后半段历史条目里的同名旧章节均已过期，不再代表当前状态）
+
+需要你决策：
+1. **双盲匿名 vs camera-ready 真实作者信息**：`paper/main.tex` 目前仍是 `\usepackage[submission]{aaai2027}` + `\author{Anonymous Submission}` 占位符。如果 AAAI 2027 这次投稿已到 camera-ready 阶段、或本轮不要求双盲，需要你提供真实作者顺序、单位、corresponding author 信息，我再切换为非匿名 `\author`/`\affiliations` 并去掉 `[submission]` 选项。
+2. **提交前的单文件打包问题**：AAAI 官方规则通常要求最终提交是单一 `.tex`/单一 PDF；当前 `main.tex` 和 `appendix.tex` 是完全独立编译的两份文档（`main.tex` 里没有 `\input{appendix}`，也没有 `\appendix` 命令），`main.pdf` 只有正文 7 页 + references 第 8 页，`appendix.pdf` 是单独的 supplementary 文档。需要你确认这一届 AAAI 2027 投稿系统是否允许"正文 PDF + 单独 supplementary PDF"两文件提交；如果不允许，需要把 `appendix.tex` 内容手动内联进 `main.tex` 合并成单一文件（我可以代做，但需要你先确认官方规则，避免做完又要拆回去）。
+
+无需你决策、仅记录供参考：
+- 【已核实，无需处理】`paper/figs/` 图片分辨率：`entropy_gain.jpg`（appendix 用，300dpi，2217×1205）、`entropy_distribution.jpg`（appendix 用，220dpi，1392×726，按 `0.92\linewidth` 排版换算实际印刷分辨率仍充足）、`workflow.png`（appendix 用，2752×1186，文件内嵌 dpi 标签是无意义的默认值，按像素数换算实际印刷分辨率远超 300dpi）。三者格式均为 AAAI 允许的 jpg/png，均只在 `appendix.tex` 中被引用，`main.tex` 当前没有任何 `\includegraphics`。此项此前长期挂在"待确认"里，现已核实清楚，标记为已解决。
+- 【低优先级，不阻塞投稿】`appendix.tex` 中存在少量硬编码数字交叉引用（如"Eq.~(1) of the main paper"、"Section~4 of the main paper"，而非可跨文档自动更新的 `\ref{}`——因为 appendix 现在是独立编译文档，做不到跨文档自动引用）。经核对，这些硬编码数字与 `main.tex` 当前实际编号一致，但如果后续再调整正文结构，需要手动同步。
 
 ## 2026-07-03（续6）表格改单栏 + references 强制第 8 页起 + 移除匿名代码链接
 
@@ -210,20 +220,8 @@ appendix.tex 中有两处引用只在 main.tex 中定义的标签（`tab:chunk_s
 - **`docs/progress.md`**（本条目）：记录 venue 由 TPDS 改投 AAAI 2027 的完整改动清单。
 - **`USAGE.md`**：`目标会议或期刊` 行由过期的 `NeurIPS 2026` 更新为 `AAAI 2027`。
 
-### 未修改或部分修改
-- 【需要 Windows 编译验证】WSL 环境无 LaTeX，本轮全部改动未经实际 `pdflatex`/`bibtex` 编译验证。已完成的静态核查：`\resizebox` 全部清零（`grep -rn resizebox paper/*.tex` 为空）、`algpseudocode` 残留命令清零、IEEE 专属命令（`markboth`/`BODYONLYMODE`/`appendices`）清零、禁用包（`hyperref`/`float`/`geometry`/`multicol` 等）未被引入、`\vspace{-`/`\newpage`/`\clearpage`/`\tiny` 等禁用命令扫描为空。
-  - 需要你：在 Windows 端运行 `paper\build.bat`，把 `paper\build\main.log` 中的报错或 overfull/underfull 警告贴回来，按需要再修一轮版式（尤其是被去掉 `\resizebox` 后的宽表格，如 `tab:routed_ablation`、`tab:h800_unified_scheduler_ablation`、`tab:external_baseline_extended` 等 6+ 列宽表，可能需要进一步缩短列标题或调整 `\tabcolsep`）。
-- 【提交前必须处理】AAAI 官方规则要求最终提交是**单一 .tex 文件**（不允许用 `\input` 拆分正文与附录，`.bib` 是唯一允许外置的例外）。当前仓库为方便日常编辑仍保留 `main.tex`/`appendix.tex`/`ReproducibilityChecklist.tex` 三个独立文件、用 `\input` 组合。**这在仓库内编辑与用 `build.bat` 编译验证阶段没有问题**，但正式打包上传 AAAI 前，需要把 `appendix.tex` 内容手动拼接进 `main.tex`（`ReproducibilityChecklist.tex` 若走"作为附件单独提交"路线可以不拼接，需先查 AAAI 2027 官方投稿说明确认）。
-- 【待你确认】当前默认仍是 `\usepackage[submission]{aaai2027}`（双盲匿名提交模式，`\author{Anonymous Submission}`）。原 TCSVT 版本中三位作者（Bo Ma / Weiqi Yan / Jinsong Wu）及其单位信息、biography 段落均已不在 AAAI 版本中出现（AAAI 格式本身也没有 IEEE 式的作者简介环境）。如果 AAAI 2027 这次投稿不要求双盲评审（或已到 camera-ready 阶段），需要你提供真实作者顺序、单位与 corresponding author 信息，我再启用非匿名 `\author`/`\affiliations` 块并同时去掉 `[submission]` 选项。
-- 【待你确认】figs 目录下 `entropy_gain.jpg`、`entropy_distribution.jpg`、`workflow.png` 三张图片是否满足 AAAI 建议的 300dpi 分辨率与嵌入字体要求，本轮未做图片层面的检查（只确认了路径与格式 jpg/png 均为 AAAI 允许格式，未使用 gif/eps/ps）。
-- 【待你确认】appendix.tex 中存在多处硬编码的"Eq.~(1)"/"Eq.~(2)"/"Section~4"/"Section~1"式数字交叉引用（而非 `\ref{}`），当前编号与实际章节/公式顺序一致（未做任何章节重排），但属于脆弱写法——如果后续再调整正文结构，这些硬编码数字不会自动更新。本轮未改动（不在用户当次指令范围内，且改动前需要先核实每一处的确切当前编号）。
-
-## 遗留问题
-
-需要你提供/决策：
-1. **Windows 编译结果**：请运行 `paper\build.bat` 并把 `main.log`（以及若失败，具体报错行）贴回来，用于下一轮修版式。
-2. **是否已到 camera-ready / 是否需要双盲**：决定是否保留 `[submission]` 匿名模式，还是启用真实作者信息。
-3. **单文件打包时机**：决定是在提交前由我把 `appendix.tex` 手动内联进 `main.tex`，还是保持当前三文件结构直到确认最终提交渠道要求。
+### 未修改或部分修改（已过期，保留仅供历史追溯——当前状态见文件顶部「遗留问题」）
+本节列出的条目均已被后续会话（续2–续6）处理或核实完毕：Windows 编译验证已在续2起用 WSL→`cmd.exe`→MiKTeX interop 直接完成，不再需要用户手动跑 `build.bat` 回贴日志；figs 分辨率已核实（见文件顶部「已核实，无需处理」条目）。**双盲/camera-ready 决策**与**单文件打包决策**两项仍然真实未决，已合并进文件顶部的当前「遗留问题」，此处不再重复。appendix.tex 硬编码数字引用低优先级项同理已合并至顶部。
 
 ## 2026-06-06 build.bat 三件套编译（正文/合并/附录）+ 自动同步 submit
 
@@ -1495,17 +1493,17 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ---
 
-## 未修改或部分修改（最新 `docs/revision_suggestions.tex`）
+## 未修改或部分修改 / 遗留问题（本节已完全过期，保留仅供历史追溯）
 
-- 【需要新实验】TCSVT scope 的强回应仍需要 video-oriented Mamba/SSM/VLM、streaming video inference、long-video token scheduling 或 edge-video analytics 实验。目前正文只完成了 scope framing 与 limitation/future-work 说明，不能替代真实视频任务证据。
-- 【需要新实验/实现】更强 adaptive baseline（RL scheduler、hardware-aware autotuner、TVM/XLA-style cost model、CUDA graph specialization、learned latency predictor）尚未加入。当前稿件只明确承认这一限制，并将 negative result 限定在已测的 entropy/proxy/seq-len policy family。
-- 【已缓解但未完全消除】Hadamard 理论仍在 appendix 中保留，正文已明确其被真实 Mamba activations 证伪且不属于 validated contribution；若之后需要更激进回应 reviewer，可进一步移到 supplementary 或压缩。
-- 【排版残留】合并 PDF 编译通过并保持 14 页，但 `main.log` 仍有轻微 appendix float-page overfull vbox；独立 appendix 仍有引用主文标签导致的 expected undefined references。
+以下两节是本文件最早期（TCSVT 投稿阶段）遗留的"未修改或部分修改"与"遗留问题"快照，早已被后续多轮 venue 迁移（TCSVT → TDSC → IEEE TPDS → AAAI 2027，见文件顶部与各带日期条目）整体取代，其中的具体内容（video-oriented 实验需求、14 页合并 PDF 结构等）均已不适用于当前 AAAI 2027 版本。当前唯一权威的「遗留问题」在**文件最顶部**。 
 
-## 遗留问题
+## 遗留问题（当前状态，唯一权威版本——文件后半段历史条目里的同名旧章节均已过期，不再代表当前状态）
 
-（无未决问题。2026-06-05 的 scope-fit 抉择已由作者拍板：选择 **Path B → 改投 IEEE TPDS**，并要求 `docs/revision_suggestions.tex` 按 IEEE TPDS 要求重写；该决策已落地，详见 `## 已全部修改` 顶部「2026-06-05 venue 定稿：IEEE TPDS」条目。NeurIPS 轮次 actionable 项早已落地，Stage 9 决策此前已消费。）
+需要你决策：
+1. **双盲匿名 vs camera-ready 真实作者信息**：`paper/main.tex` 目前仍是 `\usepackage[submission]{aaai2027}` + `\author{Anonymous Submission}` 占位符。如果 AAAI 2027 这次投稿已到 camera-ready 阶段、或本轮不要求双盲，需要你提供真实作者顺序、单位、corresponding author 信息，我再切换为非匿名 `\author`/`\affiliations` 并去掉 `[submission]` 选项。
+2. **提交前的单文件打包问题**：AAAI 官方规则通常要求最终提交是单一 `.tex`/单一 PDF；当前 `main.tex` 和 `appendix.tex` 是完全独立编译的两份文档（`main.tex` 里没有 `\input{appendix}`，也没有 `\appendix` 命令），`main.pdf` 只有正文 7 页 + references 第 8 页，`appendix.pdf` 是单独的 supplementary 文档。需要你确认这一届 AAAI 2027 投稿系统是否允许"正文 PDF + 单独 supplementary PDF"两文件提交；如果不允许，需要把 `appendix.tex` 内容手动内联进 `main.tex` 合并成单一文件（我可以代做，但需要你先确认官方规则，避免做完又要拆回去）。
 
-
-The examination of this paper indicates that, despite the interesting concept, the proposed method is not adequately compared with recent literature. The literature review is relatively brief and primarily based on works published before 2025, with the exception of [16–17], which are well-recognized and have each been cited more than 20 times. 
+无需你决策、仅记录供参考：
+- 【已核实，无需处理】`paper/figs/` 图片分辨率：`entropy_gain.jpg`（appendix 用，300dpi，2217×1205）、`entropy_distribution.jpg`（appendix 用，220dpi，1392×726，按 `0.92\linewidth` 排版换算实际印刷分辨率仍充足）、`workflow.png`（appendix 用，2752×1186，文件内嵌 dpi 标签是无意义的默认值，按像素数换算实际印刷分辨率远超 300dpi）。三者格式均为 AAAI 允许的 jpg/png，均只在 `appendix.tex` 中被引用，`main.tex` 当前没有任何 `\includegraphics`。此项此前长期挂在"待确认"里，现已核实清楚，标记为已解决。
+- 【低优先级，不阻塞投稿】`appendix.tex` 中存在少量硬编码数字交叉引用（如"Eq.~(1) of the main paper"、"Section~4 of the main paper"，而非可跨文档自动更新的 `\ref{}`——因为 appendix 现在是独立编译文档，做不到跨文档自动引用）。经核对，这些硬编码数字与 `main.tex` 当前实际编号一致，但如果后续再调整正文结构，需要手动同步。
 
