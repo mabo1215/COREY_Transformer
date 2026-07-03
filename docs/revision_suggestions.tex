@@ -1,133 +1,41 @@
 \section*{Final AAAI 2027 Submission Check}
 
-\subsection*{Decision}
+\subsection*{Final Decision}
 
-This version is submission-ready for AAAI 2027 after one final global
-typo cleanup. The main paper now has a consistent conservative framing:
-COREY is presented as a quality-preserving runtime scheduling diagnostic,
-not as a deployment-grade speedup over the best static chunk. The abstract
-also correctly separates the calibrated consumer/server GPU result from the
-H800 legacy-reference and routed end-to-end results.
+This version is ready for submission to AAAI 2027.
 
-\paragraph{Final verdict.}
-Yes, the paper can be submitted to AAAI 2027 after applying the small
-typo fix below.
+\paragraph{Decision.}
+No blocking issue remains. The main paper is internally consistent, the
+calibrated scheduler and legacy-reference diagnostics are now clearly
+separated, the negative-result framing is conservative, and the
+supplementary material no longer contains the previous visible formatting
+or notation problems.
 
-\subsection*{Must-Fix Before Upload: Replace Remaining \texttt{dinner} Typos}
-
-There are still several occurrences of \texttt{dinner} in the main paper
-and supplementary material. These are obvious typographical artifacts and
-should be fixed before submission.
-
-\paragraph{Required global replacement.}
-
-Replace all occurrences of:
-\begin{verbatim}
-dinner
-\end{verbatim}
-
-with:
-\begin{verbatim}
-d_{\mathrm{inner}}
-\end{verbatim}
-
-or, in code-style text:
-\begin{verbatim}
-d_inner
-\end{verbatim}
-
-\paragraph{Examples.}
-
-Replace:
-\begin{quote}
-\texttt{batch=1, dinner=1024, dstate=16}
-\end{quote}
-
-with:
-\begin{quote}
-\texttt{batch=1, d\_inner=1024, dstate=16}
-\end{quote}
-
-Replace:
-\begin{quote}
-\(u \in \mathbb{R}^{B\times \texttt{dinner}\times L}\),
-\(\texttt{dinner}=2048\)
-\end{quote}
-
-with:
-\begin{quote}
-\(u \in \mathbb{R}^{B\times d_{\mathrm{inner}}\times L}\),
-\(d_{\mathrm{inner}}=2048\).
-\end{quote}
-
-\subsection*{Optional Risk Note 1: Checklist 4.12}
-
-The reproducibility checklist still answers \texttt{no} for statistical
-significance testing. This is acceptable because the paper does not claim
-statistically significant speedups for small differences such as
-\(+0.7\%\), \(+1.3\%\), or \(-0.14\%\). The current paper already frames
-these as diagnostic overhead measurements rather than significant
-improvements.
-
-\paragraph{Optional sentence to keep near Table 7 or in Limitations.}
-
-\begin{quote}
-We report small latency differences as diagnostic overhead measurements
-rather than statistically significant improvements; the main empirical
-conclusion is the consistent negative ordering of adaptive variants
-relative to the best static chunk.
-\end{quote}
-
-\subsection*{Optional Risk Note 2: Checklist 4.13}
-
-The checklist still answers \texttt{partial} for final hyperparameters.
-This is not a submission blocker because the supplementary material lists
-the main scheduler defaults, hardware stacks, warmup counts, repeat counts,
-and benchmark configurations. However, if there is space in the appendix,
-it would be safer to add one compact table titled
-\textit{Final Submitted Scheduler Hyperparameters}.
-
-\paragraph{Optional table.}
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-Parameter & Submitted value \\
-\midrule
-Histogram bins \(K\) & 256 for checkpoint hook; 64 for prototype \\
-Entropy reference & \(H_{\mathrm{ref}}=\log K\) \\
-Minimum chunk & 32 \\
-Maximum chunk & 512 \\
-Chunk discretization & nearest power of two \\
-Guard fallback chunk & 512 \\
-Guard margin & 2 power-of-two buckets \\
-Learned-table rule & chunk 128 if prompt length \(\le 50\), else 512 \\
-Decode length & 32 tokens unless otherwise stated \\
-Quality check decode length & 8 greedy tokens \\
-Random seed & 7 where stochastic prototype sampling is used \\
-\bottomrule
-\end{tabular}
-\caption{Final submitted scheduler hyperparameters. Legacy
-\(H_{\mathrm{ref}}=8.0\) rows are retained only as sensitivity diagnostics
-and are not part of the submitted default policy.}
-\end{table}
-
-\subsection*{Submission Readiness Summary}
+\subsection*{Submission Readiness}
 
 \begin{enumerate}
-    \item Main paper page count: acceptable.
-    \item References-only final page: acceptable.
+    \item Main-paper format: acceptable.
+    \item Page count: acceptable.
     \item Anonymous submission: acceptable.
-    \item PDF page size and embedded fonts: acceptable.
-    \item Main claim: now conservative and internally consistent.
-    \item H800 vs calibrated-default distinction: fixed.
+    \item References-only final page: acceptable.
+    \item Calibrated \(H_{\mathrm{ref}}=\log K\) vs. legacy \(H_{\mathrm{ref}}=8.0\):
+    now clearly separated.
+    \item H800 results: now correctly framed as legacy-reference sensitivity
+    diagnostics and routed end-to-end platform evidence.
+    \item Negative-result claim: acceptable and conservative.
     \item Supplementary layout: acceptable.
-    \item Reproducibility checklist: acceptable, with known non-blocking
-    \texttt{no}/\texttt{partial} items.
-    \item Remaining required edit: globally replace \texttt{dinner}.
+    \item Remaining \texttt{dinner} typo: fixed.
+    \item Checklist: acceptable, with non-blocking \texttt{no}/\texttt{partial}
+    entries.
 \end{enumerate}
 
-\textbf{Final recommendation:} fix the \texttt{dinner} typo globally,
-recompile once, check that the main PDF remains 8 pages, then submit.
+\subsection*{Optional Final Note}
+
+The only remaining practical risk is not in the PDF text itself: when
+submitting, make sure the anonymous supplementary code/data package is
+also uploaded. The paper and checklist state that the code and data package
+is included, so the submission should contain that package at upload time.
+
+\paragraph{Final recommendation.}
+Submit this version after one last compile check and one last visual PDF
+preview in the OpenReview upload page.
