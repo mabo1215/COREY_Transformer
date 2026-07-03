@@ -1,6 +1,6 @@
 ﻿# 论文进度
 
-最后更新：2026-07-04（继续按 `docs/revision_suggestions.tex` 检查当前 `paper/main.tex` 与 `paper/appendix.tex`。已同步 legacy `H_ref=8.0` 与默认 `H_ref=\log K` 的叙事，明确 legacy chunk-256 结果只作为敏感性/诊断结果；清理 appendix 中不适合最终匿名稿的仓库/过程措辞；修复一个 appendix 表脚注的潜在 Overfull 来源。AAAI 模板恢复后已实跑 `paper/build.bat`：`paper/main.pdf` 成功生成 8 页，`main.log` 显示正文 `[6] [7]` 后进入 `main.bbl` 并输出 `[8]`，即正文刚满 7 页、References 从第 8 页开始；`main.log` 无 Overfull。)
+最后更新：2026-07-04（继续按 `docs/revision_suggestions.tex` 检查当前 `paper/main.tex` 与 `paper/appendix.tex`。已同步 legacy `H_ref=8.0` 与默认 `H_ref=\log K` 的叙事，明确 legacy chunk-256 结果只作为敏感性/诊断结果；清理 appendix 中不适合最终匿名稿的仓库/过程措辞；修复 appendix 表格排版与独立 bibliography：`paper/build.bat` 现在为 appendix wrapper 使用 `\bibliography{ref}` 并在 bibliography 前 `\clearpage` 清空浮动体，`appendix.tex` 后半段关键跨栏表后加入强制换页，避免表格堆到 References 后。AAAI 模板恢复后已实跑 `paper/build.bat`：`paper/main.pdf` 成功生成 8 页，`main.log` 显示正文 `[6] [7]` 后进入 `main.bbl` 并输出 `[8]`，即正文刚满 7 页、References 从第 8 页开始；`appendix.pdf` 成功生成 24 页，References 位于最后一页且不再为空；`main.log` 无 Overfull。)
 
 ## 遗留问题（当前状态，唯一权威版本——文件后半段历史条目里的同名旧章节均已过期，不再代表当前状态）
 
@@ -20,6 +20,7 @@
 3. **清理最终稿不应出现的过程/仓库措辞**：删除或改写 `repository link in the abstract`、`current repository state`、`current repository centers`、`automatic replacement` 等表述，改成 reader-facing 的 anonymous supplementary package / measured implementation 语言。
 4. **修复一个 appendix 表格潜在越界来源**：`tab:chunk_sweep` 表脚注从固定 `l` 列改成 `p{\dimexpr\columnwidth-2\tabcolsep\relax}` 自动换行，避免单栏脚注导致 Overfull。
 5. **恢复模板后的编译验证已完成**：`paper/template/aaai2027.sty` 与 `paper/template/aaai2027.bst` 已可被 build 脚本解析；`paper/build.bat` 成功生成 `paper/main.pdf`、`paper/appendix.pdf`、`paper/ReproducibilityChecklist.pdf`。`main.pdf` 总页数为 8 页，正文到第 7 页结束，References 从第 8 页开始；`main.log` 无 Overfull。
+6. **修复 appendix 独立 PDF 格式问题**：`paper/build.bat` 生成的 `appendix_only.tex` wrapper 原来写 `\bibliography{../ref}`，BibTeX 会到 `paper/..` 查找 `ref.bib` 并生成空 bibliography；现改为 `\bibliography{ref}`。同时在 appendix bibliography 前加入 `\clearpage`，并在后半段大跨栏表（fused-kernel sweep、external baseline、policy COREY、mixed-regime sweep）之后加入强制换页，确保大表跟随对应实验小节，不再漂到 References 后。重新构建后 `appendix_only.bbl` 含 Quamba 引用，`appendix_only.aux` 显示所有表格 label 均在 `\bibdata{ref}` 之前，References 位于第 24 页最后。
 
 ### 未修改或部分修改
 无。当前 `docs/revision_suggestions.tex` 中无需新实验即可落地的 scheduler 一致性、revision-process wording、表格说明、页数验证事项已处理。
