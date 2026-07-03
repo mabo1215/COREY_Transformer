@@ -1501,7 +1501,11 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 需要你决策：
 1. **双盲匿名 vs camera-ready 真实作者信息**：`paper/main.tex` 目前仍是 `\usepackage[submission]{aaai2027}` + `\author{Anonymous Submission}` 占位符。如果 AAAI 2027 这次投稿已到 camera-ready 阶段、或本轮不要求双盲，需要你提供真实作者顺序、单位、corresponding author 信息，我再切换为非匿名 `\author`/`\affiliations` 并去掉 `[submission]` 选项。
+A: 双盲匿名  不用管作者信息
+
 2. **提交前的单文件打包问题**：AAAI 官方规则通常要求最终提交是单一 `.tex`/单一 PDF；当前 `main.tex` 和 `appendix.tex` 是完全独立编译的两份文档（`main.tex` 里没有 `\input{appendix}`，也没有 `\appendix` 命令），`main.pdf` 只有正文 7 页 + references 第 8 页，`appendix.pdf` 是单独的 supplementary 文档。需要你确认这一届 AAAI 2027 投稿系统是否允许"正文 PDF + 单独 supplementary PDF"两文件提交；如果不允许，需要把 `appendix.tex` 内容手动内联进 `main.tex` 合并成单一文件（我可以代做，但需要你先确认官方规则，避免做完又要拆回去）。
+
+A: 是正文 PDF + 单独 supplementary PDF"两文件提交
 
 无需你决策、仅记录供参考：
 - 【已核实，无需处理】`paper/figs/` 图片分辨率：`entropy_gain.jpg`（appendix 用，300dpi，2217×1205）、`entropy_distribution.jpg`（appendix 用，220dpi，1392×726，按 `0.92\linewidth` 排版换算实际印刷分辨率仍充足）、`workflow.png`（appendix 用，2752×1186，文件内嵌 dpi 标签是无意义的默认值，按像素数换算实际印刷分辨率远超 300dpi）。三者格式均为 AAAI 允许的 jpg/png，均只在 `appendix.tex` 中被引用，`main.tex` 当前没有任何 `\includegraphics`。此项此前长期挂在"待确认"里，现已核实清楚，标记为已解决。
