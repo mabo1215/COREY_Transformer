@@ -1,6 +1,27 @@
 # 论文进度
 
-最后更新：2026-07-03（**正文页数已通过实际编译确认精确落在 7 页**（不含 references；references 另占 2 页，总计 9 页）。本轮起改用 WSL→Windows PowerShell interop（`powershell.exe`）直接调用宿主机 MiKTeX 编译，不再需要用户手动跑 `build.bat` 回传日志——可在本会话内直接迭代验证页数与排版。经三轮"移出 → 编译验证 → 移回部分内容 → 再验证"的调整，最终 `main.tex` 定格在 460 行左右；`build/main.log` 与 `build/appendix_only.log` 均 0 error、0 undefined reference，仅剩 2 处 <7pt 的可忽略 Overfull \hbox。)
+最后更新：2026-07-03（**References 已强制精确从第 8 页顶部开始**：正文压缩至精确 7 页，`\clearpage` 强制换页，总页数从 9 页降到 8 页（正文 7 页 + references 1 页）。表 1/3/4/8/9 从跨栏 `table*` 改为单栏 `table`（不再打断双栏排版），表 2/6/8 的 Overfull \hbox 全部清零。同时移除了摘要下方的匿名代码仓库链接。`build/main.log` 0 error、0 Overfull \hbox。本轮继续用 WSL→Windows `cmd.exe` interop 直接调用宿主机 MiKTeX 编译（`cmd.exe /c "C:\...\build.bat"`），在本会话内迭代验证。)
+
+## 2026-07-03（续6）表格改单栏 + references 强制第 8 页起 + 移除匿名代码链接
+
+### 背景
+用户要求：(1) `paper\main.tex` 中 reference 强制从第八页开始；(2) 检查所有正文表格，如 Table 1/3/4/8/9，改为只占单栏、内容换行显示、不要越界（越过页边距）；后续追加要求 (3) 去掉摘要下方指向 `anonymous.4open.science` 的匿名代码仓库链接。
+
+### 根因诊断
+用 WSL 直接调 `cmd.exe /c "C:\source\COREY_Transformer\paper\build.bat"` 触发宿主机真实 MiKTeX 编译（`pdflatex.exe` 通过 WSL↔Windows interop 可直接调用，无需用户手动跑），配合 PyMuPDF 把 PDF 页面渲成图片逐页肉眼核对。发现：
+- 表 1/3/4/8/9 当时是 `table*`（跨栏），在双栏正文中会独占页面整行宽度，把该页顶部撑成一整块空白/表格区，两栏正文都要等表格结束才能开始——这是"排版被打断"的真实原因，而不是表格本身超出页边距。
+- 表 2/6（当时已经是单栏 `table`）反而有真实的 Overfull \hbox（越界）：分别 6.5pt、4.5pt，是内容行（如 `COREY (default, $H_{\text{ref}}{=}\log K$)`）在单栏宽度（约 239pt）下放不下。
+- 表 8 单栏化后曾反复出现一个跟内容长度完全无关、恒定 1.21107pt 的 Overfull——用最小复现文件（独立 `.tex`，绕开完整 `build.bat` 流程加速迭代）定位到：`\multicolumn{n}{p{width}}` 里的 `p{width}` 仍然会被两侧 `\tabcolsep` 撑宽，`p{0.98\columnwidth}` 实际渲染宽度是 `0.98\columnwidth + 2\tabcolsep`，超出可用宽度正好 1.21107pt。改用 `p{\dimexpr\columnwidth-2\tabcolsep\relax}` 精确扣除两侧内边距后彻底清零。
+
+### 已全部修改
+1. **表 1/3/4/8/9：`table*` → `table`（单栏）**：字号降到 `\footnotesize`/`\scriptsize`，表头改用 `\shortstack{...\\...}` 两行折行，冗余表头文字（如 `Chunk ($H_{\text{ref}}{=}\log K$)`）精简为 `Chunk (calib.)`/`Chunk (legacy)`（完整公式已在正文/caption 说明，未丢信息），表 4 删除与 caption 重复的常量列（`COREY chunk`，caption 已说明恒为 256）。表 8 的两行脚注用 `\multicolumn{3}{p{\dimexpr\columnwidth-2\tabcolsep\relax}}` 精确换行。
+2. **表 2/6：清零 Overfull \hbox**：字号收紧、行文本精简（如 `COREY (legacy $H_{\text{ref}}{=}8.0$)` → `COREY (legacy)`），表 6 额外把 `Consumer GPU`/`Data-center accel.` 等重复行标签缩短。
+3. **全局浮动体与表格间距收紧**（preamble 新增 `\floatsep`/`\textfloatsep`/`\intextsep`/`\abovecaptionskip`/`\belowcaptionskip`/`\aboverulesep`/`\belowrulesep`/`\arraystretch` 设置）：因为单栏化后表格数量变多，article 类默认间距（`textfloatsep=20pt` 等）在 9 张表的规模下会累积成可观的页面浪费；收紧后正文从 9 页精确压缩到 7 页，不影响任何可读性（逐页渲图核对过）。
+4. **`\bibliography{ref}` 前加 `\clearpage`**：现在正文精确 7 页，`\clearpage` 保证 references 强制从第 8 页顶部开始，且这条防护是刚性的——以后正文内容有小幅增减，只要仍 ≤7 页，references 起始页不会因为半行溢出而漂移。
+5. **移除匿名代码链接**：删掉 `\begin{links}\link{Code}{https://anonymous.4open.science/r/COREY_Transformer-B0C5/}\end{links}` 整块及其注释，摘要正下方直接接 Keywords。
+
+### 验证
+`cmd.exe /c "...\build.bat"` 最终一轮：`build/main.log` 0 error、0 Overfull \hbox（仅剩 1 处可忽略的 loose-line Underfull，非越界问题）；`main.pdf` 总页数 8 页（正文 1–7 页，references 第 8 页顶部起始、整段 references 都在同一页内）。逐页渲图确认无表格越界、无跨栏空白断层。
 
 ## 2026-07-03（续5）实测编译迭代，正文精确锁定 7 页
 
