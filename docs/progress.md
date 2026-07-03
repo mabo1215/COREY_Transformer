@@ -1,6 +1,6 @@
 ﻿# 论文进度
 
-最后更新：2026-07-04（继续按 `docs/revision_suggestions.tex` 检查当前 `paper/main.tex` 与 `paper/appendix.tex`。已将主文标题改为 `COREY: A Runtime Scheduling Diagnostic for Selective Scan Kernels`，与负结果/diagnostic framing 对齐；已同步 legacy `H_ref=8.0` 与默认 `H_ref=\log K` 的叙事，明确 legacy chunk-256 结果只作为敏感性/诊断结果；清理 appendix 中不适合最终匿名稿的仓库/过程措辞；统一 theorem/proposition 编号：appendix 熵定理为 Theorem 2、量化稳定性为 Proposition 1；全面渲染审计 main/appendix 后修复 appendix 表格排版与独立 bibliography：`paper/build.bat` 现在为 appendix wrapper 使用 `\bibliography{ref}` 并在 bibliography 前 `\clearpage` 清空浮动体；Table 23/24/25 已从跨栏整页/半空页改为紧凑单栏非浮动表，去掉 Table 25 后强制换页；Table 27/28 也已改为紧凑单栏非浮动表，Table 28 脚注并入表格宽度内。AAAI 模板恢复后已实跑 `paper/build.bat`：`paper/main.pdf` 成功生成 8 页，正文刚满 7 页、References 从第 8 页开始；`appendix.pdf` 成功生成 19 页，References 位于最后一页且不再为空；`main.log` 和 `appendix_only.log` 均无 Overfull hbox、无 undefined reference/citation、无空 bibliography。)
+最后更新：2026-07-04（第二轮：按最新 `docs/revision_suggestions.tex`「AAAI 2027 投稿前终检」完成全部 3 个 Must-Fix 与 2 个可选建议；正文重新精确锁定 7 页整、References 独占第 8 页；详见「2026-07-04（续）投稿前终检修复 + 正文回压 7 页整」条目。上一轮记录：继续按 `docs/revision_suggestions.tex` 检查当前 `paper/main.tex` 与 `paper/appendix.tex`。已将主文标题改为 `COREY: A Runtime Scheduling Diagnostic for Selective Scan Kernels`，与负结果/diagnostic framing 对齐；已同步 legacy `H_ref=8.0` 与默认 `H_ref=\log K` 的叙事，明确 legacy chunk-256 结果只作为敏感性/诊断结果；清理 appendix 中不适合最终匿名稿的仓库/过程措辞；统一 theorem/proposition 编号：appendix 熵定理为 Theorem 2、量化稳定性为 Proposition 1；全面渲染审计 main/appendix 后修复 appendix 表格排版与独立 bibliography：`paper/build.bat` 现在为 appendix wrapper 使用 `\bibliography{ref}` 并在 bibliography 前 `\clearpage` 清空浮动体；Table 23/24/25 已从跨栏整页/半空页改为紧凑单栏非浮动表，去掉 Table 25 后强制换页；Table 27/28 也已改为紧凑单栏非浮动表，Table 28 脚注并入表格宽度内。AAAI 模板恢复后已实跑 `paper/build.bat`：`paper/main.pdf` 成功生成 8 页，正文刚满 7 页、References 从第 8 页开始；`appendix.pdf` 成功生成 19 页，References 位于最后一页且不再为空；`main.log` 和 `appendix_only.log` 均无 Overfull hbox、无 undefined reference/citation、无空 bibliography。)
 
 ## 遗留问题（当前状态，唯一权威版本——文件后半段历史条目里的同名旧章节均已过期，不再代表当前状态）
 
@@ -11,6 +11,26 @@
 无需你决策、仅记录供参考：
 - 【已核实，无需处理】`paper/figs/` 图片分辨率：`entropy_gain.jpg`（appendix 用，300dpi，2217×1205）、`entropy_distribution.jpg`（appendix 用，220dpi，1392×726，按 `0.92\linewidth` 排版换算实际印刷分辨率仍充足）、`workflow.png`（appendix 用，2752×1186，文件内嵌 dpi 标签是无意义的默认值，按像素数换算实际印刷分辨率远超 300dpi）。三者格式均为 AAAI 允许的 jpg/png，均只在 `appendix.tex` 中被引用，`main.tex` 当前没有任何 `\includegraphics`。此项此前长期挂在"待确认"里，现已核实清楚，标记为已解决。
 - 【低优先级，不阻塞投稿】`appendix.tex` 中存在少量硬编码数字交叉引用（如"Eq.~(1) of the main paper"、"Section~4 of the main paper"，而非可跨文档自动更新的 `\ref{}`——因为 appendix 现在是独立编译文档，做不到跨文档自动引用）。经核对，这些硬编码数字与 `main.tex` 当前实际编号一致，但如果后续再调整正文结构，需要手动同步。
+
+## 2026-07-04（续）投稿前终检修复 + 正文回压 7 页整
+
+### 背景
+用户要求按最新 `docs/revision_suggestions.tex`（AAAI 2027 Final Pre-Submission Check：3 个 Must-Fix + 2 个可选建议）修改论文，同时正文（不含 References）保持刚满 7 页整、不浪费版面，符合 AAAI 2027 页数要求。
+
+### 已全部修改
+1. **Must-Fix 1：摘要不再夸大数据中心（H800）标定结果**：`main.tex` 摘要中原句"achieving $4.41\times$ ... on a consumer GPU and $3.90$--$4.04\times$ on a data-center accelerator"已按评审建议改写为：标定规则在实测 consumer / server-class GPU 扫描上匹配 one-time-profile static oracle（相对 Static-64 分别 $4.41\times$ / $3.55\times$），H800 结果单独作为 legacy-reference 敏感性诊断与 routed end-to-end 平台报告。为节省摘要行数采用了推荐版本的紧凑改写，语义与评审给出的替换文本一致。
+2. **Must-Fix 2：`dinner` 拼写问题核实为误报，无需修改**：全文（`main.tex`/`appendix.tex`）源码中不存在任何 `dinner` 字面量；所有出现处均为正确的 `$d_{\text{inner}}$` 下标写法。评审看到的 `dinner=1024` 等是 PDF 文本提取工具丢失下标结构造成的假象（`d` + 下标 `inner` 被拼接为 `dinner`），渲染后的 PDF 视觉上完全正确。已用 pypdf 对 `main.pdf`/`appendix.pdf` 抽取验证确认此机制，源码零改动。
+3. **Must-Fix 3：附录 Figure 2 caption 桶描述修正**：`appendix.tex` 中 `fig:entropy_variance_real` 的 caption 原来说分布"entirely within the chunk-256 band"（只对 legacy mapper 成立）；已按评审建议改写为：分布狭窄，在两种 reference 下都映射到单一粗桶——legacy `H_ref=8.0` 下 chunk 256、提交默认 `H_ref=\log K` 下 chunk 512，因此真实 checkpoint 负载在任一 reference 下都不触发大范围 prompt 级 chunk 切换。与 Table 18 的表述一致。
+4. **可选建议 1：§5.1 Table 4（H800 W1 supplement）讨论显式标注 legacy 性质**：`main.tex` "Cross-hardware transfer" 段落改写为评审建议措辞的紧凑版：Table 4 作为 legacy-reference 敏感性诊断保留而非 calibrated-default COREY 行；`H_ref=8.0` under-select chunk 256，Static-512 行是 per-device static oracle；该表只用于验证 H800 上的单调 chunk--latency 趋势，不声称该设备上的 calibrated oracle match。
+5. **可选建议 2：Limitations 增加 checklist-safe 统计声明**：在 "Scope of empirical evidence" 段落加入：小幅延迟差异（$+0.7\%$、$+1.3\%$、$-0.14\%$）作为诊断性开销测量报告而非统计显著改进；主要经验结论是自适应变体相对最优 static chunk 的一致负排序。与 Reproducibility Checklist 4.12（significance tests: no）口径对齐。
+6. **正文回压 7 页整**：上述新增文字曾使正文溢出到第 8 页（`main.pdf` 一度 9 页）。在不删除任何数据/表格/结论的前提下压缩冗余行文共约 25 行：H800 perturbation 段中与 §3.2 标定推导重复的 $r{=}0.83$/chunk=512/legacy 偏置解释压缩为一句并引用 Eq.~(2)；Related Work "Recent SSM acceleration" 段删去过渡性从句；Quality Preservation 与 routed ablation 讨论段各删一句与相邻段落重复的解释；Extended Hardware 指针段与 Conclusion 各压缩一句。最终 `main.pdf` 恰为 8 页：正文两栏填满至第 7 页右栏底部（Conclusion 正好收在页底，逐页渲染核对无尾部空白），References 从第 8 页顶部开始且全部在第 8 页内。
+7. **构建与验证**：`cmd.exe` 调用 `paper/build.bat` 实跑 MiKTeX 编译。期间遇到一次间歇性构建异常（某轮 bibtex 读到空 `build/main.aux`，产出空 `main.bbl`、References 整页消失），重跑 `build.bat` 后恢复正常，属 WSL↔Windows 文件系统偶发时序问题，非源码问题。最终验证：`main.pdf` 8 页、`appendix.pdf` 19 页；两个 PDF 全文无 "??"（无 undefined reference/citation，`main.log` 中 undefined citation 计数为 0）；摘要新措辞与附录新 caption 均已在 PDF 中生效。
+
+### 未修改或部分修改
+无。本轮 `docs/revision_suggestions.tex`（投稿前终检）中的全部 3 个 Must-Fix 与 2 个可选建议均已落地或核实为误报；评审结论"After the three fixes above, the paper is ready to submit to AAAI 2027"的前置条件已全部满足。
+
+### 遗留问题
+无新增。文件顶部「遗留问题」中的两项既有决策（双盲 vs camera-ready 作者信息、单文件打包确认）仍待用户答复，不阻塞当前版本作为匿名投稿版使用。
 
 ## 2026-07-04 继续处理旧版投稿前意见
 
