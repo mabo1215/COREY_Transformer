@@ -1,6 +1,15 @@
 ﻿# 论文进度
 
-最后更新：2026-05-18（修复 Weiqi Yan biography 首行与照片未对齐问题；去除多余空行。）
+最后更新：2026-07-03（新增 AAAI 2027 投稿要求的 TL;DR 一句话摘要文件。）
+
+## 2026-07-03 新增 TL;DR 摘要（AAAI 2027 投稿要求）
+
+### 本次修改
+- 新增 `docs/tldr.txt`，内容为一句话英文 TL;DR，概括 COREY 的核心贡献：基于激活熵路由 selective-scan chunk-size 决策的运行时诊断，用于判断何时自适应调度优于静态分块。
+- 该文件用于满足 AAAI 2027 投稿表单中要求的 "Too Long; Didn't Read" 一句话摘要字段，纯文本格式，不涉及 `paper/` 正文改动。
+
+### 备注
+- `USAGE.md` 中登记的目标 venue 当前仍为 NeurIPS 2026，此前 progress 记录中亦有切换到 IEEE TCSVT 的历史条目；本次任务按用户当前指令（AAAI 2027 投稿要求）单独生成 TL;DR 文件，未改动 `USAGE.md` 的 venue 声明。如果 AAAI 2027 是新的最终目标 venue，建议后续同步更新 `USAGE.md` 中的 `目标会议或期刊` 一行，以保持评审标准、模板和 checklist 的一致性。
 
 ## 2026-05-18 Biography 尺寸恢复（TCSVT 默认）
 
