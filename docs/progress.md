@@ -1,6 +1,6 @@
 ﻿# 论文进度
 
-最后更新：2026-07-03（**References 已强制精确从第 8 页顶部开始**：正文压缩至精确 7 页，`\clearpage` 强制换页，总页数从 9 页降到 8 页（正文 7 页 + references 1 页）。表 1/3/4/8/9 从跨栏 `table*` 改为单栏 `table`（不再打断双栏排版），表 2/6/8 的 Overfull \hbox 全部清零。同时移除了摘要下方的匿名代码仓库链接。`build/main.log` 0 error、0 Overfull \hbox。本轮继续用 WSL→Windows `cmd.exe` interop 直接调用宿主机 MiKTeX 编译（`cmd.exe /c "C:\...\build.bat"`），在本会话内迭代验证。)
+最后更新：2026-07-04（继续按 `docs/revision_suggestions.tex` 检查当前 `paper/main.tex` 与 `paper/appendix.tex`。已同步 legacy `H_ref=8.0` 与默认 `H_ref=\log K` 的叙事，明确 legacy chunk-256 结果只作为敏感性/诊断结果；清理 appendix 中不适合最终匿名稿的仓库/过程措辞；修复一个 appendix 表脚注的潜在 Overfull 来源。AAAI 模板恢复后已实跑 `paper/build.bat`：`paper/main.pdf` 成功生成 8 页，`main.log` 显示正文 `[6] [7]` 后进入 `main.bbl` 并输出 `[8]`，即正文刚满 7 页、References 从第 8 页开始；`main.log` 无 Overfull。)
 
 ## 遗留问题（当前状态，唯一权威版本——文件后半段历史条目里的同名旧章节均已过期，不再代表当前状态）
 
@@ -11,6 +11,21 @@
 无需你决策、仅记录供参考：
 - 【已核实，无需处理】`paper/figs/` 图片分辨率：`entropy_gain.jpg`（appendix 用，300dpi，2217×1205）、`entropy_distribution.jpg`（appendix 用，220dpi，1392×726，按 `0.92\linewidth` 排版换算实际印刷分辨率仍充足）、`workflow.png`（appendix 用，2752×1186，文件内嵌 dpi 标签是无意义的默认值，按像素数换算实际印刷分辨率远超 300dpi）。三者格式均为 AAAI 允许的 jpg/png，均只在 `appendix.tex` 中被引用，`main.tex` 当前没有任何 `\includegraphics`。此项此前长期挂在"待确认"里，现已核实清楚，标记为已解决。
 - 【低优先级，不阻塞投稿】`appendix.tex` 中存在少量硬编码数字交叉引用（如"Eq.~(1) of the main paper"、"Section~4 of the main paper"，而非可跨文档自动更新的 `\ref{}`——因为 appendix 现在是独立编译文档，做不到跨文档自动引用）。经核对，这些硬编码数字与 `main.tex` 当前实际编号一致，但如果后续再调整正文结构，需要手动同步。
+
+## 2026-07-04 继续处理旧版投稿前意见
+
+### 已全部修改
+1. **同步默认 COREY scheduler 与 legacy 诊断结果**：`main.tex` 中 perturbation sweep、cross-layer validation、per-layer entropy diagnostics 均改为明确区分提交默认 `H_ref=\log K` 与 legacy `H_ref=8.0`。现在 chunk-256 不再被写成最终默认方法；legacy 行只作为敏感性/诊断证据保留。
+2. **修订 appendix 中的 legacy 解释**：`appendix.tex` 的 chunk sweep caption 与 interpretation 已改写，明确 `corey-256` 是 legacy 诊断点，提交默认 `corey-512` 匹配 static-512 oracle。
+3. **清理最终稿不应出现的过程/仓库措辞**：删除或改写 `repository link in the abstract`、`current repository state`、`current repository centers`、`automatic replacement` 等表述，改成 reader-facing 的 anonymous supplementary package / measured implementation 语言。
+4. **修复一个 appendix 表格潜在越界来源**：`tab:chunk_sweep` 表脚注从固定 `l` 列改成 `p{\dimexpr\columnwidth-2\tabcolsep\relax}` 自动换行，避免单栏脚注导致 Overfull。
+5. **恢复模板后的编译验证已完成**：`paper/template/aaai2027.sty` 与 `paper/template/aaai2027.bst` 已可被 build 脚本解析；`paper/build.bat` 成功生成 `paper/main.pdf`、`paper/appendix.pdf`、`paper/ReproducibilityChecklist.pdf`。`main.pdf` 总页数为 8 页，正文到第 7 页结束，References 从第 8 页开始；`main.log` 无 Overfull。
+
+### 未修改或部分修改
+无。当前 `docs/revision_suggestions.tex` 中无需新实验即可落地的 scheduler 一致性、revision-process wording、表格说明、页数验证事项已处理。
+
+### 遗留问题
+无新增遗留问题。
 
 ## 2026-07-03（续6）表格改单栏 + references 强制第 8 页起 + 移除匿名代码链接
 
@@ -84,7 +99,6 @@ powershell.exe -Command "cd 'C:\source\COREY_Transformer\paper'; & '.\build.bat'
    - Real-Checkpoint Entropy Validation（`tab:real_checkpoint_entropy`）
    - Kernel-Level CUDA Profile: Three-Policy Chunked Scan（`tab:cuda_kernel_profile`）
    - Real-Checkpoint Input-Entropy Distribution（`tab:entropy_variance_real`、`tab:h800_heterogeneous`、`tab:h800_diversity_extra` + 一张 figure）
-   
    插入 `paper/appendix.tex` 现有 Section A"Additional Experimental Details"末尾（`\subsection{Reproducibility Checklist}`之前），标题层级相应降级（原 `\section`→`\subsection`，原 6 个 `\subsection`→`\subsubsection`）。main.tex 对应位置替换为一段约 150 词的指针段落，列出五项鲁棒性检查的一句话结论并指向 `Supplementary~\ref{sec:extended_analysis}`。
 2. **`tab:mixed_regime_chunk`（8-regime 详细分解表）移入附录**：main.tex Section 5.3 只保留结论性文字 + 精简版汇总表 `tab:main_scheduler_oracle`；详细的逐 regime 数字表移到 `paper/appendix.tex` 新增小节"Per-Regime Static Chunk Sweep"（紧邻既有的"Mixed-Regime Scheduler Comparison"小节，位置上下文相关）。
 3. **Theoretical Properties 中"Empirical status of Theorem"长段落精简**：原 7 句、逐步解释 Hadamard 熵证伪机制的完整段落，压缩为 2 句（陈述证伪事实 + 指向附录），因为 `paper/appendix.tex` 的"Detailed Proofs"一节本身已有几乎相同内容的 Scope reminder 与 Remark，原正文段落属于重复。
@@ -733,16 +747,11 @@ H800 验证产物已同步：
 
 检查 `paper/main.tex` 与 `paper/appendix.tex` 后，仍主要依赖 RTX 3070/3090/T4 的实验如下；若后续再次租 H800，可按优先级扩展：
 
-1. **Tier-2b W1 三策略 selective-scan / chunk-sweep / perturbation sweep 上 H800 — 已完成并回填**  
-   已补 `seq_len=4096/8192, dim=1024, d_state=16, FP16/BF16, n=30` 的 Static-64 / COREY chunk-256 / Static-512 oracle timing，并回填到 `paper/main.tex` 与 `paper/appendix.tex`。对应输出：`src/outputs/h800_single_w1_20260428_200216/`、`src/outputs/h800_single_w1_extra_20260428_201044/`。
-2. **H800 hook microbenchmark 替代 n=1 RTX 3070/3090 feasibility row**  
-   Appendix `tab:hook_micro` 仍是 RTX 3070 n=1 / RTX 3090 n=1/3 feasibility check。H800 可用 `run_active_hook_real_benchmark.py` 或 `run_active_hook_integration.py` 做 n≥20 micro/inline split，减少“measurement noise”措辞。
-3. **Checkpoint baseline Mamba-1.x 迁移到 H800**  
-   `tab:checkpoint_baseline` 的 Mamba-370M/Mamba-1.4B 主 checkpoint 质量/延迟仍主要来自 RTX 3070/3090。H800 可补相同四任务 20/50 samples、WT103/PG19 side perplexity，并与 H800 Mamba2/FA3 baseline 保持同平台。对应脚本：`run_longbench_inference.py` / `run_checkpoint_matrix.py`。
-4. **Policy comparison / Mamba-2.8B rows 上 H800**  
-   Appendix `tab:policy_compare_n5` 中 Mamba-2.8B policy_static/policy_corey n=20 来自 RTX 3090。H800 可补同脚本更稳定 latency，检查是否仍保持 corey/static 近似持平。
-5. **Nsight / torch profiler kernel trace 上 H800**  
-   `tab:cuda_kernel_profile` 和 surrogate-to-real-trace 说明仍基于 4x RTX 3090/RTX 4050/RTX 3070。H800 可补 nsight/torch profiler，用于更强系统论文版本。
+1. **Tier-2b W1 三策略 selective-scan / chunk-sweep / perturbation sweep 上 H800 — 已完成并回填**   已补 `seq_len=4096/8192, dim=1024, d_state=16, FP16/BF16, n=30` 的 Static-64 / COREY chunk-256 / Static-512 oracle timing，并回填到 `paper/main.tex` 与 `paper/appendix.tex`。对应输出：`src/outputs/h800_single_w1_20260428_200216/`、`src/outputs/h800_single_w1_extra_20260428_201044/`。
+2. **H800 hook microbenchmark 替代 n=1 RTX 3070/3090 feasibility row**   Appendix `tab:hook_micro` 仍是 RTX 3070 n=1 / RTX 3090 n=1/3 feasibility check。H800 可用 `run_active_hook_real_benchmark.py` 或 `run_active_hook_integration.py` 做 n≥20 micro/inline split，减少“measurement noise”措辞。
+3. **Checkpoint baseline Mamba-1.x 迁移到 H800**   `tab:checkpoint_baseline` 的 Mamba-370M/Mamba-1.4B 主 checkpoint 质量/延迟仍主要来自 RTX 3070/3090。H800 可补相同四任务 20/50 samples、WT103/PG19 side perplexity，并与 H800 Mamba2/FA3 baseline 保持同平台。对应脚本：`run_longbench_inference.py` / `run_checkpoint_matrix.py`。
+4. **Policy comparison / Mamba-2.8B rows 上 H800**   Appendix `tab:policy_compare_n5` 中 Mamba-2.8B policy_static/policy_corey n=20 来自 RTX 3090。H800 可补同脚本更稳定 latency，检查是否仍保持 corey/static 近似持平。
+5. **Nsight / torch profiler kernel trace 上 H800**   `tab:cuda_kernel_profile` 和 surrogate-to-real-trace 说明仍基于 4x RTX 3090/RTX 4050/RTX 3070。H800 可补 nsight/torch profiler，用于更强系统论文版本。
 
 不建议作为 H800 优先项：
 - Quamba INT4：主要要求 sm_89/Ada，H800 sm_90 不一定是目标复现环境；当前应继续作为 quantization future work。
@@ -1495,8 +1504,7 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 
 ## 未修改或部分修改 / 遗留问题（本节已完全过期，保留仅供历史追溯）
 
-以下两节是本文件最早期（TCSVT 投稿阶段）遗留的"未修改或部分修改"与"遗留问题"快照，早已被后续多轮 venue 迁移（TCSVT → TDSC → IEEE TPDS → AAAI 2027，见文件顶部与各带日期条目）整体取代，其中的具体内容（video-oriented 实验需求、14 页合并 PDF 结构等）均已不适用于当前 AAAI 2027 版本。当前唯一权威的「遗留问题」在**文件最顶部**。 
-
+以下两节是本文件最早期（TCSVT 投稿阶段）遗留的"未修改或部分修改"与"遗留问题"快照，早已被后续多轮 venue 迁移（TCSVT → TDSC → IEEE TPDS → AAAI 2027，见文件顶部与各带日期条目）整体取代，其中的具体内容（video-oriented 实验需求、14 页合并 PDF 结构等）均已不适用于当前 AAAI 2027 版本。当前唯一权威的「遗留问题」在**文件最顶部**。
 ## 遗留问题（当前状态，唯一权威版本——文件后半段历史条目里的同名旧章节均已过期，不再代表当前状态）
 
 需要你决策：
