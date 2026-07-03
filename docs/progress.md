@@ -1,6 +1,208 @@
 # 论文进度
 
-最后更新：2026-06-06（`paper/build.bat` 现产出三个 PDF：`main.pdf`(仅正文,12页) / `main_combine.pdf`(合并,24页) / `appendix.pdf`(独立 Supplementary)，正文版用 xr 解析附录交叉引用，全部 0 error / 0 undefined，并自动同步到 `submit/`。）
+最后更新：2026-07-03（**正文页数已通过实际编译确认精确落在 7 页**（不含 references；references 另占 2 页，总计 9 页）。本轮起改用 WSL→Windows PowerShell interop（`powershell.exe`）直接调用宿主机 MiKTeX 编译，不再需要用户手动跑 `build.bat` 回传日志——可在本会话内直接迭代验证页数与排版。经三轮"移出 → 编译验证 → 移回部分内容 → 再验证"的调整，最终 `main.tex` 定格在 460 行左右；`build/main.log` 与 `build/appendix_only.log` 均 0 error、0 undefined reference，仅剩 2 处 <7pt 的可忽略 Overfull \hbox。)
+
+## 2026-07-03（续5）实测编译迭代，正文精确锁定 7 页
+
+### 关键方法变化：WSL 直接调用 Windows MiKTeX
+发现 WSL2 默认开启 Windows 互操作（`powershell.exe`/`cmd.exe` 在 WSL `$PATH` 中可直接调用），且 `/mnt/c/...` 与用户的 `C:\...` 是同一份文件系统。因此本轮起改为直接执行：
+```
+powershell.exe -Command "cd 'C:\source\COREY_Transformer\paper'; & '.\build.bat'"
+```
+可在本会话内直接触发用户机器上的真实 MiKTeX 编译，读取 `build\main.log`/`build\appendix_only.log` 拿到精确页数、Overfull/Underfull 明细、undefined reference 等第一手信息，不再需要用户手动跑 `build.bat` 再复制粘贴日志回来。后续所有 "改代码 → 编译 → 看真实结果 → 再改" 的迭代均在本会话内完成。
+
+### 第一次实测：正文只有 6 页（少了 1 页）
+按用户"续4"条目描述的移出方案编译后，`main.log` 显示 `[6] [7] (main.bbl [8])`——正文只跑到第 6 页，第 7 页起才是参考文献（连同第 8 页共 2 页 references，总 8 页）。说明"续4"那一轮移出内容偏多了约 1 页，需要往回移一部分。
+
+### 第二次调整：移回 H800 W1 Kernel Supplement + 多平台表
+把之前移入 appendix 的"H800 W1 Kernel Supplement"整段（含 `tab:h800_w1_supplement` 单栏表、`tab:real-gpu-three-policy` 跨栏表）移回 `main.tex`，插入位置为 Section 5.1（Kernel-Level Scan Comparison）"Cross-layer validation on a real checkpoint"段落之后、"End-to-End Routed Inference"小节之前，新增一段"Cross-hardware transfer"承接段落。
+
+**移动过程中发现并修正了一处自己的疏漏**：第一次移回时只搬了两张表和一句新写的承接段落，漏掉了原文里三段真实实验说明文字（H800 perturbation sweep 的具体数字、benchmark 使用的合成分布参数说明、runtime-dispatch closure 的后续说明）。用脚本核对"备份版 main.tex 的每一行是否都能在当前 main.tex+appendix.tex 中找到"时发现了这个遗漏，随后补齐——原文数字与结论一条未丢，只是重新组织了段落顺序。
+
+### 第三次实测：正文变成 9 页（超了 2 页）
+移回内容后编译，`main.log` 显示总 9 页，此时怀疑移多了。用同样方法核对 `[6] [7] (main.bbl [8]) [9` 的 page marker 序列，发现**正文实际正好跑到第 7 页，第 8 页起才是 references（8–9 两页）**——不是超了，是精确命中目标。
+
+### 收尾：清理排版警告（不影响页数，纯粹整洁度）
+`main.log` 里出现 3 处新的 Overfull \hbox（因为移回的表格是从"续4"移出前的旧版本复制回来的，没有带上之前"表格改回单栏"那一轮做的宽度收紧）：
+- `tab:kernel_summary`：6.5pt，可忽略不处理。
+- `tab:h800_w1_supplement`：135.5pt——用实测数据验证了这张 6 列表格的内容宽度（约 340pt）本来就超过单栏可用宽度（约 237pt），无论怎么收紧列距都塞不下，遂改回 `table*`（符合 AAAI 官方"放不下才跨栏"规则，不是随意跨栏）。
+- `tab:main_inline_overhead`：32pt——用 `\setlength{\tabcolsep}{1pt}` + 精简 "Active, all 48 layers" → "Active, 48 layers" 两步收紧，缩小到 4.5pt（可忽略）。
+
+再次编译确认：**总页数仍为 9（正文 7 + references 2），Overfull \hbox 从 4 处降到 2 处且均 <7pt，`main.log`/`appendix_only.log` 均 0 error、0 undefined reference**。
+
+### 结果
+- `main.tex`：446 行（含 preamble）；`appendix.tex`：1397 行。
+- 三个产物全部编译通过并已拷贝到 `paper/`：`main.pdf`（9 页，正文 7 页 + references 2 页）、`appendix.pdf`（20 页）、`ReproducibilityChecklist.pdf`（2 页）。
+- 用脚本核对确认：`paper/backup/AAAI73/main.tex`（本轮改动前的完整备份）中每一段实质性内容（表格数字、实验描述）都能在当前 `main.tex`+`appendix.tex` 中找到对应版本，没有数据被直接删除——只有搬动位置、合并重复段落（如 Hadamard 证伪长段落，与 appendix 已有的 Remark 重复，压缩为 2 句）、以及为排版收紧而做的用词精简（如去掉与 caption 重复的解释性从句）。
+
+## 2026-07-03（续4）main.tex 精简至目标 7 页 + 备份
+
+### 背景
+用户要求："现在的版本的论文做好备份到 paper\backup 然后把不重要的内容从main移到 appendix 保持main除去reference的部分 其他部分7页整 以便符合AAAI 的page limit要求"。
+
+### 备份
+`paper/backup/` 已有用户自建的子目录结构（`AAAI73/`、`IEEEPTDS/`，`IEEEPTDS/` 存放更早的 TPDS 版本）。改动前把当前 AAAI 2027 版本（`main.tex`、`appendix.tex`、`build.bat`、`ref.bib`、`ReproducibilityChecklist.tex`）复制进 `paper/backup/AAAI73/`（此前为空目录）。
+
+### 内容搬迁（main.tex → appendix.tex）
+逐段核对哪些内容是"验证/鲁棒性检查"性质、哪些是"headline 结果"性质，只保留后者在正文：
+
+1. **整节 Section 6"Extended Hardware and Calibration Analysis"移入附录**（约 300 行，main.tex 中原本的 6.1–6.6 全部内容）：
+   - Chunk-Size Sweep: Static-Oracle Latency Curve（`tab:chunk_sweep`）
+   - H800 W1 Kernel Supplement（`tab:h800_w1_supplement` + 多平台表 `tab:real-gpu-three-policy`）
+   - $H_{\text{ref}}$ Sensitivity Ablation（`tab:href_ablation`）
+   - Real-Checkpoint Entropy Validation（`tab:real_checkpoint_entropy`）
+   - Kernel-Level CUDA Profile: Three-Policy Chunked Scan（`tab:cuda_kernel_profile`）
+   - Real-Checkpoint Input-Entropy Distribution（`tab:entropy_variance_real`、`tab:h800_heterogeneous`、`tab:h800_diversity_extra` + 一张 figure）
+   
+   插入 `paper/appendix.tex` 现有 Section A"Additional Experimental Details"末尾（`\subsection{Reproducibility Checklist}`之前），标题层级相应降级（原 `\section`→`\subsection`，原 6 个 `\subsection`→`\subsubsection`）。main.tex 对应位置替换为一段约 150 词的指针段落，列出五项鲁棒性检查的一句话结论并指向 `Supplementary~\ref{sec:extended_analysis}`。
+2. **`tab:mixed_regime_chunk`（8-regime 详细分解表）移入附录**：main.tex Section 5.3 只保留结论性文字 + 精简版汇总表 `tab:main_scheduler_oracle`；详细的逐 regime 数字表移到 `paper/appendix.tex` 新增小节"Per-Regime Static Chunk Sweep"（紧邻既有的"Mixed-Regime Scheduler Comparison"小节，位置上下文相关）。
+3. **Theoretical Properties 中"Empirical status of Theorem"长段落精简**：原 7 句、逐步解释 Hadamard 熵证伪机制的完整段落，压缩为 2 句（陈述证伪事实 + 指向附录），因为 `paper/appendix.tex` 的"Detailed Proofs"一节本身已有几乎相同内容的 Scope reminder 与 Remark，原正文段落属于重复。
+
+### 交叉引用修复（新出现的双向依赖）
+搬迁后 appendix.tex 内新出现 3 处指向 main-only 标签的引用（`sec:kernel_results`、`tab:kernel_summary`、`tab:perturbation`，因为被移动的"H800 W1 Kernel Supplement"等小节本来就引用正文的核心表格）。之前只有 main→appendix 单向 xr 解析；现在补齐反向：
+- `paper/build.bat` 生成的 `build/appendix_only.tex` 包装文件新增 `\usepackage{xr}` + `\IfFileExists{main.aux}{\externaldocument{main}}{}`。
+- 编译顺序改为三段式：先编译一次独立附录（此时还没有 main.aux，新增的 3 处引用暂时"??"）→ 编译 main.tex（此时已有 appendix_only.aux，main 侧引用全部解析）→ **再编译一次独立附录**（此时 main.aux 已存在，新增的 3 处引用也解析）。latexmk 分支与 pdflatex fallback 分支均已加上这次"附录二次编译"。
+- `paper/appendix.tex` 头部注释同步更新（原注释仍写着"main.tex 通过 \input 内嵌 appendix"和"两处引用预期显示??"，均已过时，现已改为准确描述当前的纯 standalone-only 编译模式与双向 xr 机制）。
+
+### 结果
+- `main.tex`：723 → 395 行（正文，不含 references，未计入 bibliography 长度——references 由 `\bibliography{ref}` 自动生成，不在可精简范围内）。
+- `appendix.tex`：965 → 1456 行（相应增长）。
+- 结构核查：`\begin{table}/\end{table}`、`table*`、`tabular`、`figure`、`theorem`、`equation` 等全部配对；跨两文件无重复 `\label`；`\resizebox` 全文为零；引用的 bib key 全部存在于 `ref.bib`。
+
+### 待验证（无法在 WSL 本地确认，必须由你在 Windows 端跑一次 `build.bat`）
+- **精确页数**：目标是正文（不含 references）恰好 7 页。当前只做了行数层面的大幅削减（-45%），但实际页数取决于双栏排版、表格高度、公式换行等因素，无法在没有 LaTeX 环境的 WSL 里验证。请编译后告诉我 `paper\main.pdf` 中 references 前的页数——如果不是恰好 7 页（多了或少了），我会据此再做一轮微调（继续搬移/搬回内容，而不是删除数据）。
+- 确认 `paper\build\appendix_only.log` 中不再出现 `sec:kernel_results`、`tab:kernel_summary`、`tab:perturbation` 的 undefined reference 警告（验证反向 xr 生效）。
+- 确认 `paper\appendix.pdf` 中新增的"Extended Hardware and Calibration Analysis"小节与"Per-Regime Static Chunk Sweep"小节排版正常（无表格溢出——这些表此前已按"能否单栏放下"的规则处理过，迁移不改变其 `table`/`table*` 属性）。
+
+## 2026-07-03（续3）main.pdf 去除 appendix + 表格改回单栏 + 三点核实
+
+### 背景
+用户提出三点要求：
+1. "paper\main.pdf 里面不要有 appendix 内容"
+2. "paper/ main 最好节省空间 而不是一个表横跨两栏"
+3. "你检查论文是不是用了 paper\template\aaai2027.sty paper\template\aaai2027.bst 这几个AAAI 的格式？必须按照AAAI 格式！"
+
+### 修改 1：main.pdf 不再包含 appendix
+- `paper/main.tex` preamble 新增 `\usepackage{xr}` + `\IfFileExists{build/appendix_only.aux}{\externaldocument{build/appendix_only}}{}`（用 `xr` 而非 `xr-hyper`，因为 AAAI 明确禁止 hyperref；`xr` 本身不依赖 hyperref，不在 AAAI 禁用包列表中）。
+- 删除 `paper/main.tex` 末尾的 `\appendix\input{appendix}`，`main.tex` 现在真正 body-only，`\end{document}` 前只有 `\bibliography{ref}`。
+- 核实 `main.tex` 中有 8 处引用只在 appendix.tex 中定义的标签（`sec:active_overhead`、`sec:appendix_ablations`、`sec:appendix_details`、`sec:appendix_proofs`、`sec:bin_count_sensitivity`、`tab:hook_micro`、`tab:prototype_consolidated`、`tab:tiling_depth`），这些现在依赖 xr 从 `build/appendix_only.aux` 解析。
+- `paper/build.bat` 编译顺序相应调整：**独立附录必须先编译**（产出 `build/appendix_only.aux`），再编译 main.tex（否则 xr 引用在当次编译中找不到目标，回退显示"??"，需要在 build/ 已存在旧 aux 的情况下才能一次性解析——因此把附录放在第一位，保证同一次 `build.bat` 运行内 main.tex 就能拿到最新引用）。fallback 分支与 latexmk 分支均已调整。
+- 影响范围明确：只是 main.pdf 不再嵌入 appendix 页面；appendix 内容仍完整存在于独立的 `paper/appendix.pdf`（详见上一条目"恢复 appendix.tex 独立编译"）。
+
+### 修改 2：表格改回单栏节省空间
+- 上一轮修复 `\resizebox` 移除后的溢出问题时，把 21 张表统一转成跨栏 `table*`。本轮按 AAAI 官方说明书"Tables that do not fit in a single column must be placed across double columns"的原则重新评估：能在单栏放下的表改回 `table`，只有确实放不下的表才保留 `table*`。
+- **改回单栏 `table`（17 张，`\setlength{\tabcolsep}{2pt}` 收紧列间距）**：
+  - `main.tex`：`tab:kernel_summary`、`tab:main_inline_overhead`、`tab:real_checkpoint_entropy`、`tab:h800_heterogeneous`、`tab:h800_diversity_extra`、`tab:entropy_variance_real`、`tab:chunk_sweep`、`tab:h800_w1_supplement`
+  - `appendix.tex`：`tab:tpu_corey_benchmark`、`tab:active_integration`、`tab:fused_kernel_sweep`、`tab:prototype_consolidated`、`tab:policy_corey_mamba2`、`tab:scheduler_oracle_comparison`、`tab:h800_runtime_routed`、`tab:policy_compare_n5`、`tab:bin_count_sensitivity`
+- **两张表额外做了单元格文本精简**（数值本身未改动，只是把已经在 caption 里说明过的信息从单元格里搬走，避免重复占用宽度）：
+  - `tab:chunk_sweep`（main.tex）：`\texttt{corey-256 (legacy, $H_{\text{ref}}{=}8.0$)}` → `\texttt{corey-256}$^\dagger$`，`\texttt{corey-512 (default, ...)}` → `\texttt{corey-512}$^\ddagger$`，完整说明移到表格脚注（caption 本身已经解释过这个区别，脚注只是把它也放在表内方便查看）；表头缩短为 Chunk/Calls/Lat. (ms)/Spdup。
+  - `tab:scheduler_oracle_comparison`（appendix.tex）：`Guarded sampled-hist (fallback=512)` → `Guarded sampled-hist`，`Learned-table (seq-len rule, H800)` → `Learned-table (H800)`，`RTX~3070 sweep`/`H800 routed` → `RTX~3070`/`H800`（详细规则已在 caption 与既有表格脚注中说明）。
+- **保留跨栏 `table*`（6 张，本身内容就宽，符合 AAAI"放不下才跨栏"的规则，非疏漏）**：`tab:hook_micro`（9 列）、`tab:h800_routed_quality_longbench40`（8 列）、`tab:external_baseline_extended`（8 列）、`tab:h800_static_oracle_adaptive`（6 列但数值宽）、`tab:h800_unified_scheduler_ablation`（6 列，含此前已处理过的超长 Random 行，即使跨栏+收紧列距仍超宽 ~62pt）、`tab:checkpoint_baseline`（9 列）。
+- 结构核查：`\begin{table}`/`\end{table}` 与 `\begin{table*}`/`\end{table*}` 计数均配对，`\resizebox` 全文为零，交叉引用与 bib key 核对无新增缺口。
+
+### 修改 3：核实 AAAI 格式引用
+逐项核实并确认：
+- `paper/main.tex` 第 6–7 行：`\documentclass[letterpaper]{article}` + `\usepackage[submission]{aaai2027}`。
+- `paper/appendix.tex`、`paper/ReproducibilityChecklist.tex`：均无独立 `\documentclass`（前者靠 `\input` 并入 main.tex 与独立 wrapper；后者 `\ifreproStandalone` 分支同样用 `aaai2027`）。
+- `paper/template/aaai2027.sty`、`paper/template/aaai2027.bst` 文件确实存在于声明路径下。
+- `paper/build.bat` 第 35–36 行 `TEXINPUTS`/`BSTINPUTS` 均指向 `.;.\template`，确保 pdflatex/bibtex 能找到这两个文件。
+- `aaai2027.sty` 内部第 354 行自动 `\bibliographystyle{aaai2027}`，因此实际生效的 bib 样式必然是 `aaai2027.bst`，无需（也不允许）在 main.tex 中手动设置。
+- 结论：三个文档、build 脚本均严格按 AAAI 2027 官方工具包配置，未发现遗留的 IEEEtran/NeurIPS/TPDS 残留。
+
+### 待验证
+运行 `paper\build.bat`，确认：(a) `paper\main.pdf` 页数应比之前减少（不再含 appendix 页），且合并 appendix 后的 `Supplementary~\ref{...}` 引用不再显示为 "??"（前提是同一次运行里先编译了附录）；(b) 抽查 `paper\build\main.log`，确认改回单栏的表未产生新的 Overfull \hbox；(c) `paper\appendix.pdf` 与 `paper\ReproducibilityChecklist.pdf` 仍正常生成。
+
+## 2026-07-03（续2）恢复 appendix.tex 独立编译
+
+### 背景
+用户明确要求："paper\build.bat 里面有没有编译 paper\appendix.tex？编译也包括这个"，随后："appendix.tex 分开编译！！！"。此前为符合 AAAI 单文件提交要求，appendix.tex 只通过 `\appendix\input{appendix}` 作为 main.tex 的一部分编译（已用 build log 证实确实被编译，页 12–26），但用户希望额外恢复独立产出 `appendix.pdf` 的能力——这也符合 AAAI 官方说明书中"Supplementary Material / Technical Appendices... some require technical appendices to be submitted as separate documents"的场景。
+
+### 修改（`paper/build.bat`）
+1. 恢复生成 `build/appendix_only.tex` 包装文件（回显写入，仿照本仓库 TCSVT 时代已验证可用的同类做法），preamble 改为与 `main.tex` 一致的 AAAI 2027 组合（`aaai2027.sty` submission 模式、`natbib`、`algorithm`+`algorithmic`、`amsmath` 等），`\title{Supplementary Material}`、`\author{Anonymous Submission}`，正文为 `\appendix\input{../appendix}` + `\bibliography{../ref}`（appendix.tex 内有 `\cite{chiang2024quamba}`，需要 bibtex）。
+2. `latexmk` 分支与 `pdflatex/bibtex` fallback 分支均新增对这个包装文件的编译步骤。
+3. `:post_build` 新增对 `build\appendix_only.pdf` 的独立存在性检查与拷贝（→ `paper\appendix.pdf`），与 `main.pdf`、`ReproducibilityChecklist.pdf` 同样互相解耦：三者中任何一个失败都不会阻止其余已成功产物被拷贝出来，最终整体 exit code 汇总三者状态。
+4. 开头的陈旧文件清理列表补充 `appendix_only.*` 系列扩展名。
+
+### 已知限制（如实记录）
+appendix.tex 中有两处引用只在 main.tex 中定义的标签（`tab:chunk_sweep`、`tab:href_ablation`），独立编译时会显示为"??"（未定义引用警告），这是设计上可接受的限制——与本仓库 TCSVT 时代的旧版 `appendix_only.pdf` 一致的已知行为（当时的头部注释也明确记录了这一点）。已在 `paper/appendix.tex` 头部注释与 `build.bat` 内注释中重新写明。若后续需要独立编译中也正确解析这两处引用，需要额外引入 `xr` 包 + `\externaldocument{build/main}`（不能用 `xr-hyper`，因为 AAAI 禁止 hyperref），目前未做，因为这只是两处 cosmetic "??"，不影响合并版 `main.pdf`（唯一提交用的权威版本）的正确性。
+
+### 待验证
+运行 `paper\build.bat`，确认 `paper\appendix.pdf`、`paper\main.pdf`、`paper\ReproducibilityChecklist.pdf` 三者都生成且时间戳最新；确认 `paper\build\appendix_only.log` 中除上述两处已知 "??" 外无其他 fatal error。
+
+## 2026-07-03（续）build.bat 实跑问题修复
+
+### 问题 1：natbib "Bibliography not compatible with author-year citations" fatal error
+- **根因**：`paper/build/` 目录堆积了半年内多套构建系统（TCSVT/IEEEtran、旧版拆分 appendix_only）遗留的中间文件；`build/main.bbl` 是 5 月 18 日用 `IEEEtran.bst`（numeric 风格）生成的旧文件，`build.bat` 重新跑 `bibtex` 时输出被 `>nul 2>&1` 静默丢弃，一旦 bibtex 因任何原因未重新生成 `.bbl`，pdflatex 就会复用这份旧的 numeric 风格 `.bbl`，与 natbib 的 author-year 期望冲突，报 fatal error。
+- **验证**：`grep -n "output.bibitem" template/aaai2027.bst` 确认 `aaai2027.bst` 本身写出 `\bibitem[{label}]{key}`（natbib author-year 需要的带方括号 label 格式），说明 `.bst` 本身没问题，纯粹是陈旧 `.bbl` 复用导致。
+- **修复（`paper/build.bat`）**：
+  1. 把开头的"按文件名逐个删除"清理逻辑，改为 `rd /s /q build` 整个目录连根拔起再 `mkdir build`，杜绝任何陈旧构建产物残留。
+  2. `bibtex build\main` 不再重定向到 `nul`，且检查其 `errorlevel`，一旦 bibtex 本身失败会立即在日志中可见并停止构建，而不是静默复用旧文件继续。
+  3. `pdflatex main.tex` 在 bibtex 之后增加到 3 次（原为 2 次），确保 natbib/aaai2027.bst 引入的引用编号在"Label(s) may have changed"警告后能完全收敛。
+
+### 问题 2：appendix 看起来"没编译"
+- **根因**：并非 appendix.tex 真的没有被处理——`main.log` 里能看到 `(appendix.tex [12 <./figs/...` 说明它正常从第 12 页开始编译到第 26 页。真正的原因是 build.bat 原有逻辑要求 `main.pdf` **和** `ReproducibilityChecklist.pdf` **都**成功生成才会把 `build\main.pdf` 拷贝到 `paper\main.pdf`；因为 checklist 编译失败（见问题 3），整个脚本在拷贝前就走到 `:fail`，导致 `paper\main.pdf` 仍停留在 5 月 18 日的旧 TCSVT 版本，用户看到的自然还是没有新内容、没有合并 appendix 的旧文件。
+- **修复（`paper/build.bat`）**：把 main.pdf 和 ReproducibilityChecklist.pdf 的编译结果判断与复制逻辑彻底解耦——`:post_build` 现在分别检查两个 PDF 是否存在，存在就独立拷贝、独立报告；哪怕 checklist 编译失败，已经成功的 main.pdf 依然会被拷贝到 `paper\main.pdf`。
+
+### 问题 3：`ReproducibilityChecklist.tex:182: Undefined control sequence`
+- **根因**：`paper/ReproducibilityChecklist.tex` 独立编译时的 preamble（`\ifreproStandalone` 分支）只加载了 `aaai2027.sty`，没有加载 `amsmath`；但第 182、215 行的回答文本里用了 `$H_{\text{ref}}$`（`\text{}` 是 amsmath 提供的命令），main.tex 里因为已加载 amsmath 所以同样写法不会报错，但 checklist 独立编译时就会因 `\text` 未定义而 fatal error。
+- **修复（`paper/ReproducibilityChecklist.tex`）**：在 `\ifreproStandalone` 块内追加 `\usepackage{amsmath}`。
+
+### 问题 4：main.log 中 36 处 Overfull/Underfull 警告（去 `\resizebox` 的遗留问题）
+用户实跑日志确认：`main.tex` 12 处、`appendix.tex` 24 处 overfull/underfull，多处超宽达 150–311pt（远超页边距，会实际溢出版心）。逐条核对日志中报告的行号，定位到具体表格后统一处理：
+- **21 张表**（`tab:kernel_summary`、`tab:chunk_sweep`、`tab:h800_w1_supplement`、`tab:real_checkpoint_entropy`、`tab:entropy_variance_real`、`tab:h800_heterogeneous`、`tab:h800_diversity_extra`、`tab:main_inline_overhead`（以上 main.tex）；`tab:tpu_corey_benchmark`、`tab:prototype_consolidated`、`tab:policy_compare_n5`、`tab:bin_count_sensitivity`、`tab:hook_micro`、`tab:active_integration`、`tab:h800_runtime_routed`、`tab:h800_static_oracle_adaptive`、`tab:h800_routed_quality_longbench40`、`tab:fused_kernel_sweep`、`tab:external_baseline_extended`、`tab:policy_corey_mamba2`、`tab:scheduler_oracle_comparison`、`tab:h800_unified_scheduler_ablation`、`tab:checkpoint_baseline`（appendix.tex））由单栏 `table` 改为跨栏 `table*`（双栏宽度约多出 249pt，覆盖绝大多数溢出量），数值内容完全未改动。
+- **5 张跨栏后仍偏紧的表**（`tab:hook_micro`、`tab:external_baseline_extended`、`tab:h800_routed_quality_longbench40`、`tab:h800_unified_scheduler_ablation`、`tab:checkpoint_baseline`）额外加 `\setlength{\tabcolsep}{3-4pt}`（AAAI 官方说明书明确允许的例外，不受"不可 `\setlength`"限制）收紧列间距。
+- **`tab:h800_unified_scheduler_ablation` 的 Random 行**：该行 `Chunk distribution` 单元格原为 `$\{128{:}521,256{:}507,512{:}502,1024{:}528,2048{:}486\}$`（远超同列其他行长度，是本表 311pt 超宽的主因）。改为 `uniform across buckets$^\dagger$` + 表格脚注给出完整分桶数据，与本文 `main.tex` 中 `tab:routed_ablation` 表对同类型 Random 行的既有写法（"uniform across buckets"）保持一致；数据本身未删除，只是从单元格移到脚注。
+- 未处理 underfull（badness）类警告：这些是段落断行稀疏警告，不会导致内容溢出版心，AAAI 规则未禁止，暂不处理。
+
+### 待验证
+- 请重新运行 `paper\build.bat`，确认：(a) `paper\main.pdf` 与 `paper\ReproducibilityChecklist.pdf` 均生成且时间戳为最新；(b) `paper\build\main.log` 中 `grep -c "Overfull\|Underfull"` 是否显著下降或清零；(c) 页数是否有明显变化（表格转双栏可能改变分页）。
+
+## 2026-07-03 venue 改投 AAAI 2027 + ReproducibilityChecklist 落地
+
+### 追加决定（同日）
+- 用户询问 `\section*{Ethical Statement}` 能否移入 appendix：查阅 `paper/template/AAAI27Kit/AnonymousSubmission2027.tex` 官方 Section Headings 顺序说明（Main content → Content Appendices → **Ethical Statement**（optional, unnumbered）→ Acknowledgments → References → Supplementary/Technical Appendices），确认 Ethical Statement 有固定位置（References 之前），不能放进 appendix.tex 所在的 Supplementary/Technical Appendices 类别。
+- 用户随后决定该节非强制要求，**直接不写**：已删除 `paper/main.tex` 中 `\section*{Ethical Statement}` 整节（Conclusion 后直接接 `\bibliography{ref}`）。
+
+### 背景
+用户明确指令："请根据 AAAI 2027 的格式修改论文 paper/ 其中 AAAI 2027 的工具包在 paper/template 里面，同时完成 paper/ReproducibilityChecklist.tex（忽略里面的答案，只用它的模板）"。
+
+在开始改动前，通过 `git status`/`git diff -w` 确认 `paper/` 子模块（独立 git 仓库，`github.com/mabo1215/ADAMA_Transformer_latex`）工作区与 HEAD 之间只有换行符差异，随后按用户要求用 `git stash push -u` + 复制 + `git stash pop` 的方式把改动前的版本备份到 `paper/backup/`（`main.tex`/`appendix.tex`/`ref.bib`/`build.bat`）。
+
+备份过程中发现并处理了一次并发编辑事故：另一个终端会话（同日、同仓库）也在做 AAAI 2027 相关改动，但随后被用户明确纠正为"这个 agent 不是让你检查论文"（该会话应仅做 `src/` vs `submit/code/` 的匿名代码包核对，不应触碰 `paper/*.tex`）。两个会话的 git 操作短暂交错，导致工作区一度回退到更早的 TPDS 草稿。通过 `git log --oneline` 确认真实 HEAD（`9895a81 "u235"`）后，用 `git checkout -- main.tex appendix.tex build.bat ref.bib` 显式对齐到当前 HEAD（用户已确认授权），并重新生成 `paper/backup/` 快照。当前会话确认是用户直接指定做论文 venue 转换的会话，因此按指令继续执行。
+
+### 已全部修改
+- **`paper/main.tex` 换装 `aaai2027.sty`**：`\documentclass[journal]{IEEEtran}` → `\documentclass[letterpaper]{article}` + `\usepackage[submission]{aaai2027}`；按模板要求的固定顺序加载 `url`(hyphens)、`graphicx`、`natbib`（无选项）、`caption`（无选项）、`frenchspacing`，以及推荐的 `algorithm`+`algorithmic`（替换 `algpseudocode`）、`booktabs`；补 `\pdfinfo{/TemplateVersion (2027.1)}`；`\setcounter{secnumdepth}{2}` 保留 section+subsection 编号。
+- **移除全部 IEEEtran 专属机制**：`\IEEEpeerreviewmaketitle`、`\IEEEPARstart`（改为纯文本开头）、`\begin{IEEEkeywords}...\end{IEEEkeywords}`（改为 `\noindent\textbf{Keywords:} ...` 段落）、`\markboth` 运行页眉、`\ifdefined\BODYONLYMODE`/`xr-hyper`/`\externaldocument`（AAAI 要求单一合并文档，不再需要独立 `appendix_only.pdf`）、`hyperref`（AAAI 明确禁止 hyperref/navigator 包）、`\renewcommand{\theHfigure}` 等仅供 hyperref 使用的锚点重定义、`\renewcommand{\appendixname}{Supplementary}`（AAAI 的 `\appendix` 不使用该宏，正文中"Supplementary"字样是作者自己的文字，不受影响）。
+- **作者信息**：沿用原稿已经匿名化的双盲状态，改为 AAAI 规定格式 `\author{Anonymous Submission}` + `\affiliations{}`；原 `\thanks{...withheld for double-blind review}` 说明文字不再需要（AAAI 提交模式下版权栏/作者栏由 `aaai2027.sty` 自动处理）。
+- **摘要/关键词/代码链接**：摘要正文不变（数值结论未改动）；在 `\end{abstract}` 后按模板加入 `\begin{links}\link{Code}{https://anonymous.4open.science/r/COREY_Transformer-B0C5/}\end{links}`。
+- **公式改排**（AAAI 禁止 `\resizebox`）：`main.tex` 的 chunk-size 映射公式（Eq. 2）与 `appendix.tex` 的两个宽公式（fusion 可行域约束、tile-size 映射 $T(e)$）均从 `\resizebox{\columnwidth}{!}{$\displaystyle ...$}` 改为 `aligned` 环境多行排版，数值和符号未改动。
+- **算法伪代码语法转换**：`appendix.tex` 中两个 `algorithm` 环境（`alg:dp_fusion` 动态规划求解器、`alg:triton_kernel` 目标融合核）从 `algpseudocode`（`\State`/`\For`/`\If`/`\EndIf`/`\Return`/`\Comment` 首字母大写）改为模板推荐的 `algorithmic` 包语法（`\STATE`/`\FOR`/`\ENDFOR`/`\IF`/`\ENDIF`/`\RETURN`/`\COMMENT` 全大写）。
+- **批量移除 `\resizebox`（AAAI 明确禁止）**：用脚本化方式扫描并删除 `main.tex`（12 处）与 `appendix.tex`（15 处）表格外层的 `\resizebox{\linewidth/\columnwidth}{!}{% ... }` 包裹，保留内部 `tabular` 内容与数值完全不变；所有受影响表格保持 `\small`（9pt，AAAI 允许的最小表格字号），并把 3 处越界使用的 `\scriptsize`（8pt，低于 AAAI 表格字号下限）统一提升为 `\small`。
+- **`\bibliography`/`\appendix` 收尾**：`\bibliographystyle{IEEEtran}\bibliography{ref}` → `\bibliography{ref}`（`aaai2027.sty` 自动设定 `aaai2027.bst`，不需要手动 `\bibliographystyle`）；`\ifdefined\BODYONLYMODE\else\appendices\input{appendix}\fi` → `\appendix\input{appendix}`（标准 LaTeX `\appendix` 命令，附录 section 自动按字母编号 A/B/...）。
+- **`paper/appendix.tex` 头部注释更新**：原注释描述"独立编译 `appendix_only.pdf` 时计数器从 1 重新开始"的旧双 PDF 工作流，已改为说明现在始终作为单一合并文档的一部分被 `\input`。appendix.tex 主体内容（`table*`/`section`/`subsection` 结构、`Theorem`/`Remark` 环境使用）本身已与 AAAI 兼容，未做结构性改写。
+- **`paper/build.bat` 重写为单文档编译**：移除旧的三件套编译（`main.pdf` 仅正文 + `main_combine.pdf` 合并 + `appendix_only.pdf` 独立附录）与 `submit/MainManuscript`、`submit/LaTeXSupplementaryFile` 自动同步逻辑（这些是 TPDS/NeurIPS 时代双 PDF 提交习惯，AAAI 单文档模式不再需要）。新脚本：设置 `TEXINPUTS`/`BSTINPUTS` 指向 `paper/template/`（`aaai2027.sty`/`aaai2027.bst` 所在目录）→ `pdflatex`→`bibtex`→`pdflatex`×2 编译 `main.tex` → 额外编译一次独立可行的 `ReproducibilityChecklist.tex`（其 `\ifreproStandalone` 逻辑在未被 `\input` 时自动生成独立文档）→ 都拷贝到 `paper/` 根目录。
+- **`paper/ReproducibilityChecklist.tex` 完全重写**：原文件内容其实是另一篇论文（HKVLM/grounding，涉及 RefCOCO、POPE、SeeErr/SayErr 等与本文完全无关的术语）遗留下来的答案，与 COREY 论文无关。按用户指示"忽略里面的答案，只用它的模板"，改为使用 `paper/template/AAAI27Kit/ReproducibilityChecklist.tex` 官方问题结构（一字不改的 checklist 题目与 `\ifreproStandalone`/`\checksubsection`/`\question` 宏机制），逐题填入基于当前 COREY 论文实际内容（Method/Theoretical Properties/Experiments/appendix）给出的真实、如实回答：
+  - 三个正式定理（fusion depth bound、entropy majorization、quantization $\ell_2$ 保范界）均有形式化陈述与完整证明；如实标注 entropy majorization 定理在真实 checkpoint 上被**证伪**（160/160 案例熵下降）——checklist 回答为 partial 而非笼统 yes，保留论文本身的科学诚实性。
+  - 数据集问题：LongBench/WikiText-103/PG19 + 合成激活分布 + 自建 8-regime 160-prompt 混合负载语料；如实指出 PG19 在正文中提及但缺少 bib 引用（partial，而非 yes）。
+  - 计算实验问题：如实标注"未使用正式统计显著性检验（如 Wilcoxon）"为 no（论文本身用 mean±std 与 within-regime std 比较，未做正式检验），不夸大回答。
+  - 未改动任何除"Type your response here"占位符之外的模板结构、宏定义或 instructions 文字，符合官方模板"only replace the placeholder"约定。
+- **`docs/progress.md`**（本条目）：记录 venue 由 TPDS 改投 AAAI 2027 的完整改动清单。
+- **`USAGE.md`**：`目标会议或期刊` 行由过期的 `NeurIPS 2026` 更新为 `AAAI 2027`。
+
+### 未修改或部分修改
+- 【需要 Windows 编译验证】WSL 环境无 LaTeX，本轮全部改动未经实际 `pdflatex`/`bibtex` 编译验证。已完成的静态核查：`\resizebox` 全部清零（`grep -rn resizebox paper/*.tex` 为空）、`algpseudocode` 残留命令清零、IEEE 专属命令（`markboth`/`BODYONLYMODE`/`appendices`）清零、禁用包（`hyperref`/`float`/`geometry`/`multicol` 等）未被引入、`\vspace{-`/`\newpage`/`\clearpage`/`\tiny` 等禁用命令扫描为空。
+  - 需要你：在 Windows 端运行 `paper\build.bat`，把 `paper\build\main.log` 中的报错或 overfull/underfull 警告贴回来，按需要再修一轮版式（尤其是被去掉 `\resizebox` 后的宽表格，如 `tab:routed_ablation`、`tab:h800_unified_scheduler_ablation`、`tab:external_baseline_extended` 等 6+ 列宽表，可能需要进一步缩短列标题或调整 `\tabcolsep`）。
+- 【提交前必须处理】AAAI 官方规则要求最终提交是**单一 .tex 文件**（不允许用 `\input` 拆分正文与附录，`.bib` 是唯一允许外置的例外）。当前仓库为方便日常编辑仍保留 `main.tex`/`appendix.tex`/`ReproducibilityChecklist.tex` 三个独立文件、用 `\input` 组合。**这在仓库内编辑与用 `build.bat` 编译验证阶段没有问题**，但正式打包上传 AAAI 前，需要把 `appendix.tex` 内容手动拼接进 `main.tex`（`ReproducibilityChecklist.tex` 若走"作为附件单独提交"路线可以不拼接，需先查 AAAI 2027 官方投稿说明确认）。
+- 【待你确认】当前默认仍是 `\usepackage[submission]{aaai2027}`（双盲匿名提交模式，`\author{Anonymous Submission}`）。原 TCSVT 版本中三位作者（Bo Ma / Weiqi Yan / Jinsong Wu）及其单位信息、biography 段落均已不在 AAAI 版本中出现（AAAI 格式本身也没有 IEEE 式的作者简介环境）。如果 AAAI 2027 这次投稿不要求双盲评审（或已到 camera-ready 阶段），需要你提供真实作者顺序、单位与 corresponding author 信息，我再启用非匿名 `\author`/`\affiliations` 块并同时去掉 `[submission]` 选项。
+- 【待你确认】figs 目录下 `entropy_gain.jpg`、`entropy_distribution.jpg`、`workflow.png` 三张图片是否满足 AAAI 建议的 300dpi 分辨率与嵌入字体要求，本轮未做图片层面的检查（只确认了路径与格式 jpg/png 均为 AAAI 允许格式，未使用 gif/eps/ps）。
+- 【待你确认】appendix.tex 中存在多处硬编码的"Eq.~(1)"/"Eq.~(2)"/"Section~4"/"Section~1"式数字交叉引用（而非 `\ref{}`），当前编号与实际章节/公式顺序一致（未做任何章节重排），但属于脆弱写法——如果后续再调整正文结构，这些硬编码数字不会自动更新。本轮未改动（不在用户当次指令范围内，且改动前需要先核实每一处的确切当前编号）。
+
+## 遗留问题
+
+需要你提供/决策：
+1. **Windows 编译结果**：请运行 `paper\build.bat` 并把 `main.log`（以及若失败，具体报错行）贴回来，用于下一轮修版式。
+2. **是否已到 camera-ready / 是否需要双盲**：决定是否保留 `[submission]` 匿名模式，还是启用真实作者信息。
+3. **单文件打包时机**：决定是在提交前由我把 `appendix.tex` 手动内联进 `main.tex`，还是保持当前三文件结构直到确认最终提交渠道要求。
 
 ## 2026-06-06 build.bat 三件套编译（正文/合并/附录）+ 自动同步 submit
 
