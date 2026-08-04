@@ -338,9 +338,10 @@ runs the expanded workload-diversity pass on GPU 0.
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y sshpass rsync openssh-client
+sudo apt-get install -y rsync openssh-client
 
 cd /mnt/c/source/Corey_Transformer
+export COREY_H800_SSH_TARGET=<user>@<host-or-ssh-config-alias>
 bash src/scripts/watch_h800_results_wsl.sh
 ```
 
