@@ -3,7 +3,7 @@
 Figures (IEEE single-column width 3.5 in, fonts >= 8 pt, Okabe-Ito palette
 plus marker/line-style redundancy for colorblind safety):
   tpds_latency_vs_chunk.pdf   latency vs chunk per family and L, 95% CI bands (E1, Gaussian input)
-  tpds_value_invariance.pdf   latency across input distributions at each chunk (E1)
+  tpds_value_invariance.pdf   latency across input distributions at each chunk (E1, median over rounds)
   tpds_entropy_by_regime.pdf  activation entropy per workload regime (E2, batch 1)
   tpds_entropy_vs_oracle.pdf  entropy vs per-call oracle chunk (E2)
   tpds_regret_cdf.pdf         held-out regret CDF per policy (E3)
@@ -62,7 +62,14 @@ def _load_json(path: Path):
 
 
 def _plain_log_y(ax):
+    """Log y axis with plain labels; narrow ranges (< 1.5 decades) get intermediate ticks so that
+    every panel carries readable values. Call after plotting."""
     ax.set_yscale("log")
+    lo, hi = ax.get_ylim()
+    span = hi / lo if lo > 0 else 10.0
+    if span < 30:
+        subs = tuple(range(1, 10)) if span < 3 else (1.0, 2.0, 3.0, 5.0) if span < 10 else (1.0, 2.0, 5.0)
+        ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10, subs=subs, numticks=20))
     fmt = matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}")
     ax.yaxis.set_major_formatter(fmt)
     ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
@@ -133,7 +140,7 @@ def fig_value_invariance(e1, out_dir):
                 cr = [r["mean_ms"] for r in rs if r["chunk"] == c and r["input"] == inp]
                 if cr:
                     xs.append(k + (j - (len(inputs) - 1) / 2) * width / max(len(inputs), 1))
-                    ys.append(np.mean(cr))
+                    ys.append(np.median(cr))  # median over rounds: robust to single-round spikes
             color = OKABE[0] if inp == "real" else "#7a7a7a"
             ax.plot(xs, ys, ls="none", marker=MARKERS[j % len(MARKERS)], color=color, mfc="none" if inp != "real" else color,
                     ms=3.5, mew=0.7, label=inp)
