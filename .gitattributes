@@ -1,3 +1,20 @@
+# Normalize text files to LF in the repository and working tree, so Windows
+# editors and build tools do not produce whole-file line-ending diffs.
+* text=auto eol=lf
+
+# Windows batch files need CRLF for cmd.exe label/goto handling.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.eps binary
+*.pt binary
+*.npz binary
+
 src/revloop/** text eol=lf
 docs/state/** text eol=lf
 .claude/skills/** text eol=lf
