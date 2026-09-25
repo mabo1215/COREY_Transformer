@@ -1,0 +1,678 @@
+% AAAI-27 review feedback for Submission #3464 (COREY), with a
+% paragraph-aligned Chinese translation. Compile with XeLaTeX:
+%   xelatex AAAI_Review_Feedback.tex
+% Source: OpenReview JSON export (docs/Corey_notes.json).
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[fontset=windows,linespread=1.25]{ctex}
+\usepackage[a4paper,margin=1.8cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{paracol}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{needspace}
+\usepackage[colorlinks=true,linkcolor=accent,urlcolor=accent,
+            pdftitle={AAAI-27 Review Feedback: COREY (Submission 3464)},
+            pdfauthor={AAAI-27 reviewers; translation for internal reference}]{hyperref}
+
+\definecolor{accent}{HTML}{1F4E79}
+\definecolor{muted}{HTML}{666666}
+\definecolor{boxbg}{HTML}{F2F5F9}
+\definecolor{rejectred}{HTML}{A61B1B}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em plus 0.2em}
+\setlength{\emergencystretch}{3em}
+\setlength{\columnsep}{1.4em}
+\setlength{\columnseprule}{0.4pt}
+\colseprulecolor{black!20}
+
+\setlist[itemize]{leftmargin=1.5em,labelsep=0.4em,topsep=0pt,partopsep=0pt,
+                  itemsep=0pt,parsep=0.45em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{muted}AAAI-27 Submission \#3464 \textbar\ Review Feedback / 审稿意见（英中对照）}
+\fancyhead[R]{\small\color{muted}COREY}
+\fancyfoot[C]{\small\color{muted}\thepage\ / \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.3pt}
+
+% ---------------------------------------------------------------------
+% Paired-column helpers. Inside a paracol environment the left column
+% holds the English original and the right column the Chinese
+% translation; \switchcolumn* re-synchronizes both columns so every
+% pair starts at the same height.
+% ---------------------------------------------------------------------
+\newcommand{\Pair}[2]{#1\par\switchcolumn #2\par\switchcolumn*}
+\newcommand{\fieldhead}[1]{{\color{accent}\sffamily\bfseries #1}}
+% \needspace in both columns keeps a field heading off the bottom of a page.
+\newcommand{\PairHead}[2]{\Pair{\needspace{5\baselineskip}\fieldhead{#1}}%
+                               {\needspace{5\baselineskip}\fieldhead{#2}}}
+\newcommand{\colhead}[1]{{\small\sffamily\color{muted}#1}\par\vspace{-0.9em}%
+  {\color{black!25}\rule{\linewidth}{0.4pt}}}
+\newcommand{\ColHeads}{\Pair{\colhead{English original}}{\colhead{中文译文}}}
+% \PItem{label}{English}{Chinese}: one list item per language.
+\newcommand{\PItem}[3]{\Pair{\begin{itemize}[label={#1}]\item #2\end{itemize}}%
+                            {\begin{itemize}[label={#1}]\item #3\end{itemize}}}
+% \PCont{English}{Chinese}: continuation paragraph of the previous item.
+\newcommand{\PCont}[2]{\Pair{\begin{itemize}[label={}]\item #1\end{itemize}}%
+                            {\begin{itemize}[label={}]\item #2\end{itemize}}}
+
+\newtcolorbox{infobox}{colback=boxbg,colframe=accent!40,boxrule=0.4pt,arc=2pt,
+  left=6pt,right=6pt,top=4pt,bottom=4pt,fontupper=\small}
+
+\newcommand{\ReviewMeta}[4]{%
+  \begin{infobox}
+  \begin{tabularx}{\linewidth}{@{}X l l l@{}}
+  \textbf{Signature / 署名} & \textbf{Rating / 评分} & \textbf{Confidence / 置信度} & \textbf{Posted / 发布} \\
+  #1 & #2 & #3 & #4
+  \end{tabularx}
+  \end{infobox}}
+
+\begin{document}
+
+% ---------------------------------------------------------------------
+\begin{center}
+  {\LARGE\bfseries\color{accent} AAAI-27 Review Feedback}\\[0.35em]
+  {\Large\bfseries\color{accent} AAAI-27 审稿意见（英中对照）}\\[0.8em]
+  {\large\itshape COREY: A Runtime Scheduling Diagnostic for Selective Scan Kernels}\\[0.5em]
+  {\normalsize Submission \#3464 \quad\textbar\quad
+   Decision / 决定：{\color{rejectred}\bfseries Reject（拒稿）}}
+\end{center}
+
+\begin{infobox}
+\textbf{Source.} OpenReview JSON export of the AAAI-27 forum for Submission \#3464
+(forum id \texttt{zZz3zjANdV}). The English text is reproduced verbatim from the
+export; only Markdown and line-break formatting has been converted to LaTeX. The
+Chinese translation is provided for reference only; the English original prevails
+in case of any discrepancy.\par
+\textbf{来源说明。}本文档根据 AAAI-27 投稿 \#3464 的 OpenReview 论坛 JSON 导出
+（forum id \texttt{zZz3zjANdV}）整理。英文部分逐字保留原文，仅将 Markdown 与换行格式转换为
+LaTeX；中文译文仅供参考，如有歧义，以英文原文为准。
+\end{infobox}
+
+\section*{Overview / 概览}
+
+\begin{center}
+\small
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\begin{tabularx}{\textwidth}{@{}c L L c c l@{}}
+\toprule
+\textbf{\#} & \textbf{Source} & \textbf{Type} & \textbf{Rating} & \textbf{Confidence} & \textbf{Posted (UTC)} \\
+            & \textbf{来源}   & \textbf{类型} & \textbf{评分}   & \textbf{置信度}     & \textbf{发布时间} \\
+\midrule
+-- & Program Chairs / 程序主席 & Paper Decision: Reject / 论文决定：拒稿 & -- & -- & 2026-09-24 18:39 \\
+1  & PC member 8sNa / 审稿人 8sNa & Official Review / 正式审稿意见 & 3 & 3 & 2026-08-25 18:50 \\
+2  & PC member mMVb / 审稿人 mMVb & Official Review / 正式审稿意见 & 3 & 5 & 2026-08-29 13:17 \\
+-- & AAAI AI Reviewer / AI 审稿人 & AI Review / AI 审稿意见 & -- & -- & 2026-07-27 11:59 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Submission / 投稿信息} & \\
+\midrule
+Title / 题目 & COREY: A Runtime Scheduling Diagnostic for Selective Scan Kernels \\
+Venue / 会议 & AAAI-27 (Submitted to AAAI 2027) \\
+Primary topic / 主领域 & ML: Efficient, Edge, Green \& Hardware-aware ML \\
+Secondary topics / 次领域 & ML: Deep Learning Algorithms, Architectures \& Foundation Models; ML: Scalability of ML Systems; ML: Optimization for ML \\
+Submitted / 投稿时间 & 2026-07-03 07:30 UTC \\
+Outcome / 结果 & Rejected in Phase 1; did not advance to Phase 2 / 第一阶段被拒，未进入第二阶段 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection*{Terminology used in the translation / 译名对照}
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}l X l X@{}}
+\toprule
+\textbf{English} & \textbf{中文} & \textbf{English} & \textbf{中文} \\
+\midrule
+chunk size & 分块大小 & selective scan (kernel) & 选择性扫描（内核） \\
+static oracle & 静态最优配置 & best static chunk & 最佳静态分块 \\
+per-call oracle & 逐调用最优配置 & offline profiling & 离线性能剖析 \\
+fixed-bin entropy & 固定分箱熵 & activation entropy & 激活熵 \\
+routed inference / kernel & 路由推理 / 路由内核 & patched live kernel & 经补丁修改的实际运行内核 \\
+passive hook & 被动钩子 & dispatch harness & 分发测试框架 \\
+guarded policy / fallback & 带保护的策略 / 回退 & learned table & 学习查找表 \\
+regime & 负载区间 & checkpoint & 检查点 \\
+bucket & 桶 & regret & 遗憾值 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\needspace{18\baselineskip}\section{Paper Decision / 论文决定}
+
+\ReviewMeta{Program Chairs / 程序主席}{--}{--}{2026-09-24 18:39 UTC}
+
+\begin{paracol}{2}
+\ColHeads
+
+\PairHead{Decision}{决定}
+
+\Pair{Reject}{拒稿（Reject）}
+
+\PairHead{Comment}{说明}
+
+\Pair{This paper did not advance to Phase 2 review for the AAAI-27 conference. The
+paper was reviewed by at least two human reviewers and at least one senior member of
+the program committee in Phase 1. In addition, papers with at least one positive
+review were examined by one program chair or associate program chair to ensure the
+rejection was justified. \textbf{This decision is final}. The provided reviews
+contain more detail, which we hope will be beneficial to the progress of this
+research.}
+{本文未能进入 AAAI-27 会议的第二阶段（Phase 2）评审。在第一阶段（Phase 1）中，本文由至少两位人类审稿人和至少一位程序委员会高级成员进行了评审。此外，凡获得至少一份正面评审意见的论文，均由一位程序主席或副程序主席复核，以确保拒稿决定合理。\textbf{该决定为最终决定}。所附审稿意见包含更多细节，希望对本研究的后续推进有所帮助。}
+\end{paracol}
+
+% =====================================================================
+\needspace{18\baselineskip}\section{Official Review 1: 8sNa / 正式审稿意见 1：8sNa}
+
+\ReviewMeta{PC member 8sNa / 程序委员会成员 8sNa}{3}{3}{2026-08-25 18:50 UTC}
+
+\begin{paracol}{2}
+\ColHeads
+
+\PairHead{Title}{标题}
+
+\Pair{Review of the paper ``COREY: A Runtime Scheduling Diagnostic for Selective Scan Kernels''}
+{对论文“COREY: A Runtime Scheduling Diagnostic for Selective Scan Kernels”的审稿意见}
+
+\PairHead{Review}{审稿意见}
+
+\Pair{The paper proposes COREY, an entropy-based runtime scheduler for selecting
+Mamba-1 selective scan kernel chunk sizes. While the paper demonstrates wins over a
+(somewhat arbitrary) Static-64 baseline, the end-to-end results are slower than the
+best static configuration. The paper's most defensible conclusion is therefore a
+negative one -- online entropy-based chunk size selection does not justify its
+overhead on the evaluated workload.}
+{本文提出了 COREY，一种基于熵的运行时调度器，用于选择 Mamba-1 选择性扫描内核的分块大小。尽管论文展示了相对于（某种程度上随意选取的）Static-64 基线的优势，但其端到端结果慢于最佳静态配置。因此，本文最站得住脚的结论是一个负面结论——在所评测的工作负载上，基于熵的在线分块大小选择无法抵消其带来的开销。}
+
+\PairHead{Strengths}{优点}
+
+\PItem{\textbullet}{Clear and transparent presentation of negative results}
+{对负面结果的呈现清晰且透明}
+
+\PItem{\textbullet}{Measures real runtime overhead}
+{测量了真实的运行时开销}
+
+\PairHead{Weaknesses}{不足}
+
+\PItem{\textbullet}{No meaningful positive end-to-end result}
+{没有有意义的端到端正面结果}
+
+\PItem{\textbullet}{Headline speedup numbers are over a weak baseline}
+{主要宣传的加速比是相对于一个较弱的基线得到的}
+
+\PItem{\textbullet}{No batching is discussed, which hampers real-world usefulness}
+{未讨论批处理（batching），削弱了实际应用价值}
+
+\PItem{\textbullet}{Not enough evaluations on the broader family of linear attention architectures}
+{对更广泛的线性注意力架构家族评估不足}
+
+\PairHead{Justification}{评分理由}
+
+\Pair{Overall, the submission is pretty weak. I appreciate the authors for
+transparently disclosing that COREY loses end-to-end. The takeaway is that a
+hand-calibrated rule selects the same chunk size as a static offline oracle, whereas
+the actual system incurs a slowdown. (The headline 4.41x number compares against
+chunk size 64, while COREY's calibrated rule simply picks static chunk size 512.)
+While I generally agree that publications regarding failed results should be
+encouraged in the scientific community, this paper, as it stands, does not offer
+enough useful insights. Further, it does not seem to work with batching, a de facto
+approach in real-world inference. It's also not evaluated on modern linear attention
+architectures like Mamba2, Gated DeltaNet, Kimi Delta Attention, etc.}
+{总体而言，这篇投稿相当薄弱。我赞赏作者透明地披露了 COREY 在端到端评测中处于劣势。本文的核心结论是：一条手工校准的规则选出了与静态离线最优配置相同的分块大小，而实际系统却出现了减速。（主要宣传的 4.41x 数字是与分块大小 64 相比得到的，而 COREY 的校准规则只是选择了静态分块大小 512。）虽然我总体上认同科学界应当鼓励发表关于失败结果的研究，但就目前的形式而言，本文未能提供足够有用的见解。此外，该方法似乎无法与批处理配合使用，而批处理是实际推理中事实上的标准做法。本文也没有在 Mamba2、Gated DeltaNet、Kimi Delta Attention 等现代线性注意力架构上进行评估。}
+
+\PairHead{Feedback}{反馈意见}
+
+\Pair{As it stands, I think the paper should go through a major revamp to be framed
+as a clear, concise negative-results study with batched serving experiments,
+comparisons to standard auto-tuning baselines (if any), evaluations across more
+model architectures, etc. In its current form, it doesn't demonstrate that
+entropy-guided runtime scheduling improves inference performance or offers a
+sufficiently general insight/pointer to a direction.}
+{就目前而言，我认为本文需要进行大幅度重构，将其定位为一项清晰、简洁的负面结果研究，并补充批处理服务（batched serving）实验、与标准自动调优（auto-tuning）基线（如有）的比较、在更多模型架构上的评估等。以目前的形式，本文既未证明熵引导的运行时调度能够提升推理性能，也未提供足够具有普遍意义的见解或研究方向指引。}
+\end{paracol}
+
+% =====================================================================
+\needspace{18\baselineskip}\section{Official Review 2: mMVb / 正式审稿意见 2：mMVb}
+
+\ReviewMeta{PC member mMVb / 程序委员会成员 mMVb}{3}{5}{2026-08-29 13:17 UTC}
+
+\begin{paracol}{2}
+\ColHeads
+
+\PairHead{Title}{标题}
+
+\Pair{This paper studies runtime chunk-size scheduling for Mamba selective scan
+kernels using activation entropy as an adaptive signal. While the paper addresses an
+important systems problem and provides extensive experimental analysis, the proposed
+entropy-based scheduler does not demonstrate practical advantages over carefully
+tuned static scheduling. The main experimental findings show that the static oracle
+remains superior in realistic end-to-end inference settings, limiting the
+significance of the proposed approach.}
+{本文研究了以激活熵作为自适应信号、对 Mamba 选择性扫描内核进行运行时分块大小调度的问题。尽管论文针对的是一个重要的系统问题，并提供了大量实验分析，但所提出的基于熵的调度器并未表现出相对于精心调优的静态调度的实际优势。主要实验结果表明，在真实的端到端推理场景中，静态最优配置依然更优，这限制了所提方法的意义。}
+
+\PairHead{Review}{审稿意见}
+
+\Pair{This paper presents COREY, a runtime scheduling framework for optimizing
+selective scan kernels in Mamba-based state space models (SSMs). The paper focuses
+on the challenge that selective scan performance is highly sensitive to scheduling
+decisions, particularly chunk size selection, while conventional approaches rely on
+offline profiling for specific model, hardware, and workload combinations.}
+{本文提出了 COREY，一个用于优化基于 Mamba 的状态空间模型（SSM）中选择性扫描内核的运行时调度框架。论文关注的挑战在于：选择性扫描的性能对调度决策（尤其是分块大小的选择）高度敏感，而传统方法依赖于针对特定模型、硬件和工作负载组合的离线性能剖析。}
+
+\Pair{The authors propose using activation entropy as a runtime signal for
+dynamically selecting scan chunk sizes. COREY estimates fixed-bin Shannon entropy
+from intermediate activation tensors and normalizes the entropy value to derive a
+chunk selection rule. The proposed scheduler is integrated into the Mamba inference
+pipeline through a runtime hook, where activation statistics are collected during
+execution and used to determine the chunk size passed to the selective scan kernel.}
+{作者提出使用激活熵作为运行时信号，以动态选择扫描分块大小。COREY 从中间激活张量中估计固定分箱的香农熵，并对熵值进行归一化，由此得出分块选择规则。所提出的调度器通过一个运行时钩子集成到 Mamba 推理流水线中：在执行过程中收集激活统计量，并据此确定传递给选择性扫描内核的分块大小。}
+
+\Pair{The paper evaluates COREY through multiple levels of experiments, including a
+synthetic prototype cost model, kernel-level benchmarks across different hardware
+platforms, and end-to-end inference experiments using real Mamba checkpoints. The
+authors further evaluate several scheduling variants, including guarded routing and
+lightweight learned-table approaches, to analyze the trade-off between adaptation
+capability and scheduling overhead.}
+{论文通过多个层次的实验对 COREY 进行了评估，包括合成的原型代价模型、跨不同硬件平台的内核级基准测试，以及使用真实 Mamba 检查点的端到端推理实验。作者还进一步评估了若干调度变体，包括带保护的路由和轻量级学习查找表方法，以分析自适应能力与调度开销之间的权衡。}
+
+\Pair{The reported results show that COREY can reproduce offline-selected chunk
+configurations in some kernel-level benchmark scenarios. However, the end-to-end
+experiments indicate that entropy-guided scheduling does not outperform the best
+static chunk configuration and introduces additional runtime overhead. The authors
+conclude that activation entropy is a feasible diagnostic signal for selective scan
+scheduling, but current entropy-based runtime adaptation does not provide a
+consistent throughput advantage over carefully tuned static scheduling.}
+{报告的结果表明，在部分内核级基准测试场景中，COREY 能够复现离线选定的分块配置。然而，端到端实验表明，熵引导的调度并不优于最佳静态分块配置，并且会引入额外的运行时开销。作者得出结论：激活熵是选择性扫描调度中一种可行的诊断信号，但目前基于熵的运行时自适应并不能相对于精心调优的静态调度提供稳定的吞吐量优势。}
+
+\PairHead{Strengths}{优点}
+
+\PItem{1.}{\textbf{The paper addresses a relevant systems problem}}
+{\textbf{本文针对一个相关的系统问题}}
+
+\PCont{The paper studies runtime scheduling for Mamba selective scan kernels, where
+chunk-size selection can affect kernel efficiency.}
+{本文研究了 Mamba 选择性扫描内核的运行时调度，其中分块大小的选择会影响内核效率。}
+
+\PItem{2.}{\textbf{The paper attempts to provide an empirical analysis of runtime
+scheduling limitations}}
+{\textbf{本文尝试对运行时调度的局限性进行实证分析}}
+
+\PCont{The paper evaluates COREY through multiple experimental settings, including
+kernel-level benchmarks and end-to-end inference measurements.}
+{本文通过多种实验设置评估了 COREY，包括内核级基准测试和端到端推理测量。}
+
+\PairHead{Weaknesses}{不足}
+
+% --- W1
+\PItem{1.}{\textbf{The main contribution is not supported by the final experimental
+results.}}
+{\textbf{主要贡献未得到最终实验结果的支持。}}
+
+\PCont{The central motivation of the paper is that activation entropy can replace
+offline profiling for runtime chunk-size selection. However, the experimental
+results do not demonstrate this advantage.}
+{本文的核心动机是：激活熵可以替代离线性能剖析，用于运行时的分块大小选择。然而，实验结果并未证明这一优势。}
+
+\PCont{In the end-to-end evaluation, the authors report that entropy-guided variants
+do not outperform the best static chunk configuration. The guarded scheduler and
+learned-table variants reduce some scheduling overhead, but they remain slower than
+the static oracle.}
+{在端到端评估中，作者报告熵引导的各变体均未优于最佳静态分块配置。带保护的调度器和学习查找表变体降低了部分调度开销，但仍然慢于静态最优配置。}
+
+\PCont{This creates a fundamental issue: the proposed method demonstrates that
+runtime entropy-based scheduling is possible, but it does not demonstrate that such
+adaptation is beneficial in realistic inference scenarios.}
+{这带来了一个根本性问题：所提方法证明了基于熵的运行时调度是可行的，但并未证明这种自适应在真实推理场景中是有益的。}
+
+% --- W2
+\PItem{2.}{\textbf{The relationship between activation entropy and optimal chunk
+size is insufficiently justified.}}
+{\textbf{激活熵与最优分块大小之间的关系论证不足。}}
+
+\PCont{The paper assumes that activation entropy provides meaningful information for
+predicting kernel scheduling decisions. However, the connection between entropy and
+optimal chunk size is not sufficiently established.}
+{本文假设激活熵能够为预测内核调度决策提供有意义的信息。然而，熵与最优分块大小之间的联系并未得到充分确立。}
+
+\PCont{Chunk-size selection is primarily influenced by GPU-specific factors such as
+register pressure, shared memory usage, occupancy, memory access patterns, and
+kernel launch overhead.}
+{分块大小的选择主要受 GPU 特定因素的影响，例如寄存器压力、共享内存使用量、占用率（occupancy）、内存访问模式以及内核启动开销。}
+
+\PCont{The paper provides an entropy-to-chunk mapping function, but it does not
+explain why entropy should reliably capture these hardware-level optimization
+factors.}
+{论文给出了一个从熵到分块的映射函数，但没有解释为什么熵能够可靠地反映这些硬件层面的优化因素。}
+
+\PCont{The current experiments mainly show that certain activation distributions map
+to the same chunk size as offline profiling. This does not establish that entropy
+provides information beyond simpler features such as sequence length, layer index,
+tensor shape, or hardware profiling.}
+{当前实验主要表明，某些激活分布映射到的分块大小与离线剖析得到的相同。这并不能证明熵提供了超出更简单特征（如序列长度、层索引、张量形状或硬件剖析）之外的信息。}
+
+% --- W3
+\PItem{3.}{\textbf{The reported speedups rely on weak baseline comparisons.}}
+{\textbf{报告的加速比依赖于与弱基线的比较。}}
+
+\PCont{The paper highlights significant kernel-level speedups, such as the reported
+$4.41\times$ improvement. However, these improvements are mainly measured against
+Static-64.}
+{论文强调了显著的内核级加速，例如所报告的 $4.41\times$ 提升。然而，这些提升主要是相对于 Static-64 测得的。}
+
+\PCont{The paper itself shows that Static-512 is the optimal static configuration in
+these settings. Therefore, the reported speedup largely reflects comparison against
+a non-optimal baseline rather than an improvement introduced by COREY.}
+{论文本身表明，在这些设置下 Static-512 才是最优的静态配置。因此，所报告的加速比在很大程度上反映的是与非最优基线的比较，而非 COREY 带来的改进。}
+
+\PCont{The more meaningful comparison is between COREY and the best static oracle.
+Under this comparison, COREY does not provide a performance improvement.}
+{更有意义的比较是 COREY 与最佳静态最优配置之间的比较。在这一比较下，COREY 并未带来性能提升。}
+
+% --- W4
+\PItem{4.}{\textbf{The evaluation does not sufficiently demonstrate workload
+diversity.}}
+{\textbf{评估未能充分体现工作负载的多样性。}}
+
+\PCont{The motivation of runtime adaptation is to handle diverse and changing
+workloads. However, the evaluation does not sufficiently explore workload
+variation.}
+{运行时自适应的动机在于应对多样且不断变化的工作负载。然而，评估并未充分探索工作负载的变化。}
+
+\PCont{For example, the LongBench evaluation shows that prompt-level entropy
+distributions are relatively concentrated, and most inputs select similar chunk
+configurations. This raises questions about whether runtime adaptation is necessary
+in practical scenarios.}
+{例如，LongBench 评估显示，提示（prompt）级别的熵分布相对集中，大多数输入选择了相似的分块配置。这让人质疑在实际场景中运行时自适应是否有必要。}
+
+\PCont{Additional evaluation across different model architectures, batch sizes,
+sequence length distributions, serving workloads, and GPU platforms would be
+necessary.}
+{有必要在不同的模型架构、批大小、序列长度分布、服务负载以及 GPU 平台上进行更多评估。}
+
+% --- W5
+\PItem{5.}{\textbf{The experimental methodology contains inconsistencies across
+sections.}}
+{\textbf{实验方法在不同章节之间存在不一致。}}
+
+\PCont{The paper uses different entropy calibration settings throughout the
+experiments, including $H_{ref}=8.0$ and $H_{ref}=\log K$. Although the authors
+explain that earlier settings are sensitivity analyses, some reported results rely
+on configurations that are not the final default method.}
+{论文在各实验中使用了不同的熵校准设置，包括 $H_{ref}=8.0$ 和 $H_{ref}=\log K$。尽管作者解释了较早的设置属于敏感性分析，但部分报告的结果所依赖的配置并非最终的默认方法。}
+
+\PCont{Furthermore, the paper mixes isolated kernel latency measurements with
+end-to-end inference latency measurements. A clearer separation between
+microbenchmark results and deployment-level performance would improve the
+evaluation.}
+{此外，论文将孤立的内核延迟测量与端到端推理延迟测量混在一起。更清晰地区分微基准测试结果与部署层面的性能，将有助于改进评估。}
+
+% --- W6
+\PItem{6.}{\textbf{The paper lacks sufficient visualization of the proposed
+mechanism.}}
+{\textbf{论文对所提机制的可视化不足。}}
+
+\PCont{The proposed contribution relies heavily on the relationship:
+\[
+\begin{aligned}
+&\text{activation entropy}\rightarrow\text{chunk selection}\\
+&\qquad\rightarrow\text{kernel performance}.
+\end{aligned}
+\]}
+{所提出的贡献在很大程度上依赖于如下关系：
+\[
+\text{激活熵}\rightarrow\text{分块选择}\rightarrow\text{内核性能}.
+\]}
+
+\PCont{However, the paper provides limited visualization of this process. There are
+no clear figures showing entropy distributions across workloads, entropy-to-chunk
+decision boundaries, correlation between entropy values and optimal chunk sizes, or
+latency trade-offs across scheduling choices.}
+{然而，论文对这一过程的可视化十分有限。没有清晰的图表展示：不同工作负载下的熵分布、熵到分块的决策边界、熵值与最优分块大小之间的相关性，或不同调度选择之间的延迟权衡。}
+
+\PCont{For a runtime scheduling framework, such visual analysis is important to
+understand whether the proposed signal captures meaningful workload
+characteristics.}
+{对于一个运行时调度框架而言，此类可视化分析对于理解所提信号是否捕捉到了有意义的工作负载特征十分重要。}
+
+\PairHead{Justification}{评分理由}
+
+\Pair{The paper investigates an interesting systems problem and provides
+considerable engineering effort with extensive experiments. However, the main
+weakness is that the proposed runtime scheduler does not demonstrate practical
+improvement over strong static scheduling baselines.}
+{本文研究了一个有趣的系统问题，投入了相当多的工程工作并进行了大量实验。然而，其主要缺陷在于所提出的运行时调度器并未表现出相对于强静态调度基线的实际改进。}
+
+\Pair{The key motivation of replacing offline profiling with activation
+entropy-based adaptation is not validated by the experimental results. The
+strongest reported improvements come from comparisons against suboptimal static
+configurations, while comparisons against the actual static oracle show that COREY
+introduces overhead without improving throughput.}
+{以基于激活熵的自适应替代离线性能剖析这一关键动机，并未得到实验结果的验证。报告中最显著的改进来自与次优静态配置的比较，而与真正的静态最优配置相比时，COREY 引入了开销却没有提升吞吐量。}
+
+\Pair{A stronger paper would need to demonstrate that activation entropy provides
+unique predictive information for chunk-size optimization and leads to measurable
+deployment-level improvements over competitive static tuning approaches.}
+{一篇更有说服力的论文需要证明：激活熵能够为分块大小优化提供独特的预测信息，并且相对于有竞争力的静态调优方法，能够带来可测量的部署层面改进。}
+
+\PairHead{Feedback}{反馈意见}
+
+\PItem{Q1.}{The paper claims that activation entropy can replace offline profiling.
+Given that Static-512 consistently outperforms COREY in end-to-end experiments, what
+practical deployment scenario benefits from COREY?}
+{论文声称激活熵可以替代离线性能剖析。鉴于在端到端实验中 Static-512 始终优于 COREY，有哪些实际部署场景能够从 COREY 中受益？}
+
+\PItem{Q2.}{Can the authors provide evidence that activation entropy provides useful
+scheduling information beyond simpler features such as sequence length, layer
+index, tensor dimensions, or offline profiling?}
+{作者能否提供证据，证明激活熵能够提供超出更简单特征（如序列长度、层索引、张量维度或离线剖析）之外的有用调度信息？}
+
+\PItem{Q3.}{What is the theoretical justification for the relationship between
+activation entropy and optimal chunk size? Is this relationship causal or only
+empirical correlation?}
+{激活熵与最优分块大小之间关系的理论依据是什么？这种关系是因果关系，还是仅仅是经验上的相关性？}
+
+\PItem{Q4.}{The reported kernel-level speedups are mainly relative to Static-64. Can
+the authors clarify COREY's improvement compared with the strongest static tuning
+baseline under identical conditions?}
+{所报告的内核级加速比主要是相对于 Static-64 而言的。作者能否说明在相同条件下，COREY 相对于最强静态调优基线的改进？}
+
+\PItem{Q5.}{Since LongBench prompts show narrow entropy distributions and similar
+chunk selections, what motivates per-request runtime adaptation in realistic serving
+workloads?}
+{既然 LongBench 提示的熵分布较窄、分块选择也相似，那么在真实服务负载中，逐请求（per-request）运行时自适应的动机何在？}
+\end{paracol}
+
+% =====================================================================
+\needspace{18\baselineskip}\section{AI Review / AI 审稿意见}
+
+\ReviewMeta{AAAI AI Reviewer / AAAI AI 审稿人}{--}{--}{2026-07-27 11:59 UTC}
+
+\begin{paracol}{2}
+\ColHeads
+
+\PairHead{Title}{标题}
+
+\Pair{COREY: A Runtime Scheduling Diagnostic for Selective Scan Kernels}
+{COREY: A Runtime Scheduling Diagnostic for Selective Scan Kernels（论文题目，保留原文）}
+
+\PairHead{Synopsis of the paper}{论文概述}
+
+\Pair{COREY investigates whether fixed-bin activation entropy can select Mamba-1.x
+selective-scan chunk sizes at runtime, avoiding offline tuning. It combines kernel
+microbenchmarks, an inline entropy hook, a patched routed kernel, mixed-workload
+timing, and output-equivalence checks. The principal empirical result is negative:
+entropy-guided variants preserve tested outputs but remain slower than a tuned
+static chunk, while sequence length captures the limited workload adaptation
+observed.}
+{COREY 研究了固定分箱激活熵能否在运行时为 Mamba-1.x 选择性扫描选择分块大小，从而避免离线调优。该工作结合了内核微基准测试、内联熵钩子、经补丁修改的路由内核、混合工作负载计时以及输出等价性检查。其主要实证结果是负面的：熵引导的变体保持了所测试的输出不变，但仍慢于经过调优的静态分块；而所观察到的有限的工作负载自适应，已可由序列长度刻画。}
+
+\PairHead{Summary of Review}{评审总结}
+
+\Pair{The routed ablation provides useful evidence that online histogram cost
+outweighs decision value on the measured checkpoint workloads. However, the headline
+kernel gains are reproduced entirely by the Static-512 baseline: COREY selects the
+same chunk and has the same latency, so these results establish chunk sensitivity
+rather than a benefit from entropy. No experiment shows that entropy predicts a
+changing per-call oracle, and the defined scheduler is inconsistent with the
+central end-to-end experiment. The claimed bin-count invariance is also contradicted
+by Table 1. The validated contribution is consequently narrower: an
+output-preserving runtime diagnostic and a negative characterization for the tested
+Mamba-1.x settings.}
+{路由消融实验提供了有用的证据，表明在所测量的检查点工作负载上，在线直方图的计算代价超过了其决策价值。然而，主要宣传的内核加速完全可以由 Static-512 基线复现：COREY 选择了相同的分块并具有相同的延迟，因此这些结果证明的是分块敏感性，而非熵带来的收益。没有任何实验表明熵能够预测随调用变化的逐调用最优配置，并且所定义的调度器与核心端到端实验不一致。所声称的分箱数不变性也与表 1 相矛盾。因此，经过验证的贡献更为有限：一个保持输出不变的运行时诊断工具，以及针对所测 Mamba-1.x 设置的负面刻画。}
+
+\PairHead{Strengths}{优点}
+
+\PItem{\textbullet}{The end-to-end experimental design exposes actual runtime costs
+rather than extrapolating scheduler utility from microbenchmarks. Table 7 routes
+through a patched live scan kernel and includes fixed chunks, entropy variants,
+proxies, random routing, a guarded policy, and a learned table, allowing decision
+cost to be separated from the selected chunk's performance.}
+{端到端实验设计揭示了真实的运行时代价，而不是从微基准测试外推调度器的效用。表 7 通过经补丁修改的实际运行扫描内核进行路由，涵盖固定分块、熵变体、代理特征（proxy）、随机路由、带保护的策略以及学习查找表，从而能够将决策代价与所选分块本身的性能区分开来。}
+
+\PItem{\textbullet}{The mixed-workload analysis identifies a simpler alternative to
+activation-dependent routing. Section 5.3 finds that sequence length reproduces the
+per-regime chunk choices for the constructed mixture, helping delimit a regime in
+which online activation statistics provide no additional decision value.}
+{混合工作负载分析找到了一种比依赖激活的路由更简单的替代方案。第 5.3 节发现，对于所构造的混合负载，序列长度即可复现各负载区间的分块选择，这有助于界定一个在线激活统计量不提供额外决策价值的区间。}
+
+\PItem{\textbullet}{The quality evaluation directly compares passive and routed
+inference. Table 9 reports identical greedy generations and zero task-metric deltas
+across the tested prompts, supporting the interpretation that the measured latency
+differences arise from scheduling rather than altered token trajectories.}
+{质量评估直接比较了被动推理与路由推理。表 9 报告了在所测试的提示上贪心生成结果完全一致、任务指标差异为零，支持了如下解读：所测得的延迟差异来自调度，而非 token 轨迹的改变。}
+
+\PairHead{Weaknesses}{不足}
+
+\PItem{\textbullet}{The headline kernel gains are not attributable to entropy
+scheduling. The abstract reports 4.41$\times$ and 3.55$\times$ lower latency than
+Static-64, but Tables 2 and 5 show that COREY-default and Static-512 use the same
+chunk and have identical latency and speedup on the consumer and server-class GPUs.
+The entire reported gain is therefore reproduced by a static configuration that
+incurs no runtime-statistic cost.}
+{主要宣传的内核加速不能归功于熵调度。摘要报告的延迟分别比 Static-64 低 4.41$\times$ 和 3.55$\times$，但表 2 和表 5 显示，在消费级和服务器级 GPU 上，COREY-default 与 Static-512 使用相同的分块，具有相同的延迟和加速比。因此，所报告的全部收益都可以由一个不产生任何运行时统计代价的静态配置复现。}
+
+\PItem{\textbullet}{No experiment establishes that activation entropy predicts a
+changing per-call optimal chunk. Table 3 reports entropy-selected chunks without a
+per-distribution static sweep, while Section 5.2 states that all 80 prompts map to
+one coarse bucket and all sampled layers map to one calibrated chunk. The evaluation
+consequently measures the cost of the heuristic but provides no evidence that
+activation values contain useful scheduling information beyond shape or sequence
+length.}
+{没有任何实验证明激活熵能够预测随调用变化的逐调用最优分块。表 3 报告了由熵选出的分块，但没有针对每种分布进行静态扫描（static sweep）；而第 5.2 节指出，全部 80 个提示都映射到同一个粗粒度桶，所有采样层都映射到同一个校准分块。因此，该评估测量的是启发式方法的代价，却没有提供任何证据表明激活值包含超出形状或序列长度之外的有用调度信息。}
+
+\PItem{\textbullet}{The scheduler evaluated end to end is inconsistent with the
+defined method. Equation (2) clips outputs at $C_{\max}=512$, whereas Table 7
+reports entropy and proxy policies routing to chunks 1024 and 2048, despite Section
+5.2 stating that entropy is mapped through Eq. (2). This prevents the central routed
+experiment from being unambiguously interpreted as an evaluation of the specified
+COREY algorithm.}
+{端到端评估的调度器与所定义的方法不一致。公式 (2) 将输出截断在 $C_{\max}=512$，而表 7 却报告熵策略和代理策略路由到了分块 1024 和 2048，尽管第 5.2 节声明熵是通过公式 (2) 映射的。这使得核心路由实验无法被明确地解读为对所定义 COREY 算法的评估。}
+
+\PItem{\textbullet}{The claimed histogram-resolution invariance is contradicted by
+the paper's own table. In Table 1, standard-normal $H/\log K$ changes from 0.763 to
+0.881 as $K$ increases, while the chunk remains 512 because every calibrated point
+falls in the same saturated output bucket. Thus, the table demonstrates decision
+saturation for these examples, not invariance of the entropy signal or robustness
+near a chunk boundary.}
+{所声称的直方图分辨率不变性与论文自身的表格相矛盾。在表 1 中，随着 $K$ 增大，标准正态分布的 $H/\log K$ 从 0.763 变为 0.881，而分块保持为 512，只是因为所有校准点都落入同一个已饱和的输出桶。因此，该表展示的是这些示例上的决策饱和，而不是熵信号的不变性或在分块边界附近的鲁棒性。}
+
+\PItem{\textbullet}{The related-work positioning omits the closest published
+chunkwise-kernel analysis. Tiled Flash Linear Attention derives runtime-optimal
+chunks from architectural dimensions and accelerator arithmetic intensity (Beck et
+al., 2025), while Section 2 attributes Flash Linear Attention to Dao and Gu rather
+than the published GLA work (Yang et al., 2024). These results bear directly on
+whether chunk choice is primarily hardware- and shape-driven rather than
+activation-driven.}
+{相关工作的定位遗漏了最接近的已发表分块式（chunkwise）内核分析。Tiled Flash Linear Attention 根据架构维度和加速器的算术强度推导出运行时最优分块（Beck et al., 2025）；而第 2 节将 Flash Linear Attention 归于 Dao 和 Gu，而非已发表的 GLA 工作（Yang et al., 2024）。这些结果直接关系到：分块选择究竟主要由硬件和形状驱动，还是由激活驱动。}
+
+\PItem{\textbullet}{The static-oracle and transfer claims exceed the evaluation's
+resolution and coverage. In Table 7, Static-512 leads Static-128 by 1.20 ms against
+standard deviations of 10.17 and 12.11 ms; Table 8's comparable rows span only
+0.4 ms without uncertainty; and Table 5's TPU and Tesla entries contain no sweep.
+These data support near-equivalence in the tested settings, but not a unique or
+cross-platform oracle.}
+{关于静态最优配置及其可迁移性的论断超出了评估的分辨率和覆盖范围。在表 7 中，Static-512 仅领先 Static-128 1.20 ms，而两者的标准差分别为 10.17 ms 和 12.11 ms；表 8 中可比较的各行之间差距仅 0.4 ms，且未给出不确定性；表 5 中 TPU 和 Tesla 的条目没有进行扫描。这些数据支持在所测设置下各配置近似等价，但不足以支持存在唯一的或跨平台的最优配置。}
+
+\PairHead{Suggestions for Improvement}{改进建议}
+
+\PItem{\textbullet}{Organize the evidence in causal order: static chunk sensitivity,
+variation in the per-call oracle, feature-to-oracle prediction, routed decision
+cost, and output preservation. The current fusion prototype and Hadamard discussion
+interrupt this progression without materially supporting the routed scheduler.}
+{按因果顺序组织证据：静态分块敏感性、逐调用最优配置的变化、从特征到最优配置的预测、路由决策代价、输出保持性。当前的融合原型和 Hadamard 相关讨论打断了这一递进逻辑，且并未对路由调度器形成实质性支撑。}
+
+\PItem{\textbullet}{Add a system-path schematic before the experiments. Sections
+5.1--5.2 alternate among isolated Triton timing, a Python-dispatch harness, a passive
+hook, and a patched live kernel; showing where entropy collection, synchronization,
+dispatch, and scan execution occur would clarify which costs each table includes.}
+{在实验部分之前增加一张系统路径示意图。第 5.1--5.2 节在孤立的 Triton 计时、Python 分发测试框架、被动钩子和经补丁修改的实际运行内核之间来回切换；标明熵收集、同步、分发和扫描执行各自发生的位置，可以澄清每张表包含了哪些代价。}
+
+\PItem{\textbullet}{Quantify the amortization trade-off between one-time static
+profiling and recurring online scheduling. Reporting profiling cost, expected
+request volume, and break-even behavior would place the proposed replacement for
+offline tuning on an operationally meaningful scale.}
+{量化一次性静态剖析与持续在线调度之间的摊销权衡。报告剖析代价、预期请求量以及盈亏平衡点，可以将所提出的离线调优替代方案放到具有实际运维意义的尺度上衡量。}
+
+\PItem{\textbullet}{Develop the staged policy proposed in Section 5.3 as the
+forward-looking systems hypothesis. A low-cost shape or length gate could reserve
+activation-dependent analysis for regions where competing static chunks have
+demonstrably different regret.}
+{将第 5.3 节提出的分阶段策略发展为前瞻性的系统假设。可以用低成本的形状或长度门控，仅在相互竞争的静态分块具有明显不同遗憾值的区域才启用依赖激活的分析。}
+
+\PairHead{Additional Details and Minor Issues}{其他细节与次要问题}
+
+\PItem{\textbullet}{Equation (1) with $\epsilon>0$ does not yield the exact stated
+range $H_e\in[0,1]$ or exact uniform entropy $\log K$.}
+{当 $\epsilon>0$ 时，公式 (1) 无法精确得到所声明的取值范围 $H_e\in[0,1]$，也无法精确得到均匀分布的熵 $\log K$。}
+
+\PItem{\textbullet}{Table 2 combines direct-Triton latency with speedup from a
+separate dispatch harness, so the displayed latency ratio differs from the displayed
+speedup.}
+{表 2 将直接调用 Triton 的延迟与另一个分发测试框架得到的加速比放在一起，因此表中延迟之比与所显示的加速比不一致。}
+
+\PItem{\textbullet}{Theorem 2's strictness condition is incomplete: a
+non-permutation doubly stochastic matrix can preserve a nonuniform vector by mixing
+coordinates with equal probabilities.}
+{定理 2 的严格性条件不完整：一个非置换的双随机矩阵，只要仅在概率值相等的坐标之间进行混合，就可以使一个非均匀向量保持不变。}
+
+\PItem{\textbullet}{Section 5.3 describes 160 prompts with 20 per regime, whereas
+Table 8 reports eight samples per regime.}
+{第 5.3 节描述为 160 个提示、每个区间 20 个，而表 8 报告的是每个区间 8 个样本。}
+
+\PItem{\textbullet}{Table 9 establishes identical generated tokens, but not bitwise
+equality of hidden states or logits; the ``recurrence-preserving'' interpretation
+should be scoped accordingly.}
+{表 9 证明了生成的 token 完全一致，但并未证明隐藏状态或 logits 逐位（bitwise）相等；“保持递推（recurrence-preserving）”这一解读应相应地限定适用范围。}
+\end{paracol}
+
+\subsection*{References cited in the AI review / AI 审稿意见所引参考文献}
+
+{\small\color{muted}(Retained in the original language. / 参考文献保留原文，不作翻译。)}
+
+\begin{itemize}[label={}]
+\item Beck, M., Pöppel, K., Lippe, P., \& Hochreiter, S. (2025). Tiled Flash Linear
+Attention: More efficient linear RNN and xLSTM kernels. \emph{Advances in Neural
+Information Processing Systems, 38}.
+(\href{https://proceedings.neurips.cc/paper_files/paper/2025/hash/6cb81234ab47027e991728ed7dd76735-Abstract-Conference.html}{proceedings.neurips.cc})
+\item Yang, S., Wang, B., Shen, Y., Panda, R., \& Kim, Y. (2024). Gated linear
+attention transformers with hardware-efficient training. In \emph{Proceedings of the
+41st International Conference on Machine Learning} (Proceedings of Machine Learning
+Research, Vol. 235, pp. 56501--56523).
+(\href{https://proceedings.mlr.press/v235/yang24ab.html}{proceedings.mlr.press})
+\end{itemize}
+
+\end{document}

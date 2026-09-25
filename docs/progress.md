@@ -1,10 +1,20 @@
 ﻿# 论文进度
 
-最后更新：2026-07-04（第三轮：按当前 `docs/revision_suggestions.tex` 的最终 Must-Fix，彻底清理生成 PDF 文本抽取中的 `dinner` 残留。`paper/main.tex` 与 `paper/appendix.tex` 中会被抽取成 `dinner` 的 `d_{\text{inner}}` / `d_{\mathrm{inner}}` / `d_\text{inner}` 配置与维度说明已改为 `d_inner` 文本式写法；重新构建后 `main.pdf` 仍为 8 页、`appendix.pdf` 仍为 19 页，最终日志无 fatal、undefined、Overfull hbox；PyPDF 抽取验证两份 PDF 均 `dinner=False`、`d_inner=True`。上一轮记录：按最新 `docs/revision_suggestions.tex`「AAAI 2027 投稿前终检」完成全部 3 个 Must-Fix 与 2 个可选建议；正文重新精确锁定 7 页整、References 独占第 8 页；详见「2026-07-04（续）投稿前终检修复 + 正文回压 7 页整」条目。)
+最后更新：2026-09-25（AAAI-27 Submission #3464 在 Phase 1 被拒（Reject，两位 PC 审稿人评分均为 3）；OpenReview 审稿意见已整理为英中对照文档 `docs/AAAI_Review_Feedback.tex` / `docs/AAAI_Review_Feedback.pdf`，详见「2026-09-25 AAAI-27 审稿结果整理」条目。以下为 2026-07-04 的上一轮记录——第三轮：按当前 `docs/revision_suggestions.tex` 的最终 Must-Fix，彻底清理生成 PDF 文本抽取中的 `dinner` 残留。`paper/main.tex` 与 `paper/appendix.tex` 中会被抽取成 `dinner` 的 `d_{\text{inner}}` / `d_{\mathrm{inner}}` / `d_\text{inner}` 配置与维度说明已改为 `d_inner` 文本式写法；重新构建后 `main.pdf` 仍为 8 页、`appendix.pdf` 仍为 19 页，最终日志无 fatal、undefined、Overfull hbox；PyPDF 抽取验证两份 PDF 均 `dinner=False`、`d_inner=True`。上一轮记录：按最新 `docs/revision_suggestions.tex`「AAAI 2027 投稿前终检」完成全部 3 个 Must-Fix 与 2 个可选建议；正文重新精确锁定 7 页整、References 独占第 8 页；详见「2026-07-04（续）投稿前终检修复 + 正文回压 7 页整」条目。)
 
 ## 遗留问题（当前状态，唯一权威版本——文件后半段历史条目里的同名旧章节均已过期，不再代表当前状态）
 
-当前无需要继续决策的投稿阻塞项。
+### AAAI-27 拒稿后的下一步方向（2026-09-25 新增）【已阻挡：等待作者决策】
+
+AAAI-27 已在 Phase 1 给出最终拒稿决定，审稿意见见 `docs/AAAI_Review_Feedback.pdf`。`USAGE.md` 当前目标期刊为 IEEE TPDS。以下决策会实质影响后续论文叙事与实验范围，需要你答复后才能启动新一轮修订。
+
+需要你提供/决策：
+1. 是否以 AAAI-27 三份审稿意见为输入，重写 `docs/revision_suggestions.tex`，并按 `USAGE.md` 中的 IEEE TPDS 标准启动新一轮自动修订？
+   A:
+2. 论文定位：审稿人 8sNa 建议重构为“清晰、简洁的负面结果研究”；审稿人 mMVb 则要求证明激活熵相对 seq-len / shape / 离线剖析具有独特的预测信息并带来部署级收益。采用哪条叙事线？（推荐：负面结果 + 诊断工具定位，与现有证据最一致）
+   A:
+3. 审稿人要求的补充实验包括 batched serving、Mamba2 / Gated DeltaNet 等线性注意力架构、标准 auto-tuning 基线、逐调用 oracle 变化分析、静态剖析与在线调度的摊销（break-even）分析。是否有对应的 GPU 资源和时间预算？哪些必须做？
+   A:
 
 已消费决策：
 1. **双盲匿名 vs camera-ready 真实作者信息**：用户已答复 `A: 双盲匿名，不用管作者信息`。因此当前 `paper/main.tex` 保持 `\usepackage[submission]{aaai2027}` + `\author{Anonymous Submission}`，无需切换 camera-ready 作者信息。
@@ -13,6 +23,19 @@
 无需你决策、仅记录供参考：
 - 【已核实，无需处理】`paper/figs/` 图片分辨率：`entropy_gain.jpg`（appendix 用，300dpi，2217×1205）、`entropy_distribution.jpg`（appendix 用，220dpi，1392×726，按 `0.92\linewidth` 排版换算实际印刷分辨率仍充足）、`workflow.png`（appendix 用，2752×1186，文件内嵌 dpi 标签是无意义的默认值，按像素数换算实际印刷分辨率远超 300dpi）。三者格式均为 AAAI 允许的 jpg/png，均只在 `appendix.tex` 中被引用，`main.tex` 当前没有任何 `\includegraphics`。此项此前长期挂在"待确认"里，现已核实清楚，标记为已解决。
 - 【低优先级，不阻塞投稿】`appendix.tex` 中存在少量硬编码数字交叉引用（如"Eq.~(1) of the main paper"、"Section~4 of the main paper"，而非可跨文档自动更新的 `\ref{}`——因为 appendix 现在是独立编译文档，做不到跨文档自动引用）。经核对，这些硬编码数字与 `main.tex` 当前实际编号一致，但如果后续再调整正文结构，需要手动同步。
+
+## 2026-09-25 AAAI-27 审稿结果整理
+
+### 背景
+AAAI-27 Submission #3464（COREY）已收到最终决定：Phase 1 拒稿，未进入 Phase 2。OpenReview 论坛（forum id `zZz3zjANdV`）的 JSON 导出保存在 `docs/Corey_notes.json`，内容包括 1 份 PC 决定、2 份正式审稿意见（8sNa：Rating 3 / Confidence 3；mMVb：Rating 3 / Confidence 5）以及 1 份 AAAI AI Review。
+
+### 已全部修改
+1. **审稿意见英中对照文档**：新建 `docs/AAAI_Review_Feedback.tex`（XeLaTeX + ctex + paracol）。每份意见按字段逐段左右对照：左栏为逐字保留的英文原文，只把 Markdown 格式转换为 LaTeX；右栏为中文译文。文档附有概览表、投稿信息表和译名对照表，并注明“如有歧义以英文原文为准”。
+2. **PDF 生成**：已编译为 `docs/AAAI_Review_Feedback.pdf`（12 页），中间文件放在临时目录，未污染 `docs/`。最终日志无错误、无 Overfull hbox、无缺字。
+3. **清理**：删除了此前误拼且为空的占位文件 `docs/AAAI_Review_Fedback.tex`。
+
+### 未修改或部分修改
+- 尚未将审稿意见转写为 `docs/revision_suggestions.tex`，也未修改 `paper/`。需要作者先答复本文件顶部「遗留问题 → AAAI-27 拒稿后的下一步方向」中的 3 个问题。
 
 ## 2026-07-04（再续）最终 `dinner` 抽取残留清理
 
