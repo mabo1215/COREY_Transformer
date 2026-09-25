@@ -1,0 +1,222 @@
+{
+  "meta": {
+    "host": "bobsteam1215",
+    "hostname": "bobsteam1215",
+    "utc": "2026-09-25T11:27:24Z",
+    "python": "3.12.3",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "argv": [
+      "/mnt/c/source/COREY_Transformer/src/experiments/tpds/e2_oracle_sweep.py",
+      "--model",
+      "mamba2",
+      "--batches",
+      "1,4",
+      "--warmup",
+      "2",
+      "--repeats",
+      "3",
+      "--max-rows",
+      "12",
+      "--trace-dir",
+      "src/outputs/tpds_traces_smoke_lane",
+      "--out-dir",
+      "src/experiments/results/tpds/smoke",
+      "--tag",
+      "smoke-lane"
+    ],
+    "torch": "2.11.0+cu130",
+    "cuda_runtime": "13.0",
+    "gpu": "NVIDIA GeForce RTX 3070",
+    "gpu_mem_gb": 8.0,
+    "gpu_sm_count": 46,
+    "gpu_cc": "8.6",
+    "pkg_triton": "3.6.0",
+    "pkg_transformers": "5.6.2",
+    "pkg_mamba_ssm": "2.3.2.post1",
+    "pkg_fla-core": "0.5.2",
+    "pkg_flash-linear-attention": "0.5.2",
+    "pkg_numpy": "2.4.4",
+    "pkg_scikit-learn": "1.8.0",
+    "nvidia_smi": "NVIDIA GeForce RTX 3070, 617.14, 8192 MiB, 2100 MHz",
+    "git_commit": "f504e2e",
+    "experiment": "E2",
+    "model": "mamba2",
+    "args": {
+      "model": "mamba2",
+      "trace_dir": "src/outputs/tpds_traces_smoke_lane",
+      "batches": "1,4",
+      "layers": null,
+      "chunks": null,
+      "warmup": 2,
+      "repeats": 3,
+      "flush_l2": false,
+      "max_rows": 12,
+      "out_dir": "src/experiments/results/tpds/smoke",
+      "tag": "smoke-lane",
+      "seed": 0
+    },
+    "layers": [
+      0,
+      24
+    ],
+    "n_prompts": 12,
+    "chunks": [
+      32,
+      64,
+      128,
+      256,
+      512
+    ],
+    "mamba1_default_launch": null
+  },
+  "summary": {
+    "rows": 12,
+    "by_batch": {
+      "1": {
+        "rows": 12,
+        "oracle_distribution": {
+          "256": 5,
+          "128": 4,
+          "512": 2,
+          "32": 1
+        },
+        "static_regret": {
+          "static_32": {
+            "n": 12,
+            "mean_regret_pct": 396.6407582655206,
+            "p95_regret_pct": 1075.2695668976523,
+            "max_regret_pct": 1159.4085522855385,
+            "oracle_hit_rate": 0.08333333333333333
+          },
+          "static_64": {
+            "n": 12,
+            "mean_regret_pct": 265.33630334267013,
+            "p95_regret_pct": 672.6736441005784,
+            "max_regret_pct": 718.1080882413963,
+            "oracle_hit_rate": 0.0
+          },
+          "static_128": {
+            "n": 12,
+            "mean_regret_pct": 149.8393115092606,
+            "p95_regret_pct": 377.5627661998522,
+            "max_regret_pct": 381.68072807713725,
+            "oracle_hit_rate": 0.3333333333333333
+          },
+          "static_256": {
+            "n": 12,
+            "mean_regret_pct": 80.30281708528751,
+            "p95_regret_pct": 290.56363503046884,
+            "max_regret_pct": 307.25780401924646,
+            "oracle_hit_rate": 0.4166666666666667
+          },
+          "static_512": {
+            "n": 12,
+            "mean_regret_pct": 103.15117273322045,
+            "p95_regret_pct": 347.9698268781375,
+            "max_regret_pct": 353.1249845972675,
+            "oracle_hit_rate": 0.16666666666666666
+          },
+          "entropy_rule": {
+            "n": 12,
+            "mean_regret_pct": 80.30281708528751,
+            "p95_regret_pct": 290.56363503046884,
+            "max_regret_pct": 307.25780401924646,
+            "oracle_hit_rate": 0.4166666666666667
+          },
+          "best_static": "static_256"
+        },
+        "entropy_bits_range": [
+          4.671412,
+          4.999292
+        ]
+      }
+    },
+    "entropy_by_regime_b1": {
+      "code_repo": {
+        "mean": 4.812412,
+        "std": 0.0,
+        "min": 4.812412,
+        "max": 4.812412,
+        "n": 1
+      },
+      "logs_uuid": {
+        "mean": 4.671412,
+        "std": 0.0,
+        "min": 4.671412,
+        "max": 4.671412,
+        "n": 1
+      },
+      "long_doc_qa": {
+        "mean": 4.828156,
+        "std": 0.0,
+        "min": 4.828156,
+        "max": 4.828156,
+        "n": 1
+      },
+      "longbench_gov_report": {
+        "mean": 4.831033,
+        "std": 0.0,
+        "min": 4.831033,
+        "max": 4.831033,
+        "n": 1
+      },
+      "longbench_multifieldqa_en": {
+        "mean": 4.712381,
+        "std": 0.0,
+        "min": 4.712381,
+        "max": 4.712381,
+        "n": 1
+      },
+      "longbench_narrativeqa": {
+        "mean": 4.698835,
+        "std": 0.0,
+        "min": 4.698835,
+        "max": 4.698835,
+        "n": 1
+      },
+      "longbench_qasper": {
+        "mean": 4.723091,
+        "std": 0.0,
+        "min": 4.723091,
+        "max": 4.723091,
+        "n": 1
+      },
+      "mixed_zh_en": {
+        "mean": 4.850397,
+        "std": 0.0,
+        "min": 4.850397,
+        "max": 4.850397,
+        "n": 1
+      },
+      "ocr_forms": {
+        "mean": 4.873262,
+        "std": 0.0,
+        "min": 4.873262,
+        "max": 4.873262,
+        "n": 1
+      },
+      "repetition_policy": {
+        "mean": 4.968275,
+        "std": 0.0,
+        "min": 4.968275,
+        "max": 4.968275,
+        "n": 1
+      },
+      "short_chat": {
+        "mean": 4.999292,
+        "std": 0.0,
+        "min": 4.999292,
+        "max": 4.999292,
+        "n": 1
+      },
+      "tables_csv": {
+        "mean": 4.73894,
+        "std": 0.0,
+        "min": 4.73894,
+        "max": 4.73894,
+        "n": 1
+      }
+    },
+    "max_out_diff_across_chunks": 0.0625
+  }
+}

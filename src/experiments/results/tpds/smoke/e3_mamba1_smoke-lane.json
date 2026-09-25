@@ -1,0 +1,414 @@
+{
+  "experiment": "E3",
+  "model": "mamba1",
+  "host": "smoke-lane",
+  "source": "e2_mamba1_smoke-lane.csv",
+  "sklearn": true,
+  "meta": {
+    "host": "bobsteam1215",
+    "hostname": "bobsteam1215",
+    "utc": "2026-09-25T11:28:01Z",
+    "python": "3.12.3",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "argv": [
+      "/mnt/c/source/COREY_Transformer/src/experiments/tpds/e3_predictors.py",
+      "--in-dir",
+      "src/experiments/results/tpds/smoke",
+      "--hosts",
+      "smoke-lane"
+    ],
+    "torch": "2.11.0+cu130",
+    "cuda_runtime": "13.0",
+    "gpu": "NVIDIA GeForce RTX 3070",
+    "gpu_mem_gb": 8.0,
+    "gpu_sm_count": 46,
+    "gpu_cc": "8.6",
+    "pkg_triton": "3.6.0",
+    "pkg_transformers": "5.6.2",
+    "pkg_mamba_ssm": "2.3.2.post1",
+    "pkg_fla-core": "0.5.2",
+    "pkg_flash-linear-attention": "0.5.2",
+    "pkg_numpy": "2.4.4",
+    "pkg_scikit-learn": "1.8.0",
+    "nvidia_smi": "NVIDIA GeForce RTX 3070, 617.14, 8192 MiB, 2100 MHz",
+    "git_commit": "f504e2e"
+  },
+  "n_calls": 12,
+  "chunks": [
+    32,
+    64,
+    128,
+    256,
+    512,
+    1024
+  ],
+  "n_folds": 5,
+  "oracle_distribution": {
+    "256": 9,
+    "64": 1,
+    "32": 1,
+    "512": 1
+  },
+  "tied_with_oracle_mean_count": 3.5,
+  "predictors_all_batches": {
+    "global_static": {
+      "n": 12,
+      "mean_regret_pct": 327.04473731472723,
+      "p95_regret_pct": 1423.927633382127,
+      "max_regret_pct": 2567.5565466661615,
+      "oracle_hit_rate": 0.16666666666666666,
+      "accuracy": 0.16666666666666666,
+      "tie_aware_accuracy": 0.5,
+      "per_call_regret": [
+        0.22241,
+        4.809,
+        0.22478,
+        4.88231,
+        0.0,
+        0.24431,
+        0.2302,
+        0.23894,
+        1.73029,
+        0.0,
+        25.67557,
+        0.98758
+      ],
+      "chosen_distribution": {
+        "64": 6,
+        "128": 3,
+        "256": 3
+      }
+    },
+    "entropy_rule": {
+      "n": 12,
+      "mean_regret_pct": 220.15266630562414,
+      "p95_regret_pct": 1186.735422968595,
+      "max_regret_pct": 2567.5565466661615,
+      "oracle_hit_rate": 0.75,
+      "accuracy": 0.75,
+      "tie_aware_accuracy": 1.0,
+      "per_call_regret": [
+        0.0,
+        0.17303,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        25.67557,
+        0.56973
+      ],
+      "chosen_distribution": {
+        "256": 12
+      }
+    },
+    "L_only": {
+      "n": 12,
+      "mean_regret_pct": 327.04473731472723,
+      "p95_regret_pct": 1423.927633382127,
+      "max_regret_pct": 2567.5565466661615,
+      "oracle_hit_rate": 0.16666666666666666,
+      "accuracy": 0.16666666666666666,
+      "tie_aware_accuracy": 0.5,
+      "per_call_regret": [
+        0.22241,
+        4.809,
+        0.22478,
+        4.88231,
+        0.0,
+        0.24431,
+        0.2302,
+        0.23894,
+        1.73029,
+        0.0,
+        25.67557,
+        0.98758
+      ],
+      "chosen_distribution": {
+        "64": 6,
+        "128": 3,
+        "256": 3
+      }
+    },
+    "shape": {
+      "n": 12,
+      "mean_regret_pct": 327.04473731472723,
+      "p95_regret_pct": 1423.927633382127,
+      "max_regret_pct": 2567.5565466661615,
+      "oracle_hit_rate": 0.16666666666666666,
+      "accuracy": 0.16666666666666666,
+      "tie_aware_accuracy": 0.5,
+      "per_call_regret": [
+        0.22241,
+        4.809,
+        0.22478,
+        4.88231,
+        0.0,
+        0.24431,
+        0.2302,
+        0.23894,
+        1.73029,
+        0.0,
+        25.67557,
+        0.98758
+      ],
+      "chosen_distribution": {
+        "64": 6,
+        "128": 3,
+        "256": 3
+      }
+    },
+    "entropy_only": {
+      "n": 12,
+      "mean_regret_pct": 321.0994138087765,
+      "p95_regret_pct": 1423.927633382127,
+      "max_regret_pct": 2567.5565466661615,
+      "oracle_hit_rate": 0.4166666666666667,
+      "accuracy": 0.4166666666666667,
+      "tie_aware_accuracy": 0.75,
+      "per_call_regret": [
+        0.22241,
+        4.809,
+        0.22478,
+        4.88231,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.73029,
+        0.0,
+        25.67557,
+        0.98758
+      ],
+      "chosen_distribution": {
+        "256": 6,
+        "64": 3,
+        "128": 3
+      }
+    },
+    "moments": {
+      "n": 12,
+      "mean_regret_pct": 310.58979282288567,
+      "p95_regret_pct": 1423.927633382127,
+      "max_regret_pct": 2567.5565466661615,
+      "oracle_hit_rate": 0.3333333333333333,
+      "accuracy": 0.3333333333333333,
+      "tie_aware_accuracy": 0.5833333333333334,
+      "per_call_regret": [
+        0.22241,
+        4.809,
+        0.22478,
+        4.88231,
+        0.0,
+        0.0,
+        0.2302,
+        0.23894,
+        0.0,
+        0.0,
+        25.67557,
+        0.98758
+      ],
+      "chosen_distribution": {
+        "256": 5,
+        "64": 4,
+        "128": 3
+      }
+    },
+    "shape+entropy": {
+      "n": 12,
+      "mean_regret_pct": 321.0994138087765,
+      "p95_regret_pct": 1423.927633382127,
+      "max_regret_pct": 2567.5565466661615,
+      "oracle_hit_rate": 0.4166666666666667,
+      "accuracy": 0.4166666666666667,
+      "tie_aware_accuracy": 0.75,
+      "per_call_regret": [
+        0.22241,
+        4.809,
+        0.22478,
+        4.88231,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.73029,
+        0.0,
+        25.67557,
+        0.98758
+      ],
+      "chosen_distribution": {
+        "256": 6,
+        "64": 3,
+        "128": 3
+      }
+    },
+    "all": {
+      "n": 12,
+      "mean_regret_pct": 368.62182918478544,
+      "p95_regret_pct": 1423.927633382127,
+      "max_regret_pct": 2567.5565466661615,
+      "oracle_hit_rate": 0.3333333333333333,
+      "accuracy": 0.3333333333333333,
+      "tie_aware_accuracy": 0.75,
+      "per_call_regret": [
+        0.22241,
+        4.809,
+        0.22478,
+        4.88231,
+        0.0,
+        0.0,
+        4.83225,
+        2.60073,
+        0.0,
+        0.0,
+        25.67557,
+        0.98758
+      ],
+      "chosen_distribution": {
+        "256": 5,
+        "128": 3,
+        "64": 2,
+        "32": 2
+      }
+    }
+  },
+  "predictors_by_batch": {
+    "1": {
+      "global_static": {
+        "n": 12,
+        "mean_regret_pct": 327.04473731472723,
+        "p95_regret_pct": 1423.927633382127,
+        "max_regret_pct": 2567.5565466661615,
+        "oracle_hit_rate": 0.16666666666666666,
+        "accuracy": 0.16666666666666666,
+        "tie_aware_accuracy": 0.5,
+        "chosen_distribution": {
+          "64": 6,
+          "128": 3,
+          "256": 3
+        }
+      },
+      "entropy_rule": {
+        "n": 12,
+        "mean_regret_pct": 220.15266630562414,
+        "p95_regret_pct": 1186.735422968595,
+        "max_regret_pct": 2567.5565466661615,
+        "oracle_hit_rate": 0.75,
+        "accuracy": 0.75,
+        "tie_aware_accuracy": 1.0,
+        "chosen_distribution": {
+          "256": 12
+        }
+      },
+      "L_only": {
+        "n": 12,
+        "mean_regret_pct": 327.04473731472723,
+        "p95_regret_pct": 1423.927633382127,
+        "max_regret_pct": 2567.5565466661615,
+        "oracle_hit_rate": 0.16666666666666666,
+        "accuracy": 0.16666666666666666,
+        "tie_aware_accuracy": 0.5,
+        "chosen_distribution": {
+          "64": 6,
+          "128": 3,
+          "256": 3
+        }
+      },
+      "shape": {
+        "n": 12,
+        "mean_regret_pct": 327.04473731472723,
+        "p95_regret_pct": 1423.927633382127,
+        "max_regret_pct": 2567.5565466661615,
+        "oracle_hit_rate": 0.16666666666666666,
+        "accuracy": 0.16666666666666666,
+        "tie_aware_accuracy": 0.5,
+        "chosen_distribution": {
+          "64": 6,
+          "128": 3,
+          "256": 3
+        }
+      },
+      "entropy_only": {
+        "n": 12,
+        "mean_regret_pct": 321.0994138087765,
+        "p95_regret_pct": 1423.927633382127,
+        "max_regret_pct": 2567.5565466661615,
+        "oracle_hit_rate": 0.4166666666666667,
+        "accuracy": 0.4166666666666667,
+        "tie_aware_accuracy": 0.75,
+        "chosen_distribution": {
+          "256": 6,
+          "64": 3,
+          "128": 3
+        }
+      },
+      "moments": {
+        "n": 12,
+        "mean_regret_pct": 310.58979282288567,
+        "p95_regret_pct": 1423.927633382127,
+        "max_regret_pct": 2567.5565466661615,
+        "oracle_hit_rate": 0.3333333333333333,
+        "accuracy": 0.3333333333333333,
+        "tie_aware_accuracy": 0.5833333333333334,
+        "chosen_distribution": {
+          "256": 5,
+          "64": 4,
+          "128": 3
+        }
+      },
+      "shape+entropy": {
+        "n": 12,
+        "mean_regret_pct": 321.0994138087765,
+        "p95_regret_pct": 1423.927633382127,
+        "max_regret_pct": 2567.5565466661615,
+        "oracle_hit_rate": 0.4166666666666667,
+        "accuracy": 0.4166666666666667,
+        "tie_aware_accuracy": 0.75,
+        "chosen_distribution": {
+          "256": 6,
+          "64": 3,
+          "128": 3
+        }
+      },
+      "all": {
+        "n": 12,
+        "mean_regret_pct": 368.62182918478544,
+        "p95_regret_pct": 1423.927633382127,
+        "max_regret_pct": 2567.5565466661615,
+        "oracle_hit_rate": 0.3333333333333333,
+        "accuracy": 0.3333333333333333,
+        "tie_aware_accuracy": 0.75,
+        "chosen_distribution": {
+          "256": 5,
+          "128": 3,
+          "64": 2,
+          "32": 2
+        }
+      }
+    }
+  },
+  "mi_entropy_oracle_given_Lbucket": {
+    "cmi_bits": 0.4603685660024548,
+    "cmi_perm_baseline_bits": 0.6270352326691216,
+    "cmi_excess_bits": -0.16666666666666685,
+    "H_oracle_given_cond_bits": 0.7937018993357882,
+    "bins": 8
+  },
+  "mi_entropy_oracle_given_Lbucket_batch": {
+    "cmi_bits": 0.4603685660024548,
+    "cmi_perm_baseline_bits": 0.6270352326691216,
+    "cmi_excess_bits": -0.16666666666666685,
+    "H_oracle_given_cond_bits": 0.7937018993357882,
+    "bins": 8
+  },
+  "mi_logL_oracle_given_batch": {
+    "cmi_bits": 0.41381685030363363,
+    "cmi_perm_baseline_bits": 0.0741174743300728,
+    "cmi_excess_bits": 0.3396993759735608,
+    "H_oracle_given_cond_bits": 1.207518749639422,
+    "bins": 8
+  }
+}

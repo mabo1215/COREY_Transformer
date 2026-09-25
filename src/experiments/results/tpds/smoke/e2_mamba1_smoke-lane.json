@@ -1,0 +1,267 @@
+{
+  "meta": {
+    "host": "bobsteam1215",
+    "hostname": "bobsteam1215",
+    "utc": "2026-09-25T11:27:10Z",
+    "python": "3.12.3",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "argv": [
+      "/mnt/c/source/COREY_Transformer/src/experiments/tpds/e2_oracle_sweep.py",
+      "--model",
+      "mamba1",
+      "--batches",
+      "1,4",
+      "--warmup",
+      "2",
+      "--repeats",
+      "3",
+      "--max-rows",
+      "12",
+      "--trace-dir",
+      "src/outputs/tpds_traces_smoke_lane",
+      "--out-dir",
+      "src/experiments/results/tpds/smoke",
+      "--tag",
+      "smoke-lane"
+    ],
+    "torch": "2.11.0+cu130",
+    "cuda_runtime": "13.0",
+    "gpu": "NVIDIA GeForce RTX 3070",
+    "gpu_mem_gb": 8.0,
+    "gpu_sm_count": 46,
+    "gpu_cc": "8.6",
+    "pkg_triton": "3.6.0",
+    "pkg_transformers": "5.6.2",
+    "pkg_mamba_ssm": "2.3.2.post1",
+    "pkg_fla-core": "0.5.2",
+    "pkg_flash-linear-attention": "0.5.2",
+    "pkg_numpy": "2.4.4",
+    "pkg_scikit-learn": "1.8.0",
+    "nvidia_smi": "NVIDIA GeForce RTX 3070, 617.14, 8192 MiB, 2100 MHz",
+    "git_commit": "f504e2e",
+    "experiment": "E2",
+    "model": "mamba1",
+    "args": {
+      "model": "mamba1",
+      "trace_dir": "src/outputs/tpds_traces_smoke_lane",
+      "batches": "1,4",
+      "layers": null,
+      "chunks": null,
+      "warmup": 2,
+      "repeats": 3,
+      "flush_l2": false,
+      "max_rows": 12,
+      "out_dir": "src/experiments/results/tpds/smoke",
+      "tag": "smoke-lane",
+      "seed": 0
+    },
+    "layers": [
+      0,
+      24
+    ],
+    "n_prompts": 12,
+    "chunks": [
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024
+    ],
+    "mamba1_default_launch": {
+      "32": {
+        "block_t": 32,
+        "block_d": 8,
+        "num_warps": 2,
+        "num_stages": 1
+      },
+      "64": {
+        "block_t": 64,
+        "block_d": 8,
+        "num_warps": 2,
+        "num_stages": 1
+      },
+      "128": {
+        "block_t": 128,
+        "block_d": 8,
+        "num_warps": 2,
+        "num_stages": 1
+      },
+      "256": {
+        "block_t": 256,
+        "block_d": 4,
+        "num_warps": 2,
+        "num_stages": 1
+      },
+      "512": {
+        "block_t": 512,
+        "block_d": 4,
+        "num_warps": 2,
+        "num_stages": 1
+      },
+      "1024": {
+        "block_t": 1024,
+        "block_d": 4,
+        "num_warps": 4,
+        "num_stages": 1
+      }
+    }
+  },
+  "summary": {
+    "rows": 12,
+    "by_batch": {
+      "1": {
+        "rows": 12,
+        "oracle_distribution": {
+          "256": 9,
+          "64": 1,
+          "32": 1,
+          "512": 1
+        },
+        "static_regret": {
+          "static_32": {
+            "n": 12,
+            "mean_regret_pct": 244.0370214021271,
+            "p95_regret_pct": 572.6617783878788,
+            "max_regret_pct": 681.9733019049796,
+            "oracle_hit_rate": 0.08333333333333333
+          },
+          "static_64": {
+            "n": 12,
+            "mean_regret_pct": 157.1956768210793,
+            "p95_regret_pct": 540.5207042133635,
+            "max_regret_pct": 617.0784007628281,
+            "oracle_hit_rate": 0.08333333333333333
+          },
+          "static_128": {
+            "n": 12,
+            "mean_regret_pct": 196.31651319749054,
+            "p95_regret_pct": 499.3608796649921,
+            "max_regret_pct": 512.963760628081,
+            "oracle_hit_rate": 0.0
+          },
+          "static_256": {
+            "n": 12,
+            "mean_regret_pct": 220.15266630562414,
+            "p95_regret_pct": 1186.735422968595,
+            "max_regret_pct": 2567.5565466661615,
+            "oracle_hit_rate": 0.75
+          },
+          "static_512": {
+            "n": 12,
+            "mean_regret_pct": 313.7680738855638,
+            "p95_regret_pct": 780.419684023726,
+            "max_regret_pct": 989.1170468516417,
+            "oracle_hit_rate": 0.08333333333333333
+          },
+          "static_1024": {
+            "n": 12,
+            "mean_regret_pct": 622.8652885265394,
+            "p95_regret_pct": 2883.420524731065,
+            "max_regret_pct": 5855.801010476646,
+            "oracle_hit_rate": 0.0
+          },
+          "entropy_rule": {
+            "n": 12,
+            "mean_regret_pct": 220.15266630562414,
+            "p95_regret_pct": 1186.735422968595,
+            "max_regret_pct": 2567.5565466661615,
+            "oracle_hit_rate": 0.75
+          },
+          "best_static": "static_64"
+        },
+        "entropy_bits_range": [
+          3.239974,
+          3.304858
+        ]
+      }
+    },
+    "entropy_by_regime_b1": {
+      "code_repo": {
+        "mean": 3.271293,
+        "std": 0.0,
+        "min": 3.271293,
+        "max": 3.271293,
+        "n": 1
+      },
+      "logs_uuid": {
+        "mean": 3.304858,
+        "std": 0.0,
+        "min": 3.304858,
+        "max": 3.304858,
+        "n": 1
+      },
+      "long_doc_qa": {
+        "mean": 3.267522,
+        "std": 0.0,
+        "min": 3.267522,
+        "max": 3.267522,
+        "n": 1
+      },
+      "longbench_gov_report": {
+        "mean": 3.266381,
+        "std": 0.0,
+        "min": 3.266381,
+        "max": 3.266381,
+        "n": 1
+      },
+      "longbench_multifieldqa_en": {
+        "mean": 3.267592,
+        "std": 0.0,
+        "min": 3.267592,
+        "max": 3.267592,
+        "n": 1
+      },
+      "longbench_narrativeqa": {
+        "mean": 3.264451,
+        "std": 0.0,
+        "min": 3.264451,
+        "max": 3.264451,
+        "n": 1
+      },
+      "longbench_qasper": {
+        "mean": 3.267874,
+        "std": 0.0,
+        "min": 3.267874,
+        "max": 3.267874,
+        "n": 1
+      },
+      "mixed_zh_en": {
+        "mean": 3.2845,
+        "std": 0.0,
+        "min": 3.2845,
+        "max": 3.2845,
+        "n": 1
+      },
+      "ocr_forms": {
+        "mean": 3.264893,
+        "std": 0.0,
+        "min": 3.264893,
+        "max": 3.264893,
+        "n": 1
+      },
+      "repetition_policy": {
+        "mean": 3.264098,
+        "std": 0.0,
+        "min": 3.264098,
+        "max": 3.264098,
+        "n": 1
+      },
+      "short_chat": {
+        "mean": 3.265952,
+        "std": 0.0,
+        "min": 3.265952,
+        "max": 3.265952,
+        "n": 1
+      },
+      "tables_csv": {
+        "mean": 3.239974,
+        "std": 0.0,
+        "min": 3.239974,
+        "max": 3.239974,
+        "n": 1
+      }
+    },
+    "max_out_diff_across_chunks": 0.000244140625
+  }
+}

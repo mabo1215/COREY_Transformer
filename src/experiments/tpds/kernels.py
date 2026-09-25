@@ -128,15 +128,16 @@ class LaunchConfig:
                 "num_stages": self.num_stages}
 
 
-def default_mamba1_config(chunk: int) -> LaunchConfig:
-    """Fixed launch heuristic used when only the chunk is varied (E1, E2).
+# Per-chunk default launch configuration (BLOCK_D, num_warps), chosen once by a
+# short offline search on the RTX 3070 at d=2048, L in {512, 2048, 8192}. It
+# plays the role of a vendor default: E1/E2 vary only the chunk and take the
+# launch configuration from this table; E4 searches the full joint space.
+DEFAULT_MAMBA1_LAUNCH = {32: (8, 2), 64: (8, 2), 128: (8, 2), 256: (4, 2), 512: (4, 2), 1024: (4, 4)}
 
-    BLOCK_D is held at 8 channels so that the number of programs does not
-    change with the chunk; num_warps grows with the tile size so every thread
-    holds a similar number of tile elements.
-    """
-    block_d = 8
-    num_warps = int(min(8, max(1, (chunk * block_d) // 256)))
+
+def default_mamba1_config(chunk: int) -> LaunchConfig:
+    """Fixed launch configuration used when only the chunk is varied (E1, E2)."""
+    block_d, num_warps = DEFAULT_MAMBA1_LAUNCH.get(chunk, (4, 4))
     return LaunchConfig(block_t=chunk, block_d=block_d, num_warps=num_warps, num_stages=1)
 
 
