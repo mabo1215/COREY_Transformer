@@ -115,9 +115,26 @@ def _mamba2_prefill_forward(self, hidden_states, cache_params=None, attention_ma
     return self.out_proj(y)
 
 
+def _disable_hf_fused_kernels() -> None:
+    """Keep transformers off its fused Mamba kernels (compiled CUDA extensions or hub kernels).
+
+    The capture forward uses our own Triton kernels, so the fused path is never needed; the
+    unpatched reference forward then runs the portable PyTorch path. This avoids depending on
+    whichever mamba_ssm/causal_conv1d build a host has installed, which may lack kernels for the
+    GPU architecture or be incompatible with the installed transformers version.
+    """
+    import importlib
+
+    for name in ("transformers.models.mamba.modeling_mamba", "transformers.models.mamba2.modeling_mamba2"):
+        mod = importlib.import_module(name)
+        if hasattr(mod, "lazy_load_kernel"):
+            mod.lazy_load_kernel = lambda *args, **kwargs: None
+
+
 def load_model(kind: str, model_id: str, device: str = "cuda", dtype=torch.float32):
     from transformers import AutoTokenizer
 
+    _disable_hf_fused_kernels()
     if kind == "mamba1":
         from transformers import MambaForCausalLM as Cls
     else:
