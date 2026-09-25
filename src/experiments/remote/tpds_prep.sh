@@ -34,9 +34,15 @@ if [ "${TPDS_SKIP_INSTALL:-0}" != 1 ]; then
   # shellcheck disable=SC2086
   "$PY" -c "import torch._inductor.compile_fx" 2>/dev/null || "$PY" -m pip install ${PIP_EXTRA:-} -U "typing_extensions>=4.12" || rc=1
   # mamba-ssm: only the Triton SSD ops are used; the CUDA extensions are not built.
-  # shellcheck disable=SC2086
-  MAMBA_SKIP_CUDA_BUILD=TRUE CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE MAMBA_FORCE_BUILD=FALSE \
-    "$PY" -m pip install ${PIP_EXTRA:-} --no-deps --no-build-isolation "mamba-ssm==2.3.2.post1" || rc=1
+  # Skip when an existing install already provides the SSD ops (for example a
+  # patched runtime-chunk build that must not be replaced): TPDS_SKIP_MAMBA_INSTALL=1.
+  if [ "${TPDS_SKIP_MAMBA_INSTALL:-0}" != 1 ]; then
+    # shellcheck disable=SC2086
+    MAMBA_SKIP_CUDA_BUILD=TRUE CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE MAMBA_FORCE_BUILD=FALSE \
+      "$PY" -m pip install ${PIP_EXTRA:-} --no-deps --no-build-isolation "mamba-ssm==2.3.2.post1" || rc=1
+  else
+    echo "skip mamba-ssm install (TPDS_SKIP_MAMBA_INSTALL=1); using: $("$PY" -c 'import importlib.metadata as m; print(m.version("mamba_ssm"))' 2>&1)"
+  fi
 fi
 
 echo "== import checks (CPU)"
