@@ -8,6 +8,8 @@
 #   TPDS_NO_GPU_LOCK set to 1 to let the lanes time kernels concurrently (NOT recommended:
 #                    concurrent kernels on one GPU contaminate each other's latency)
 #   TPDS_WAIT_MAX_S  maximum wait for a marker of the other lane (default 43200 = 12 h)
+#   TPDS_ID_PREFIX   prefix for marker/ledger IDs (default none), e.g. "3090-" when a second
+#                    host runs the same experiments under its own ledger entries
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 cd "$ROOT" || exit 1
@@ -69,7 +71,7 @@ if [ "${TPDS_SMOKE:-0}" = 1 ]; then
   E4_ARGS="--lengths 128,512 --batches 1 --search-warmup 1 --search-repeats 2 --warmup 2 --repeats 3 --overhead-repeats 10"
   MAX_GB_DEFAULT=2
 else
-  ID_PREFIX=
+  ID_PREFIX=${TPDS_ID_PREFIX:-}  # e.g. "3090-" for a second host, so its ledger IDs differ
   E1_ARGS="--lengths 512,2048,8192 --batch 1 --warmup 10 --repeats 100 --rounds 3"
   CAP_ARGS="--layer-stride 6 --samples-per-regime 20 --longbench-per-task 8 --longbench-lengths 1024,2048,4096,8192 --max-tokens 8192"
   E2_ARGS="--batches 1,4,16 --warmup 10 --repeats 50"
