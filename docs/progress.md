@@ -79,6 +79,7 @@
 1. 这两个目录是否还在别的机器或 H800 数据盘上？如有，请拷回 `src/outputs/` 对应位置。
    A:
 2. 如果找不到：是否同意在 PRO 6000 上用同一 patched kernel 重跑路由消融（约 1–2 小时 GPU），用新结果替换 Table I？补充：PRO 6000 的 base 环境里已装有 `mamba_ssm 2.2.2+corey.runtime.chunk.gpu`（即当年的 runtime-chunk patched 扩展），不需要重新编译；是否支持 Blackwell 要开卡后才能确认。远端也没有找到这两个结果目录。
+   补充（2026-09-26 开卡后实测）：该 patched 扩展 `selective_scan_cuda` **没有 sm_120 kernel**，在 PRO 6000（Blackwell）上报 `no kernel image is available`；且 nvcc 未安装，无法就地重编。因此 PRO 6000 不能直接重跑路由消融，需换 H800/3090 等非 Blackwell 主机，或在 PRO 6000 装 CUDA toolkit 后以 `TORCH_CUDA_ARCH_LIST=12.0` 重编（TPDS 的 E1–E5 用 Triton kernel，不受影响）。
    A:
 
 已消费决策（2026-09-25）：
