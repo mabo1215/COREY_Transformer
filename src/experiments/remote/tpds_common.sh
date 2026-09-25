@@ -11,6 +11,10 @@
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 cd "$ROOT" || exit 1
+# Host-local settings (untracked): e.g. PY=<venv python>, REVLOOP_HOST=<registry name>, HF_ENDPOINT.
+# shellcheck disable=SC1091
+[ -f "$ROOT/.tpds_env" ] && . "$ROOT/.tpds_env"
+if [ -z "${PY:-}" ] && [ -x "$ROOT/.venv/bin/python" ]; then PY="$ROOT/.venv/bin/python"; fi
 PY=${PY:-python3}
 command -v "$PY" >/dev/null 2>&1 || PY=python
 export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
