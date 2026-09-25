@@ -1,41 +1,242 @@
-\section*{Final AAAI 2027 Submission Check}
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\setlist{itemsep=2pt,topsep=3pt}
 
-\subsection*{Final Decision}
+\title{Revision Plan for IEEE TPDS Submission\\
+\large COREY: Runtime Chunk Scheduling for Selective Scan Kernels}
+\date{Cycle opened 2026-09-25}
 
-This version is ready for submission to AAAI 2027.
+\begin{document}
+\maketitle
 
-\paragraph{Decision.}
-No blocking issue remains. The main paper is internally consistent, the
-calibrated scheduler and legacy-reference diagnostics are now clearly
-separated, the negative-result framing is conservative, and the
-supplementary material no longer contains the previous visible formatting
-or notation problems.
+\section*{Scope and Inputs}
 
-\subsection*{Submission Readiness}
+This review opens a new revision cycle. It converts the AAAI-27 Phase-1
+reviews of Submission \#3464 (Reviewer 8sNa, Rating 3 / Confidence 3;
+Reviewer mMVb, Rating 3 / Confidence 5; the AAAI AI Review) into concrete
+actions, and it assesses the manuscript against the IEEE Transactions on
+Parallel and Distributed Systems (TPDS) standard.
 
+Author decisions that fix the direction of this cycle:
 \begin{enumerate}
-    \item Main-paper format: acceptable.
-    \item Page count: acceptable.
-    \item Anonymous submission: acceptable.
-    \item References-only final page: acceptable.
-    \item Calibrated \(H_{\mathrm{ref}}=\log K\) vs. legacy \(H_{\mathrm{ref}}=8.0\):
-    now clearly separated.
-    \item H800 results: now correctly framed as legacy-reference sensitivity
-    diagnostics and routed end-to-end platform evidence.
-    \item Negative-result claim: acceptable and conservative.
-    \item Supplementary layout: acceptable.
-    \item Remaining \texttt{dinner} typo: fixed.
-    \item Checklist: acceptable, with non-blocking \texttt{no}/\texttt{partial}
-    entries.
+  \item Target venue: IEEE TPDS (regular paper, IEEEtran journal format).
+  \item Narrative: a negative-result and diagnostic characterization study.
+        The paper no longer claims that activation entropy replaces offline
+        profiling. It asks what determines the optimal chunk of chunked
+        linear-recurrence kernels, and shows with causal evidence why an
+        activation-statistic scheduler cannot beat a tuned static or
+        shape-keyed policy.
+  \item Supplementary experiments in scope: the core evidence chain
+        (per-call oracle variation, feature-to-oracle prediction, strongest
+        static baseline, break-even amortization), Mamba-2 and Gated
+        DeltaNet coverage, and an auto-tuning baseline. A full batched
+        serving system is out of scope; batch size is covered as a
+        kernel-level sweep dimension only.
 \end{enumerate}
 
-\subsection*{Optional Final Note}
+\section*{Overall Assessment}
 
-The only remaining practical risk is not in the PDF text itself: when
-submitting, make sure the anonymous supplementary code/data package is
-also uploaded. The paper and checklist state that the code and data package
-is included, so the submission should contain that package at upload time.
+The reviewers agree that the paper studies a relevant systems problem and
+that its end-to-end measurements are honest. They also agree that the
+contribution, as framed, is not supported: the headline kernel gains are
+relative to a weak Static-64 baseline and are reproduced exactly by
+Static-512, no experiment shows that entropy predicts a changing per-call
+optimum, the evaluated scheduler is inconsistent with the defined rule, and
+the architecture coverage stops at Mamba-1.
 
-\paragraph{Final recommendation.}
-Submit this version after one last compile check and one last visual PDF
-preview in the OpenReview upload page.
+An internal audit made for this plan found a more serious problem with
+the kernel-level evidence. The chunk sweeps behind the consumer-GPU,
+server-GPU, H800 and perturbation tables split the sequence into
+independent calls of a stock selective-scan kernel. No recurrent state is
+carried across the split points, so the computed scan is not the model's
+scan, and the measured speedups mostly count fewer Python-level launches.
+The ``isolated kernel latency'' column of the kernel-summary table comes
+from an element-wise placeholder kernel, not from a scan. These results
+cannot support any claim about chunk sensitivity of a correct scan kernel.
+The only recurrence-preserving chunk measurements in the paper are the
+routed ablation (a patched live kernel), where all fixed chunks from 128 to
+2048 lie within 2.6\% of each other.
+
+As a TPDS paper, a characterization study is in scope, provided it is
+methodologically clean, covers the relevant kernel family, and yields
+actionable guidance: what drives the optimal chunk, how large the
+opportunity is, and when runtime adaptation can repay its cost.
+
+\section*{Required Revisions}
+
+\subsection*{A. Framing and Claims}
+
+\begin{enumerate}[label=\textbf{A\arabic*}]
+  \item \textbf{Reframe the paper as a negative-result characterization.}
+        Rewrite the title, abstract, introduction, contributions and
+        conclusion. The central question is whether per-call activation
+        statistics carry scheduling information for chunked
+        linear-recurrence kernels beyond shape, sequence length and
+        hardware. Remove the ``replace offline profiling'' claim and the
+        concept-and-feasibility framing. Answer reviewer questions Q1 and Q5
+        explicitly: state which deployment scenario, if any, could benefit
+        from runtime adaptation, using the break-even analysis (C5).
+  \item \textbf{Remove the invalid kernel-level evidence.} Delete the
+        $4.41\times$ and $3.55\times$ headline numbers and the tables built
+        on the chunk-splitting harness (kernel summary, multi-platform
+        three-policy table, perturbation sweep, H800 W1 supplement). Replace
+        them with recurrence-preserving measurements (C1, C2). State
+        briefly, in the evaluation methodology, why split-call timing is not
+        a valid chunk measurement, so readers of the earlier preprint
+        understand the change.
+  \item \textbf{Make the evaluated scheduler match the defined method.}
+        Eq.~(2) clips at $C_{\max}=512$, but the routed ablation reports
+        entropy and proxy policies at chunks 1024 and 2048. Either define the
+        routed variant (its chunk range and mapping) in the method section
+        or rerun it with the defined rule. Every scheduler row must be traceable
+        to one written definition.
+  \item \textbf{Report comparisons against the strongest static baseline
+        only.} All speedup or regret figures are relative to the per-setting
+        best static chunk (and to the auto-tuned configuration, C4), never to
+        an arbitrary chunk.
+\end{enumerate}
+
+\subsection*{B. Method, Theory and Presentation}
+
+\begin{enumerate}[label=\textbf{B\arabic*}]
+  \item \textbf{Correct the bin-count claim.} Table~1 shows $H/\log K$
+        changing from 0.763 to 0.881 as $K$ grows; the chunk stays at 512
+        only because every point falls in the saturated output bucket. Replace
+        ``invariance'' with ``decision saturation'' and state the actual
+        dependence on $K$.
+  \item \textbf{Fix Eq.~(1).} With $\epsilon>0$ the normalized entropy is not
+        exactly in $[0,1]$ and the uniform value is not exactly $\log K$.
+        Use the convention $0\log 0=0$, or state the bounds with $\epsilon$.
+  \item \textbf{Fix or remove Theorem~2.} Its strictness condition is
+        incomplete: a non-permutation doubly-stochastic matrix can leave a
+        non-uniform vector unchanged. Given that the Hadamard analysis is
+        empirically falsified and does not support the scheduler, move it,
+        together with the fusion-depth prototype and Theorem~1, out of the
+        main text.
+  \item \textbf{Add a causal account of chunk cost.} Answer reviewer Q3
+        with an argument in the main text: for a fixed shape, data type and
+        hardware, a dense chunked scan executes a data-independent
+        instruction and memory-access stream, so its latency, and therefore
+        the optimal chunk, is a function of shape and hardware, not of
+        activation values. Entropy can only correlate with the optimum
+        through its correlation with shape or sequence length. Support the
+        argument empirically (C1).
+  \item \textbf{Organize the evidence in causal order}: static chunk
+        sensitivity $\rightarrow$ value invariance $\rightarrow$ variation of
+        the per-call oracle $\rightarrow$ feature-to-oracle prediction
+        $\rightarrow$ routed decision cost $\rightarrow$ output preservation
+        $\rightarrow$ amortization.
+  \item \textbf{Add a system-path schematic} before the experiments. It
+        should show where entropy collection, synchronization, dispatch and
+        scan execution happen, and which cost each experiment tier includes.
+  \item \textbf{Separate microbenchmarks from deployment measurements}
+        consistently in tables, captions and text.
+  \item \textbf{Scope the quality claim.} The LongBench study shows identical
+        greedy tokens and zero metric deltas, not bitwise-equal hidden states
+        or logits. Rephrase ``bitwise identical'' and ``recurrence-preserving''
+        accordingly.
+  \item \textbf{Fix internal inconsistencies}: the mixed-regime section says
+        160 prompts with 20 per regime while its table reports 8 samples per
+        regime; the kernel-summary latency ratio differs from its speedup
+        column; the calibration setting ($H_{\text{ref}}=8.0$ versus
+        $\log K$) must be stated for every reported result.
+\end{enumerate}
+
+\subsection*{C. Experiments}
+
+All new timing experiments use recurrence-preserving kernels in which the
+chunk is a real tiling parameter, report mean, standard deviation and a
+95\% confidence interval over repeated timed runs after warmup, and are
+run on at least two GPU generations (a consumer GPU and an RTX PRO 6000
+Blackwell server GPU).
+
+\begin{enumerate}[label=\textbf{C\arabic*}]
+  \item \textbf{Value invariance of kernel latency.} For fixed shape, data
+        type and chunk, time the scan on inputs with very different
+        entropy (uniform, Gaussian, Laplace, sparse at several densities,
+        real captured activations). Cover the Mamba-1 selective scan, the
+        Mamba-2 SSD chunked scan and the Gated DeltaNet chunked kernel. The
+        expected outcome is that latency differences across inputs stay
+        within measurement noise while differences across chunks do not.
+  \item \textbf{Per-call oracle variation on real traces.} Capture the scan
+        inputs of real Mamba-1 and Mamba-2 checkpoints over a diverse prompt
+        set (the mixed-regime corpus plus long-context prompts, sequence
+        lengths from tens to several thousand tokens). For each captured call
+        and each candidate chunk, measure latency and record the per-call
+        oracle chunk, the regret of every static chunk, and the spread of
+        entropy. Include batch size $\{1,4,16\}$ as a sweep dimension.
+  \item \textbf{Feature-to-oracle prediction.} Using C2, compare predictors
+        of the oracle chunk: global static, sequence length only, shape
+        (sequence length, batch, width, layer), entropy only, other activation
+        moments, and all features combined. Report accuracy and mean and
+        tail regret relative to the per-call oracle under held-out
+        evaluation. This answers reviewer Q2 directly.
+  \item \textbf{Auto-tuning baseline.} Add a standard offline auto-tuner
+        (a Triton-style autotune over chunk and launch configuration, keyed
+        on shape), report its tuning cost, and compare its latency with the
+        best static chunk and with the entropy scheduler under identical
+        conditions. This answers reviewer Q4.
+  \item \textbf{Break-even amortization.} Combine the measured one-time
+        profiling or tuning cost, the per-call runtime scheduling overhead,
+        and the attainable per-call gain from C2--C3 into a break-even model
+        (number of calls or requests after which each policy pays off).
+        State the conditions under which runtime adaptation could win.
+  \item \textbf{Architecture coverage.} Report chunk sensitivity and
+        oracle behavior for Mamba-2 (SSD) and Gated DeltaNet, positioned
+        against the arithmetic-intensity analysis of Tiled Flash Linear
+        Attention.
+  \item \textbf{Mechanism visualization.} Add figures for the entropy
+        distribution across workloads, latency versus chunk curves per shape,
+        entropy versus oracle chunk, and the regret of each policy
+        (reviewer mMVb weakness 6).
+  \item \textbf{Statistical resolution of existing results.} For the routed
+        ablation and the mixed-regime table, report confidence intervals and
+        avoid claiming a unique oracle where competing chunks are within
+        noise (Static-512 versus Static-128 differ by 1.20\,ms against
+        standard deviations of 10--12\,ms). Remove the TPU and Tesla rows
+        that contain no sweep, or label them as single-point measurements.
+\end{enumerate}
+
+\subsection*{D. Related Work and Citations}
+
+\begin{enumerate}[label=\textbf{D\arabic*}]
+  \item Cite and discuss Tiled Flash Linear Attention (Beck et al., NeurIPS
+        2025), which derives optimal chunk sizes from architectural dimensions
+        and arithmetic intensity, and Gated Linear Attention (Yang et al.,
+        ICML 2024); correct the attribution of Flash Linear Attention.
+  \item Position the work against kernel auto-tuning (Triton autotune,
+        TVM/Ansor-style search, kernel tuners) and against modern
+        linear-attention architectures (Mamba-2, Gated DeltaNet, Kimi Delta
+        Attention). Every new reference must be verified.
+\end{enumerate}
+
+\subsection*{E. Format and Submission Readiness (TPDS)}
+
+\begin{enumerate}[label=\textbf{E\arabic*}]
+  \item Convert the manuscript and supplement to the IEEEtran journal class
+        with IEEE numeric citations and double-anonymous front matter.
+  \item Abstract of 100--200 words (currently about 300) and IEEE keywords.
+  \item Respect the TPDS regular-paper page limit (plan for at most 14
+        double-column pages including references; confirm the current limit
+        in the submission system) and move secondary material to the
+        supplement.
+  \item Clean build: no undefined references or citations, no visible overfull
+        boxes, figures legible in print.
+\end{enumerate}
+
+\section*{Acceptance Criteria for This Cycle}
+
+\begin{itemize}
+  \item No claim in the paper relies on the chunk-splitting harness or on the
+        placeholder kernel.
+  \item Every scheduler row maps to one written definition.
+  \item C1--C6 results are integrated with figures, or the corresponding
+        items are recorded as blocked with the reason.
+  \item Every reviewer question (Q1--Q5) and every AI-review weakness has an
+        explicit answer in the manuscript.
+\end{itemize}
+
+\end{document}
