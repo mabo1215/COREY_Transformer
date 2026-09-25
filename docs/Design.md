@@ -40,6 +40,29 @@ real captured activations (from E2). Report latency per (chunk, input) and
 the between-input coefficient of variation versus the between-chunk spread.
 Runtime: ~1 h on PRO 6000. Peak VRAM < 10 GB.
 
+## E1b — E1 control: value effects vs device state (items C1, B4)
+Why: E1 on PRO 6000 (3 rounds) found that the chunk decision is input-independent
+within noise (tie-aware agreement 94%; regret of the input-agnostic chunk <= 1.4%
+for Mamba-1/GDN, <= 5.8% for Mamba-2), but 12/84 fixed-chunk tests show a
+significant input effect on latency (BH-adjusted), almost all Mamba-1, with no
+monotone relation to entropy, up to 43% at non-optimal chunks at L=8192, and
+bimodal per-round latencies (~1.0 vs ~1.4 ms) even for the constant input. With
+three rounds these cannot be separated from clock/power state.
+Setup: E1 with Mamba-1 (all chunks) and Mamba-2 (control), L in {512, 2048, 8192},
+act/all modes, 8 distributions + 2 extra random draws of each synthetic
+distribution (null spread for inputs that differ only in values), 10 rounds with
+shuffled chunk and input order, SM clock / power / temperature / throttle reasons
+recorded before and after every timing. GPU must be exclusive (lane waits;
+foreign GPU processes are logged every 30 s).
+Analysis (e1_analysis): tie-aware decision agreement; two-way input x round
+decomposition with BH correction; between-distribution vs between-redraw range;
+latency-vs-SM-clock correlation and clock-adjusted input test.
+Decision rule: if between-distribution effects are within the redraw null and/or
+vanish after clock adjustment, report latency value invariance with that
+evidence; otherwise report the residual effect honestly as a limitation of
+assumption 2 of the proposition (decision-level result unaffected).
+Runtime: ~0.5 h on PRO 6000 (13k timings). Peak VRAM < 2 GB.
+
 ## E2 — Per-call oracle variation on real traces (items C2, C6, C7)
 Purpose: measure whether the optimal chunk changes from call to call on real
 workloads, and how much a single static chunk loses (regret).

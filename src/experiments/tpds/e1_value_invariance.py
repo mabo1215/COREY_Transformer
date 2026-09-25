@@ -12,6 +12,12 @@ Two perturbation modes:
         Mamba-2 x, GDN v) follows the distribution; other inputs are Gaussian.
   all - every data input follows the distribution (mapped to its valid range).
 
+Controls (optional): ``--extra-seeds K`` adds K further random draws of every
+synthetic distribution (inputs named ``<dist>#s<k>``), so the spread between two
+draws of the same distribution gives a null baseline for input effects;
+``--record-gpu-state`` stores SM clock, power, temperature and throttle reasons
+before and after every timing, to separate device-state drift from value effects.
+
 Output: ``<out-dir>/e1_<host>.jsonl`` (resumable raw rows) and
 ``<out-dir>/e1_<host>.json`` (metadata, validation, all rows, summary).
 """
@@ -29,7 +35,7 @@ from src.algorithms.torch_entropy import activation_entropy
 from src.experiments.tpds import kernels as K
 from src.experiments.tpds.common import (DEFAULT_TRACE_DIR, GDN_CHUNKS, MAMBA1_CHUNKS, MAMBA2_CHUNKS, RESULTS_DIR,
                                          JsonlWriter, Logger, check_disk, cuda_time, dedupe_by_key, env_metadata,
-                                         host_name, peak_vram_gb, read_jsonl, summarize, write_json)
+                                         gpu_state, host_name, peak_vram_gb, read_jsonl, summarize, write_json)
 
 DISTS = ("uniform", "gaussian", "laplace", "sparse50", "sparse10", "sparse02", "constant", "real")
 MAMBA1_DIM, MAMBA1_N = 2048, 16                       # mamba-370m
@@ -218,7 +224,25 @@ def parse_args(argv=None):
     p.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
     p.add_argument("--tag", default=None, help="file tag (default: host name)")
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--extra-seeds", type=int, default=0,
+                   help="additional random draws per synthetic distribution (null control for input effects)")
+    p.add_argument("--record-gpu-state", action="store_true",
+                   help="store SM clock, power, temperature and throttle reasons around every timing")
     return p.parse_args(argv)
+
+
+def input_names(dists, extra_seeds):
+    """Input names: every distribution, plus ``<dist>#s<k>`` redraws of the synthetic ones."""
+    names = list(dists)
+    for k in range(1, extra_seeds + 1):
+        names += [f"{d}#s{k}" for d in dists if d not in ("real", "constant")]
+    return names
+
+
+def split_input_name(name, seed):
+    """``gaussian#s2`` -> (``gaussian``, seed + 2000); plain names keep the base seed."""
+    dist, _, k = name.partition("#s")
+    return dist, seed + 1000 * int(k) if k else seed
 
 
 def main(argv=None):
@@ -250,7 +274,7 @@ def main(argv=None):
                 f"passed={v['passed']}")
 
     rng = random.Random(args.seed)
-    dists = [d for d in args.inputs.split(",") if d]
+    dists = input_names([d for d in args.inputs.split(",") if d], args.extra_seeds)
     modes = [m for m in args.modes.split(",") if m]
     for fam in families:
         if not avail[fam]:
@@ -265,7 +289,8 @@ def main(argv=None):
                     if all(f"{fam}|L{L}|b{args.batch}|c{c}|{d}|{mode}|r{r}" in w.done
                            for c in chunks for r in range(args.rounds)):
                         continue
-                    inp = BUILDERS[fam](d, mode, L, args.batch, args.seed, args.trace_dir)
+                    dist, seed = split_input_name(d, args.seed)
+                    inp = BUILDERS[fam](dist, mode, L, args.batch, seed, args.trace_dir)
                     if inp is None:
                         log(f"{fam} input {d}/{mode}: not available (no captured traces); skipped")
                         continue
@@ -287,12 +312,16 @@ def main(argv=None):
                         fn = runner(fam, inputs[(d, mode)], c)
                         y = fn()
                         finite = bool(torch.isfinite(y.float()).all())
+                        state_before = gpu_state() if args.record_gpu_state else None
                         samples = cuda_time(fn, args.warmup, args.repeats, args.flush_l2)
+                        state_after = gpu_state() if args.record_gpu_state else None
                         st = summarize(samples)
                         row = {"kind": "timing", "key": key, "family": fam, "L": L, "batch": args.batch, "chunk": c,
                                "input": d, "mode": mode, "round": r, "entropy_bits_k256": ent[(d, mode)],
                                "entropy_norm": ent[(d, mode)] / 8.0, "output_finite": finite,
                                "flush_l2": args.flush_l2, **st, "peak_vram_gb": peak_vram_gb()}
+                        if args.record_gpu_state:
+                            row["gpu_state_before"], row["gpu_state_after"] = state_before, state_after
                         w.write(row)
                         log(f"{fam} L={L} c={c} {d:9s} {mode} r{r}: {st['mean_ms']:.4f} +- {st['std_ms']:.4f} ms "
                             f"(H={ent[(d, mode)]:.2f} bits)")

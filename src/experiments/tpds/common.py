@@ -332,6 +332,42 @@ def peak_vram_gb() -> float:
     return torch.cuda.max_memory_allocated() / 2**30 if torch.cuda.is_available() else 0.0
 
 
+_NVML_HANDLE: Any = None
+
+
+def gpu_state(index: int = 0) -> dict[str, Any] | None:
+    """SM/memory clock (MHz), power (W), temperature (C) and active clock-event (throttle) reasons.
+
+    Uses NVML when ``pynvml`` is importable, else one ``nvidia-smi`` query. Returns None if neither works.
+    """
+    global _NVML_HANDLE
+    try:
+        import pynvml  # type: ignore
+
+        if _NVML_HANDLE is None:
+            pynvml.nvmlInit()
+            _NVML_HANDLE = pynvml.nvmlDeviceGetHandleByIndex(index)
+        h = _NVML_HANDLE
+        reasons = pynvml.nvmlDeviceGetCurrentClocksThrottleReasons(h)
+        return {"sm_mhz": pynvml.nvmlDeviceGetClockInfo(h, pynvml.NVML_CLOCK_SM),
+                "mem_mhz": pynvml.nvmlDeviceGetClockInfo(h, pynvml.NVML_CLOCK_MEM),
+                "power_w": pynvml.nvmlDeviceGetPowerUsage(h) / 1000.0,
+                "temp_c": pynvml.nvmlDeviceGetTemperature(h, pynvml.NVML_TEMPERATURE_GPU),
+                "throttle_reasons": int(reasons), "source": "nvml"}
+    except Exception:
+        pass
+    out = _cmd(["nvidia-smi", f"--id={index}", "--query-gpu=clocks.sm,clocks.mem,power.draw,temperature.gpu,"
+                "clocks_event_reasons.active", "--format=csv,noheader,nounits"])
+    if not out:
+        return None
+    try:
+        sm, mem, pw, temp, reasons = [x.strip() for x in out.splitlines()[0].split(",")]
+        return {"sm_mhz": float(sm), "mem_mhz": float(mem), "power_w": float(pw), "temp_c": float(temp),
+                "throttle_reasons": int(reasons, 16) if reasons.startswith("0x") else reasons, "source": "nvidia-smi"}
+    except ValueError:
+        return None
+
+
 def entropy_rule_chunk(r: float, c_min: int = 32, c_max: int = 512) -> int:
     """Eq. (2) of the manuscript: map normalized entropy r in [0,1] to a power-of-two chunk."""
     r = min(max(float(r), 0.0), 1.0)
