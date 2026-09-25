@@ -21,6 +21,7 @@ from pathlib import Path
 from src.experiments.tpds.common import RESULTS_DIR
 
 FAM = {"mamba1": "Mamba-1", "mamba2": "Mamba-2 SSD", "mamba2_ssd": "Mamba-2 SSD", "gdn": "Gated DeltaNet"}
+SHORT = {"mamba1": "Mamba-1", "mamba2": "Mamba-2", "mamba2_ssd": "Mamba-2", "gdn": "GDN"}  # narrow tables
 
 
 def _load(p: Path):
@@ -82,7 +83,7 @@ def t_effects(d, host, alpha=0.05):
     rows = []
     for e in a["effects"]:
         if e.get("p_input_bh") is not None and e["p_input_bh"] < alpha:
-            rows.append(f"{FAM[e['family']]} & {e['L']} & {e['mode']} & {e['chunk']} & "
+            rows.append(f"{SHORT[e['family']]} & {e['L']} & {e['mode']} & {e['chunk']} & "
                         f"{e['input_range_pct']:.1f}\\% & {e['fastest_input']} & {e['slowest_input']} & "
                         f"{_pval(e['p_input_bh'])} \\\\")
     return rows
