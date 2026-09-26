@@ -335,6 +335,45 @@ def peak_vram_gb() -> float:
 _NVML_HANDLE: Any = None
 
 
+def foreign_gpu_pids(index: int = 0) -> list[int] | None:
+    """PIDs of compute processes on GPU ``index`` other than this process; None if they cannot be listed."""
+    out = _cmd(["nvidia-smi", f"--id={index}", "--query-compute-apps=pid", "--format=csv,noheader"])
+    if out is None:
+        # nvidia-smi ran but printed nothing (no compute apps), or is unavailable
+        return [] if shutil.which("nvidia-smi") else None
+    pids = []
+    for tok in out.split():
+        tok = tok.strip().strip(",")
+        if tok.isdigit() and int(tok) != os.getpid():
+            pids.append(int(tok))
+    return pids
+
+
+def wait_for_exclusive_gpu(until_epoch: float | None, log: Callable[[str], None] | None = None,
+                           poll_s: float = 30.0, index: int = 0) -> float | None:
+    """Block while other processes hold the GPU.
+
+    Returns the seconds spent waiting (0.0 if the GPU was free), or None if ``until_epoch``
+    passes while the GPU is still busy.
+    """
+    announced = False
+    t0 = time.time()
+    while True:
+        pids = foreign_gpu_pids(index)
+        if not pids:  # empty list, or None when processes cannot be listed (guard then does nothing)
+            if announced and log:
+                log("GPU exclusive again; resuming")
+            return time.time() - t0
+        if until_epoch is not None and time.time() >= until_epoch:
+            if log:
+                log(f"GPU still busy (pids {pids}) at the guard deadline; stopping")
+            return None
+        if not announced and log:
+            log(f"foreign GPU processes {pids}; pausing timings")
+            announced = True
+        time.sleep(poll_s)
+
+
 def gpu_state(index: int = 0) -> dict[str, Any] | None:
     """SM/memory clock (MHz), power (W), temperature (C) and active clock-event (throttle) reasons.
 

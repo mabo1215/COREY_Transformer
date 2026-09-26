@@ -35,7 +35,8 @@ from src.algorithms.torch_entropy import activation_entropy
 from src.experiments.tpds import kernels as K
 from src.experiments.tpds.common import (DEFAULT_TRACE_DIR, GDN_CHUNKS, MAMBA1_CHUNKS, MAMBA2_CHUNKS, RESULTS_DIR,
                                          JsonlWriter, Logger, check_disk, cuda_time, dedupe_by_key, env_metadata,
-                                         gpu_state, host_name, peak_vram_gb, read_jsonl, summarize, write_json)
+                                         foreign_gpu_pids, gpu_state, host_name, peak_vram_gb, read_jsonl,
+                                         summarize, wait_for_exclusive_gpu, write_json)
 
 DISTS = ("uniform", "gaussian", "laplace", "sparse50", "sparse10", "sparse02", "constant", "real")
 MAMBA1_DIM, MAMBA1_N = 2048, 16                       # mamba-370m
@@ -228,6 +229,10 @@ def parse_args(argv=None):
                    help="additional random draws per synthetic distribution (null control for input effects)")
     p.add_argument("--record-gpu-state", action="store_true",
                    help="store SM clock, power, temperature and throttle reasons around every timing")
+    p.add_argument("--exclusive-guard", action="store_true",
+                   help="pause while other processes use the GPU and re-time any cell during which one appeared")
+    p.add_argument("--guard-until", type=float, default=None,
+                   help="epoch seconds after which a paused run stops (exit code 3) instead of waiting further")
     return p.parse_args(argv)
 
 
@@ -312,9 +317,25 @@ def main(argv=None):
                         fn = runner(fam, inputs[(d, mode)], c)
                         y = fn()
                         finite = bool(torch.isfinite(y.float()).all())
-                        state_before = gpu_state() if args.record_gpu_state else None
-                        samples = cuda_time(fn, args.warmup, args.repeats, args.flush_l2)
-                        state_after = gpu_state() if args.record_gpu_state else None
+                        retimed = 0
+                        while True:
+                            if args.exclusive_guard:
+                                waited = wait_for_exclusive_gpu(args.guard_until, log)
+                                if waited is None:
+                                    _write_summary(args, tag, w)
+                                    w.close()
+                                    raise SystemExit(3)
+                                if waited > 0:  # clocks may have dropped while paused: extra untimed warmup
+                                    cuda_time(fn, 5 * args.warmup, 1, args.flush_l2)
+                            pids_before = foreign_gpu_pids() if args.exclusive_guard else None
+                            state_before = gpu_state() if args.record_gpu_state else None
+                            samples = cuda_time(fn, args.warmup, args.repeats, args.flush_l2)
+                            state_after = gpu_state() if args.record_gpu_state else None
+                            pids_after = foreign_gpu_pids() if args.exclusive_guard else None
+                            if not (pids_before or pids_after):
+                                break
+                            retimed += 1  # another process appeared during the timing: discard and re-time
+                            log(f"{key}: foreign GPU processes {pids_before or pids_after} during timing; re-timing")
                         st = summarize(samples)
                         row = {"kind": "timing", "key": key, "family": fam, "L": L, "batch": args.batch, "chunk": c,
                                "input": d, "mode": mode, "round": r, "entropy_bits_k256": ent[(d, mode)],
@@ -322,6 +343,9 @@ def main(argv=None):
                                "flush_l2": args.flush_l2, **st, "peak_vram_gb": peak_vram_gb()}
                         if args.record_gpu_state:
                             row["gpu_state_before"], row["gpu_state_after"] = state_before, state_after
+                        if args.exclusive_guard:
+                            row["guard"] = {"foreign_pids_before": pids_before, "foreign_pids_after": pids_after,
+                                            "retimed": retimed}
                         w.write(row)
                         log(f"{fam} L={L} c={c} {d:9s} {mode} r{r}: {st['mean_ms']:.4f} +- {st['std_ms']:.4f} ms "
                             f"(H={ent[(d, mode)]:.2f} bits)")

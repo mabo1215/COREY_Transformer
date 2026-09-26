@@ -63,6 +63,23 @@ evidence; otherwise report the residual effect honestly as a limitation of
 assumption 2 of the proposition (decision-level result unaffected).
 Runtime: ~0.5 h on PRO 6000 (13k timings). Peak VRAM < 2 GB.
 
+## E1c — E1b rerun with an in-run exclusive-GPU guard (items C1, B4)
+Why: E1b (2026-09-26 11:38-12:05 host time) started when the GPU was free, but
+another project's jobs claimed it 30 s later (three processes, about 50 GB) and
+ran for the whole measurement. Its tie-aware agreement of 99.75% is an artifact
+of the inflated confidence intervals and the between-chunk spreads changed
+(Mamba-1 L=512: 4.37x vs 2.50x in E1), so E1b cannot separate value effects
+from device state and is not used.
+Setup: identical to E1b, plus a guard inside the timing loop: before every
+timed cell the run waits while any other compute process is on the GPU
+(polling every 30 s, extra untimed warmup after a pause), and a cell during
+which another process appeared (checked before and after the timing) is
+discarded and re-timed. Every row records the guard result. A deadline
+(`--guard-until`) stops a paused run cleanly so completed rows can be pushed;
+the run is resumable.
+Analysis and decision rule: as E1b.
+Runtime: ~0.5 h of exclusive GPU time on PRO 6000. Peak VRAM ~4 GB.
+
 ## E2 — Per-call oracle variation on real traces (items C2, C6, C7)
 Purpose: measure whether the optimal chunk changes from call to call on real
 workloads, and how much a single static chunk loses (regret).
