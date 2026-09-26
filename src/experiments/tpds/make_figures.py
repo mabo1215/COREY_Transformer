@@ -214,13 +214,16 @@ def fig_entropy_vs_oracle(dfs, out_dir):
         lo, hi = float(d["entropy_bits"].min()), float(d["entropy_bits"].max())
         pad = 0.05 * (hi - lo)
         ax.set_xlim(lo - pad, hi + pad)
-        edges = [lo - pad] + [h for h, _, _ in rule_switch_points() if lo - pad < h < hi + pad] + [hi + pad]
-        for h in edges[1:-1]:
-            ax.axvline(h, color="#555555", ls="--", lw=0.7)
+        switches = [(h, c0, c1) for h, c0, c1 in rule_switch_points() if lo - pad < h < hi + pad]
         top = math.log2(max(chunks)) + 0.55
-        for a, b in zip(edges[:-1], edges[1:]):
-            c = entropy_rule_chunk(0.5 * (a + b) / 8.0)
-            ax.text(0.5 * (a + b), top, f"rule: {c}", ha="center", va="bottom", fontsize=6, color="#555555")
+        for h, c0, c1 in switches:  # label each switch point on its own line: chunk left | chunk right
+            ax.axvline(h, color="#555555", ls="--", lw=0.7)
+            ax.text(h, top, f"rule {c0} | {c1}", ha="center", va="bottom", fontsize=6, color="#555555",
+                    bbox={"facecolor": "white", "edgecolor": "none", "pad": 0.5})
+        if not switches:
+            c = entropy_rule_chunk(0.5 * (lo + hi) / 8.0)
+            ax.text(0.5 * (lo + hi), top, f"rule: {c} for every call", ha="center", va="bottom", fontsize=6,
+                    color="#555555")
         ax.set_ylim(math.log2(min(chunks)) - 0.5, top + 0.6)
         ax.set_yticks(np.log2(chunks))
         ax.set_yticklabels([str(int(c)) for c in chunks])

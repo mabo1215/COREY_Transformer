@@ -80,6 +80,26 @@ the run is resumable.
 Analysis and decision rule: as E1b.
 Runtime: ~0.5 h of exclusive GPU time on PRO 6000. Peak VRAM ~4 GB.
 
+## E7 — Triton Mamba-1 scan vs the reference CUDA selective scan (items C1, C4; final-review limitation)
+Why: the kernel-level Mamba-1 results use a Triton scan written for this study
+(chunk = time tile). A reviewer can ask whether the chunk sensitivity (up to
+8.5x) and the per-call oracle variation are artefacts of a slow kernel. The
+reference CUDA selective scan of mamba_ssm has no sm_120 build on the RTX PRO
+6000, but the stock wheel on the RTX 3090 has sm_86 kernels.
+Setup: RTX 3090; the twelve E4 keys (L in {128, 512, 2048, 8192} x batch
+{1, 4, 16}), captured Mamba-1 activations as in E4; time the reference
+`selective_scan_fn` (with z and D, softplus delta) and the Triton kernel at
+every chunk (default launch) and at the E4-tuned configuration of the key;
+CUDA events, 10 warmup, 50 repeats; exclusive-GPU guard per key; output check
+(max |y_ref - y_triton|).
+Metrics: best Triton static chunk / reference and tuned / reference per key
+(geometric mean, min, max).
+Decision rule: report the ratio in the paper (Limitations or Sec. V-B). If the
+Triton kernel at its best chunk is within ~1.5x of the reference, state that
+the chunk effects are measured on a competitive kernel; if it is much slower,
+say so and scope the kernel-level magnitudes accordingly.
+Runtime: ~10-15 min exclusive GPU. Peak VRAM ~3 GB.
+
 ## E2 — Per-call oracle variation on real traces (items C2, C6, C7)
 Purpose: measure whether the optimal chunk changes from call to call on real
 workloads, and how much a single static chunk loses (regret).
