@@ -152,7 +152,18 @@ def t_redraw(d, host):
     return rows
 
 
-TABLES = {"redraw": t_redraw, "validation": t_validation, "latency": t_latency, "effects": t_effects, "autotune": t_autotune,
+def t_reference(d, host):
+    """E7: Triton Mamba-1 scan at its best chunk vs the reference CUDA selective scan, per E4 key."""
+    e7 = _load(d / f"e7_{host}.json")
+    rows = []
+    for r in sorted(e7["rows"], key=lambda r: (r["L"], r["batch"])):
+        ref, best = r["ref"]["mean_ms"], r["best_static"]["mean_ms"]
+        rows.append(f"{r['L']} & {r['batch']} & {ref:.3f} & {r['best_static_chunk']} & {best:.3f} & "
+                    f"{best / ref:.2f} & {_sci(r['max_abs_out_diff'])} \\\\")
+    return rows
+
+
+TABLES = {"reference": t_reference, "redraw": t_redraw, "validation": t_validation, "latency": t_latency, "effects": t_effects, "autotune": t_autotune,
           "overhead": t_overhead}
 
 
