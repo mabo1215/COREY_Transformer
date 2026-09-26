@@ -28,7 +28,7 @@ import matplotlib.ticker  # noqa: E402,F401
 import numpy as np  # noqa: E402
 
 from src.experiments.tpds.analysis import load_e2  # noqa: E402
-from src.experiments.tpds.common import RESULTS_DIR  # noqa: E402
+from src.experiments.tpds.common import RESULTS_DIR, entropy_rule_chunk  # noqa: E402
 
 COL_W = 3.5
 OKABE = ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#56B4E9", "#D55E00", "#000000"]
@@ -189,6 +189,13 @@ def fig_entropy_by_regime(dfs, out_dir):
     _save(fig, out_dir, "tpds_entropy_by_regime.pdf")
 
 
+def rule_switch_points(bits_max=8.0, step=1e-3):
+    """Entropies (bits, K=256) at which Eq. (2) with the kernel-level range [32, 512] changes chunk."""
+    hs = np.arange(0.0, bits_max + step, step)
+    cs = [entropy_rule_chunk(h / bits_max) for h in hs]
+    return [(float(hs[i]), cs[i - 1], cs[i]) for i in range(1, len(hs)) if cs[i] != cs[i - 1]]
+
+
 def fig_entropy_vs_oracle(dfs, out_dir):
     models = [m for m in ("mamba1", "mamba2") if m in dfs]
     if not models:
@@ -203,6 +210,18 @@ def fig_entropy_vs_oracle(dfs, out_dir):
             ax.scatter(s["entropy_bits"], y, s=7, marker=MARKERS[j], facecolors="none", edgecolors=OKABE[j],
                        linewidths=0.6, label=f"batch {b}")
         chunks = sorted(d["oracle_chunk"].unique())
+        # Eq. (2) decision boundaries inside the plotted entropy range, labelled with the rule's chunk
+        lo, hi = float(d["entropy_bits"].min()), float(d["entropy_bits"].max())
+        pad = 0.05 * (hi - lo)
+        ax.set_xlim(lo - pad, hi + pad)
+        edges = [lo - pad] + [h for h, _, _ in rule_switch_points() if lo - pad < h < hi + pad] + [hi + pad]
+        for h in edges[1:-1]:
+            ax.axvline(h, color="#555555", ls="--", lw=0.7)
+        top = math.log2(max(chunks)) + 0.55
+        for a, b in zip(edges[:-1], edges[1:]):
+            c = entropy_rule_chunk(0.5 * (a + b) / 8.0)
+            ax.text(0.5 * (a + b), top, f"rule: {c}", ha="center", va="bottom", fontsize=6, color="#555555")
+        ax.set_ylim(math.log2(min(chunks)) - 0.5, top + 0.6)
         ax.set_yticks(np.log2(chunks))
         ax.set_yticklabels([str(int(c)) for c in chunks])
         ax.set_ylabel("oracle chunk")

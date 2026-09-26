@@ -1,29 +1,31 @@
-June 5, 2026
+September 2026
 
 Editor-in-Chief
 IEEE Transactions on Parallel and Distributed Systems
 
 Dear Editor-in-Chief,
 
-We are pleased to submit our manuscript entitled "COREY: Entropy-Guided Runtime Chunk Scheduling for Selective Scan Kernels" for consideration as a regular paper in the IEEE Transactions on Parallel and Distributed Systems (TPDS).
+We are pleased to submit our manuscript entitled "When Activation-Driven Chunk Scheduling Does Not Pay: A Characterization of Entropy-Guided Scheduling for Chunked Linear-Recurrence Kernels" for consideration as a regular paper in the IEEE Transactions on Parallel and Distributed Systems (TPDS).
 
-Selective state space models such as Mamba provide linear-time sequence modeling, but their selective-scan GPU kernels remain highly sensitive to runtime scheduling choices such as chunk size and per-call kernel-launch granularity, which can change end-to-end latency by an order of magnitude even when the model's mathematical computation is fixed. This manuscript presents COREY, an entropy-guided runtime scheduler that studies whether a low-cost activation statistic (fixed-bin entropy) can replace offline per-shape profiling for selecting selective-scan chunk sizes on modern accelerators. The work is deliberately framed as a concept-and-feasibility study: it validates output-preserving runtime scheduling and reports both positive kernel-level evidence and a rigorous end-to-end negative result against a well-tuned static oracle.
+The chunked linear-recurrence kernels behind Mamba, Mamba-2 and Gated DeltaNet expose a chunk size that is normally fixed by offline tuning. The manuscript asks whether a cheap per-call statistic of the activations, fixed-bin entropy, can choose this chunk better at run time, and answers the question negatively with a causal argument and recurrence-preserving measurements. For a fixed shape, data type and device, these dense kernels execute a data-independent instruction and memory stream, so the optimal chunk is a function of shape and hardware rather than of activation values. The paper tests every link of this argument.
 
 The main contributions of the manuscript are:
 
-1. A calibrated entropy-to-chunk rule using the normalized signal H/log K, which removes histogram-bin sensitivity and reproduces the offline static-chunk oracle at the kernel level.
+1. A causal account of chunk cost for chunked linear-recurrence kernels, and a value-invariance experiment on the Mamba-1 selective scan, the Mamba-2 SSD scan and the Gated DeltaNet chunk kernel on two GPU generations (Blackwell RTX PRO 6000 and Ampere RTX 3090).
 
-2. A real-checkpoint inline scheduling hook and a patched live scan path that measure the true cost of runtime feature extraction inside the prefill critical path across consumer, server-class, and data-center GPUs.
+2. A per-call characterization of 2360 real prefill calls per model (Mamba-1 and Mamba-2, batch sizes 1, 4 and 16): how strongly latency depends on the chunk, how often the per-call optimum changes, and how much a single static chunk loses.
 
-3. A unified routed ablation showing that the best static chunk outperforms entropy-guided and proxy-based adaptive variants on the measured workloads, with a clean decomposition of decision quality versus decision cost; guarded and sequence-length-keyed policies reduce but do not eliminate online scheduling overhead.
+3. A predictor study showing that sequence length and shape explain the per-call optimum and that entropy adds no information beyond them, together with an offline auto-tuning baseline and its cost.
 
-4. An 80-prompt LongBench quality-preservation study showing bitwise-identical greedy generations and zero metric deltas between passive and routed inference paths.
+4. A routed end-to-end study with a patched live scan kernel that separates decision quality from decision cost, and an output-preservation check on 80 LongBench prompts.
 
-5. A mixed-regime workload analysis showing that a simple sequence-length rule matches the per-regime chunk oracle for the evaluated serving mixture, clarifying when entropy-guided routing is useful and when it is redundant.
+5. A break-even model of one-time tuning versus per-call scheduling, practical guidance for kernel and runtime designers (key chunk selection on shape and device), and a documented measurement pitfall, split-call chunk timing, that does not measure a chunked scan.
 
-We believe the manuscript is well suited to TPDS because it concerns parallel and accelerator-level systems: GPU kernel scheduling and tiling, runtime adaptivity inside the inference critical path, and reproducible performance characterization of memory-bound workloads across multiple GPU classes. Importantly, the paper reports limitations and negative results explicitly: COREY is validated as a scheduling scaffold and diagnostic mechanism, not as a deployment-grade replacement for static chunk tuning on current measured Mamba-1.x checkpoint workloads. We believe this careful and honest accounting, including a clean negative result and an explicit regime boundary that separates when runtime adaptation helps from when static tuning suffices, is valuable to the parallel and distributed systems community working on efficient long-context inference.
+We believe the manuscript is well suited to TPDS because it concerns GPU kernel tiling and scheduling, runtime adaptivity inside the inference critical path, and reproducible performance characterization across GPU generations. It is deliberately a negative-result and diagnostic study: it delimits when runtime chunk adaptation can and cannot pay off, which we believe is useful to the community building efficient long-context inference systems.
 
-This manuscript is original, has not been published previously, and is not under consideration for publication elsewhere. All authors have approved the submission. To the best of our knowledge, there are no conflicts of interest that would affect the review process. In compliance with the double-blind review policy of TPDS, the submitted manuscript and the supplementary source code are anonymized, and the code and data are provided through an anonymized repository link for review.
+Relation to an earlier version. An earlier version of this study was submitted to the AAAI-27 conference and was not accepted. While revising it, we found that its kernel-level chunk results had been obtained with a split-call timing harness, which cuts the sequence into independent kernel calls, resets the recurrent state and mostly measures the number of kernel launches. We withdrew all such results, replaced them with measurements that change the chunk inside a single recurrence-preserving launch on two GPU generations, added real-trace, predictor, auto-tuning and break-even experiments, and reframed the paper as a characterization study. To preserve double-anonymous review, the manuscript describes the measurement pitfall in general terms and does not refer to the earlier version.
+
+This manuscript is original, has not been published previously, and is not under consideration for publication elsewhere. All authors have approved the submission. To the best of our knowledge, there are no conflicts of interest that would affect the review process. In compliance with the double-anonymous review policy of TPDS, the submitted manuscript and the Supplementary Material are anonymized, and the code and data are provided through an anonymized repository link for review.
 
 Thank you for considering our submission. We look forward to receiving the reviewers' comments.
 
