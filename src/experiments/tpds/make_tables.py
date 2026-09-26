@@ -114,7 +114,45 @@ def t_overhead(d, host):
     return rows
 
 
-TABLES = {"validation": t_validation, "latency": t_latency, "effects": t_effects, "autotune": t_autotune,
+def e1c_valid_configs(d, host, control_suffix="_e1c", factor=1.5):
+    """Mamba-1 (L, chunk) configurations of the E1c control that are GPU-bound in that run.
+
+    The host launch path of the control run was slower than in E1, which put a latency floor
+    under every short kernel. The floor is the smallest Mamba-1 median latency of the control;
+    a configuration is kept if its E1 median latency is at least ``factor`` times that floor.
+    """
+    import statistics as st
+    ctl = _load(d / f"e1_{host}{control_suffix}.json")["rows"]
+    ref = _load(d / f"e1_{host}.json")["rows"]
+
+    def medians(rows):
+        m = defaultdict(list)
+        for r in rows:
+            if r.get("kind", "timing") == "timing" and r["family"] == "mamba1":
+                m[(r["L"], r["chunk"])].append(r["mean_ms"])
+        return {k: st.median(v) for k, v in m.items()}
+
+    mc, mr = medians(ctl), medians(ref)
+    floor = min(mc.values())
+    keep = sorted(k for k in mc if k in mr and mr[k] >= factor * floor)
+    return floor, keep, mc, mr
+
+
+def t_redraw(d, host):
+    """E1c control: between-distribution vs between-redraw range on the GPU-bound configurations."""
+    floor, keep, mc, mr = e1c_valid_configs(d, host)
+    a = _load(d / f"e1_analysis_{host}_e1c.json")
+    rows = [f"% host floor {floor:.3f} ms; kept (L, chunk): {keep}"]
+    for e in sorted(a["effects"], key=lambda e: (e["L"], e["chunk"], e["mode"])):
+        if e["family"] != "mamba1" or (e["L"], e["chunk"]) not in keep:
+            continue
+        rows.append(f"{e['L']} & {e['chunk']} & {e['mode']} & {mr[(e['L'], e['chunk'])]:.3f} & "
+                    f"{mc[(e['L'], e['chunk'])]:.3f} & {e['between_distribution_range_pct']:.1f}\\% & "
+                    f"{e['between_redraw_range_pct_max']:.1f}\\% & {_pval(e['p_input_bh'])} \\\\")
+    return rows
+
+
+TABLES = {"redraw": t_redraw, "validation": t_validation, "latency": t_latency, "effects": t_effects, "autotune": t_autotune,
           "overhead": t_overhead}
 
 

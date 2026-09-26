@@ -3,6 +3,7 @@
   "created_at": "2026-09-26T09:36:56Z",
   "design_ref": "docs/Design.md#E1c",
   "est_hours": 0.5,
+  "eta": null,
   "finished_at": "2026-09-26T16:34:02Z",
   "host": "pro6000",
   "id": "E1c",
@@ -40,9 +41,14 @@
       "at": "2026-09-26T16:34:02Z",
       "by": "pro6000",
       "text": "remote: FAILED on pro6000 exit 1; log tail:     \"argmin_agreement\": sum(d[\"argmin_agreement\"] * d[\"n_cells\"] for d in dec) / tot_cells,                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~ ZeroDivisionError: division by zero "
+    },
+    {
+      "at": "2026-09-26T19:26:53Z",
+      "by": "bobsteam1215",
+      "text": "rows recovered from run log (13200/13200; JSONL lost: snapshot git pull replaced the open file - fixed in remote_snapshot.sh via separate worktree + snapshot branch); no foreign GPU process during timing; host launch floor 0.224 ms in this run (cause undetermined; HKVLM idle per its logs; not reproduced locally) -> only GPU-bound Mamba-1 configs used (L=8192 all chunks, L=2048 c32/64; medians agree with E1 within 4%); result: redraw ranges as large as between-distribution ranges -> effects are per-tensor, not value-driven; integrated main VI-A + Table S-redraw"
     }
   ],
-  "progress": 0,
+  "progress": 100,
   "purpose": "Separate genuine value effects on Mamba-1 kernel latency from clock/power drift (redraw null + GPU-state logging, 10 rounds) with every timed cell guarded against other GPU processes; decides how strongly the paper can state latency value invariance",
   "results": [
     "src/experiments/results/tpds/e1_pro6000_e1c.json",
@@ -51,9 +57,9 @@
   ],
   "screen": "tpds-e1c",
   "started_at": "2026-09-26T09:41:26Z",
-  "status": "failed",
+  "status": "integrated",
   "title": "E1b rerun with in-run exclusive-GPU guard",
-  "updated_at": "2026-09-26T16:34:02Z",
-  "updated_by": "pro6000",
+  "updated_at": "2026-09-26T19:26:53Z",
+  "updated_by": "bobsteam1215",
   "vram_gb": 4.2
 }
