@@ -335,18 +335,42 @@ def peak_vram_gb() -> float:
 _NVML_HANDLE: Any = None
 
 
-def foreign_gpu_pids(index: int = 0) -> list[int] | None:
-    """PIDs of compute processes on GPU ``index`` other than this process; None if they cannot be listed."""
+_OWN_GPU_PIDS: set[int] = set()
+
+
+def all_gpu_pids(index: int = 0) -> list[int] | None:
+    """PIDs that nvidia-smi lists as compute processes on GPU ``index``; None if they cannot be listed."""
     out = _cmd(["nvidia-smi", f"--id={index}", "--query-compute-apps=pid", "--format=csv,noheader"])
     if out is None:
         # nvidia-smi ran but printed nothing (no compute apps), or is unavailable
         return [] if shutil.which("nvidia-smi") else None
-    pids = []
-    for tok in out.split():
-        tok = tok.strip().strip(",")
-        if tok.isdigit() and int(tok) != os.getpid():
-            pids.append(int(tok))
-    return pids
+    return [int(t.strip().strip(",")) for t in out.split() if t.strip().strip(",").isdigit()]
+
+
+def register_own_gpu_pids(baseline: list[int] | None, index: int = 0,
+                          log: Callable[[str], None] | None = None) -> set[int]:
+    """Record the PID(s) under which nvidia-smi lists this process.
+
+    Inside a container nvidia-smi can report host PIDs, which differ from ``os.getpid()``.
+    Call with the PID list taken *before* this process created its CUDA context; the PIDs
+    that appeared since then are this process. Returns the registered set.
+    """
+    now = all_gpu_pids(index)
+    if now is None or baseline is None:
+        return set(_OWN_GPU_PIDS)
+    new = set(now) - set(baseline) - {os.getpid()}
+    _OWN_GPU_PIDS.update(new)
+    if log:
+        log(f"own GPU PIDs as listed by nvidia-smi: {sorted(new) or [os.getpid()]}")
+    return set(_OWN_GPU_PIDS)
+
+
+def foreign_gpu_pids(index: int = 0) -> list[int] | None:
+    """PIDs of compute processes on GPU ``index`` other than this process; None if they cannot be listed."""
+    pids = all_gpu_pids(index)
+    if pids is None:
+        return None
+    return [p for p in pids if p != os.getpid() and p not in _OWN_GPU_PIDS]
 
 
 def wait_for_exclusive_gpu(until_epoch: float | None, log: Callable[[str], None] | None = None,

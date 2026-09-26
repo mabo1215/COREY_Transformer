@@ -25,8 +25,9 @@ import torch
 
 from src.experiments.tpds import kernels as K
 from src.experiments.tpds.common import (DEFAULT_TRACE_DIR, MAMBA1_CHUNKS, RESULTS_DIR, JsonlWriter, Logger,
-                                         check_disk, cuda_time, dedupe_by_key, env_metadata, foreign_gpu_pids,
-                                         host_name, peak_vram_gb, read_jsonl, summarize, wait_for_exclusive_gpu,
+                                         all_gpu_pids, check_disk, cuda_time, dedupe_by_key, env_metadata, foreign_gpu_pids,
+                                         host_name, peak_vram_gb, read_jsonl, register_own_gpu_pids, summarize,
+                                         wait_for_exclusive_gpu,
                                          write_json)
 from src.experiments.tpds.e4_autotune import m1_fn, mamba1_key_inputs
 
@@ -95,6 +96,7 @@ def main(argv=None):
     args = p.parse_args(argv)
     tag = args.tag or host_name()
     log = Logger(f"e7_{tag}")
+    gpu_baseline = all_gpu_pids()  # before this process creates its CUDA context
     check_disk(args.out_dir, need_gb=0.2, log=log)
     try:
         import mamba_ssm  # noqa: F401
@@ -105,7 +107,10 @@ def main(argv=None):
             raise SystemExit("mamba_ssm is not installed; the reference CUDA scan is unavailable")
         log("mamba_ssm missing: timing the Triton kernel only (smoke test)")
     meta = env_metadata()
-    meta.update({"experiment": "E7", "args": {k: str(v) for k, v in vars(args).items()}})
+    torch.zeros(1, device="cuda")  # make sure the CUDA context exists before identifying this process
+    torch.cuda.synchronize()
+    own = register_own_gpu_pids(gpu_baseline, log=log) if args.exclusive_guard else set()
+    meta.update({"experiment": "E7", "own_gpu_pids": sorted(own), "args": {k: str(v) for k, v in vars(args).items()}})
     jsonl = args.out_dir / f"e7_{tag}.jsonl"
     w = JsonlWriter(jsonl, meta=meta)
     tuned = tuned_configs(args.out_dir / f"e4_{args.e4_tag or tag}.json")
