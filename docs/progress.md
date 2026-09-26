@@ -100,9 +100,9 @@
 
 需要你提供/决策：
 1. **代码与数据可用性声明**：草稿 “An anonymized repository with the kernels, the measurement scripts and all result files is provided to the reviewers and will be made public upon acceptance.” 请提供给审稿人的匿名仓库链接（或说明不提供）。
-   A:
+   A: （2026-09-27 作者）https://codeocean.com/capsule/3457679/tree/v1 ——已写入正文「Code and Data Availability」和投稿信。**请确认该 capsule 页面不显示作者姓名/单位（双盲）**；若显示，请设为匿名，或告诉我改为只放在投稿信里。
 2. **AI 使用披露**（IEEE：凡使用 AI 生成的文字、图、代码，须在 acknowledgments 中披露）。草稿 “The authors used an AI assistant (Anthropic Claude) for code development, consistency checks and language editing; all content was reviewed and verified by the authors, who take full responsibility for it.” 请确认或修改工具名与用途。
-   A:
+   A: （2026-09-27 作者）使用 Grammarly 检查语法、使用 Copilot 调试实验代码的 bug；没有用 AI 设计实验和论文思路。——已写入正文 Acknowledgment。按 IEEE 政策（正文中 AI 生成的文字与代码须披露），并如实补充：本轮修订中 Claude（Anthropic）用于编辑正文、实现与调试实验/分析脚本、核对数字；同时写明研究问题、研究范围与每个实验均由作者选定或批准。若你希望调整措辞，请直接改这里或告诉我。
 
 已消费决策（2026-09-27，续）：vGPU 3090 由作者开机；E7 的独占窗口由 HKVLM 会话安排（约 09:48 NZDT）；该主机与 HKVLM 共用，watcher 不关机。3090-E7 完成并回填，原遗留问题 5 关闭。
 
@@ -125,8 +125,8 @@
 4. 编译：正文 11 页、Supplement 11 页，0 undefined / 0 overfull / 无 ??，BibTeX 0 警告。账本 27/27 verified，0 个未完成实验，周期 tpds-r1 标记为 done。
 
 ### 未修改或部分修改
-- 【待作者】代码/数据可用性声明与 AI 使用披露（遗留问题 4）——投稿前补上即可，不影响修订周期。
-  - 需要你提供：匿名仓库链接；确认 AI 披露措辞。
+- 代码/数据可用性声明与 AI 使用披露已按作者回答写入正文（遗留问题 4）；剩一项确认：Code Ocean capsule 页面是否匿名（双盲）。
+  - 需要你确认：capsule 页面不显示作者信息；AI 披露措辞是否接受。
 - vGPU 3090 仍开机（HKVLM 在用），COREY 在其上已无任务；是否关机由你或 HKVLM 会话决定。
 
 ## 2026-09-27（续）最终复核（Stage 9'/11）与修正
