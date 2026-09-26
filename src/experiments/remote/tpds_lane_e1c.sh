@@ -24,7 +24,7 @@ check_space "$OUT_DIR" 2 || exit 1
 if [ "${TPDS_SMOKE:-0}" = 1 ]; then
   E1C_ARGS="--families mamba1 --lengths 512 --inputs gaussian,constant,sparse10 --modes act --chunks-mamba1 128,512 --warmup 2 --repeats 5 --rounds 2 --extra-seeds 1 --skip-real"
 else
-  E1C_ARGS="--families mamba1,mamba2 --lengths 512,2048,8192 --batch 1 --warmup 10 --repeats 100 --rounds 10 --extra-seeds 2"
+  E1C_ARGS="--families mamba1,mamba2 --lengths 8192,2048,512 --batch 1 --warmup 10 --repeats 100 --rounds 10 --extra-seeds 2"
 fi
 GUARD_ARGS="--exclusive-guard"
 [ -n "$GUARD_UNTIL" ] && GUARD_ARGS="$GUARD_ARGS --guard-until $GUARD_UNTIL"
