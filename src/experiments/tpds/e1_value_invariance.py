@@ -27,6 +27,7 @@ import argparse
 import math
 import random
 import statistics
+import time
 from pathlib import Path
 
 import torch
@@ -232,7 +233,8 @@ def parse_args(argv=None):
     p.add_argument("--exclusive-guard", action="store_true",
                    help="pause while other processes use the GPU and re-time any cell during which one appeared")
     p.add_argument("--guard-until", type=float, default=None,
-                   help="epoch seconds after which a paused run stops (exit code 3) instead of waiting further")
+                   help="hard deadline (epoch seconds): no new cell is timed after it and a paused run stops; "
+                        "exit code 3, completed rows are kept")
     return p.parse_args(argv)
 
 
@@ -318,6 +320,11 @@ def main(argv=None):
                         y = fn()
                         finite = bool(torch.isfinite(y.float()).all())
                         retimed = 0
+                        if args.guard_until is not None and time.time() >= args.guard_until:
+                            log("guard deadline reached; stopping before the next cell")
+                            _write_summary(args, tag, w)
+                            w.close()
+                            raise SystemExit(3)
                         while True:
                             if args.exclusive_guard:
                                 waited = wait_for_exclusive_gpu(args.guard_until, log)
