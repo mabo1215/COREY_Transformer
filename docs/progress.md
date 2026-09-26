@@ -104,6 +104,7 @@
 2. **AI 使用披露**（IEEE：凡使用 AI 生成的文字、图、代码，须在 acknowledgments 中披露）。草稿 “The authors used an AI assistant (Anthropic Claude) for code development, consistency checks and language editing; all content was reviewed and verified by the authors, who take full responsibility for it.” 请确认或修改工具名与用途。
    A: （2026-09-27 作者）使用 Grammarly 检查语法、使用 Copilot 调试实验代码的 bug；没有用 AI 设计实验和论文思路。——已写入正文 Acknowledgment。按 IEEE 政策（正文中 AI 生成的文字与代码须披露），并如实补充：本轮修订中 Claude（Anthropic）用于编辑正文、实现与调试实验/分析脚本、核对数字；同时写明研究问题、研究范围与每个实验均由作者选定或批准。若你希望调整措辞，请直接改这里或告诉我。
    补充（作者要求重写）：已按 IEEE 政策重写为「工具名 + 用于哪些部分 + 使用程度」：Grammarly（全文语法与措辞）、GitHub Copilot（定位修复实验代码 bug）、Claude（修订中编辑精简各节文字；编写调试第 V、VI 节与 Supplement 背后的部分测量/分析脚本，含由结果文件生成表格和图的脚本；核对数字），并写明研究问题、叙事与范围由作者选定、每个实验经作者批准、作者审核全部 AI 辅助内容并负全责。投稿信同步。
+   定稿（作者提供，2026-09-27）：采用作者给出的版本——Grammarly（语法与措辞）；Claude（定位修复实验代码 bug、编写调试第 V/VI 节与 Supplement 背后的部分测量/分析脚本含生成表格和图的脚本、核对数字）；研究问题、叙事、研究范围与每个实验由作者设计；作者审核全部 AI 检查过的文字、代码与数字并负全责。仅做了语法修正（把断开的半句并入上一句；"was write by" 改为 "were designed by"，以免与「Claude 编写部分脚本」自相矛盾）。投稿信同步（去掉 Copilot）。
    Code Ocean 页面：再次尝试仍无法读取（前端为 JS 应用，接口拒绝非浏览器访问），匿名性仍需你在浏览器中确认。
 
 已消费决策（2026-09-27，续）：vGPU 3090 由作者开机；E7 的独占窗口由 HKVLM 会话安排（约 09:48 NZDT）；该主机与 HKVLM 共用，watcher 不关机。3090-E7 完成并回填，原遗留问题 5 关闭。
