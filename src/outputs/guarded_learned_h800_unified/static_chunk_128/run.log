@@ -1,0 +1,44 @@
+/root/Corey_Transformer/Quamba/3rdparty/mamba/mamba_ssm/ops/selective_scan_interface.py:163: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @custom_fwd
+/root/Corey_Transformer/Quamba/3rdparty/mamba/mamba_ssm/ops/selective_scan_interface.py:239: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @custom_bwd
+/root/Corey_Transformer/Quamba/3rdparty/mamba/mamba_ssm/ops/triton/layer_norm.py:985: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @custom_fwd
+/root/Corey_Transformer/Quamba/3rdparty/mamba/mamba_ssm/ops/triton/layer_norm.py:1044: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @custom_bwd
+/root/Corey_Transformer/Quamba/3rdparty/mamba/mamba_ssm/distributed/tensor_parallel.py:25: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @custom_fwd
+/root/Corey_Transformer/Quamba/3rdparty/mamba/mamba_ssm/distributed/tensor_parallel.py:61: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @custom_bwd
+/root/Corey_Transformer/Quamba/3rdparty/mamba/mamba_ssm/ops/triton/ssd_combined.py:816: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @custom_fwd
+/root/Corey_Transformer/Quamba/3rdparty/mamba/mamba_ssm/ops/triton/ssd_combined.py:894: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @custom_bwd
+[integrated] Device: NVIDIA H800 PCIe
+[integrated] Loading state-spaces/mamba-370m-hf …
+[integrated] Using selective_scan_fn from dispatch module: src.corey_selective_scan_dispatch
+[integrated] Dispatch info: {'module': 'src.corey_selective_scan_dispatch', 'requested_backend': 'auto', 'resolved_backend': 'runtime_cuda', 'runtime_cuda_available': True, 'runtime_cuda_reason': 'fwd_with_chunk_size', 'valid_chunks': [128, 256, 512, 1024, 2048], 'chunk_size_honored': True, 'recurrence_preserving': True, 'eligible_for_w1_speedup': True, 'debug_only': False, 'fallback_hint': 'Set COREY_SELECTIVE_SCAN_BACKEND=original to force the stock path, or COREY_SELECTIVE_SCAN_BACKEND=chunked_emulation for debug-only chunk routing that is not recurrence-preserving.'}
+[integrated] Using installed mamba_ssm / causal_conv1d CUDA kernels.
+
+Loading weights:   0%|          | 0/482 [00:00<?, ?it/s]
+Loading weights:  45%|████▌     | 219/482 [00:00<00:00, 2158.29it/s]
+Loading weights:  90%|█████████ | 435/482 [00:00<00:00, 2120.21it/s]
+Loading weights: 100%|██████████| 482/482 [00:00<00:00, 2123.82it/s]
+[integrated] mamba_ssm fast-path: True
+[integrated] (1/3) Timing passive baseline …
+  passive: 915.49 ± 3.96 ms (prompt_len=976)
+[integrated] (2/3) Timing active-hook-only (chunk selected, not routed) …
+  active-only: 903.69 ± 11.86 ms
+  chunk distribution: {128: 1104}
+[integrated] (3/3) Timing active+routed (chunk selected AND routed into scan) …
+  active+routed: 900.00 ± 14.96 ms
+  chunk distribution: {128: 1104}
+
+[integrated] === Table: integrated measurement ===
+Configuration                                   Latency (ms)  vs. Passive
+Passive (stock fast path, static chunk)           915.49 ±  3.96         1.00x
+Active hook only (chunk selected, not routed)     903.69 ± 11.86       0.987x
+Active + routed (integrated)                      900.00 ± 14.96       0.983x
+  => Net end-to-end improvement achieved (integrated <= passive).
+
+[integrated] Results saved to src/outputs/guarded_learned_h800_unified/static_chunk_128/summary.json
