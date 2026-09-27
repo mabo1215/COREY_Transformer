@@ -73,7 +73,7 @@
 1. 是否做 E6（GDN 真实 trace）？（我的建议：可选；若 PRO 6000 在租期内空出来且 E1b 已完成，值得做；否则保持现有范围说明即可）
    A:
 
-已消费决策（2026-09-27，H800 原始数据）：作者确认原始文件已丢失；我在本机、PRO 6000（无卡模式开机后搜索全盘与旧仓库 Corey_Transformer）、vGPU 3090、共享盘 /autodl-fs 中按目录名与 Table IV 数值检索，均未找到两组 50 次运行的逐次记录（H800 已无法连接）。处理：Table IV 保留运行当时记录的汇总统计，Supplement 路由节补一句说明逐次记录未保留；从 PRO 6000 旧仓库抢救回本机缺失的 H800 输出（含 Table V 输出一致性的原始数据 routed_quality_h800_longbench80_20260501、20 次复核 session 日志等），强制纳入 git 并加入 capsule。PRO 6000 已按作者指示关机。原遗留问题 1 关闭。
+已消费决策（2026-09-27，H800 原始数据）：作者确认原始文件已丢失；我在本机、PRO 6000（无卡模式开机后搜索全盘与旧仓库 Corey_Transformer）、vGPU 3090、共享盘 /autodl-fs 中按目录名与 Table IV 数值检索，均未找到两组 50 次运行的逐次记录（H800 已无法连接）。处理：Table IV 保留运行当时记录的汇总统计，Supplement 路由节补一句说明逐次记录未保留；从 PRO 6000 旧仓库抢救回本机缺失的 H800 输出（含 Table V 输出一致性的原始数据 routed_quality_h800_longbench80_20260501、20 次复核 session 日志等），强制纳入 git（未能加入 capsule：Code Ocean 发布后不能再修改或提交，作者指示不再改动 capsule；Supplement 相应写为「保留、可按需提供」）。PRO 6000 已按作者指示关机。原遗留问题 1 关闭。
 
 已消费决策（2026-09-27，投稿信）：作者确认早期版本没有公开 preprint，「has not been published previously」成立；投稿信删除「曾投 AAAI-27 未录用」一句，「Relation to an earlier version」段改为只说明早期未发表版本的 split-call 结果已撤回。原遗留问题 2 关闭。
 
