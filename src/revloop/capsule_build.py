@@ -65,13 +65,9 @@ EXTRA = [
     "src/data/longbench_subset_remote_min/**/*",
     "src/data/longbench_push120/**/*",
     "src/requirements.txt",
-    # per-run records of the routed end-to-end study that were retained (supplement)
-    "src/outputs/routed_quality_h800_longbench80_20260501/**/*",
-    "src/outputs/guarded_learned_h800_unified/**/*",
-    "src/outputs/static_oracle_adaptive_h800/**/*",
-    "src/outputs/static_oracle_adaptive_h800_confirm_128_1024/**/*",
 ]
-EXCLUDE = ["*_e1b.*", "*/smoke/*", "*localsmoke*", "*/__pycache__/*"]
+# Generated run outputs (src/outputs/, the capsule's own results) are never packaged.
+EXCLUDE = ["*_e1b.*", "*/smoke/*", "*localsmoke*", "*/__pycache__/*", "src/outputs/*"]
 
 # Identifying strings that must not appear in the package (checked case-insensitively).
 IDENTIFYING = [r"mabo", r"bo\s+ma\b", r"weiqi", r"jinsong", r"aut\.ac\.nz", r"\brcn\d{3,}", r"auckland",
@@ -312,7 +308,6 @@ def build(args) -> int:
         return 0
     git = ["git", "-C", str(CAPSULE)]
     subprocess.run(git + ["add", "-A"], check=True)
-    subprocess.run(git + ["add", "-f", "code"], check=True)  # the capsule's .gitignore hides outputs/
     if subprocess.run(git + ["diff", "--cached", "--quiet"]).returncode == 0:
         print("capsule unchanged")
     else:
