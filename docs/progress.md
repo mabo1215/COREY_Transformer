@@ -76,23 +76,15 @@
    补充（2026-09-26 开卡后实测）：该 patched 扩展 `selective_scan_cuda` **没有 sm_120 kernel**，在 PRO 6000（Blackwell）上报 `no kernel image is available`；且 nvcc 未安装，无法就地重编。因此 PRO 6000 不能直接重跑路由消融，需换 H800/3090 等非 Blackwell 主机，或在 PRO 6000 装 CUDA toolkit 后以 `TORCH_CUDA_ARCH_LIST=12.0` 重编（TPDS 的 E1–E5 用 Triton kernel，不受影响）。
    A:
 
-### 2. 投稿信里如何交代早期版本【需要你确认】
-
-为满足双盲，正文和 Supplement 里所有「earlier version / reviewers」表述已删除，改为在 `docs/cover_letter.txt` 新增一段「Relation to an earlier version」，向编辑说明：早期版本投过 AAAI-27 未录用；其 kernel 级结果来自 split-call 计时、已全部撤回并用 recurrence-preserving 测量替换。投稿信的标题、贡献列表也已按当前负面结果叙事重写。
-
-需要你提供/决策：
-1. 是否保留投稿信中「曾投 AAAI-27 未录用」这句？（建议保留：透明，且不进入审稿人可见的稿件）
-   A:
-2. 早期版本是否有公开 preprint（如 arXiv）？如有，投稿信里「has not been published previously」需要补一句说明 preprint，且要确认 TPDS 双盲对 preprint 的要求。
-   A:
-
-### 3. 是否补 Gated DeltaNet 真实 trace 实验（可选）【需要你决策】
+### 2. 是否补 Gated DeltaNet 真实 trace 实验（可选）【需要你决策】
 
 审阅发现 Hugging Face 上有公开的 Gated DeltaNet 340M 检查点（如 `linear-moe-hub/Gated-Deltanet-340M`），正文原来「没有匹配规模的公开检查点」的说法已改为「我们只用合成输入研究 GDN kernel，未采集 GDN 检查点的 trace」，并在 Limitations 写明 KDA 未测。若补做，可在 GDN 上复现 E2/E3（逐调用 oracle、regret、熵 vs shape 预测），直接回应 8sNa「线性注意力家族覆盖不足」。预计实现+本地冒烟 1–2 小时，PRO 6000 上约 0.5–1 小时 GPU，同样需要独占 GPU（排在 E1b 之后）。合成输入下 GDN 三个 chunk（16/32/64）中 64 在所有长度都最优且 100% 打平，真实 trace 的结论大概率相同。
 
 需要你提供/决策：
 1. 是否做 E6（GDN 真实 trace）？（我的建议：可选；若 PRO 6000 在租期内空出来且 E1b 已完成，值得做；否则保持现有范围说明即可）
    A:
+
+已消费决策（2026-09-27，投稿信）：作者确认早期版本没有公开 preprint，「has not been published previously」成立；投稿信删除「曾投 AAAI-27 未录用」一句，「Relation to an earlier version」段改为只说明早期未发表版本的 split-call 结果已撤回。原遗留问题 2 关闭。
 
 已消费决策（2026-09-27，收尾）：代码与数据可用性链接 https://codeocean.com/capsule/3457679/tree（作者提供，capsule 已同步 TPDS 代码包并发布新版本，页面匿名已由作者确认）；AI 使用披露采用作者定稿措辞（Grammarly；Claude 用于调试实验代码、编写调试部分测量/分析脚本、核对数字）。原遗留问题 4 关闭。
 
