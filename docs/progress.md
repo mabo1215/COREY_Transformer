@@ -123,12 +123,12 @@
 
 ### 已全部修改
 1. **capsule 挂为子模块** `codeocean/`（https://git.codeocean.com/capsule-2225238.git，发布地址 capsule/3457679）。凭据由 `src/revloop/codeocean_credential.sh` 在 git 需要时从 `C:\source\.env` 的 CODE OCEAN 段读取，不复制、不进仓库，只写在本仓库和子模块的本地 git 配置里。
-2. **打包脚本** `src/revloop/capsule_build.py`：从论文用到的入口脚本出发自动追踪本地 import（37 个模块），加上 TPDS 结果文件（不含已作废的 E1b 与冒烟文件）和 LongBench 子集，共 82 个文件；替换 capsule 旧内容（删除含投稿信/内部进度/审稿报告的 docs/、指向论文仓库的 .gitmodules、AAAI 时期的旧脚本）；结果文件副本中的主机名与主机路径替换为占位符；LICENSE 与 metadata 作者改为 Anonymous Authors，标题与简介更新为 TPDS 版；匿名化扫描（姓名、邮箱、编号、单位、主机、路径、IP）通过才提交；以 Anonymous Authors 身份提交并推送。环境 `environment/` 未改（Ubuntu 20.04 / Python 3.8），打包代码已通过 Python 3.8 语法检查。
+2. **打包脚本** `src/revloop/capsule_build.py`：从论文用到的入口脚本出发自动追踪本地 import（37 个模块），加上 TPDS 结果文件（不含已作废的 E1b 与冒烟文件）和 LongBench 子集，共 82 个文件；替换 capsule 旧内容（删除含投稿信/内部进度/审稿报告的 docs/、指向论文仓库的 .gitmodules、AAAI 时期的旧脚本）；结果文件副本中的主机名与主机路径替换为占位符；LICENSE 作者改为 Anonymous Authors；（metadata 不能用 git 改：Code Ocean 报 "Error Parsing Files"，已恢复到上一有效版本，作者与标题须在 Code Ocean 的 Metadata 页面修改）；匿名化扫描（姓名、邮箱、编号、单位、主机、路径、IP）通过才提交；以 Anonymous Authors 身份提交并推送。环境 `environment/` 未改（Ubuntu 20.04 / Python 3.8），打包代码已通过 Python 3.8 语法检查。
 3. **capsule 的一键运行**（`code/run`，仅 CPU）：从附带测量重算 E1 分析、break-even、熵带、补充表格与全部图；本地完整跑通，重算结果与论文一致。README 写明 GPU 实验所需软件版本与命令。
 4. 源码两处默认路径去掉用户名（`~/source/.env`）。正文与投稿信链接改为不带版本号的 `https://codeocean.com/capsule/3457679/tree`。
 
 ### 未修改或部分修改
-- 【待作者】在 Code Ocean 网页上：打开 capsule 确认作者显示为 Anonymous Authors、点一次 Reproducible Run 确认环境能跑通，然后发布新版本（旧的 v1 仍带真实姓名，建议在评审期间不要公开指向 v1）。
+- 【待作者】在 Code Ocean 网页上：在 Metadata 页面把作者改为 Anonymous Authors（单位 Anonymous），点一次 Reproducible Run 确认环境能跑通，然后发布新版本（旧的 v1 仍带真实姓名，评审期间不要指向 v1）。
   - 需要你操作：发布新版本并确认页面匿名。
 
 ## 2026-09-27（再续）3090-E7：Triton kernel 对比官方 CUDA scan（周期收尾）

@@ -4,8 +4,9 @@ The capsule gets only what the paper needs: the entry scripts listed in ENTRIES,
 local module they import (resolved from the source, so the package is complete), the
 TPDS result files, and the small LongBench prompt subsets. Everything else in the
 capsule is replaced. The package is written for anonymous review: the metadata authors
-and the license holder are anonymized, and a scan for identifying strings must pass
-before anything is committed.
+license holder is anonymized, and a scan for identifying strings must pass before
+anything is committed. The capsule metadata (title, authors) must be edited in the Code
+Ocean metadata UI; this script never touches metadata/metadata.yml.
 
 Usage (repository root):
     python src/revloop/capsule_build.py            # rebuild codeocean/ in place, scan, no commit
@@ -284,12 +285,8 @@ def build(args) -> int:
     lic = code / "LICENSE"
     if lic.exists():
         lic.write_text(LICENSE_HOLDER.sub(r"\1 Anonymous Authors", lic.read_text()))
-    (CAPSULE / "metadata").mkdir(exist_ok=True)
-    (CAPSULE / "metadata" / "metadata.yml").write_text(
-        "metadata_version: 2\n"
-        f"name: '{TITLE}'\n"
-        f"description: '{DESCRIPTION}'\n"
-        "authors:\n- name: Anonymous Authors\n  affiliations:\n  - name: Anonymous\n")
+    # metadata/metadata.yml is owned by the Code Ocean metadata UI: Code Ocean rejects the
+    # capsule ("Error Parsing Files") if the file is edited through git, so it is left as is.
     n_py = sum(1 for f in files if f.suffix == ".py")
     print(f"copied {len(files)} files ({n_py} Python modules) into codeocean/code")
 
