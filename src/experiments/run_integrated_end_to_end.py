@@ -711,8 +711,9 @@ def _parse_args() -> argparse.Namespace:
 
 
 
-def _set_hf_token_from_envfile(env_path="/home/amabo1215/source/.env"):
+def _set_hf_token_from_envfile(env_path=None):
     import os
+    env_path = env_path or os.path.expanduser("~/source/.env")
     try:
         if os.path.exists(env_path):
             with open(env_path, "r") as f:
