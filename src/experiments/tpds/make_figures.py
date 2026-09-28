@@ -8,6 +8,8 @@ plus marker/line-style redundancy for colorblind safety):
   tpds_entropy_vs_oracle.pdf  entropy vs per-call oracle chunk (E2)
   tpds_regret_cdf.pdf         held-out regret CDF per policy (E3)
   tpds_breakeven.pdf          cumulative cost vs number of calls (E5)
+  tpds_cost_model.pdf         measured vs cost-model latency per chunk, both GPUs (T1; full width)
+  tpds_key_churn.pdf          key-churn break-even N* vs decision overhead, both GPUs (T3)
 
 Example:
     python -m src.experiments.tpds.make_figures --in-dir src/experiments/results/tpds --host pro6000 \
@@ -297,12 +299,94 @@ def fig_breakeven(e5, out_dir):
     _save(fig, out_dir, "tpds_breakeven.pdf")
 
 
+# --------------------------------------------------------------------------- T1 / T3 (both GPUs)
+HOST_LABEL = {"pro6000": "RTX PRO 6000", "vgpu3090": "RTX 3090"}
+FULL_W = 7.16
+
+
+def fig_cost_model(curves, out_dir, lengths=(512, 2048, 8192, 2382)):
+    """Rows: GPUs; columns: batch sizes. Markers: measured medians; lines: cost-model prediction."""
+    import pandas as pd
+
+    hosts = [h for h in curves if not curves[h].empty]
+    if not hosts:
+        return
+    batches = sorted(set.intersection(*[set(curves[h]["batch"]) for h in hosts]))
+    fig, axes = plt.subplots(len(hosts), len(batches), figsize=(FULL_W, 1.75 * len(hosts) + 0.35), squeeze=False)
+    for i, h in enumerate(hosts):
+        df = curves[h]
+        for j, b in enumerate(batches):
+            ax = axes[i, j]
+            for k, L in enumerate(lengths):
+                g = df[(df["batch"] == b) & (df["L"] == L)].sort_values("chunk")
+                if g.empty:
+                    continue
+                lab = f"L={L}" + ("" if L % 16 == 0 else r" ($L$ mod 16 $\neq$ 0)")
+                ax.plot(g["chunk"], g["predicted_ms"], color=OKABE[k], ls=STYLES[k], lw=1.0)
+                ax.plot(g["chunk"], g["measured_ms"], color=OKABE[k], marker=MARKERS[k], ls="none", label=lab)
+            _pow2_axis(ax, sorted(df["chunk"].unique()))
+            _plain_log_y(ax)
+            ax.grid(True, which="major", axis="y")
+            ax.set_title(f"{HOST_LABEL.get(h, h)}, batch {b}", loc="left")
+            if j == 0:
+                ax.set_ylabel("latency (ms)")
+            if i == len(hosts) - 1:
+                ax.set_xlabel("chunk size")
+    handles, labels = {}, {}
+    for ax in axes.ravel():
+        for hd, l in zip(*ax.get_legend_handles_labels()):
+            handles.setdefault(l, hd)
+    extra = [plt.Line2D([], [], color="#555555", marker="o", ls="none"), plt.Line2D([], [], color="#555555", lw=1.0)]
+    fig.legend(list(handles.values()) + extra, list(handles) + ["measured (median over calls)", "cost model"],
+               loc="lower center", ncol=6, frameon=False, bbox_to_anchor=(0.5, 1.0), handlelength=1.8,
+               columnspacing=1.0)
+    fig.tight_layout(h_pad=0.5, w_pad=0.6)
+    _save(fig, out_dir, "tpds_cost_model.pdf")
+
+
+def fig_key_churn(e5bs, out_dir):
+    """N* = P / (o - h) versus the per-call decision overhead o, per GPU and tuning cost."""
+    if not e5bs:
+        return
+    fig, ax = plt.subplots(figsize=(COL_W, 2.3))
+    plabel = {"profile": "profile 6 chunks", "search": "full launch search"}
+    for i, (h, d) in enumerate(e5bs.items()):
+        o = np.array(d["curve"]["overhead_ms"])
+        for j, pk in enumerate(("profile", "search")):
+            n = np.array([np.nan if v is None else v for v in d["curve"]["n_star_calls"][pk]], dtype=float)
+            ax.plot(o, n, color=OKABE[i], ls=STYLES[j], label=f"{HOST_LABEL.get(h, h)}, {plabel[pk]}")
+    d0 = next(iter(e5bs.values()))
+    marks = {"host sync": d0["host_sync_ms"]}
+    for name, key in (("1/8 histogram", "sampled_histogram"), ("full histogram", "full_histogram")):
+        vals = [k["overhead_ms"][key] for k in d0["keys"] if k["overhead_ms"].get(key)]
+        if vals:
+            marks[name] = float(np.median(vals))
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ylo, yhi = ax.get_ylim()
+    for name, x in marks.items():
+        ax.axvline(x, color="#999999", lw=0.6, ls=":")
+        # label in the empty region: below the curves at small o, above them at large o
+        low = name == "host sync"
+        ax.text(x * 1.08, ylo * 2 if low else yhi * 0.6, name, rotation=90, va="bottom" if low else "top",
+                ha="left", fontsize=7, color="#444444")
+    ax.set_ylim(ylo, yhi)
+    ax.set_xlabel("per-call decision overhead $o$ (ms)")
+    ax.set_ylabel("break-even calls per key $N^\\star$")
+    ax.grid(True, which="major")
+    h, l = ax.get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=2, frameon=False, bbox_to_anchor=(0.5, 1.0))
+    fig.tight_layout()
+    _save(fig, out_dir, "tpds_key_churn.pdf")
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--in-dir", type=Path, default=RESULTS_DIR)
     p.add_argument("--host", required=True)
     p.add_argument("--out-dir", type=Path, required=True)
     p.add_argument("--png", action="store_true", help="also write PNG previews")
+    p.add_argument("--cross-hosts", default="pro6000,vgpu3090", help="hosts of the two-GPU figures (T1, T3)")
     args = p.parse_args(argv)
     global PNG_PREVIEW
     PNG_PREVIEW = args.png
@@ -323,6 +407,15 @@ def main(argv=None):
     e5 = _load_json(args.in_dir / f"e5_{args.host}.json")
     if e5:
         jobs.append(lambda: fig_breakeven(e5, args.out_dir))
+    import pandas as pd
+
+    cross = [h for h in args.cross_hosts.split(",") if h]
+    curves = {h: pd.read_csv(f) for h in cross if (f := args.in_dir / f"cost_model_curves_{h}.csv").exists()}
+    if curves:
+        jobs.append(lambda: fig_cost_model(curves, args.out_dir))
+    e5bs = {h: j for h in cross if (j := _load_json(args.in_dir / f"e5b_{h}.json"))}
+    if e5bs:
+        jobs.append(lambda: fig_key_churn(e5bs, args.out_dir))
     if not jobs:
         print("no results found; nothing to plot")
     for job in jobs:

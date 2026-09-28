@@ -12,7 +12,9 @@ cross-compiled (for example sm_120 on an sm_86 workstation).
 Alignment: Triton specializes integer arguments that are divisible by 16.
 The row stride of the (b, d, L) scan inputs is L, so a sequence length that
 is not a multiple of 16 compiles to a different kernel (no vectorized loads).
-Both variants are recorded (``aligned`` = L % 16 == 0).
+Both variants are recorded (``aligned`` = L % 16 == 0); by default the
+unaligned variant only for the default launch table, which is what the
+per-call sweep (E2) uses.
 
 Output: ``kernel_stats_sm<arch>.json`` in the results directory (and the resumable
 per-configuration log ``kernel_stats_sm<arch>.jsonl``).
@@ -118,6 +120,8 @@ def parse_args(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--archs", default=None, help="comma list of compute capabilities, e.g. 86,120 (default: native)")
     p.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
+    p.add_argument("--unaligned", choices=("default", "all", "none"), default="default",
+                   help="unaligned lengths: only the default launch table (what E2 uses), the whole space, or none")
     return p.parse_args(argv)
 
 
@@ -142,6 +146,9 @@ def main(argv=None):
             for chunk, bd, nw, ns in search_space():
                 key = _key(aligned, chunk, bd, nw, ns)
                 if key in writer.done:
+                    continue
+                if not aligned and (args.unaligned == "none" or (
+                        args.unaligned == "default" and (K.DEFAULT_MAMBA1_LAUNCH.get(chunk) != (bd, nw) or ns != 1))):
                     continue
                 rec = compile_config(arch, arch == native, L, chunk, bd, nw, ns)
                 rec.update({"kind": "config", "key": key, "block_t": chunk, "block_d": bd, "num_warps": nw,

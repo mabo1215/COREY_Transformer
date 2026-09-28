@@ -6,6 +6,10 @@ Prints table bodies (tabular rows only) for:
   effects     fixed-chunk configurations with a significant input effect (E1 analysis, BH-adjusted)
   autotune    per-key tuned / best static / global static / entropy rule latency and tuning cost (E4)
   overhead    per-call decision cost vs scan latency (E4)
+  tost        TOST equivalence of value invariance at the selected chunk and at all chunks (E1 analysis)
+  model_params    fitted cost-model parameters and validation summary, both GPUs (T1)
+  model_ablation  drop-one / add-one ablation of the cost model, both GPUs (T1)
+  model_compile   compile facts of the default launch table, both architectures (T1)
 
 Example:
     python -m src.experiments.tpds.make_tables --in-dir src/experiments/results/tpds --host pro6000 latency
@@ -163,7 +167,96 @@ def t_reference(d, host):
     return rows
 
 
-TABLES = {"reference": t_reference, "redraw": t_redraw, "validation": t_validation, "latency": t_latency, "effects": t_effects, "autotune": t_autotune,
+def t_tost(d, host):
+    """E1 TOST: configurations whose input effects are equivalent to zero within 2% / 5% (alpha = 0.05)."""
+    a = _load(d / f"e1_analysis_{host}.json")
+    summ = a["equivalence"]["summary"]
+    gpu = {"pro6000": "RTX PRO~6000", "vgpu3090": "RTX~3090"}.get(host, host)
+    rows = []
+    for fam in ("mamba1", "mamba2", "gdn", "all"):
+        if fam not in summ:
+            continue
+        b, c = summ[fam]["at_best_chunk"], summ[fam]["all_chunks"]
+        name = "All kernels" if fam == "all" else SHORT[fam]
+        rows.append(f"{gpu} & {name} & {b['equivalent_2pct']}/{b['n']} & {b['equivalent_5pct']}/{b['n']} & "
+                    f"{b['median_bound_pct']:.1f} & {b['max_bound_pct']:.1f} & {c['equivalent_2pct']}/{c['n']} & "
+                    f"{c['equivalent_5pct']}/{c['n']} & {c['median_bound_pct']:.1f} \\\\")
+    return rows
+
+
+MODEL_HOSTS = ("pro6000", "vgpu3090")
+PARAM_TEX = {"t0": ("$t_0$", "ms", 1.0), "tau_m": ("$\\tau_m$", "$\\mu$s", 1e3), "tau_e": ("$\\tau_e$", "ns", 1e6),
+             "tau_s": ("$\\tau_s$", "ns", 1e6), "tau_q": ("$\\tau_q$", "ns", 1e6), "tau_p": ("$\\tau_p$", "ns", 1e6),
+             "W0": ("$W_0$", "warps", 1.0), "W1": ("$W_1$", "warps", 1.0)}
+
+
+def t_model_params(d, host):
+    ms = {h: _load(d / f"cost_model_{h}.json") for h in MODEL_HOSTS}
+    rows = []
+    for k, (tex, unit, sc) in PARAM_TEX.items():
+        rows.append(f"{tex} & {unit} & " + " & ".join(f"{ms[h]['params'][k] * sc:.3g}" for h in MODEL_HOSTS) + " \\\\")
+    rows.append("\\midrule")
+
+    def line(name, fn):
+        rows.append(f"{name} & & " + " & ".join(fn(ms[h]) for h in MODEL_HOSTS) + " \\\\")
+
+    line("Fit points", lambda m: str(m["n_points"]))
+    line("$R^2$ (log), fit / captured calls", lambda m: f"{m['V1']['all']['r2_log']:.3f} / {m['V2_e2_calls']['curve_fit']['r2_log']:.3f}")
+    line("Median rel.\\ error, fit", lambda m: f"{100 * m['V1']['all']['median_rel_err']:.0f}\\%")
+    line("Regret, no profiling (mean / p95)", lambda m: f"{m['V2_e2_calls']['mean_regret_pct']:.2f} / {m['V2_e2_calls']['p95_regret_pct']:.1f}")
+    line("Tied with oracle", lambda m: f"{100 * m['V2_e2_calls']['tie_aware_accuracy']:.0f}\\%")
+    for k in (2, 3):
+        line(f"Regret, top-{k} profiled", lambda m, k=k: f"{m['V2_topk_profiling'][f'top{k}']['mean_regret_pct']:.2f}")
+    line("Regret floor, exact-shape table", lambda m: f"{m['V2_topk_profiling']['all_chunks_profiled']['mean_regret_pct']:.2f}")
+    line("Leave one key out: chunk regret (mean / max)", lambda m: f"{m['V2_leave_one_key_out']['chunk_mean_regret_pct']:.2f} / {m['V2_leave_one_key_out']['chunk_max_regret_pct']:.1f}")
+    line("Leave one key out: config.\\ rank of 184 (median)", lambda m: f"{m['V2_leave_one_key_out']['config_median_rank']:.0f}")
+    line("Calibration on 18 batch-1 medians", lambda m: f"{m['V2_tiny_calibration']['e2']['mean_regret_pct']:.2f}")
+    line("Parameters of the other GPU", lambda m: f"{next(v for k, v in m.items() if k.startswith('V3'))['e2']['mean_regret_pct']:.2f}")
+    return rows
+
+
+ABL_TEX = {"drop_state_latency": "without state latency $\\tau_m$", "drop_scan_work": "without scan work $\\tau_e$",
+           "drop_shuffle": "without shuffle levels $\\tau_s$", "drop_spill": "without spill terms $\\tau_q,\\tau_p$",
+           "drop_spill_l1_miss": "without L1 miss of spills $\\tau_p$", "drop_issue_sharing": "without issue sharing ($W_0$)",
+           "drop_latency_hiding": "without latency hiding ($W_1$)", "add_tile_fixed": "with per-tile fixed cost",
+           "add_l2_miss": "with L2-miss term", "add_load_issue": "with load issue cost", "add_cross_warp": "with cross-warp exchange"}
+
+
+def t_model_ablation(d, host):
+    ms = {h: _load(d / f"cost_model_{h}.json") for h in MODEL_HOSTS}
+    rows = ["Eq.~(\\ref{eq:cost_model}), 8 parameters & " + " & ".join(
+        f"{ms[h]['V1']['all']['r2_log']:.3f} & {ms[h]['V2_e2_calls']['mean_regret_pct']:.2f}" for h in MODEL_HOSTS) + " \\\\",
+            "\\midrule"]
+    for k, name in ABL_TEX.items():
+        if k == "add_tile_fixed":
+            rows.append("\\midrule")
+        rows.append(f"{name} & " + " & ".join(
+            f"{ms[h]['ablation'][k]['fit']['r2_log']:.3f} & {ms[h]['ablation'][k]['e2_mean_regret_pct']:.2f}"
+            for h in MODEL_HOSTS) + " \\\\")
+    return rows
+
+
+def t_model_compile(d, host):
+    from src.experiments.tpds.kernels import DEFAULT_MAMBA1_LAUNCH
+
+    st = {a: {(r["aligned"], r["block_t"], r["block_d"], r["num_warps"], r["num_stages"]): r
+              for r in _load(d / f"kernel_stats_sm{a}.json")["configs"]} for a in (120, 86)}
+    rows = []
+    for c, (bd, nw) in sorted(DEFAULT_MAMBA1_LAUNCH.items()):
+        cells = []
+        for al in (True, False):
+            for a in (120, 86):
+                r = st[a][(al, c, bd, nw, 1)]
+                sp = r["spill_store_bytes"]
+                cells.append(f"{r['regs']}" + (f"/{sp}" if sp else ""))
+        lay = st[86][(True, c, bd, nw, 1)]["layout"]
+        rows.append(f"{c} & {bd} & {nw} & {lay['size_per_thread'][1]}$\\times${lay['threads_per_warp'][1]}$\\times$"
+                    f"{lay['warps_per_cta'][1]} & " + " & ".join(cells) + " \\\\")
+    return rows
+
+
+TABLES = {"model_params": t_model_params, "model_ablation": t_model_ablation, "model_compile": t_model_compile,
+          "tost": t_tost, "reference": t_reference, "redraw": t_redraw, "validation": t_validation, "latency": t_latency, "effects": t_effects, "autotune": t_autotune,
           "overhead": t_overhead}
 
 

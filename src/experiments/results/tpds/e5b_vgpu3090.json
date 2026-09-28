@@ -1,6 +1,12 @@
 {
   "experiment": "E5b",
   "host": "vgpu3090",
+  "key_mode": "bucket_aligned",
+  "key": [
+    "L_bucket",
+    "batch",
+    "aligned"
+  ],
   "layers_per_request": 48,
   "host_sync_ms": 0.021443195641040802,
   "tuning_scale": {
@@ -11,61 +17,68 @@
     "compile_total_s": 521.0781117044389,
     "n_keys": 12
   },
-  "headroom_pooled_ms": 0.0067418646032653615,
+  "headroom_pooled_ms": 0.0029059262300320608,
   "P_pooled_s": {
     "profile": 0.06361745761000352,
-    "search": 9.750576319850842
+    "search": 9.750576319850838
   },
   "summary_n_star": {
     "profile|host_sync": {
       "min_calls": 401.46282388493347,
-      "median_calls": 2114.130795218363,
+      "median_calls": 2662.180232627792,
       "max_calls": 51993.040630001124,
-      "median_requests": 44.044391567049225
+      "median_requests": 55.46208817974567,
+      "n_keys_unbounded": 1
     },
     "profile|sampled_histogram": {
       "min_calls": 21.59988874591486,
-      "median_calls": 57.15477407393214,
+      "median_calls": 65.95641135734125,
       "max_calls": 299.4384411636554,
-      "median_requests": 1.1907244598735862
+      "median_requests": 1.3740919032779428,
+      "n_keys_unbounded": 0
     },
     "profile|full_histogram": {
       "min_calls": 5.32060819430016,
-      "median_calls": 19.4891230068118,
+      "median_calls": 21.78397099633451,
       "max_calls": 204.31892247286004,
-      "median_requests": 0.4060233959752458
+      "median_requests": 0.4538327290903023,
+      "n_keys_unbounded": 0
     },
     "search|host_sync": {
       "min_calls": 61531.756390990166,
-      "median_calls": 324030.45395643334,
+      "median_calls": 408029.3760647521,
       "max_calls": 7968914.977265837,
-      "median_requests": 6750.634457425695
+      "median_requests": 8500.612001349002,
+      "n_keys_unbounded": 1
     },
     "search|sampled_histogram": {
       "min_calls": 3310.590703081044,
-      "median_calls": 8760.048068379207,
+      "median_calls": 10109.065135323899,
       "max_calls": 45894.593769561136,
-      "median_requests": 182.5010014245668
+      "median_requests": 210.60552365258124,
+      "n_keys_unbounded": 0
     },
     "search|full_histogram": {
       "min_calls": 815.4836457719393,
-      "median_calls": 2987.0760074982627,
+      "median_calls": 3338.8047829779507,
       "max_calls": 31315.73190765236,
-      "median_requests": 62.23075015621381
+      "median_requests": 69.5584329787073,
+      "n_keys_unbounded": 0
     }
   },
   "workload": {
     "n_calls": 2360,
-    "n_keys": 27,
+    "n_keys": 33,
     "calls_per_key_median": 48.0,
-    "calls_per_key_min": 24,
-    "calls_per_key_max": 312,
+    "calls_per_key_min": 1,
+    "calls_per_key_max": 232,
     "note": "captured calls cover 8 of 48 layers per prompt; a request contributes 48 calls to its key"
   },
   "keys": [
     {
       "L_bucket": 16,
       "batch": 1,
+      "aligned": 0,
       "n_calls": 160,
       "table_chunk": 32,
       "table_ms": 0.09183513959590342,
@@ -96,11 +109,19 @@
         "search|host_sync": 1965.4917700831156,
         "search|sampled_histogram": 102.59015231388794,
         "search|full_histogram": 102.12363295897886
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.002924163755960764,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 16,
       "batch": 4,
+      "aligned": 0,
       "n_calls": 48,
       "table_chunk": 32,
       "table_ms": 0.09825877410359675,
@@ -131,11 +152,19 @@
         "search|host_sync": 4677.635845359001,
         "search|sampled_histogram": 267.83832182382554,
         "search|full_histogram": 266.626829105003
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.0010184531100094288,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 16,
       "batch": 16,
+      "aligned": 0,
       "n_calls": 40,
       "table_chunk": 32,
       "table_ms": 0.151964162774384,
@@ -166,11 +195,19 @@
         "search|host_sync": 16547.188921334237,
         "search|sampled_histogram": 956.1373701991903,
         "search|full_histogram": 652.4110814094241
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.0,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 64,
       "batch": 1,
+      "aligned": 1,
       "n_calls": 224,
       "table_chunk": 64,
       "table_ms": 0.0888531677464821,
@@ -201,11 +238,19 @@
         "search|host_sync": 1340.5679600697151,
         "search|sampled_histogram": 68.97063964752175,
         "search|full_histogram": 68.65675594426459
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.0032035173369305454,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 64,
       "batch": 4,
+      "aligned": 1,
       "n_calls": 72,
       "table_chunk": 32,
       "table_ms": 0.09643121870441565,
@@ -236,11 +281,19 @@
         "search|host_sync": 2334.1492695898482,
         "search|sampled_histogram": 118.01129428052758,
         "search|full_histogram": 117.47372600138347
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.003535928916600015,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 64,
       "batch": 16,
+      "aligned": 1,
       "n_calls": 40,
       "table_chunk": 32,
       "table_ms": 0.09998233701661226,
@@ -271,11 +324,19 @@
         "search|host_sync": 6823.358566251849,
         "search|sampled_histogram": 364.8744008046837,
         "search|full_histogram": 248.60742564045435
+      },
+      "model_regret_vs_table_ms": 0.0023106562420725832,
+      "model_regret_vs_oracle_ms": 0.00399974412843585,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 128,
       "batch": 1,
+      "aligned": 1,
       "n_calls": 168,
       "table_chunk": 128,
       "table_ms": 0.09099738250353503,
@@ -306,11 +367,19 @@
         "search|host_sync": 1281.9115914789618,
         "search|sampled_histogram": 69.87541309368227,
         "search|full_histogram": 69.5584329787073
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.002056163528135845,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 128,
       "batch": 4,
+      "aligned": 1,
       "n_calls": 48,
       "table_chunk": 128,
       "table_ms": 0.09602560077793892,
@@ -341,11 +410,19 @@
         "search|host_sync": 2309.7186150416974,
         "search|sampled_histogram": 117.32652014872679,
         "search|full_histogram": 79.86851559461284
+      },
+      "model_regret_vs_table_ms": 0.0037845331244170566,
+      "model_regret_vs_oracle_ms": 0.0065156263764947625,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 128,
       "batch": 16,
+      "aligned": 1,
       "n_calls": 40,
       "table_chunk": 32,
       "table_ms": 0.17866956634074443,
@@ -376,11 +453,19 @@
         "search|host_sync": 6750.634457425695,
         "search|sampled_histogram": 348.4421582982663,
         "search|full_histogram": 90.86096786633993
+      },
+      "model_regret_vs_table_ms": 0.004339711859822281,
+      "model_regret_vs_oracle_ms": 0.004460031829774386,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 256,
       "batch": 1,
+      "aligned": 1,
       "n_calls": 168,
       "table_chunk": 128,
       "table_ms": 0.0962614863809375,
@@ -411,11 +496,19 @@
         "search|host_sync": 1429.7365144770258,
         "search|sampled_histogram": 71.6365110592474,
         "search|full_histogram": 71.31003517091453
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.003705173181813386,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 256,
       "batch": 4,
+      "aligned": 1,
       "n_calls": 56,
       "table_chunk": 32,
       "table_ms": 0.10640127777255003,
@@ -446,11 +539,19 @@
         "search|host_sync": 2229.1450125202814,
         "search|sampled_histogram": 125.24970015035598,
         "search|full_histogram": 85.41698474819525
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.0006271998398005961,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 256,
       "batch": 16,
+      "aligned": 1,
       "n_calls": 40,
       "table_chunk": 32,
       "table_ms": 0.35560704182088376,
@@ -481,11 +582,19 @@
         "search|host_sync": 8621.97053243223,
         "search|sampled_histogram": 182.5010014245668,
         "search|full_histogram": 27.541698699732887
+      },
+      "model_regret_vs_table_ms": 0.014106109574437153,
+      "model_regret_vs_oracle_ms": 0.015698942184448252,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 512,
       "batch": 1,
+      "aligned": 1,
       "n_calls": 168,
       "table_chunk": 128,
       "table_ms": 0.09839166553247537,
@@ -516,11 +625,19 @@
         "search|host_sync": 1627.3290574116363,
         "search|sampled_histogram": 75.908488324456,
         "search|full_histogram": 51.6016821640454
+      },
+      "model_regret_vs_table_ms": 0.0008297904598570959,
+      "model_regret_vs_oracle_ms": 0.005164742698626854,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 512,
       "batch": 4,
+      "aligned": 1,
       "n_calls": 56,
       "table_chunk": 32,
       "table_ms": 0.20580682118556326,
@@ -551,11 +668,19 @@
         "search|host_sync": 3127.090396312927,
         "search|sampled_histogram": 162.2720785281484,
         "search|full_histogram": 42.323731712595865
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.0,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 512,
       "batch": 16,
+      "aligned": 1,
       "n_calls": 40,
       "table_chunk": 32,
       "table_ms": 0.7468482536971569,
@@ -586,20 +711,71 @@
         "search|host_sync": 11429.52700324836,
         "search|sampled_histogram": 260.70945167178985,
         "search|full_histogram": 39.400499539890674
+      },
+      "model_regret_vs_table_ms": 0.0361210909485817,
+      "model_regret_vs_oracle_ms": 0.036136962860822686,
+      "online_beats_model_default": {
+        "host_sync": true,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 1024,
       "batch": 1,
-      "n_calls": 312,
+      "aligned": 0,
+      "n_calls": 80,
       "table_chunk": 512,
-      "table_ms": 0.25652092762960077,
-      "oracle_ms": 0.2475739286591609,
-      "headroom_ms": 0.008946998970439804,
-      "headroom_pct": 3.487824191622556,
+      "table_ms": 0.5950766066759824,
+      "oracle_ms": 0.5805952000916005,
+      "headroom_ms": 0.014481406584382059,
+      "headroom_pct": 2.433536526544581,
       "P_s": {
-        "profile": 0.02404168853777796,
-        "search": 3.684842616357962
+        "profile": 0.054541680925290485,
+        "search": 8.359542214578735
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.41322457790374756,
+        "full_histogram": 1.5843312591314316
+      },
+      "n_star_calls": {
+        "profile|host_sync": 7834.434580163414,
+        "profile|sampled_histogram": 136.7839874092951,
+        "profile|full_histogram": 34.743246837777335,
+        "search|host_sync": 1200774.9942643093,
+        "search|sampled_histogram": 20964.72821570485,
+        "search|full_histogram": 5325.058444930607
+      },
+      "n_star_requests": {
+        "profile|host_sync": 163.21738708673777,
+        "profile|sampled_histogram": 2.8496664043603146,
+        "profile|full_histogram": 0.7238176424536945,
+        "search|host_sync": 25016.14571383978,
+        "search|sampled_histogram": 436.7651711605177,
+        "search|full_histogram": 110.93871760272098
+      },
+      "model_regret_vs_table_ms": 0.03834598496556282,
+      "model_regret_vs_oracle_ms": 0.05282739154994487,
+      "online_beats_model_default": {
+        "host_sync": true,
+        "sampled_histogram": false,
+        "full_histogram": false
+      }
+    },
+    {
+      "L_bucket": 1024,
+      "batch": 1,
+      "aligned": 1,
+      "n_calls": 232,
+      "table_chunk": 1024,
+      "table_ms": 0.13289084197375275,
+      "oracle_ms": 0.13273900747556108,
+      "headroom_ms": 0.00015183449819170173,
+      "headroom_pct": 0.1142550501874994,
+      "P_s": {
+        "profile": 0.013524449783463281,
+        "search": 2.0728772376611415
       },
       "overhead_ms": {
         "host_sync": 0.021443195641040802,
@@ -607,34 +783,42 @@
         "full_histogram": 0.5438666194677353
       },
       "n_star_calls": {
-        "profile|host_sync": 1923.9204672842018,
-        "profile|sampled_histogram": 66.38505669571936,
-        "profile|full_histogram": 44.944488137165855,
-        "search|host_sync": 294877.1304973981,
-        "search|sampled_histogram": 10174.763125199977,
-        "search|full_histogram": 6888.591248405315
+        "profile|host_sync": 635.2083219444893,
+        "profile|sampled_histogram": 36.45892765072602,
+        "profile|full_histogram": 24.874162258105336,
+        "search|host_sync": 97357.66650866924,
+        "search|sampled_histogram": 5588.018917348628,
+        "search|full_histogram": 3812.43492905431
       },
       "n_star_requests": {
-        "profile|host_sync": 40.0816764017542,
-        "profile|sampled_histogram": 1.3830220144941532,
-        "profile|full_histogram": 0.936343502857622,
-        "search|host_sync": 6143.273552029127,
-        "search|sampled_histogram": 211.97423177499954,
-        "search|full_histogram": 143.51231767511072
+        "profile|host_sync": 13.23350670717686,
+        "profile|sampled_histogram": 0.7595609927234587,
+        "profile|full_histogram": 0.5182117137105279,
+        "search|host_sync": 2028.2847189306092,
+        "search|sampled_histogram": 116.41706077809641,
+        "search|full_histogram": 79.42572768863145
+      },
+      "model_regret_vs_table_ms": 0.006886748053647324,
+      "model_regret_vs_oracle_ms": 0.007038582551839025,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 1024,
       "batch": 4,
-      "n_calls": 96,
-      "table_chunk": 32,
-      "table_ms": 0.4422436264716089,
-      "oracle_ms": 0.4397823999325434,
-      "headroom_ms": 0.002461226539065444,
-      "headroom_pct": 0.5565318281016425,
+      "aligned": 0,
+      "n_calls": 1,
+      "table_chunk": 512,
+      "table_ms": 1.731584005355835,
+      "oracle_ms": 1.731584005355835,
+      "headroom_ms": 0.0,
+      "headroom_pct": 0.0,
       "P_s": {
-        "profile": 0.03861357767078735,
-        "search": 5.918259707415546
+        "profile": 0.16368636081404753,
+        "search": 25.088024790620423
       },
       "overhead_ms": {
         "host_sync": 0.021443195641040802,
@@ -642,25 +826,76 @@
         "full_histogram": 6.215779073536396
       },
       "n_star_calls": {
-        "profile|host_sync": 2034.224029306266,
-        "profile|sampled_histogram": 41.212849727414465,
-        "profile|full_histogram": 6.2146470889861005,
-        "search|host_sync": 311783.23363721324,
-        "search|sampled_histogram": 6316.647217956568,
-        "search|full_histogram": 952.5119836377957
+        "profile|host_sync": 7633.487263473132,
+        "profile|sampled_histogram": 174.24717368623567,
+        "profile|full_histogram": 26.334005581205457,
+        "search|host_sync": 1169976.0245904613,
+        "search|sampled_histogram": 26706.668725453517,
+        "search|full_histogram": 4036.183476570521
       },
       "n_star_requests": {
-        "profile|host_sync": 42.379667277213876,
-        "profile|sampled_histogram": 0.8586010359878014,
-        "profile|full_histogram": 0.12947181435387708,
-        "search|host_sync": 6495.484034108609,
-        "search|sampled_histogram": 131.59681704076183,
-        "search|full_histogram": 19.843999659120744
+        "profile|host_sync": 159.03098465569025,
+        "profile|sampled_histogram": 3.6301494517965764,
+        "profile|full_histogram": 0.5486251162751137,
+        "search|host_sync": 24374.500512301278,
+        "search|sampled_histogram": 556.3889317802816,
+        "search|full_histogram": 84.08715576188585
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.0,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
+      }
+    },
+    {
+      "L_bucket": 1024,
+      "batch": 4,
+      "aligned": 1,
+      "n_calls": 95,
+      "table_chunk": 32,
+      "table_ms": 0.4263058591955587,
+      "oracle_ms": 0.4261844882965088,
+      "headroom_ms": 0.00012137089904986163,
+      "headroom_pct": 0.028470380228620158,
+      "P_s": {
+        "profile": 0.03729702205875303,
+        "search": 5.716472706539704
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.9393917694687843,
+        "full_histogram": 6.215779073536396
+      },
+      "n_star_calls": {
+        "profile|host_sync": 1749.2415639877543,
+        "profile|sampled_histogram": 39.70850365937938,
+        "profile|full_histogram": 6.000494853976217,
+        "search|host_sync": 268104.2910591865,
+        "search|sampled_histogram": 6086.077784676714,
+        "search|full_histogram": 919.689110955091
+      },
+      "n_star_requests": {
+        "profile|host_sync": 36.44253258307821,
+        "profile|sampled_histogram": 0.8272604929037372,
+        "profile|full_histogram": 0.12501030945783784,
+        "search|host_sync": 5585.5060637330525,
+        "search|sampled_histogram": 126.79328718076488,
+        "search|full_histogram": 19.160189811564397
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.00012137089904986163,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 1024,
       "batch": 16,
+      "aligned": 1,
       "n_calls": 40,
       "table_chunk": 32,
       "table_ms": 1.5612656711935997,
@@ -691,20 +926,28 @@
         "search|host_sync": 20084.835163367647,
         "search|sampled_histogram": 125.07236857948567,
         "search|full_histogram": 16.989242620248735
+      },
+      "model_regret_vs_table_ms": 0.06653336834907535,
+      "model_regret_vs_oracle_ms": 0.06653336834907535,
+      "online_beats_model_default": {
+        "host_sync": true,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 2048,
       "batch": 1,
-      "n_calls": 160,
+      "aligned": 0,
+      "n_calls": 96,
       "table_chunk": 512,
-      "table_ms": 0.6358752001151442,
-      "oracle_ms": 0.629209599647671,
-      "headroom_ms": 0.0066656004674732735,
-      "headroom_pct": 1.048256083311044,
+      "table_ms": 0.8771438940614463,
+      "oracle_ms": 0.8665971198678016,
+      "headroom_ms": 0.010546774193644531,
+      "headroom_pct": 1.2023995452798193,
       "P_s": {
-        "profile": 0.0599998896657718,
-        "search": 9.196115741612788
+        "profile": 0.08186704704758238,
+        "search": 12.547670408519288
       },
       "overhead_ms": {
         "host_sync": 0.021443195641040802,
@@ -712,34 +955,85 @@
         "full_histogram": 1.5843312591314316
       },
       "n_star_calls": {
-        "profile|host_sync": 4060.193080203789,
-        "profile|sampled_histogram": 147.57979283627165,
-        "profile|full_histogram": 38.030801606331806,
-        "search|host_sync": 622301.2359995994,
-        "search|sampled_histogram": 22619.389195640688,
-        "search|full_histogram": 5828.93827415911
+        "profile|host_sync": 7513.204903353359,
+        "profile|sampled_histogram": 203.30657983453276,
+        "profile|full_histogram": 52.019223617405686,
+        "search|host_sync": 1151540.4822670096,
+        "search|sampled_histogram": 31160.57128778979,
+        "search|full_histogram": 7972.928014355985
       },
       "n_star_requests": {
-        "profile|host_sync": 84.58735583757894,
-        "profile|sampled_histogram": 3.074579017422326,
-        "profile|full_histogram": 0.7923083667985793,
-        "search|host_sync": 12964.60908332499,
-        "search|sampled_histogram": 471.237274909181,
-        "search|full_histogram": 121.43621404498145
+        "profile|host_sync": 156.52510215319498,
+        "profile|sampled_histogram": 4.235553746552766,
+        "profile|full_histogram": 1.0837338253626185,
+        "search|host_sync": 23990.42671389603,
+        "search|sampled_histogram": 649.1785684956207,
+        "search|full_histogram": 166.1026669657497
+      },
+      "model_regret_vs_table_ms": 0.029559679590165616,
+      "model_regret_vs_oracle_ms": 0.04010645378381015,
+      "online_beats_model_default": {
+        "host_sync": true,
+        "sampled_histogram": false,
+        "full_histogram": false
+      }
+    },
+    {
+      "L_bucket": 2048,
+      "batch": 1,
+      "aligned": 1,
+      "n_calls": 64,
+      "table_chunk": 512,
+      "table_ms": 0.2739721591956913,
+      "oracle_ms": 0.27312831931747494,
+      "headroom_ms": 0.0008438398782163875,
+      "headroom_pct": 0.3080020541845109,
+      "P_s": {
+        "profile": 0.02719915359305591,
+        "search": 4.168783741253035
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.41322457790374756,
+        "full_histogram": 1.5843312591314316
+      },
+      "n_star_calls": {
+        "profile|host_sync": 1320.388555167445,
+        "profile|sampled_histogram": 65.95641135734125,
+        "profile|full_histogram": 17.176741199423763,
+        "search|host_sync": 202374.47176753095,
+        "search|sampled_histogram": 10109.065135323899,
+        "search|full_histogram": 2632.6598434353623
+      },
+      "n_star_requests": {
+        "profile|host_sync": 27.508094899321772,
+        "profile|sampled_histogram": 1.3740919032779428,
+        "profile|full_histogram": 0.35784877498799506,
+        "search|host_sync": 4216.134828490228,
+        "search|sampled_histogram": 210.60552365258124,
+        "search|full_histogram": 54.84708007157005
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.0008438398782163875,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 2048,
       "batch": 4,
-      "n_calls": 48,
-      "table_chunk": 32,
-      "table_ms": 1.4279637395590543,
-      "oracle_ms": 1.3378325350085893,
-      "headroom_ms": 0.09013120455046493,
-      "headroom_pct": 6.311869276057167,
+      "aligned": 0,
+      "n_calls": 11,
+      "table_chunk": 512,
+      "table_ms": 2.8781326029517436,
+      "oracle_ms": 2.8518884160301905,
+      "headroom_ms": 0.02624418692155314,
+      "headroom_pct": 0.9118477340007799,
       "P_s": {
-        "profile": 0.11938350481508136,
-        "search": 18.297775779830737
+        "profile": 0.2616263396445304,
+        "search": 40.09917541228618
       },
       "overhead_ms": {
         "host_sync": 0.021443195641040802,
@@ -748,33 +1042,84 @@
       },
       "n_star_calls": {
         "profile|host_sync": null,
-        "profile|sampled_histogram": 140.57347031833922,
-        "profile|full_histogram": 19.4891230068118,
+        "profile|sampled_histogram": 286.5104662651814,
+        "profile|full_histogram": 42.26914371390159,
         "search|host_sync": null,
-        "search|sampled_histogram": 21545.538007632073,
-        "search|full_histogram": 2987.0760074982627
+        "search|sampled_histogram": 43913.137568003265,
+        "search|full_histogram": 6478.544211617987
       },
       "n_star_requests": {
         "profile|host_sync": null,
-        "profile|sampled_histogram": 2.9286139649654004,
-        "profile|full_histogram": 0.4060233959752458,
+        "profile|sampled_histogram": 5.968968047191279,
+        "profile|full_histogram": 0.8806071607062832,
         "search|host_sync": null,
-        "search|sampled_histogram": 448.86537515900153,
-        "search|full_histogram": 62.23075015621381
+        "search|sampled_histogram": 914.8570326667347,
+        "search|full_histogram": 134.96967107537472
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.02624418692155314,
+      "online_beats_model_default": {
+        "host_sync": true,
+        "sampled_histogram": false,
+        "full_histogram": false
+      }
+    },
+    {
+      "L_bucket": 2048,
+      "batch": 4,
+      "aligned": 1,
+      "n_calls": 37,
+      "table_chunk": 64,
+      "table_ms": 0.8943854005272324,
+      "oracle_ms": 0.8877078136237891,
+      "headroom_ms": 0.00667758690344321,
+      "headroom_pct": 0.7466117961570964,
+      "P_s": {
+        "profile": 0.07709509446038029,
+        "search": 11.816278591803444
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.9393917694687843,
+        "full_histogram": 6.215779073536396
+      },
+      "n_star_calls": {
+        "profile|host_sync": 5221.260825100523,
+        "profile|sampled_histogram": 82.65671939107607,
+        "profile|full_histogram": 12.416465510565702,
+        "search|host_sync": 800256.7860081323,
+        "search|sampled_histogram": 12668.702602231158,
+        "search|full_histogram": 1903.0577318218595
+      },
+      "n_star_requests": {
+        "profile|host_sync": 108.77626718959424,
+        "profile|sampled_histogram": 1.7220149873140846,
+        "profile|full_histogram": 0.25867636480345213,
+        "search|host_sync": 16672.016375169424,
+        "search|sampled_histogram": 263.93130421314913,
+        "search|full_histogram": 39.647036079622076
+      },
+      "model_regret_vs_table_ms": 0.0029114806652069157,
+      "model_regret_vs_oracle_ms": 0.009589067568650127,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 2048,
       "batch": 16,
-      "n_calls": 40,
-      "table_chunk": 32,
-      "table_ms": 4.873995780467988,
-      "oracle_ms": 4.784410113930702,
-      "headroom_ms": 0.0895856665372848,
-      "headroom_pct": 1.8380333215775377,
+      "aligned": 0,
+      "n_calls": 8,
+      "table_chunk": 512,
+      "table_ms": 11.070336003303527,
+      "oracle_ms": 11.070336003303527,
+      "headroom_ms": 0.0,
+      "headroom_pct": 0.0,
       "P_s": {
-        "profile": 0.4191219808567076,
-        "search": 64.23835555836139
+        "profile": 0.981346217305948,
+        "search": 150.40983320487086
       },
       "overhead_ms": {
         "host_sync": 0.021443195641040802,
@@ -782,34 +1127,85 @@
         "full_histogram": 25.35033841431141
       },
       "n_star_calls": {
-        "profile|host_sync": null,
-        "profile|sampled_histogram": 124.96611047879239,
-        "profile|full_histogram": 16.591824679240364,
-        "search|host_sync": null,
-        "search|sampled_histogram": 19153.41548365767,
-        "search|full_histogram": 2543.010344932093
+        "profile|host_sync": 45764.92392895575,
+        "profile|sampled_histogram": 284.98752352691656,
+        "profile|full_histogram": 38.71136555525956,
+        "search|host_sync": 7014338.521306815,
+        "search|sampled_histogram": 43679.71784395131,
+        "search|full_histogram": 5933.247546705638
       },
       "n_star_requests": {
-        "profile|host_sync": null,
-        "profile|sampled_histogram": 2.6034606349748413,
-        "profile|full_histogram": 0.34566301415084094,
-        "search|host_sync": null,
-        "search|sampled_histogram": 399.0294892428681,
-        "search|full_histogram": 52.979382186085274
+        "profile|host_sync": 953.4359151865782,
+        "profile|sampled_histogram": 5.937240073477429,
+        "profile|full_histogram": 0.8064867824012408,
+        "search|host_sync": 146132.0525272253,
+        "search|sampled_histogram": 909.9941217489855,
+        "search|full_histogram": 123.6093238897008
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.0,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
+      }
+    },
+    {
+      "L_bucket": 2048,
+      "batch": 16,
+      "aligned": 1,
+      "n_calls": 32,
+      "table_chunk": 32,
+      "table_ms": 3.2174169605970384,
+      "oracle_ms": 3.212928641587496,
+      "headroom_ms": 0.0044883190095424685,
+      "headroom_pct": 0.13950069464138076,
+      "P_s": {
+        "profile": 0.2785659217443977,
+        "search": 42.695486146734055
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 3.4434708058834076,
+        "full_histogram": 25.35033841431141
+      },
+      "n_star_calls": {
+        "profile|host_sync": 16429.840676450876,
+        "profile|sampled_histogram": 81.00242522538177,
+        "profile|full_histogram": 10.99059296480385,
+        "search|host_sync": 2518183.238645068,
+        "search|sampled_histogram": 12415.150792333778,
+        "search|full_histogram": 1684.5158472174558
+      },
+      "n_star_requests": {
+        "profile|host_sync": 342.28834742605994,
+        "profile|sampled_histogram": 1.6875505255287868,
+        "profile|full_histogram": 0.2289706867667469,
+        "search|host_sync": 52462.15080510558,
+        "search|sampled_histogram": 258.64897484028705,
+        "search|full_histogram": 35.09408015036366
+      },
+      "model_regret_vs_table_ms": 0.061626877784729,
+      "model_regret_vs_oracle_ms": 0.06611519679427147,
+      "online_beats_model_default": {
+        "host_sync": true,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 4096,
       "batch": 1,
-      "n_calls": 104,
+      "aligned": 0,
+      "n_calls": 40,
       "table_chunk": 512,
-      "table_ms": 0.9612315505743028,
-      "oracle_ms": 0.9606565410586504,
-      "headroom_ms": 0.0005750095156522893,
-      "headroom_pct": 0.05982008344490367,
+      "table_ms": 1.6392913934588436,
+      "oracle_ms": 1.6392913934588436,
+      "headroom_ms": 0.0,
+      "headroom_pct": 0.0,
       "P_s": {
-        "profile": 0.09323234252505012,
-        "search": 14.289616489264256
+        "profile": 0.15629422114931582,
+        "search": 23.955039841586096
       },
       "overhead_ms": {
         "host_sync": 0.021443195641040802,
@@ -817,25 +1213,76 @@
         "full_histogram": 6.215779073536396
       },
       "n_star_calls": {
-        "profile|host_sync": 4467.67831017294,
-        "profile|sampled_histogram": 99.3083490858264,
-        "profile|full_histogram": 15.000688885625456,
-        "search|host_sync": 684756.039811209,
-        "search|sampled_histogram": 15220.879194761741,
-        "search|full_histogram": 2299.1387478305915
+        "profile|host_sync": 7288.756012195283,
+        "profile|sampled_histogram": 166.37810360814476,
+        "profile|full_histogram": 25.1447516554661,
+        "search|host_sync": 1117139.452654053,
+        "search|sampled_histogram": 25500.585187298802,
+        "search|full_histogram": 3853.9078622620914
       },
       "n_star_requests": {
-        "profile|host_sync": 93.07663146193624,
-        "profile|sampled_histogram": 2.0689239392880503,
-        "profile|full_histogram": 0.31251435178386366,
-        "search|host_sync": 14265.750829400187,
-        "search|sampled_histogram": 317.1016498908696,
-        "search|full_histogram": 47.898723913137324
+        "profile|host_sync": 151.84908358740174,
+        "profile|sampled_histogram": 3.466210491836349,
+        "profile|full_histogram": 0.5238489928222104,
+        "search|host_sync": 23273.738596959436,
+        "search|sampled_histogram": 531.2621914020584,
+        "search|full_histogram": 80.28974713046024
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.0,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
+      }
+    },
+    {
+      "L_bucket": 4096,
+      "batch": 1,
+      "aligned": 1,
+      "n_calls": 64,
+      "table_chunk": 512,
+      "table_ms": 0.5374441487714648,
+      "oracle_ms": 0.5365097583085299,
+      "headroom_ms": 0.0009343904629349701,
+      "headroom_pct": 0.17385815159972967,
+      "P_s": {
+        "profile": 0.05381866838488405,
+        "search": 8.248726894063102
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.9393917694687843,
+        "full_histogram": 6.215779073536396
+      },
+      "n_star_calls": {
+        "profile|host_sync": 2624.1737593927774,
+        "profile|sampled_histogram": 57.34801557199818,
+        "profile|full_histogram": 8.659696441242167,
+        "search|host_sync": 402204.1665727571,
+        "search|sampled_histogram": 8789.665975881988,
+        "search|full_histogram": 1327.2619533886427
+      },
+      "n_star_requests": {
+        "profile|host_sync": 54.670286654016195,
+        "profile|sampled_histogram": 1.1947503244166289,
+        "profile|full_histogram": 0.18041034252587848,
+        "search|host_sync": 8379.253470265774,
+        "search|sampled_histogram": 183.11804116420808,
+        "search|full_histogram": 27.651290695596725
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.0009343904629349701,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 4096,
       "batch": 4,
+      "aligned": 1,
       "n_calls": 40,
       "table_chunk": 64,
       "table_ms": 1.7849303045868872,
@@ -866,11 +1313,19 @@
         "search|host_sync": 23005.400452975784,
         "search|sampled_histogram": 143.25932482737923,
         "search|full_histogram": 19.459673265551086
+      },
+      "model_regret_vs_table_ms": 0.08696064066886906,
+      "model_regret_vs_oracle_ms": 0.08696064066886906,
+      "online_beats_model_default": {
+        "host_sync": true,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 4096,
       "batch": 16,
+      "aligned": 1,
       "n_calls": 32,
       "table_chunk": 32,
       "table_ms": 6.507342716157436,
@@ -901,11 +1356,19 @@
         "search|host_sync": 118747.52689591683,
         "search|sampled_histogram": 132.1970402375201,
         "search|full_histogram": 17.58958078921059
+      },
+      "model_regret_vs_table_ms": 0.045080960988998275,
+      "model_regret_vs_oracle_ms": 0.051541764736175444,
+      "online_beats_model_default": {
+        "host_sync": true,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 8192,
       "batch": 1,
+      "aligned": 1,
       "n_calls": 72,
       "table_chunk": 512,
       "table_ms": 1.075546746916241,
@@ -936,11 +1399,19 @@
         "search|host_sync": 17720.09265443519,
         "search|sampled_histogram": 365.4257282396649,
         "search|full_histogram": 55.12129049618804
+      },
+      "model_regret_vs_table_ms": 0.0,
+      "model_regret_vs_oracle_ms": 0.002114560438526989,
+      "online_beats_model_default": {
+        "host_sync": false,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 8192,
       "batch": 4,
+      "aligned": 1,
       "n_calls": 24,
       "table_chunk": 64,
       "table_ms": 3.6020258180300395,
@@ -971,11 +1442,19 @@
         "search|host_sync": 46163.889205033985,
         "search|sampled_histogram": 287.4719617438198,
         "search|full_histogram": 39.04883996404685
+      },
+      "model_regret_vs_table_ms": 0.2153130652507147,
+      "model_regret_vs_oracle_ms": 0.2153130652507147,
+      "online_beats_model_default": {
+        "host_sync": true,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     },
     {
       "L_bucket": 8192,
       "batch": 16,
+      "aligned": 1,
       "n_calls": 24,
       "table_chunk": 32,
       "table_ms": 13.012113064130148,
@@ -1006,6 +1485,13 @@
         "search|host_sync": 166019.0620263716,
         "search|sampled_histogram": 264.39609020483886,
         "search|full_histogram": 35.19406944566968
+      },
+      "model_regret_vs_table_ms": 0.13833215872446672,
+      "model_regret_vs_oracle_ms": 0.13833215872446672,
+      "online_beats_model_default": {
+        "host_sync": true,
+        "sampled_histogram": false,
+        "full_histogram": false
       }
     }
   ],
@@ -1081,61 +1567,61 @@
         null,
         null,
         null,
-        null,
-        null,
-        null,
-        null,
-        894315.0742143271,
-        42071.27069929152,
-        19525.725564923443,
-        11839.913367652174,
-        8016.175938250654,
-        5761.858298451631,
-        4297.856755454188,
-        3286.0027218990167,
-        2556.8550870211725,
-        2015.1151336710327,
-        1603.4995337350067,
-        1285.4053901703508,
-        1036.332078355745,
-        839.3010893608888,
-        682.1652324418127,
-        556.0425337044527,
-        454.2866657698081,
-        371.8446118528534,
-        304.8256421272871,
-        250.19240557339236,
-        205.55834441000533,
-        169.02582975170668,
-        139.07974294584696,
-        114.50244170120321,
-        94.31094039079407,
-        77.70905097396943,
-        64.04926911028315,
-        52.80394232712046,
-        43.54207379626455,
-        35.910880070688684,
-        29.62129764327422,
-        24.43615570373061,
-        20.160585992467208,
-        16.634428095516153,
-        13.72590200961568,
-        11.326541304702877,
-        9.347014873462514,
-        7.713731350331561,
-        6.366037657394896,
-        5.253935087823412,
-        4.336198530234157,
-        3.578829378167982,
-        2.9537851218866105,
-        2.4379333868017268,
-        2.0121896163626976,
-        1.660807939520563,
-        1.3707956923922335,
-        1.1314317866324501,
-        0.9338689884982981,
-        0.770806049337156,
-        0.6362174690203789
+        248434.10403950603,
+        68770.14533901261,
+        36644.44375032425,
+        23413.960383841244,
+        16282.63538277793,
+        11895.396426138846,
+        8967.690451616354,
+        6908.127700906124,
+        5404.099469058694,
+        4276.207713537514,
+        3413.306460483708,
+        2742.5959341606044,
+        2215.318250027762,
+        1796.7950364483784,
+        1462.1316880854004,
+        1192.9449746191679,
+        975.3826971475282,
+        798.8723243491194,
+        655.2146298931065,
+        538.0044983925928,
+        442.17457630148044,
+        363.6902778414572,
+        299.3240495954962,
+        246.47413671540951,
+        203.04173544028572,
+        167.32054208239197,
+        137.92310821917744,
+        113.71732054855421,
+        93.77765857790203,
+        77.34663416098859,
+        63.80286402612821,
+        52.636352579236096,
+        43.42805543225155,
+        35.83328966171216,
+        29.56848614577691,
+        24.40020382003929,
+        20.136108101408592,
+        16.617760395360705,
+        13.714551435888486,
+        11.318811056549738,
+        9.341749896419161,
+        7.710145250451132,
+        6.363594974755796,
+        5.252271188072396,
+        4.335065086169909,
+        3.5780572603185323,
+        2.9532591339707355,
+        2.4375750634221567,
+        2.0119455092521523,
+        1.66064164013366,
+        1.3706823989221018,
+        1.1313546034935984,
+        0.9338164058124323,
+        0.7707702260564093,
+        0.6361930634011382
       ],
       "search": [
         null,
@@ -1144,62 +1630,234 @@
         null,
         null,
         null,
-        null,
-        null,
-        null,
-        null,
-        137070667.5921717,
-        6448216.436773191,
-        2992686.0404951377,
-        1814690.232034067,
-        1228630.288220985,
-        883113.5539497619,
-        658727.6807373229,
-        503641.9487797288,
-        391886.30922086025,
-        308854.43465216696,
-        245766.57367190812,
-        197012.64133562034,
-        158837.45440855843,
-        128638.73588466787,
-        104554.69947335287,
-        85224.01500552829,
-        69628.00734404953,
-        56992.2062780836,
-        46720.284014340825,
-        38346.70917133342,
-        31505.696716757408,
-        25906.399201356577,
-        21316.596089899012,
-        17549.660715163427,
-        14454.931973464163,
-        11910.37901749979,
-        9816.75958380768,
-        8093.200970178817,
-        6673.644776528999,
-        5504.020279917647,
-        4540.0230410708355,
-        3745.3021561100163,
-        3089.9903856195056,
-        2549.540122724064,
-        2103.753594241509,
-        1736.0062721852962,
-        1432.606478007793,
-        1182.2749457124967,
-        975.715446127995,
-        805.2647335801255,
-        664.6042815207504,
-        548.5231616999431,
-        452.72333012670543,
-        373.6593137130455,
-        308.4060438980938,
-        254.55016870028257,
-        210.10031710999257,
-        173.413279950536,
-        143.1330516367999,
-        118.1405779831546,
-        97.51233734826391
+        38077216.268857315,
+        10540322.984391576,
+        5616452.761699696,
+        3588631.426803657,
+        2495621.24851583,
+        1823194.0581308196,
+        1374467.84964782,
+        1058800.9786227157,
+        828280.2597385858,
+        655409.5563829318,
+        523153.64989928406,
+        420354.60037529934,
+        339539.34157622646,
+        275392.7584063684,
+        224099.28264890696,
+        182841.33722718369,
+        149495.8111640011,
+        122442.26445097465,
+        100424.01087167874,
+        82459.34558024777,
+        67771.60098657162,
+        55742.40065706845,
+        45877.06110230929,
+        37776.81427707744,
+        31119.9788847607,
+        25645.03167439744,
+        21139.319983618276,
+        17429.32607736379,
+        14373.196468589556,
+        11854.83179937249,
+        9778.993353139032,
+        8067.514677633321,
+        6656.169309857744,
+        5492.128085025922,
+        4531.9286821282,
+        3739.7918512511883,
+        3086.2386867323976,
+        2546.9854830300596,
+        2102.0139045469027,
+        1734.8214657277563,
+        1431.7995208860823,
+        1181.7253082090756,
+        975.3410589017127,
+        805.0097095329475,
+        664.4305598212683,
+        548.404820063829,
+        452.6427125492394,
+        373.6043938908622,
+        308.3686298752608,
+        254.52468017991617,
+        210.08295274699276,
+        173.40145017747912,
+        143.12499234755916,
+        118.13508738912469,
+        97.50859672639719
       ]
+    }
+  },
+  "model_default": {
+    "mean_regret_vs_oracle_ms": 0.014875807619890416,
+    "max_regret_vs_oracle_ms": 0.2153130652507147,
+    "keys_where_host_sync_online_beats_model": 10
+  },
+  "by_key_mode": {
+    "bucket_aligned": {
+      "n_keys": 33,
+      "headroom_pooled_ms": 0.0029059262300320608,
+      "max_key_headroom_ms": 0.02624418692155314,
+      "n_keys_headroom_above_sync": 1,
+      "summary_n_star": {
+        "profile|host_sync": {
+          "min_calls": 401.46282388493347,
+          "median_calls": 2662.180232627792,
+          "max_calls": 51993.040630001124,
+          "median_requests": 55.46208817974567,
+          "n_keys_unbounded": 1
+        },
+        "profile|sampled_histogram": {
+          "min_calls": 21.59988874591486,
+          "median_calls": 65.95641135734125,
+          "max_calls": 299.4384411636554,
+          "median_requests": 1.3740919032779428,
+          "n_keys_unbounded": 0
+        },
+        "profile|full_histogram": {
+          "min_calls": 5.32060819430016,
+          "median_calls": 21.78397099633451,
+          "max_calls": 204.31892247286004,
+          "median_requests": 0.4538327290903023,
+          "n_keys_unbounded": 0
+        },
+        "search|host_sync": {
+          "min_calls": 61531.756390990166,
+          "median_calls": 408029.3760647521,
+          "max_calls": 7968914.977265837,
+          "median_requests": 8500.612001349002,
+          "n_keys_unbounded": 1
+        },
+        "search|sampled_histogram": {
+          "min_calls": 3310.590703081044,
+          "median_calls": 10109.065135323899,
+          "max_calls": 45894.593769561136,
+          "median_requests": 210.60552365258124,
+          "n_keys_unbounded": 0
+        },
+        "search|full_histogram": {
+          "min_calls": 815.4836457719393,
+          "median_calls": 3338.8047829779507,
+          "max_calls": 31315.73190765236,
+          "median_requests": 69.5584329787073,
+          "n_keys_unbounded": 0
+        }
+      },
+      "model_default": {
+        "mean_regret_vs_oracle_ms": 0.014875807619890416,
+        "max_regret_vs_oracle_ms": 0.2153130652507147,
+        "keys_where_host_sync_online_beats_model": 10
+      }
+    },
+    "bucket": {
+      "n_keys": 27,
+      "headroom_pooled_ms": 0.0067418646032653615,
+      "max_key_headroom_ms": 0.09013120455046493,
+      "n_keys_headroom_above_sync": 2,
+      "summary_n_star": {
+        "profile|host_sync": {
+          "min_calls": 401.46282388493347,
+          "median_calls": 2114.130795218363,
+          "max_calls": 51993.040630001124,
+          "median_requests": 44.044391567049225,
+          "n_keys_unbounded": 2
+        },
+        "profile|sampled_histogram": {
+          "min_calls": 21.59988874591486,
+          "median_calls": 57.15477407393214,
+          "max_calls": 299.4384411636554,
+          "median_requests": 1.1907244598735862,
+          "n_keys_unbounded": 0
+        },
+        "profile|full_histogram": {
+          "min_calls": 5.32060819430016,
+          "median_calls": 19.4891230068118,
+          "max_calls": 204.31892247286004,
+          "median_requests": 0.4060233959752458,
+          "n_keys_unbounded": 0
+        },
+        "search|host_sync": {
+          "min_calls": 61531.756390990166,
+          "median_calls": 324030.45395643334,
+          "max_calls": 7968914.977265837,
+          "median_requests": 6750.634457425695,
+          "n_keys_unbounded": 2
+        },
+        "search|sampled_histogram": {
+          "min_calls": 3310.590703081044,
+          "median_calls": 8760.048068379207,
+          "max_calls": 45894.593769561136,
+          "median_requests": 182.5010014245668,
+          "n_keys_unbounded": 0
+        },
+        "search|full_histogram": {
+          "min_calls": 815.4836457719393,
+          "median_calls": 2987.0760074982627,
+          "max_calls": 31315.73190765236,
+          "median_requests": 62.23075015621381,
+          "n_keys_unbounded": 0
+        }
+      },
+      "model_default": {
+        "mean_regret_vs_oracle_ms": 0.014875807619890416,
+        "max_regret_vs_oracle_ms": 0.2153130652507147,
+        "keys_where_host_sync_online_beats_model": 8
+      }
+    },
+    "exact": {
+      "n_keys": 57,
+      "headroom_pooled_ms": 0.0018639107906591086,
+      "max_key_headroom_ms": 0.00667758690344321,
+      "n_keys_headroom_above_sync": 0,
+      "summary_n_star": {
+        "profile|host_sync": {
+          "min_calls": 401.46282388493347,
+          "median_calls": 3569.2698875101614,
+          "max_calls": 51993.040630001124,
+          "median_requests": 74.35978932312837,
+          "n_keys_unbounded": 0
+        },
+        "profile|sampled_histogram": {
+          "min_calls": 21.59988874591486,
+          "median_calls": 122.12463695388442,
+          "max_calls": 299.4384411636554,
+          "median_requests": 2.544263269872592,
+          "n_keys_unbounded": 0
+        },
+        "profile|full_histogram": {
+          "min_calls": 5.32060819430016,
+          "median_calls": 31.42998955535765,
+          "max_calls": 204.31892247286004,
+          "median_requests": 0.654791449069951,
+          "n_keys_unbounded": 0
+        },
+        "search|host_sync": {
+          "min_calls": 61531.756390990166,
+          "median_calls": 547057.9892969623,
+          "max_calls": 7968914.977265837,
+          "median_requests": 11397.041443686714,
+          "n_keys_unbounded": 0
+        },
+        "search|sampled_histogram": {
+          "min_calls": 3310.590703081044,
+          "median_calls": 18717.906025934637,
+          "max_calls": 45894.593769561136,
+          "median_requests": 389.9563755403049,
+          "n_keys_unbounded": 0
+        },
+        "search|full_histogram": {
+          "min_calls": 815.4836457719393,
+          "median_calls": 4817.239220252024,
+          "max_calls": 31315.73190765236,
+          "median_requests": 100.35915042191716,
+          "n_keys_unbounded": 0
+        }
+      },
+      "model_default": {
+        "mean_regret_vs_oracle_ms": 0.014875807619890416,
+        "max_regret_vs_oracle_ms": 0.2153130652507147,
+        "keys_where_host_sync_online_beats_model": 19
+      }
     }
   }
 }

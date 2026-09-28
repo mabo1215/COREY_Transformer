@@ -22,6 +22,12 @@ unseen keys (the T1 cost model), P_k = 0 and the cache is cheaper at every
 N_k as soon as the model's per-call regret is below o - h_k; this is reported
 when ``cost_model_<host>.json`` is present.
 
+Keys: by default (length bucket, batch, L mod 16 == 0). Triton specializes the
+kernel on the divisibility of the row stride L by 16, so aligned and unaligned
+lengths of one bucket run different kernels and have different optimal
+chunks; a key without this bit leaves that difference as apparent headroom.
+The bucket-only key is reported alongside (``by_key_mode``).
+
 Workload view: the number of distinct keys in the 2360 captured calls, the
 calls per key, and the equivalent number of 48-layer requests.
 
@@ -75,11 +81,16 @@ def _n_star(P_s: float, o_ms: float, h_ms: float) -> float | None:
     return 1000.0 * P_s / gap
 
 
-def analyze(host: str, in_dir: Path) -> dict:
+KEY_MODES = {"bucket_aligned": ["L_bucket", "batch", "aligned"], "bucket": ["L_bucket", "batch"],
+             "exact": ["L", "batch"]}
+
+
+def analyze(host: str, in_dir: Path, key_mode: str = "bucket_aligned") -> dict:
     e4_rows = read_jsonl(in_dir / f"e4_{host}.jsonl")
     sync_ms = next(r["sync_wall"]["mean_ms"] for r in e4_rows if r.get("kind") == "sync")
     scale = _tuning_scale(e4_rows)
     df = load_e2([in_dir / f"e2_mamba1_{host}.csv"])
+    df["aligned"] = (df["L"] % 16 == 0).astype(int)
     chunks = chunk_columns(df)
     lat = latency_matrix(df, chunks)
     oracle = lat.min(1)
@@ -92,7 +103,9 @@ def analyze(host: str, in_dir: Path) -> dict:
             m = dict(zip(choice["keys"], choice["chunk"]))
             model = np.array([chunks.index(int(m[k])) for k in df["key"]])
     keys = []
-    for (lb, b), g in df.groupby(["L_bucket", "batch"]):
+    for kv, g in df.groupby(KEY_MODES[key_mode]):
+        kv = dict(zip(KEY_MODES[key_mode], kv))
+        b = kv["batch"]
         idx = g.index.to_numpy()
         table = int(np.argmin(lat[idx].mean(0)))     # in-sample shape table (E5: CV and in-sample agree)
         h = float((lat[idx, table] - oracle[idx]).mean())
@@ -101,7 +114,7 @@ def analyze(host: str, in_dir: Path) -> dict:
         P = {"profile": scale["profile_s_per_ms"] * sum_lat, "search": scale["search_s_per_ms"] * sum_lat}
         o = {"host_sync": sync_ms, "sampled_histogram": _overhead(e4_rows, numel, 8),
              "full_histogram": _overhead(e4_rows, numel, 1)}
-        rec = {"L_bucket": int(lb), "batch": int(b), "n_calls": int(len(idx)),
+        rec = {**{k: int(v) for k, v in kv.items()}, "n_calls": int(len(idx)),
                "table_chunk": int(chunks[table]), "table_ms": float(lat[idx, table].mean()),
                "oracle_ms": float(oracle[idx].mean()), "headroom_ms": h,
                "headroom_pct": 100 * h / float(lat[idx, table].mean()),
@@ -128,15 +141,18 @@ def analyze(host: str, in_dir: Path) -> dict:
 
     def _mins(name):
         vals = [k["n_star_calls"][name] for k in keys if k["n_star_calls"][name] is not None]
+        unbounded = sum(k["n_star_calls"][name] is None for k in keys)
         return {"min_calls": float(min(vals)), "median_calls": float(np.median(vals)), "max_calls": float(max(vals)),
-                "median_requests": float(np.median(vals)) / LAYERS_PER_REQUEST} if vals else None
+                "median_requests": float(np.median(vals)) / LAYERS_PER_REQUEST,
+                "n_keys_unbounded": int(unbounded)} if vals else {"n_keys_unbounded": int(unbounded)}
 
     summary = {name: _mins(name) for name in keys[0]["n_star_calls"]}
     workload = {"n_calls": int(len(df)), "n_keys": len(keys),
                 "calls_per_key_median": float(np.median(w)), "calls_per_key_min": int(w.min()),
                 "calls_per_key_max": int(w.max()),
                 "note": "captured calls cover 8 of 48 layers per prompt; a request contributes 48 calls to its key"}
-    out = {"experiment": "E5b", "host": host, "layers_per_request": LAYERS_PER_REQUEST,
+    out = {"experiment": "E5b", "host": host, "key_mode": key_mode, "key": KEY_MODES[key_mode],
+           "layers_per_request": LAYERS_PER_REQUEST,
            "host_sync_ms": sync_ms, "tuning_scale": scale, "headroom_pooled_ms": h_pool,
            "P_pooled_s": P_pool, "summary_n_star": summary, "workload": workload, "keys": keys,
            "curve": {"overhead_ms": OVERHEAD_GRID_MS, "n_star_calls": curve}}
@@ -156,6 +172,15 @@ def main(argv=None):
     args = p.parse_args(argv)
     for host in args.hosts.split(","):
         res = analyze(host, args.in_dir)
+        res["by_key_mode"] = {}
+        for mode in KEY_MODES:
+            r = res if mode == res["key_mode"] else analyze(host, args.in_dir, mode)
+            res["by_key_mode"][mode] = {"n_keys": r["workload"]["n_keys"], "headroom_pooled_ms": r["headroom_pooled_ms"],
+                                        "max_key_headroom_ms": max(k["headroom_ms"] for k in r["keys"]),
+                                        "n_keys_headroom_above_sync": sum(k["headroom_ms"] > r["host_sync_ms"]
+                                                                          for k in r["keys"]),
+                                        "summary_n_star": r["summary_n_star"],
+                                        "model_default": r.get("model_default")}
         out = args.in_dir / f"e5b_{host}.json"
         write_json(out, res)
         s = res["summary_n_star"]

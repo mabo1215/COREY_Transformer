@@ -5,10 +5,16 @@
       "exps": [],
       "id": "M1",
       "kind": "text",
-      "notes": [],
-      "status": "todo",
+      "notes": [
+        {
+          "at": "2026-09-28T23:49:24Z",
+          "by": "bobsteam1215",
+          "text": "contributions, related work, discussion, limitations, conclusion updated; title/abstract await author (progress 0b); page budget 14/14 -> compress when E8/E10 are integrated"
+        }
+      ],
+      "status": "in_progress",
       "title": "Manuscript integration: Sec IV restructure, related work (TFLA, Triton/TVM/Ansor), limitations, abstract/title",
-      "updated_at": "2026-09-28T22:49:41Z",
+      "updated_at": "2026-09-28T23:49:24Z",
       "updated_by": "bobsteam1215",
       "where": "whole paper"
     },
@@ -17,10 +23,16 @@
       "exps": [],
       "id": "P1",
       "kind": "other",
-      "notes": [],
-      "status": "todo",
+      "notes": [
+        {
+          "at": "2026-09-28T23:25:16Z",
+          "by": "bobsteam1215",
+          "text": "H800 unreachable since 2026-09-27 (tpds-r1 notes): re-implemented instead in src/kernels/mamba1_runtime_chunk (unchanged stock kernel, runtime chunk dispatch to the stock (kNThreads,kNItems) pairs, n_chunks=ceil(L/C)); needs build + validation on vgpu3090 (nvcc; no GPU needed for the build)"
+        }
+      ],
+      "status": "in_progress",
       "title": "Recover runtime-chunk CUDA scan patch from the H800 (prereq for E8/E10)",
-      "updated_at": "2026-09-28T22:49:40Z",
+      "updated_at": "2026-09-28T23:25:16Z",
       "updated_by": "bobsteam1215",
       "where": "src/kernels/"
     },
@@ -32,9 +44,10 @@
       "id": "R2",
       "kind": "experiment",
       "notes": [],
+      "question": "Power on vGPU 3090 (no-GPU mode first) to build P1 and run E8",
       "status": "waiting_exp",
       "title": "Reviewer point 2: chunk sensitivity on the production (reference CUDA) kernel",
-      "updated_at": "2026-09-28T22:50:03Z",
+      "updated_at": "2026-09-28T23:49:24Z",
       "updated_by": "bobsteam1215",
       "where": "Sec VI-B/C, Table III reference block"
     },
@@ -92,11 +105,16 @@
           "at": "2026-09-28T23:13:25Z",
           "by": "bobsteam1215",
           "text": "kernel_stats.py (compile-only regs/spills/layout, sm86+sm120, resumable) running; cost_model.py WIP: E2 mean regret 0.87% PRO6000, 4.6% RTX3090 before unaligned stats"
+        },
+        {
+          "at": "2026-09-28T23:49:23Z",
+          "by": "bobsteam1215",
+          "text": "cost_model.py (8 params) + kernel_stats (Triton 3.4, sm86/sm120); E2 regret 0.88%/3.25%, top-2 0.52/2.30, LOKO 0.98/2.04; paper Sec IV-A, VI-D, Fig cost_model, Table III row, Supp cost-model section; build clean"
         }
       ],
-      "status": "in_progress",
+      "status": "done",
       "title": "Analytical shape-and-hardware chunk cost model (fit, V1-V4 validation, Table III row, figure)",
-      "updated_at": "2026-09-28T23:13:25Z",
+      "updated_at": "2026-09-28T23:49:23Z",
       "updated_by": "bobsteam1215",
       "where": "new Sec IV, Table III, new figure"
     },
@@ -105,10 +123,16 @@
       "exps": [],
       "id": "T2",
       "kind": "text",
-      "notes": [],
-      "status": "todo",
+      "notes": [
+        {
+          "at": "2026-09-28T23:49:24Z",
+          "by": "bobsteam1215",
+          "text": "Theorem 1 + proof in Sec IV; instantiated in Sec VI-G with exact-shape headroom (0.3/1.9 us mean, max 4.4/6.7 us < host sync); device-side o_min to be measured by E9"
+        }
+      ],
+      "status": "done",
       "title": "No-gain theorem for activation-dependent policies (Theorem 1)",
-      "updated_at": "2026-09-28T22:49:39Z",
+      "updated_at": "2026-09-28T23:49:24Z",
       "updated_by": "bobsteam1215",
       "where": "Sec IV, Sec VI-G, contributions, abstract"
     },
@@ -122,11 +146,16 @@
           "at": "2026-09-28T23:13:24Z",
           "by": "bobsteam1215",
           "text": "e5b_key_churn.py: per-key N*=P_k/(o-h_k); median N* profile+host-sync 891 calls (PRO6000) / 2114 (3090); search+host-sync 1.0e5 / 3.2e5. Headroom falls 4x when alignment (L%16) is in the key. Figure + text pending."
+        },
+        {
+          "at": "2026-09-28T23:49:24Z",
+          "by": "bobsteam1215",
+          "text": "e5b_key_churn.py (alignment-aware keys); Sec VI-G key-churn paragraph + Eq. keychurn + Fig key_churn; build clean"
         }
       ],
-      "status": "in_progress",
+      "status": "done",
       "title": "Key-churn break-even for any online policy vs shape-keyed cache",
-      "updated_at": "2026-09-28T23:13:24Z",
+      "updated_at": "2026-09-28T23:49:24Z",
       "updated_by": "bobsteam1215",
       "where": "Sec VI-G, Discussion, new figure"
     },
@@ -140,11 +169,16 @@
           "at": "2026-09-28T23:13:24Z",
           "by": "bobsteam1215",
           "text": "TOST added to e1_analysis (equivalence section); PRO6000: 16/84 configs equivalent at 2%, 48/84 at 5%; at C*: 4/18 and 13/18; RTX3090: 25/84, 65/84; at C*: 4/18, 15/18. Paper text pending."
+        },
+        {
+          "at": "2026-09-28T23:49:24Z",
+          "by": "bobsteam1215",
+          "text": "TOST in e1_analysis; Sec VI-A paragraph + Supp Table tost; build clean"
         }
       ],
-      "status": "in_progress",
+      "status": "done",
       "title": "TOST equivalence testing for the invariance claim",
-      "updated_at": "2026-09-28T23:13:24Z",
+      "updated_at": "2026-09-28T23:49:24Z",
       "updated_by": "bobsteam1215",
       "where": "Sec VI-A, supplement table"
     }
