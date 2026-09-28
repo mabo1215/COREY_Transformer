@@ -16,6 +16,12 @@ null      - (only when the run used ``--extra-seeds``) the between-distribution 
             that differ in value but not in distribution.
 clock     - (only when the run used ``--record-gpu-state``) the correlation of latency with the SM
             clock and the input F test after regressing out the clock.
+equivalence - two one-sided tests (TOST) of value invariance: at every fixed chunk, is every input's
+            mean latency within +/- delta of the pooled mean? The input effects are estimated from
+            the same inputs x rounds table (rounds as blocks) and the configuration passes when, for
+            every input, the one-sided 1 - alpha confidence bound of |effect| lies inside the margin
+            (intersection-union test, no multiplicity correction needed). Also reported: the
+            equivalence bound, i.e. the smallest margin at which the configuration would pass.
 """
 from __future__ import annotations
 
@@ -30,8 +36,12 @@ from src.experiments.tpds.common import RESULTS_DIR, write_json
 
 try:
     from scipy.stats import f as f_dist
+    from scipy.stats import t as t_dist
 except ImportError:  # pragma: no cover - scipy ships with scikit-learn
     f_dist = None
+    t_dist = None
+
+TOST_MARGINS = (0.02, 0.05)
 
 
 def _bh(pvals: list[float]) -> list[float]:
@@ -167,6 +177,54 @@ def effect_analysis(rows: list[dict]) -> list[dict]:
     return out
 
 
+def equivalence_analysis(rows: list[dict], decision: list[dict], alpha: float = 0.05,
+                         margins=TOST_MARGINS) -> dict:
+    """TOST of value invariance per (family, L, mode, chunk); see the module docstring."""
+    tab: dict[tuple, dict] = defaultdict(lambda: defaultdict(dict))
+    for r in rows:
+        tab[(r["family"], r["L"], r["mode"], r["chunk"])][r["input"]][r["round"]] = r
+    c_star = {(d["family"], d["L"], d["mode"]): d["input_agnostic_best_chunk"] for d in decision}
+    configs = []
+    for key, by_input in sorted(tab.items()):
+        inputs = sorted(by_input)
+        rounds = sorted(set.intersection(*[set(v) for v in by_input.values()]))
+        if len(inputs) < 2 or len(rounds) < 2 or t_dist is None:
+            continue
+        X = np.array([[by_input[i][r]["mean_ms"] for r in rounds] for i in inputs])
+        I, J = X.shape
+        gm = X.mean()
+        eff = X.mean(axis=1) - gm
+        resid = X - X.mean(axis=1, keepdims=True) - X.mean(axis=0, keepdims=True) + gm
+        dof = (I - 1) * (J - 1)
+        se = float(np.sqrt((resid ** 2).sum() / dof * (I - 1) / (I * J)))
+        tq = float(t_dist.ppf(1 - alpha, dof))
+        bound = float((np.abs(eff) + tq * se).max() / gm)
+        rec = {"family": key[0], "L": key[1], "mode": key[2], "chunk": key[3], "n_inputs": I, "n_rounds": J,
+               "max_abs_effect_pct": float(100 * np.abs(eff).max() / gm), "se_effect_pct": 100 * se / gm,
+               "equivalence_bound_pct": 100 * bound, "at_input_agnostic_best": key[3] == c_star.get(key[:3])}
+        for m in margins:
+            rec[f"equivalent_{round(100 * m)}pct"] = bool(bound < m)
+        configs.append(rec)
+
+    def _share(sel):
+        out = {"n": len(sel)}
+        for m in margins:
+            k = f"equivalent_{round(100 * m)}pct"
+            out[k] = sum(r[k] for r in sel)
+        if sel:
+            out["median_bound_pct"] = float(np.median([r["equivalence_bound_pct"] for r in sel]))
+            out["max_bound_pct"] = float(max(r["equivalence_bound_pct"] for r in sel))
+        return out
+
+    summary = {}
+    for fam in sorted({r["family"] for r in configs}):
+        sel = [r for r in configs if r["family"] == fam]
+        summary[fam] = {"all_chunks": _share(sel), "at_best_chunk": _share([r for r in sel if r["at_input_agnostic_best"]])}
+    summary["all"] = {"all_chunks": _share(configs),
+                      "at_best_chunk": _share([r for r in configs if r["at_input_agnostic_best"]])}
+    return {"alpha": alpha, "margins": list(margins), "summary": summary, "configs": configs}
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--in-dir", type=Path, default=RESULTS_DIR)
@@ -179,6 +237,7 @@ def main(argv=None):
     rows = [r for r in data["rows"] if r.get("kind") == "timing"]
     dec = decision_analysis(rows)
     eff = effect_analysis(rows)
+    equiv = equivalence_analysis(rows, dec, alpha=args.alpha)
     n_sig = sum(1 for r in eff if r.get("p_input_bh") is not None and r["p_input_bh"] < args.alpha)
     tot_cells = sum(d["n_cells"] for d in dec)
     res = {
@@ -190,12 +249,14 @@ def main(argv=None):
             "tie_aware_agreement": sum(d["tie_aware_agreement"] * d["n_cells"] for d in dec) / tot_cells,
             "n_fixed_chunk_tests": len(eff), "n_significant_input_effects_bh": n_sig,
         },
-        "decision": dec, "effects": eff,
+        "decision": dec, "effects": eff, "equivalence": equiv,
     }
     out = args.in_dir / f"e1_analysis_{args.tag}.json"
     write_json(out, res)
     print(f"wrote {out}: tie-aware agreement {res['overall']['tie_aware_agreement']:.3f}, "
-          f"{n_sig}/{len(eff)} significant input effects (BH, alpha={args.alpha})")
+          f"{n_sig}/{len(eff)} significant input effects (BH, alpha={args.alpha}); TOST "
+          + ", ".join(f"{k}: {v}/{equiv['summary']['all']['all_chunks']['n']}"
+                      for k, v in equiv["summary"]["all"]["all_chunks"].items() if k.startswith("equivalent")))
 
 
 if __name__ == "__main__":

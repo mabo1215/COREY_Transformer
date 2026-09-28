@@ -1,0 +1,1205 @@
+{
+  "experiment": "E5b",
+  "host": "vgpu3090",
+  "layers_per_request": 48,
+  "host_sync_ms": 0.021443195641040802,
+  "tuning_scale": {
+    "profile_s_per_ms": 0.013020575721822868,
+    "search_s_per_ms": 1.9956490258118598,
+    "profile_total_s": 2.108259614557028,
+    "search_total_s": 321.8125118166208,
+    "compile_total_s": 521.0781117044389,
+    "n_keys": 12
+  },
+  "headroom_pooled_ms": 0.0067418646032653615,
+  "P_pooled_s": {
+    "profile": 0.06361745761000352,
+    "search": 9.750576319850842
+  },
+  "summary_n_star": {
+    "profile|host_sync": {
+      "min_calls": 401.46282388493347,
+      "median_calls": 2114.130795218363,
+      "max_calls": 51993.040630001124,
+      "median_requests": 44.044391567049225
+    },
+    "profile|sampled_histogram": {
+      "min_calls": 21.59988874591486,
+      "median_calls": 57.15477407393214,
+      "max_calls": 299.4384411636554,
+      "median_requests": 1.1907244598735862
+    },
+    "profile|full_histogram": {
+      "min_calls": 5.32060819430016,
+      "median_calls": 19.4891230068118,
+      "max_calls": 204.31892247286004,
+      "median_requests": 0.4060233959752458
+    },
+    "search|host_sync": {
+      "min_calls": 61531.756390990166,
+      "median_calls": 324030.45395643334,
+      "max_calls": 7968914.977265837,
+      "median_requests": 6750.634457425695
+    },
+    "search|sampled_histogram": {
+      "min_calls": 3310.590703081044,
+      "median_calls": 8760.048068379207,
+      "max_calls": 45894.593769561136,
+      "median_requests": 182.5010014245668
+    },
+    "search|full_histogram": {
+      "min_calls": 815.4836457719393,
+      "median_calls": 2987.0760074982627,
+      "max_calls": 31315.73190765236,
+      "median_requests": 62.23075015621381
+    }
+  },
+  "workload": {
+    "n_calls": 2360,
+    "n_keys": 27,
+    "calls_per_key_median": 48.0,
+    "calls_per_key_min": 24,
+    "calls_per_key_max": 312,
+    "note": "captured calls cover 8 of 48 layers per prompt; a request contributes 48 calls to its key"
+  },
+  "keys": [
+    {
+      "L_bucket": 16,
+      "batch": 1,
+      "n_calls": 160,
+      "table_chunk": 32,
+      "table_ms": 0.09183513959590342,
+      "oracle_ms": 0.08891097583994265,
+      "headroom_ms": 0.002924163755960764,
+      "headroom_pct": 3.1841447280722655,
+      "P_s": {
+        "profile": 0.011399262893554427,
+        "search": 1.747152228481518
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.3577243462204933,
+        "full_histogram": 0.35934513807296753
+      },
+      "n_star_calls": {
+        "profile|host_sync": 615.5431322918292,
+        "profile|sampled_histogram": 32.12868385346434,
+        "profile|full_histogram": 31.982581595817457,
+        "search|host_sync": 94343.60496398955,
+        "search|sampled_histogram": 4924.327311066621,
+        "search|full_histogram": 4901.934382030985
+      },
+      "n_star_requests": {
+        "profile|host_sync": 12.823815256079776,
+        "profile|sampled_histogram": 0.669347580280507,
+        "profile|full_histogram": 0.666303783246197,
+        "search|host_sync": 1965.4917700831156,
+        "search|sampled_histogram": 102.59015231388794,
+        "search|full_histogram": 102.12363295897886
+      }
+    },
+    {
+      "L_bucket": 16,
+      "batch": 4,
+      "n_calls": 48,
+      "table_chunk": 32,
+      "table_ms": 0.09825877410359675,
+      "oracle_ms": 0.09724032099358731,
+      "headroom_ms": 0.0010184531100094288,
+      "headroom_pct": 1.036500932665461,
+      "P_s": {
+        "profile": 0.029920597369635146,
+        "search": 4.585896374178283
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.3577243462204933,
+        "full_histogram": 0.35934513807296753
+      },
+      "n_star_calls": {
+        "profile|host_sync": 1464.919194167402,
+        "profile|sampled_histogram": 83.88030012267761,
+        "profile|full_histogram": 83.5008907380933,
+        "search|host_sync": 224526.52057723206,
+        "search|sampled_histogram": 12856.239447543625,
+        "search|full_histogram": 12798.087797040145
+      },
+      "n_star_requests": {
+        "profile|host_sync": 30.519149878487543,
+        "profile|sampled_histogram": 1.7475062525557836,
+        "profile|full_histogram": 1.739601890376944,
+        "search|host_sync": 4677.635845359001,
+        "search|sampled_histogram": 267.83832182382554,
+        "search|full_histogram": 266.626829105003
+      }
+    },
+    {
+      "L_bucket": 16,
+      "batch": 16,
+      "n_calls": 40,
+      "table_chunk": 32,
+      "table_ms": 0.151964162774384,
+      "oracle_ms": 0.151964162774384,
+      "headroom_ms": 0.0,
+      "headroom_pct": 0.0,
+      "P_s": {
+        "profile": 0.11112224165860468,
+        "search": 17.03158124877278
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.37110212445259094,
+        "full_histogram": 0.5438666194677353
+      },
+      "n_star_calls": {
+        "profile|host_sync": 5182.167971546384,
+        "profile|sampled_histogram": 299.4384411636554,
+        "profile|full_histogram": 204.31892247286004,
+        "search|host_sync": 794265.0682240434,
+        "search|sampled_histogram": 45894.593769561136,
+        "search|full_histogram": 31315.73190765236
+      },
+      "n_star_requests": {
+        "profile|host_sync": 107.96183274054967,
+        "profile|sampled_histogram": 6.238300857576154,
+        "profile|full_histogram": 4.256644218184584,
+        "search|host_sync": 16547.188921334237,
+        "search|sampled_histogram": 956.1373701991903,
+        "search|full_histogram": 652.4110814094241
+      }
+    },
+    {
+      "L_bucket": 64,
+      "batch": 1,
+      "n_calls": 224,
+      "table_chunk": 64,
+      "table_ms": 0.0888531677464821,
+      "oracle_ms": 0.08564965040955157,
+      "headroom_ms": 0.0032035173369305454,
+      "headroom_pct": 3.6054058827377937,
+      "P_s": {
+        "profile": 0.007657610461994476,
+        "search": 1.1736733601505087
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.3577243462204933,
+        "full_histogram": 0.35934513807296753
+      },
+      "n_star_calls": {
+        "profile|host_sync": 419.8325394954393,
+        "profile|sampled_histogram": 21.59988874591486,
+        "profile|full_histogram": 21.501588177670758,
+        "search|host_sync": 64347.26208334633,
+        "search|sampled_histogram": 3310.590703081044,
+        "search|full_histogram": 3295.5242853247
+      },
+      "n_star_requests": {
+        "profile|host_sync": 8.746511239488319,
+        "profile|sampled_histogram": 0.4499976822065596,
+        "profile|full_histogram": 0.4479497537014741,
+        "search|host_sync": 1340.5679600697151,
+        "search|sampled_histogram": 68.97063964752175,
+        "search|full_histogram": 68.65675594426459
+      }
+    },
+    {
+      "L_bucket": 64,
+      "batch": 4,
+      "n_calls": 72,
+      "table_chunk": 32,
+      "table_ms": 0.09643121870441565,
+      "oracle_ms": 0.09289528978781564,
+      "headroom_ms": 0.003535928916600015,
+      "headroom_pct": 3.666788581650583,
+      "P_s": {
+        "profile": 0.01309016704740123,
+        "search": 2.0063152101697947
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.3577243462204933,
+        "full_histogram": 0.35934513807296753
+      },
+      "n_star_calls": {
+        "profile|host_sync": 730.9974910651817,
+        "profile|sampled_histogram": 36.958201928353525,
+        "profile|full_histogram": 36.78984891492365,
+        "search|host_sync": 112039.16494031271,
+        "search|sampled_histogram": 5664.542125465324,
+        "search|full_histogram": 5638.738848066407
+      },
+      "n_star_requests": {
+        "profile|host_sync": 15.229114397191287,
+        "profile|sampled_histogram": 0.7699625401740318,
+        "profile|full_histogram": 0.7664551857275761,
+        "search|host_sync": 2334.1492695898482,
+        "search|sampled_histogram": 118.01129428052758,
+        "search|full_histogram": 117.47372600138347
+      }
+    },
+    {
+      "L_bucket": 64,
+      "batch": 16,
+      "n_calls": 40,
+      "table_chunk": 32,
+      "table_ms": 0.09998233701661226,
+      "oracle_ms": 0.09829324913024898,
+      "headroom_ms": 0.0016890878863632663,
+      "headroom_pct": 1.6893862823816783,
+      "P_s": {
+        "profile": 0.04221267488498529,
+        "search": 6.46988929759397
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.37110212445259094,
+        "full_histogram": 0.5438666194677353
+      },
+      "n_star_calls": {
+        "profile|host_sync": 2136.9061771463626,
+        "profile|sampled_histogram": 114.26958636154541,
+        "profile|full_histogram": 77.85766179181819,
+        "search|host_sync": 327521.21118008875,
+        "search|sampled_histogram": 17513.971238624817,
+        "search|full_histogram": 11933.156430741808
+      },
+      "n_star_requests": {
+        "profile|host_sync": 44.51887869054922,
+        "profile|sampled_histogram": 2.380616382532196,
+        "profile|full_histogram": 1.6220346206628788,
+        "search|host_sync": 6823.358566251849,
+        "search|sampled_histogram": 364.8744008046837,
+        "search|full_histogram": 248.60742564045435
+      }
+    },
+    {
+      "L_bucket": 128,
+      "batch": 1,
+      "n_calls": 168,
+      "table_chunk": 128,
+      "table_ms": 0.09099738250353503,
+      "oracle_ms": 0.08894121897539918,
+      "headroom_ms": 0.002056163528135845,
+      "headroom_pct": 2.2595853546182694,
+      "P_s": {
+        "profile": 0.007783172658794713,
+        "search": 1.1929181371155713
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.3577243462204933,
+        "full_histogram": 0.35934513807296753
+      },
+      "n_star_calls": {
+        "profile|host_sync": 401.46282388493347,
+        "profile|sampled_histogram": 21.883241283707765,
+        "profile|full_histogram": 21.78397099633451,
+        "search|host_sync": 61531.756390990166,
+        "search|sampled_histogram": 3354.019828496749,
+        "search|full_histogram": 3338.8047829779507
+      },
+      "n_star_requests": {
+        "profile|host_sync": 8.363808830936113,
+        "profile|sampled_histogram": 0.4559008600772451,
+        "profile|full_histogram": 0.4538327290903023,
+        "search|host_sync": 1281.9115914789618,
+        "search|sampled_histogram": 69.87541309368227,
+        "search|full_histogram": 69.5584329787073
+      }
+    },
+    {
+      "L_bucket": 128,
+      "batch": 4,
+      "n_calls": 48,
+      "table_chunk": 128,
+      "table_ms": 0.09602560077793892,
+      "oracle_ms": 0.09329450752586121,
+      "headroom_ms": 0.0027310932520777063,
+      "headroom_pct": 2.844130346441063,
+      "P_s": {
+        "profile": 0.013535332231711298,
+        "search": 2.0745451782890054
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.37110212445259094,
+        "full_histogram": 0.5438666194677353
+      },
+      "n_star_calls": {
+        "profile|host_sync": 723.346417754469,
+        "profile|sampled_histogram": 36.743747703504106,
+        "profile|full_histogram": 25.01283241624962,
+        "search|host_sync": 110866.49352200147,
+        "search|sampled_histogram": 5631.672967138886,
+        "search|full_histogram": 3833.6887485414168
+      },
+      "n_star_requests": {
+        "profile|host_sync": 15.069717036551438,
+        "profile|sampled_histogram": 0.7654947438230022,
+        "profile|full_histogram": 0.5211006753385338,
+        "search|host_sync": 2309.7186150416974,
+        "search|sampled_histogram": 117.32652014872679,
+        "search|full_histogram": 79.86851559461284
+      }
+    },
+    {
+      "L_bucket": 128,
+      "batch": 16,
+      "n_calls": 40,
+      "table_chunk": 32,
+      "table_ms": 0.17866956634074443,
+      "oracle_ms": 0.17854924637079234,
+      "headroom_ms": 0.00012031996995210542,
+      "headroom_pct": 0.06734217383314219,
+      "P_s": {
+        "profile": 0.04507934809886103,
+        "search": 6.909261083359458
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.41322457790374756,
+        "full_histogram": 1.5843312591314316
+      },
+      "n_star_calls": {
+        "profile|host_sync": 2114.130795218363,
+        "profile|sampled_histogram": 109.12341674794718,
+        "profile|full_histogram": 28.455395038946936,
+        "search|host_sync": 324030.45395643334,
+        "search|sampled_histogram": 16725.22359831678,
+        "search|full_histogram": 4361.326457584317
+      },
+      "n_star_requests": {
+        "profile|host_sync": 44.044391567049225,
+        "profile|sampled_histogram": 2.2734045155822327,
+        "profile|full_histogram": 0.5928207299780611,
+        "search|host_sync": 6750.634457425695,
+        "search|sampled_histogram": 348.4421582982663,
+        "search|full_histogram": 90.86096786633993
+      }
+    },
+    {
+      "L_bucket": 256,
+      "batch": 1,
+      "n_calls": 168,
+      "table_chunk": 128,
+      "table_ms": 0.0962614863809375,
+      "oracle_ms": 0.09255631319912412,
+      "headroom_ms": 0.003705173181813386,
+      "headroom_pct": 3.849071234107928,
+      "P_s": {
+        "profile": 0.007942339912416883,
+        "search": 1.2173135234194086
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.3577243462204933,
+        "full_histogram": 0.35934513807296753
+      },
+      "n_star_calls": {
+        "profile|host_sync": 447.7579127365032,
+        "profile|sampled_histogram": 22.43477336056346,
+        "profile|full_histogram": 22.332529233174586,
+        "search|host_sync": 68627.35269489724,
+        "search|sampled_histogram": 3438.552530843875,
+        "search|full_histogram": 3422.8816882038977
+      },
+      "n_star_requests": {
+        "profile|host_sync": 9.32828984867715,
+        "profile|sampled_histogram": 0.46739111167840547,
+        "profile|full_histogram": 0.4652610256911372,
+        "search|host_sync": 1429.7365144770258,
+        "search|sampled_histogram": 71.6365110592474,
+        "search|full_histogram": 71.31003517091453
+      }
+    },
+    {
+      "L_bucket": 256,
+      "batch": 4,
+      "n_calls": 56,
+      "table_chunk": 32,
+      "table_ms": 0.10640127777255003,
+      "oracle_ms": 0.10577407793274943,
+      "headroom_ms": 0.0006271998398005961,
+      "headroom_pct": 0.5894664546616981,
+      "P_s": {
+        "profile": 0.014531912481852392,
+        "search": 2.227289914606931
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.37110212445259094,
+        "full_histogram": 0.5438666194677353
+      },
+      "n_star_calls": {
+        "profile|host_sync": 698.1127696512405,
+        "profile|sampled_histogram": 39.225090596997156,
+        "profile|full_histogram": 26.75047494124288,
+        "search|host_sync": 106998.9606009735,
+        "search|sampled_histogram": 6011.985607217087,
+        "search|full_histogram": 4100.015267913372
+      },
+      "n_star_requests": {
+        "profile|host_sync": 14.544016034400842,
+        "profile|sampled_histogram": 0.8171893874374407,
+        "profile|full_histogram": 0.5573015612758934,
+        "search|host_sync": 2229.1450125202814,
+        "search|sampled_histogram": 125.24970015035598,
+        "search|full_histogram": 85.41698474819525
+      }
+    },
+    {
+      "L_bucket": 256,
+      "batch": 16,
+      "n_calls": 40,
+      "table_chunk": 32,
+      "table_ms": 0.35560704182088376,
+      "oracle_ms": 0.3540142092108726,
+      "headroom_ms": 0.0015928326100111008,
+      "headroom_pct": 0.4479193105555534,
+      "P_s": {
+        "profile": 0.05359968636293694,
+        "search": 8.21516376535777
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.9393917694687843,
+        "full_histogram": 6.215779073536396
+      },
+      "n_star_calls": {
+        "profile|host_sync": 2700.186705862807,
+        "profile|sampled_histogram": 57.15477407393214,
+        "profile|full_histogram": 8.625374954154337,
+        "search|host_sync": 413854.58555674704,
+        "search|sampled_histogram": 8760.048068379207,
+        "search|full_histogram": 1322.0015375871785
+      },
+      "n_star_requests": {
+        "profile|host_sync": 56.25388970547514,
+        "profile|sampled_histogram": 1.1907244598735862,
+        "profile|full_histogram": 0.17969531154488202,
+        "search|host_sync": 8621.97053243223,
+        "search|sampled_histogram": 182.5010014245668,
+        "search|full_histogram": 27.541698699732887
+      }
+    },
+    {
+      "L_bucket": 512,
+      "batch": 1,
+      "n_calls": 168,
+      "table_chunk": 128,
+      "table_ms": 0.09839166553247537,
+      "oracle_ms": 0.09405671329370564,
+      "headroom_ms": 0.004334952238769759,
+      "headroom_pct": 4.405812438797425,
+      "P_s": {
+        "profile": 0.008719027755120446,
+        "search": 1.336355597269756
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.37110212445259094,
+        "full_histogram": 0.5438666194677353
+      },
+      "n_star_calls": {
+        "profile|host_sync": 509.63898222087687,
+        "profile|sampled_histogram": 23.77265037787338,
+        "profile|full_histogram": 16.160363301567397,
+        "search|host_sync": 78111.79475575854,
+        "search|sampled_histogram": 3643.607439573888,
+        "search|full_histogram": 2476.880743874179
+      },
+      "n_star_requests": {
+        "profile|host_sync": 10.617478796268268,
+        "profile|sampled_histogram": 0.49526354953902874,
+        "profile|full_histogram": 0.3366742354493208,
+        "search|host_sync": 1627.3290574116363,
+        "search|sampled_histogram": 75.908488324456,
+        "search|full_histogram": 51.6016821640454
+      }
+    },
+    {
+      "L_bucket": 512,
+      "batch": 4,
+      "n_calls": 56,
+      "table_chunk": 32,
+      "table_ms": 0.20580682118556326,
+      "oracle_ms": 0.20580682118556326,
+      "headroom_ms": 0.0,
+      "headroom_pct": 0.0,
+      "P_s": {
+        "profile": 0.02099989891693145,
+        "search": 3.2186309354571794
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.41322457790374756,
+        "full_histogram": 1.5843312591314316
+      },
+      "n_star_calls": {
+        "profile|host_sync": 979.3269281533339,
+        "profile|sampled_histogram": 50.8195786016943,
+        "profile|full_histogram": 13.254740002065034,
+        "search|host_sync": 150100.3390230205,
+        "search|sampled_histogram": 7789.059769351124,
+        "search|full_histogram": 2031.5391222046014
+      },
+      "n_star_requests": {
+        "profile|host_sync": 20.40264433652779,
+        "profile|sampled_histogram": 1.0587412208686313,
+        "profile|full_histogram": 0.2761404167096882,
+        "search|host_sync": 3127.090396312927,
+        "search|sampled_histogram": 162.2720785281484,
+        "search|full_histogram": 42.323731712595865
+      }
+    },
+    {
+      "L_bucket": 512,
+      "batch": 16,
+      "n_calls": 40,
+      "table_chunk": 32,
+      "table_ms": 0.7468482536971569,
+      "oracle_ms": 0.7468323817849158,
+      "headroom_ms": 1.5871912240980612e-05,
+      "headroom_pct": 0.002125185693667912,
+      "P_s": {
+        "profile": 0.0766978958586245,
+        "search": 11.75540040795177
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.9393917694687843,
+        "full_histogram": 6.215779073536396
+      },
+      "n_star_calls": {
+        "profile|host_sync": 3579.443556711526,
+        "profile|sampled_histogram": 81.6477153162298,
+        "profile|full_histogram": 12.339256398728903,
+        "search|host_sync": 548617.2961559213,
+        "search|sampled_histogram": 12514.053680245914,
+        "search|full_histogram": 1891.2239779147524
+      },
+      "n_star_requests": {
+        "profile|host_sync": 74.57174076482346,
+        "profile|sampled_histogram": 1.700994069088121,
+        "profile|full_histogram": 0.2570678416401855,
+        "search|host_sync": 11429.52700324836,
+        "search|sampled_histogram": 260.70945167178985,
+        "search|full_histogram": 39.400499539890674
+      }
+    },
+    {
+      "L_bucket": 1024,
+      "batch": 1,
+      "n_calls": 312,
+      "table_chunk": 512,
+      "table_ms": 0.25652092762960077,
+      "oracle_ms": 0.2475739286591609,
+      "headroom_ms": 0.008946998970439804,
+      "headroom_pct": 3.487824191622556,
+      "P_s": {
+        "profile": 0.02404168853777796,
+        "search": 3.684842616357962
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.37110212445259094,
+        "full_histogram": 0.5438666194677353
+      },
+      "n_star_calls": {
+        "profile|host_sync": 1923.9204672842018,
+        "profile|sampled_histogram": 66.38505669571936,
+        "profile|full_histogram": 44.944488137165855,
+        "search|host_sync": 294877.1304973981,
+        "search|sampled_histogram": 10174.763125199977,
+        "search|full_histogram": 6888.591248405315
+      },
+      "n_star_requests": {
+        "profile|host_sync": 40.0816764017542,
+        "profile|sampled_histogram": 1.3830220144941532,
+        "profile|full_histogram": 0.936343502857622,
+        "search|host_sync": 6143.273552029127,
+        "search|sampled_histogram": 211.97423177499954,
+        "search|full_histogram": 143.51231767511072
+      }
+    },
+    {
+      "L_bucket": 1024,
+      "batch": 4,
+      "n_calls": 96,
+      "table_chunk": 32,
+      "table_ms": 0.4422436264716089,
+      "oracle_ms": 0.4397823999325434,
+      "headroom_ms": 0.002461226539065444,
+      "headroom_pct": 0.5565318281016425,
+      "P_s": {
+        "profile": 0.03861357767078735,
+        "search": 5.918259707415546
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.9393917694687843,
+        "full_histogram": 6.215779073536396
+      },
+      "n_star_calls": {
+        "profile|host_sync": 2034.224029306266,
+        "profile|sampled_histogram": 41.212849727414465,
+        "profile|full_histogram": 6.2146470889861005,
+        "search|host_sync": 311783.23363721324,
+        "search|sampled_histogram": 6316.647217956568,
+        "search|full_histogram": 952.5119836377957
+      },
+      "n_star_requests": {
+        "profile|host_sync": 42.379667277213876,
+        "profile|sampled_histogram": 0.8586010359878014,
+        "profile|full_histogram": 0.12947181435387708,
+        "search|host_sync": 6495.484034108609,
+        "search|sampled_histogram": 131.59681704076183,
+        "search|full_histogram": 19.843999659120744
+      }
+    },
+    {
+      "L_bucket": 1024,
+      "batch": 16,
+      "n_calls": 40,
+      "table_chunk": 32,
+      "table_ms": 1.5612656711935997,
+      "oracle_ms": 1.5612656711935997,
+      "headroom_ms": 0.0,
+      "headroom_pct": 0.0,
+      "P_s": {
+        "profile": 0.13487921829546742,
+        "search": 20.672786391655112
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 3.4434708058834076,
+        "full_histogram": 25.35033841431141
+      },
+      "n_star_calls": {
+        "profile|host_sync": 6290.070778318035,
+        "profile|sampled_histogram": 39.16955475998721,
+        "profile|full_histogram": 5.32060819430016,
+        "search|host_sync": 964072.087841647,
+        "search|sampled_histogram": 6003.473691815312,
+        "search|full_histogram": 815.4836457719393
+      },
+      "n_star_requests": {
+        "profile|host_sync": 131.04314121495906,
+        "profile|sampled_histogram": 0.8160323908330668,
+        "profile|full_histogram": 0.11084600404792,
+        "search|host_sync": 20084.835163367647,
+        "search|sampled_histogram": 125.07236857948567,
+        "search|full_histogram": 16.989242620248735
+      }
+    },
+    {
+      "L_bucket": 2048,
+      "batch": 1,
+      "n_calls": 160,
+      "table_chunk": 512,
+      "table_ms": 0.6358752001151442,
+      "oracle_ms": 0.629209599647671,
+      "headroom_ms": 0.0066656004674732735,
+      "headroom_pct": 1.048256083311044,
+      "P_s": {
+        "profile": 0.0599998896657718,
+        "search": 9.196115741612788
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.41322457790374756,
+        "full_histogram": 1.5843312591314316
+      },
+      "n_star_calls": {
+        "profile|host_sync": 4060.193080203789,
+        "profile|sampled_histogram": 147.57979283627165,
+        "profile|full_histogram": 38.030801606331806,
+        "search|host_sync": 622301.2359995994,
+        "search|sampled_histogram": 22619.389195640688,
+        "search|full_histogram": 5828.93827415911
+      },
+      "n_star_requests": {
+        "profile|host_sync": 84.58735583757894,
+        "profile|sampled_histogram": 3.074579017422326,
+        "profile|full_histogram": 0.7923083667985793,
+        "search|host_sync": 12964.60908332499,
+        "search|sampled_histogram": 471.237274909181,
+        "search|full_histogram": 121.43621404498145
+      }
+    },
+    {
+      "L_bucket": 2048,
+      "batch": 4,
+      "n_calls": 48,
+      "table_chunk": 32,
+      "table_ms": 1.4279637395590543,
+      "oracle_ms": 1.3378325350085893,
+      "headroom_ms": 0.09013120455046493,
+      "headroom_pct": 6.311869276057167,
+      "P_s": {
+        "profile": 0.11938350481508136,
+        "search": 18.297775779830737
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.9393917694687843,
+        "full_histogram": 6.215779073536396
+      },
+      "n_star_calls": {
+        "profile|host_sync": null,
+        "profile|sampled_histogram": 140.57347031833922,
+        "profile|full_histogram": 19.4891230068118,
+        "search|host_sync": null,
+        "search|sampled_histogram": 21545.538007632073,
+        "search|full_histogram": 2987.0760074982627
+      },
+      "n_star_requests": {
+        "profile|host_sync": null,
+        "profile|sampled_histogram": 2.9286139649654004,
+        "profile|full_histogram": 0.4060233959752458,
+        "search|host_sync": null,
+        "search|sampled_histogram": 448.86537515900153,
+        "search|full_histogram": 62.23075015621381
+      }
+    },
+    {
+      "L_bucket": 2048,
+      "batch": 16,
+      "n_calls": 40,
+      "table_chunk": 32,
+      "table_ms": 4.873995780467988,
+      "oracle_ms": 4.784410113930702,
+      "headroom_ms": 0.0895856665372848,
+      "headroom_pct": 1.8380333215775377,
+      "P_s": {
+        "profile": 0.4191219808567076,
+        "search": 64.23835555836139
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 3.4434708058834076,
+        "full_histogram": 25.35033841431141
+      },
+      "n_star_calls": {
+        "profile|host_sync": null,
+        "profile|sampled_histogram": 124.96611047879239,
+        "profile|full_histogram": 16.591824679240364,
+        "search|host_sync": null,
+        "search|sampled_histogram": 19153.41548365767,
+        "search|full_histogram": 2543.010344932093
+      },
+      "n_star_requests": {
+        "profile|host_sync": null,
+        "profile|sampled_histogram": 2.6034606349748413,
+        "profile|full_histogram": 0.34566301415084094,
+        "search|host_sync": null,
+        "search|sampled_histogram": 399.0294892428681,
+        "search|full_histogram": 52.979382186085274
+      }
+    },
+    {
+      "L_bucket": 4096,
+      "batch": 1,
+      "n_calls": 104,
+      "table_chunk": 512,
+      "table_ms": 0.9612315505743028,
+      "oracle_ms": 0.9606565410586504,
+      "headroom_ms": 0.0005750095156522893,
+      "headroom_pct": 0.05982008344490367,
+      "P_s": {
+        "profile": 0.09323234252505012,
+        "search": 14.289616489264256
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.9393917694687843,
+        "full_histogram": 6.215779073536396
+      },
+      "n_star_calls": {
+        "profile|host_sync": 4467.67831017294,
+        "profile|sampled_histogram": 99.3083490858264,
+        "profile|full_histogram": 15.000688885625456,
+        "search|host_sync": 684756.039811209,
+        "search|sampled_histogram": 15220.879194761741,
+        "search|full_histogram": 2299.1387478305915
+      },
+      "n_star_requests": {
+        "profile|host_sync": 93.07663146193624,
+        "profile|sampled_histogram": 2.0689239392880503,
+        "profile|full_histogram": 0.31251435178386366,
+        "search|host_sync": 14265.750829400187,
+        "search|sampled_histogram": 317.1016498908696,
+        "search|full_histogram": 47.898723913137324
+      }
+    },
+    {
+      "L_bucket": 4096,
+      "batch": 4,
+      "n_calls": 40,
+      "table_chunk": 64,
+      "table_ms": 1.7849303045868872,
+      "oracle_ms": 1.7849303045868872,
+      "headroom_ms": 0.0,
+      "headroom_pct": 0.0,
+      "P_s": {
+        "profile": 0.15449220291989144,
+        "search": 23.67884653025512
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 3.4434708058834076,
+        "full_histogram": 25.35033841431141
+      },
+      "n_star_calls": {
+        "profile|host_sync": 7204.719180204838,
+        "profile|sampled_histogram": 44.865257070259126,
+        "profile|full_histogram": 6.094285622343945,
+        "search|host_sync": 1104259.2217428377,
+        "search|sampled_histogram": 6876.447591714203,
+        "search|full_histogram": 934.064316746452
+      },
+      "n_star_requests": {
+        "profile|host_sync": 150.09831625426747,
+        "profile|sampled_histogram": 0.9346928556303985,
+        "profile|full_histogram": 0.1269642837988322,
+        "search|host_sync": 23005.400452975784,
+        "search|sampled_histogram": 143.25932482737923,
+        "search|full_histogram": 19.459673265551086
+      }
+    },
+    {
+      "L_bucket": 4096,
+      "batch": 16,
+      "n_calls": 32,
+      "table_chunk": 32,
+      "table_ms": 6.507342716157436,
+      "oracle_ms": 6.500881912410259,
+      "headroom_ms": 0.006460803747177168,
+      "headroom_pct": 0.09928482375970896,
+      "P_s": {
+        "profile": 0.5571767512154375,
+        "search": 85.39785525032343
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 13.464568346738815,
+        "full_histogram": 101.15281589329243
+      },
+      "n_star_calls": {
+        "profile|host_sync": 37188.77167027259,
+        "profile|sampled_histogram": 41.400824702548135,
+        "profile|full_histogram": 5.508619175868145,
+        "search|host_sync": 5699881.291004008,
+        "search|sampled_histogram": 6345.457931400964,
+        "search|full_histogram": 844.2998778821084
+      },
+      "n_star_requests": {
+        "profile|host_sync": 774.7660764640123,
+        "profile|sampled_histogram": 0.8625171813030862,
+        "profile|full_histogram": 0.11476289949725303,
+        "search|host_sync": 118747.52689591683,
+        "search|sampled_histogram": 132.1970402375201,
+        "search|full_histogram": 17.58958078921059
+      }
+    },
+    {
+      "L_bucket": 8192,
+      "batch": 1,
+      "n_calls": 72,
+      "table_chunk": 512,
+      "table_ms": 1.075546746916241,
+      "oracle_ms": 1.073432186477714,
+      "headroom_ms": 0.002114560438526989,
+      "headroom_pct": 0.1966033038163856,
+      "P_s": {
+        "profile": 0.10726411117581346,
+        "search": 16.440249920271476
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 0.9393917694687843,
+        "full_histogram": 6.215779073536396
+      },
+      "n_star_calls": {
+        "profile|host_sync": 5549.492245674081,
+        "profile|sampled_histogram": 114.44224840033503,
+        "profile|full_histogram": 17.262617083640414,
+        "search|host_sync": 850564.4474128891,
+        "search|sampled_histogram": 17540.434955503915,
+        "search|full_histogram": 2645.821943817026
+      },
+      "n_star_requests": {
+        "profile|host_sync": 115.61442178487668,
+        "profile|sampled_histogram": 2.3842135083403133,
+        "profile|full_histogram": 0.3596378559091753,
+        "search|host_sync": 17720.09265443519,
+        "search|sampled_histogram": 365.4257282396649,
+        "search|full_histogram": 55.12129049618804
+      }
+    },
+    {
+      "L_bucket": 8192,
+      "batch": 4,
+      "n_calls": 24,
+      "table_chunk": 64,
+      "table_ms": 3.6020258180300395,
+      "oracle_ms": 3.6020258180300395,
+      "headroom_ms": 0.0,
+      "headroom_pct": 0.0,
+      "P_s": {
+        "profile": 0.31001246656034487,
+        "search": 47.51526277319402
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 3.4434708058834076,
+        "full_histogram": 25.35033841431141
+      },
+      "n_star_calls": {
+        "profile|host_sync": 14457.38180772843,
+        "profile|sampled_histogram": 90.02906777390625,
+        "profile|full_histogram": 12.229125366836477,
+        "search|host_sync": 2215866.6818416314,
+        "search|sampled_histogram": 13798.654163703352,
+        "search|full_histogram": 1874.3443182742487
+      },
+      "n_star_requests": {
+        "profile|host_sync": 301.19545432767563,
+        "profile|sampled_histogram": 1.8756055786230468,
+        "profile|full_histogram": 0.2547734451424266,
+        "search|host_sync": 46163.889205033985,
+        "search|sampled_histogram": 287.4719617438198,
+        "search|full_histogram": 39.04883996404685
+      }
+    },
+    {
+      "L_bucket": 8192,
+      "batch": 16,
+      "n_calls": 24,
+      "table_chunk": 32,
+      "table_ms": 13.012113064130148,
+      "oracle_ms": 13.012113064130148,
+      "headroom_ms": 0.0,
+      "headroom_pct": 0.0,
+      "P_s": {
+        "profile": 1.1148969422016974,
+        "search": 170.87900290433154
+      },
+      "overhead_ms": {
+        "host_sync": 0.021443195641040802,
+        "sampled_histogram": 13.464568346738815,
+        "full_histogram": 101.15281589329243
+      },
+      "n_star_calls": {
+        "profile|host_sync": 51993.040630001124,
+        "profile|sampled_histogram": 82.80227880247872,
+        "profile|full_histogram": 11.021907124936773,
+        "search|host_sync": 7968914.977265837,
+        "search|sampled_histogram": 12691.012329832265,
+        "search|full_histogram": 1689.3153333921448
+      },
+      "n_star_requests": {
+        "profile|host_sync": 1083.1883464583568,
+        "profile|sampled_histogram": 1.72504747505164,
+        "profile|full_histogram": 0.22962306510284944,
+        "search|host_sync": 166019.0620263716,
+        "search|sampled_histogram": 264.39609020483886,
+        "search|full_histogram": 35.19406944566968
+      }
+    }
+  ],
+  "curve": {
+    "overhead_ms": [
+      0.001,
+      0.001212,
+      0.001468,
+      0.001778,
+      0.002154,
+      0.00261,
+      0.003162,
+      0.003831,
+      0.004642,
+      0.005623,
+      0.006813,
+      0.008254,
+      0.01,
+      0.012115,
+      0.014678,
+      0.017783,
+      0.021544,
+      0.026102,
+      0.031623,
+      0.038312,
+      0.046416,
+      0.056234,
+      0.068129,
+      0.08254,
+      0.1,
+      0.121153,
+      0.14678,
+      0.177828,
+      0.215443,
+      0.261016,
+      0.316228,
+      0.383119,
+      0.464159,
+      0.562341,
+      0.681292,
+      0.825404,
+      1.0,
+      1.211528,
+      1.467799,
+      1.778279,
+      2.154435,
+      2.610157,
+      3.162278,
+      3.831187,
+      4.641589,
+      5.623413,
+      6.812921,
+      8.254042,
+      10.0,
+      12.115277,
+      14.677993,
+      17.782794,
+      21.544347,
+      26.101572,
+      31.622777,
+      38.311868,
+      46.415888,
+      56.234133,
+      68.129207,
+      82.540419,
+      100.0
+    ],
+    "n_star_calls": {
+      "profile": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        894315.0742143271,
+        42071.27069929152,
+        19525.725564923443,
+        11839.913367652174,
+        8016.175938250654,
+        5761.858298451631,
+        4297.856755454188,
+        3286.0027218990167,
+        2556.8550870211725,
+        2015.1151336710327,
+        1603.4995337350067,
+        1285.4053901703508,
+        1036.332078355745,
+        839.3010893608888,
+        682.1652324418127,
+        556.0425337044527,
+        454.2866657698081,
+        371.8446118528534,
+        304.8256421272871,
+        250.19240557339236,
+        205.55834441000533,
+        169.02582975170668,
+        139.07974294584696,
+        114.50244170120321,
+        94.31094039079407,
+        77.70905097396943,
+        64.04926911028315,
+        52.80394232712046,
+        43.54207379626455,
+        35.910880070688684,
+        29.62129764327422,
+        24.43615570373061,
+        20.160585992467208,
+        16.634428095516153,
+        13.72590200961568,
+        11.326541304702877,
+        9.347014873462514,
+        7.713731350331561,
+        6.366037657394896,
+        5.253935087823412,
+        4.336198530234157,
+        3.578829378167982,
+        2.9537851218866105,
+        2.4379333868017268,
+        2.0121896163626976,
+        1.660807939520563,
+        1.3707956923922335,
+        1.1314317866324501,
+        0.9338689884982981,
+        0.770806049337156,
+        0.6362174690203789
+      ],
+      "search": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        137070667.5921717,
+        6448216.436773191,
+        2992686.0404951377,
+        1814690.232034067,
+        1228630.288220985,
+        883113.5539497619,
+        658727.6807373229,
+        503641.9487797288,
+        391886.30922086025,
+        308854.43465216696,
+        245766.57367190812,
+        197012.64133562034,
+        158837.45440855843,
+        128638.73588466787,
+        104554.69947335287,
+        85224.01500552829,
+        69628.00734404953,
+        56992.2062780836,
+        46720.284014340825,
+        38346.70917133342,
+        31505.696716757408,
+        25906.399201356577,
+        21316.596089899012,
+        17549.660715163427,
+        14454.931973464163,
+        11910.37901749979,
+        9816.75958380768,
+        8093.200970178817,
+        6673.644776528999,
+        5504.020279917647,
+        4540.0230410708355,
+        3745.3021561100163,
+        3089.9903856195056,
+        2549.540122724064,
+        2103.753594241509,
+        1736.0062721852962,
+        1432.606478007793,
+        1182.2749457124967,
+        975.715446127995,
+        805.2647335801255,
+        664.6042815207504,
+        548.5231616999431,
+        452.72333012670543,
+        373.6593137130455,
+        308.4060438980938,
+        254.55016870028257,
+        210.10031710999257,
+        173.413279950536,
+        143.1330516367999,
+        118.1405779831546,
+        97.51233734826391
+      ]
+    }
+  }
+}
