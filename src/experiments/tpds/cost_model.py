@@ -59,6 +59,18 @@ Validation (all from existing result files; no GPU):
       the 12th).
   V3  cross-GPU transfer: parameters of one GPU with the hardware constants
       and compile facts of the other.
+  V4  the production pipelines. Mamba-2 SSD and Gated DeltaNet are multi-kernel
+      pipelines; they are modeled at the level of work terms,
+
+          T = (F^p + W^p)^(1/p),   W = B * L * (a + b * C) + B * ceil(L / C) * g,
+
+      a launch floor F, a per-token cost a, an intra-chunk cost b * C (the
+      chunk-local matrix products grow with C) and a per-chunk cost g of the
+      inter-chunk state pass, joined by a smooth maximum. The unconstrained
+      optimum is C* = sqrt(g / b), independent of the shape once the pipeline
+      is work-bound, and the chunk matters only above B * L ~ F / (a + 2 sqrt(b g)).
+      Mamba-2 is fitted on the E4 static re-measurements and E1 medians and
+      validated on the E2 calls; Gated DeltaNet (no captured calls) on E1.
 
 Output: ``cost_model_<host>.json`` (parameters, validation tables, per-call
 choices for the key-churn analysis) and ``cost_model_curves_<host>.csv``
@@ -364,6 +376,63 @@ def topk_refinement(df, chunks, P, ks=(1, 2, 3)) -> dict:
     return out
 
 
+# --------------------------------------------------------------------------- V4: multi-kernel pipelines
+PIPE_PARAMS = ["F", "a", "b", "g", "p"]
+
+
+def pipe_predict(th, L, B, C):
+    F, a, b, g, p = th
+    work = B * L * (a + b * C) + B * np.ceil(L / C) * g
+    return (F ** p + work ** p) ** (1.0 / p)
+
+
+def pipe_points(host: str, in_dir: Path, family: str) -> pd.DataFrame:
+    pts = []
+    if family == "mamba2":
+        for r in read_jsonl(in_dir / f"e4_{host}.jsonl", kind="m2tune"):
+            for k, v in r["final"].items():
+                if k.startswith("static_"):
+                    pts.append({"src": "e4_static", "L": r["L"], "B": r["batch"], "C": int(k.split("_")[1]),
+                                "lat": v["median_ms"]})
+    e1 = pd.DataFrame(read_jsonl(in_dir / f"e1_{host}.jsonl", kind="timing"))
+    e1 = e1[e1["family"] == family]
+    for (L, b, c), g in e1.groupby(["L", "batch", "chunk"]):
+        pts.append({"src": "e1", "L": int(L), "B": int(b), "C": int(c), "lat": float(g["median_ms"].median())})
+    return pd.DataFrame(pts)
+
+
+def pipe_fit(d: pd.DataFrame):
+    y = np.log(d["lat"].to_numpy())
+    L, B, C = (d[k].to_numpy(float) for k in ("L", "B", "C"))
+
+    def res(th):
+        return np.log(pipe_predict(th, L, B, C)) - y
+
+    sol = least_squares(res, [float(np.exp(y.min())), 1e-6, 1e-8, 1e-4, 4.0], bounds=([0, 0, 0, 0, 1], [10, 1, 1, 1, 20]),
+                        loss="soft_l1", f_scale=0.1, x_scale="jac", max_nfev=20000)
+    return sol.x, float(1 - (res(sol.x) ** 2).sum() / ((y - y.mean()) ** 2).sum())
+
+
+def pipeline_model(host: str, in_dir: Path, family: str) -> dict | None:
+    d = pipe_points(host, in_dir, family)
+    if d.empty:
+        return None
+    th, r2 = pipe_fit(d)
+    F, a, b, g, p = th
+    c_star = float(np.sqrt(g / b)) if b > 0 else float("inf")
+    out = {"family": family, "params": dict(zip(PIPE_PARAMS, map(float, th))), "n_points": int(len(d)),
+           "fit_r2_log": r2, "unconstrained_optimal_chunk": c_star,
+           "work_bound_above_BL_tokens": float(F / (a + 2 * np.sqrt(b * g))) if b > 0 else None}
+    if family == "mamba2":
+        df = load_e2([in_dir / f"e2_mamba2_{host}.csv"])
+        if not df.empty:
+            chunks = chunk_columns(df)
+            lat = latency_matrix(df, chunks)
+            P = np.stack([pipe_predict(th, df["L"].to_numpy(float), df["batch"].to_numpy(float), c) for c in chunks], 1)
+            out["e2"] = e2_eval(df, chunks, P.argmin(1), P)
+    return out
+
+
 def analyze(host: str, in_dir: Path, other: str | None = None, do_loko: bool = True,
             do_ablation: bool = False) -> dict:
     hw = HARDWARE[host]
@@ -395,6 +464,7 @@ def analyze(host: str, in_dir: Path, other: str | None = None, do_loko: bool = T
         res["V2_leave_one_key_out"] = loko(fitted, f, stats, hw, theta)
     if do_ablation:
         res["ablation"] = ablation(f, fitted["lat"].to_numpy(), df, chunks, stats, hw, theta)
+    res["V4_pipelines"] = {fam: m for fam in ("mamba2", "gdn") if (m := pipeline_model(host, in_dir, fam))}
     if other:
         ohw = HARDWARE[other]
         ostats = load_kernel_stats(in_dir, ohw["arch"])
@@ -420,8 +490,22 @@ def main(argv=None):
     p.add_argument("--hosts", default="pro6000,vgpu3090")
     p.add_argument("--no-loko", action="store_true")
     p.add_argument("--ablation", action="store_true", help="refit without each mechanism (drop-one)")
+    p.add_argument("--pipelines-only", action="store_true",
+                   help="only (re)compute V4 for Mamba-2 SSD and Gated DeltaNet into the existing result files")
     args = p.parse_args(argv)
     hosts = args.hosts.split(",")
+    if args.pipelines_only:
+        for h in hosts:
+            path = args.in_dir / f"cost_model_{h}.json"
+            res = json.loads(path.read_text())
+            res["V4_pipelines"] = {fam: m for fam in ("mamba2", "gdn") if (m := pipeline_model(h, args.in_dir, fam))}
+            write_json(path, res)
+            for fam, m in res["V4_pipelines"].items():
+                e2 = m.get("e2", {})
+                print(f"{h} {fam}: fit R2 {m['fit_r2_log']:.3f}, C* {m['unconstrained_optimal_chunk']:.0f}, work-bound above "
+                      f"B*L {m['work_bound_above_BL_tokens']}" + (f", E2 regret {e2['mean_regret_pct']:.2f}% tied "
+                                                                 f"{e2['tie_aware_accuracy']:.2f}" if e2 else ""))
+        return
     for h in hosts:
         other = next((o for o in hosts if o != h), None)
         res = analyze(h, args.in_dir, other=other, do_loko=not args.no_loko, do_ablation=args.ablation)
