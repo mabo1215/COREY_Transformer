@@ -59,10 +59,11 @@ if want E10; then
 fi
 if want E11; then
   # 8 captured layers per model: stride 6 of 48 (1.4B) and stride 8 of 64 (2.8B)
-  E11_CAP="--samples-per-regime 20 --longbench-per-task 8 --longbench-lengths 1024,2048,4096,8192 --max-tokens 8192"
+  # traces scale with the width: ~60 GB (1.4B, d_inner 4096) and ~80 GB (2.8B, 5120) vs 31 GB at 370M
+  E11_CAP="--samples-per-regime 20 --longbench-per-task 8 --longbench-lengths 1024,2048,4096,8192 --max-tokens 8192 --max-gb 100"
   E11_E2="--batches 1 --warmup 10 --repeats 50"
   [ "${TPDS_SMOKE:-0}" = 1 ] && { E11_CAP="--samples-per-regime 1 --longbench-per-task 1 --max-tokens 1024 --limit-prompts 6"; E11_E2="--batches 1 --warmup 2 --repeats 3 --max-rows 6"; }
-  check_space src/outputs 40 || { lanelog "E11 needs ~40 GB for traces"; : > "$MARK_DIR/${P}E11.FAIL"; }
+  check_space src/outputs 160 || { lanelog "E11 needs ~160 GB for traces"; : > "$MARK_DIR/${P}E11.FAIL"; }
   if [ ! -f "$MARK_DIR/${P}E11.FAIL" ]; then
     # shellcheck disable=SC2086
     $RUN ${P}E11 -- bash -c "set -e
