@@ -28,11 +28,16 @@
           "at": "2026-09-28T23:25:16Z",
           "by": "bobsteam1215",
           "text": "H800 unreachable since 2026-09-27 (tpds-r1 notes): re-implemented instead in src/kernels/mamba1_runtime_chunk (unchanged stock kernel, runtime chunk dispatch to the stock (kNThreads,kNItems) pairs, n_chunks=ceil(L/C)); needs build + validation on vgpu3090 (nvcc; no GPU needed for the build)"
+        },
+        {
+          "at": "2026-09-29T00:52:06Z",
+          "by": "bobsteam1215",
+          "text": "selective_scan_chunk_cuda built on vgpu3090 from mamba v2.3.2.post1 sources; validation PASS for chunks 128-2048 (fp16, L=300..5000): max rel 1.8e-4 (c128), 0 for c512-2048"
         }
       ],
-      "status": "in_progress",
+      "status": "done",
       "title": "Recover runtime-chunk CUDA scan patch from the H800 (prereq for E8/E10)",
-      "updated_at": "2026-09-28T23:25:16Z",
+      "updated_at": "2026-09-29T00:52:06Z",
       "updated_by": "bobsteam1215",
       "where": "src/kernels/"
     },
