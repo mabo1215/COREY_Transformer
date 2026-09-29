@@ -10,6 +10,7 @@ Prints table bodies (tabular rows only) for:
   model_params    fitted cost-model parameters and validation summary, both GPUs (T1)
   model_ablation  drop-one / add-one ablation of the cost model, both GPUs (T1)
   model_compile   compile facts of the default launch table, both architectures (T1)
+  routed_e10  single-session interleaved routed study: paired prefill/total deltas to the best static chunk (E10)
 
 Example:
     python -m src.experiments.tpds.make_tables --in-dir src/experiments/results/tpds --host pro6000 latency
@@ -255,7 +256,58 @@ def t_model_compile(d, host):
     return rows
 
 
-TABLES = {"model_params": t_model_params, "model_ablation": t_model_ablation, "model_compile": t_model_compile,
+E10_ROWS = [("static_chunk_128", "Static 128", "none"), ("static_chunk_256", "Static 256", "none"),
+            ("static_chunk_512", "Static 512", "none"), ("static_chunk_1024", "Static 1024", "none"),
+            ("static_chunk_2048", "Static 2048", "none"), ("passive", "Passive (stock dispatch)", "none"),
+            None,
+            ("no_entropy_mid", "Midpoint, no statistic", "none"), ("random_seed_0", "Random", "uniform draw"),
+            None,
+            ("hist", "Full histogram", "entropy"), ("sampled_hist_s8", "Sampled histogram", "entropy, stride 8"),
+            ("token_hist_s8", "Token-level histogram", "entropy, stride 8"),
+            ("cheap_proxy", "Moment proxy", "$|x|$ mean / RMS"), ("variance_proxy", "Variance proxy", "variance"),
+            ("kurtosis_proxy", "Kurtosis proxy", "kurtosis"),
+            ("guarded_sampled_hist_s8", "Guarded sampled histogram", "entropy + guard"),
+            ("learned_table", "Learned table", "sequence length")]
+
+
+def _pm(st, digits=1):
+    return f"${st['mean']:+.{digits}f}\\pm{st['ci95_half']:.{digits}f}$"
+
+
+def t_routed_e10(d, host):
+    """E10: paired differences (percent, mean +- 95% CI over rounds) to the best static chunk of each length."""
+    e = _load(d / f"e10_routed_{host}.json")["lengths"]
+    Ls = sorted(e, key=int)
+    rows = []
+    for spec in E10_ROWS:
+        if spec is None:
+            rows.append("\\midrule")
+            continue
+        key, name, dec = spec
+        cells = []
+        for L in Ls:
+            pv = e[L]["paired_vs_best_static"]["prefill_ms"].get(key)
+            cells.append(_pm(pv["diff_pct"]) if pv else "--")
+        for L in (Ls[1], Ls[-1]):
+            pv = e[L]["paired_vs_best_static"]["total_ms"].get(key)
+            cells.append(_pm(pv["diff_pct"]) if pv else "--")
+        dc = e[Ls[-1]]["decision_cost"].get(key)
+        cells.append(f"{dc['hook_minus_passive_prefill_ms']['diff_ms']['mean']:.1f}" if dc else "--")
+        chunks = e[Ls[-1]]["per_config"][key].get("scan_chunk_counts") or e[Ls[-1]]["per_config"][key].get("chunk_counts") or {}
+        tot = sum(chunks.values()) if chunks else 0
+        if chunks and len(chunks) == 1:
+            ch = f"{next(iter(chunks))} (all)"
+        elif chunks and len(chunks) >= 5:
+            ch = "uniform"
+        elif chunks:
+            ch = ", ".join(f"{k}: {100 * v / tot:.0f}\\%" for k, v in sorted(chunks.items(), key=lambda kv: int(kv[0])))
+        else:
+            ch = "--"
+        rows.append(f"{name} & {dec} & " + " & ".join(cells) + f" & {ch} \\\\")
+    return rows
+
+
+TABLES = {"routed_e10": t_routed_e10, "model_params": t_model_params, "model_ablation": t_model_ablation, "model_compile": t_model_compile,
           "tost": t_tost, "reference": t_reference, "redraw": t_redraw, "validation": t_validation, "latency": t_latency, "effects": t_effects, "autotune": t_autotune,
           "overhead": t_overhead}
 
