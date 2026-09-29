@@ -210,7 +210,7 @@ def t_model_params(d, host):
         line(f"Regret, top-{k} profiled", lambda m, k=k: f"{m['V2_topk_profiling'][f'top{k}']['mean_regret_pct']:.2f}")
     line("Regret floor, exact-shape table", lambda m: f"{m['V2_topk_profiling']['all_chunks_profiled']['mean_regret_pct']:.2f}")
     line("Leave one key out: chunk regret (mean / max)", lambda m: f"{m['V2_leave_one_key_out']['chunk_mean_regret_pct']:.2f} / {m['V2_leave_one_key_out']['chunk_max_regret_pct']:.1f}")
-    line("Leave one key out: config.\\ rank of 184 (median)", lambda m: f"{m['V2_leave_one_key_out']['config_median_rank']:.0f}")
+    line("Leave one key out: config.\\ rank of 184 (median)", lambda m: f"{m['V2_leave_one_key_out']['config_median_rank']:.1f}")
     line("Calibration on 18 batch-1 medians", lambda m: f"{m['V2_tiny_calibration']['e2']['mean_regret_pct']:.2f}")
     line("Parameters of the other GPU", lambda m: f"{next(v for k, v in m.items() if k.startswith('V3'))['e2']['mean_regret_pct']:.2f}")
     return rows

@@ -312,7 +312,7 @@ def fig_cost_model(curves, out_dir, lengths=(512, 2048, 8192, 2382)):
     if not hosts:
         return
     batches = sorted(set.intersection(*[set(curves[h]["batch"]) for h in hosts]))
-    fig, axes = plt.subplots(len(hosts), len(batches), figsize=(FULL_W, 1.75 * len(hosts) + 0.35), squeeze=False)
+    fig, axes = plt.subplots(len(hosts), len(batches), figsize=(FULL_W, 1.55 * len(hosts) + 0.35), squeeze=False)
     for i, h in enumerate(hosts):
         df = curves[h]
         for j, b in enumerate(batches):
@@ -348,7 +348,7 @@ def fig_key_churn(e5bs, out_dir):
     """N* = P / (o - h) versus the per-call decision overhead o, per GPU and tuning cost."""
     if not e5bs:
         return
-    fig, ax = plt.subplots(figsize=(COL_W, 2.3))
+    fig, ax = plt.subplots(figsize=(COL_W, 2.0))
     plabel = {"profile": "profile 6 chunks", "search": "full launch search"}
     for i, (h, d) in enumerate(e5bs.items()):
         o = np.array(d["curve"]["overhead_ms"])

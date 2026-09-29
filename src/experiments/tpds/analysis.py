@@ -108,3 +108,47 @@ def conditional_mutual_information(x: np.ndarray, y: np.ndarray, cond: np.ndarra
         h_y += w * float(-(p * np.log2(p)).sum())
     return {"cmi_bits": total, "cmi_perm_baseline_bits": total_perm, "cmi_excess_bits": total - total_perm,
             "H_oracle_given_cond_bits": h_y, "bins": bins}
+
+
+def cv_exact_headroom(df: pd.DataFrame, chunks: list[int], threshold_ms: float | None = None) -> dict:
+    """Out-of-sample oracle headroom of a chunk table keyed on the exact shape (L, batch).
+
+    For every prompt fold, the table is chosen on the other folds; a shape without training
+    calls falls back to the (length bucket, batch, L mod 16 == 0) table and then to the best
+    single chunk. Returns the per-call mean and, per exact shape, the mean headroom.
+    """
+    lat = latency_matrix(df, chunks)
+    orc = lat.min(1)
+    aligned = (df["L"].to_numpy() % 16 == 0).astype(int)
+    h = np.full(len(df), np.nan)
+    source = {"exact": 0, "bucket_aligned": 0, "global": 0}
+    folds = df["fold"].to_numpy()
+    for f in np.unique(folds):
+        te, tr = folds == f, folds != f
+        dtr = df[tr]
+        exact = {k: int(np.argmin(lat[g.index].mean(0))) for k, g in dtr.groupby(["L", "batch"])}
+        bucket = {k: int(np.argmin(lat[g.index].mean(0)))
+                  for k, g in dtr.assign(aligned=aligned[tr]).groupby(["L_bucket", "batch", "aligned"])}
+        glob = int(np.argmin((lat[tr] / orc[tr, None]).sum(0)))
+        for i in np.where(te)[0]:
+            L, b, lb = int(df["L"].iat[i]), int(df["batch"].iat[i]), int(df["L_bucket"].iat[i])
+            if (L, b) in exact:
+                j = exact[(L, b)]; source["exact"] += 1
+            elif (lb, b, int(aligned[i])) in bucket:
+                j = bucket[(lb, b, int(aligned[i]))]; source["bucket_aligned"] += 1
+            else:
+                j = glob; source["global"] += 1
+            h[i] = lat[i, j] - orc[i]
+    per_key = pd.Series(h).groupby([df["L"].to_numpy(), df["batch"].to_numpy()]).mean()
+    out = {"mean_ms": float(np.nanmean(h)), "mean_pct": float(100 * np.nanmean(h / orc)),
+           "max_key_ms": float(per_key.max()), "n_keys": int(len(per_key)), "fallbacks": source,
+           "n_keys_single_prompt_group": int((df.groupby(["L", "batch"])["group_id"].nunique() == 1).sum())
+           if "group_id" in df else None}
+    if threshold_ms is not None:
+        above = per_key[per_key > threshold_ms]
+        out["threshold_ms"] = threshold_ms
+        out["n_keys_above_threshold"] = int(len(above))
+        out["calls_on_keys_above_threshold"] = int(sum(
+            ((df["L"] == L) & (df["batch"] == b)).sum() for L, b in above.index))
+    return out
+

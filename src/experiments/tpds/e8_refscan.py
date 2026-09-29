@@ -124,7 +124,8 @@ def analyze(csv_path: Path) -> dict:
     import numpy as np
     import pandas as pd
 
-    from src.experiments.tpds.analysis import chunk_columns, conditional_mutual_information, latency_matrix, regret_stats
+    from src.experiments.tpds.analysis import (chunk_columns, conditional_mutual_information, cv_exact_headroom,
+                                               latency_matrix, regret_stats)
     from src.experiments.tpds.e3_predictors import evaluate
 
     df = pd.read_csv(csv_path)
@@ -165,6 +166,7 @@ def analyze(csv_path: Path) -> dict:
         per_key = pd.Series(h).groupby([calls[k] for k in keys]).mean()
         out["headroom"][name] = {"n_keys": int(len(per_key)), "mean_ms": float(h.mean()),
                                  "mean_pct": float(100 * (h / orc).mean()), "max_key_ms": float(per_key.max())}
+    out["headroom"]["exact_cv"] = cv_exact_headroom(calls, chunks, threshold_ms=0.0214)  # RTX 3090 host sync
     return out
 
 

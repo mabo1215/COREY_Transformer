@@ -43,7 +43,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.experiments.tpds.analysis import chunk_columns, latency_matrix, load_e2
+from src.experiments.tpds.analysis import chunk_columns, cv_exact_headroom, latency_matrix, load_e2
 from src.experiments.tpds.common import RESULTS_DIR, read_jsonl, write_json
 
 LAYERS_PER_REQUEST = 48
@@ -172,6 +172,8 @@ def main(argv=None):
     args = p.parse_args(argv)
     for host in args.hosts.split(","):
         res = analyze(host, args.in_dir)
+        df_all = load_e2([args.in_dir / f"e2_mamba1_{host}.csv"])
+        res["exact_cv_headroom"] = cv_exact_headroom(df_all, chunk_columns(df_all), threshold_ms=res["host_sync_ms"])
         res["by_key_mode"] = {}
         for mode in KEY_MODES:
             r = res if mode == res["key_mode"] else analyze(host, args.in_dir, mode)
