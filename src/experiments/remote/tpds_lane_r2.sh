@@ -69,6 +69,8 @@ if want E11; then
     $RUN ${P}E11 -- bash -c "set -e
       for spec in 1p4b:state-spaces/mamba-1.4b-hf:6 2p8b:state-spaces/mamba-2.8b-hf:8; do
         tag=\${spec%%:*}; rest=\${spec#*:}; mid=\${rest%:*}; stride=\${rest##*:}
+        local_dir=\${TPDS_E11_MODEL_ROOT:-/root/autodl-tmp/hf_models}/\${mid##*/}
+        [ -f \$local_dir/config.json ] && mid=\$local_dir   # pre-downloaded checkpoint (aria2), no network
         $PY -m src.experiments.tpds.capture_traces --model mamba1 --model-id \$mid --layer-stride \$stride $E11_CAP \
             --trace-dir src/outputs/tpds_traces_\$tag
         ${L[*]} $PY -m src.experiments.tpds.e2_oracle_sweep --model mamba1 $E11_E2 \
