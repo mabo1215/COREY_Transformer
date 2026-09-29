@@ -5,9 +5,9 @@ IEEE Transactions on Parallel and Distributed Systems
 
 Dear Editor-in-Chief,
 
-We are pleased to submit our manuscript entitled "When Activation-Driven Chunk Scheduling Does Not Pay: A Characterization of Entropy-Guided Scheduling for Chunked Linear-Recurrence Kernels" for consideration as a regular paper in the IEEE Transactions on Parallel and Distributed Systems (TPDS).
+We are pleased to submit our manuscript entitled "Shape, Not Values, Sets the Chunk: A Cost Model and a No-Gain Bound for Activation-Driven Scheduling of Chunked Linear-Recurrence Kernels" for consideration as a regular paper in the IEEE Transactions on Parallel and Distributed Systems (TPDS).
 
-The chunked linear-recurrence kernels behind Mamba, Mamba-2 and Gated DeltaNet expose a chunk size that is normally fixed by offline tuning. The manuscript asks whether a cheap per-call statistic of the activations, fixed-bin entropy, can choose this chunk better at run time, and answers the question negatively with a causal argument and recurrence-preserving measurements. For a fixed shape, data type and device, these dense kernels execute a data-independent instruction and memory stream, so the optimal chunk is a function of shape and hardware rather than of activation values. The paper tests every link of this argument.
+The chunked linear-recurrence kernels behind Mamba, Mamba-2 and Gated DeltaNet expose a chunk size that is normally fixed by offline tuning. The manuscript asks whether a cheap per-call statistic of the activations, fixed-bin entropy, can choose this chunk better at run time, and answers the question negatively with a causal argument and recurrence-preserving measurements. For a fixed shape, data type and device, these dense kernels execute a data-independent instruction and memory stream, so the optimal chunk is a function of shape and hardware rather than of activation values. The paper tests every link of this argument and turns it into a quantitative bound and a predictive model.
 
 The main contributions of the manuscript are:
 
@@ -15,13 +15,17 @@ The main contributions of the manuscript are:
 
 2. A per-call characterization of 2360 real prefill calls per model (Mamba-1 and Mamba-2, batch sizes 1, 4 and 16): how strongly latency depends on the chunk, how often the per-call optimum changes, and how much a single static chunk loses.
 
-3. A predictor study showing that sequence length and shape explain the per-call optimum and that entropy adds no information beyond them, together with an offline auto-tuning baseline and its cost.
+3. A predictor study showing that sequence length and shape explain the per-call optimum and that entropy adds no information beyond them, on our kernel, on the reference CUDA scan with a runtime chunk and on 1.4B and 2.8B checkpoints, together with an offline auto-tuning baseline and its cost.
 
-4. A routed end-to-end study with a patched live scan kernel that separates decision quality from decision cost, and an output-preservation check on 80 LongBench prompts.
+4. A no-gain bound: no policy that reads the activations can beat a shape-keyed table unless the table's oracle headroom exceeds the least decision cost; measured out of sample, this headroom is on average below one host synchronization.
 
-5. A break-even model of one-time tuning versus per-call scheduling, practical guidance for kernel and runtime designers (key chunk selection on shape and device), and a documented measurement pitfall, split-call chunk timing, that does not measure a chunked scan.
+5. A shape-and-hardware cost model built from the compiled kernel's register allocation, spills and thread layout and eight per-GPU parameters, which selects the chunk without profiling with 0.9% and 3.2% mean regret on the two GPUs and carries over to the reference CUDA scan and to larger checkpoints.
 
-We believe the manuscript is well suited to TPDS because it concerns GPU kernel tiling and scheduling, runtime adaptivity inside the inference critical path, and reproducible performance characterization across GPU generations. It is deliberately a negative-result and diagnostic study: it delimits when runtime chunk adaptation can and cannot pay off, which we believe is useful to the community building efficient long-context inference systems.
+6. A single-session routed end-to-end study that separates decision quality from decision cost, with output agreement at every configuration and on 80 LongBench prompts.
+
+7. A break-even and key-churn analysis of one-time tuning versus per-call scheduling, practical guidance for kernel and runtime designers (key chunk selection on the complete shape and device), and a documented measurement pitfall, split-call chunk timing, that does not measure a chunked scan.
+
+We believe the manuscript is well suited to TPDS because it concerns GPU kernel tiling and scheduling, runtime adaptivity inside the inference critical path, and reproducible performance modeling across GPU generations, including the per-device tuning that heterogeneous multi-GPU deployments require. It starts from a negative result and turns it into a bound and a predictive model that delimit when runtime chunk adaptation can and cannot pay off, which we believe is useful to the community building efficient long-context inference systems.
 
 Relation to an earlier version. While preparing this manuscript, we found that the kernel-level chunk results of an earlier, unpublished version of this study had been obtained with a split-call timing harness, which cuts the sequence into independent kernel calls, resets the recurrent state and mostly measures the number of kernel launches. We withdrew all such results, replaced them with measurements that change the chunk inside a single recurrence-preserving launch on two GPU generations, added real-trace, predictor, auto-tuning and break-even experiments, and reframed the paper as a characterization study. To preserve double-anonymous review, the manuscript describes the measurement pitfall in general terms and does not refer to the earlier version.
 
