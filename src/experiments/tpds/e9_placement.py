@@ -288,8 +288,9 @@ def analyze(args):
     res["placement_correlation"] = placement_correlation(rows)
     write_json(args.out_dir / f"e9_placement_{tag}.json", res)
     for fam, d in res["designs"].items():
+        rng = d["max_input_range_pct"]
         print(f"{fam}: {d['n_significant_input_effects_bh']}/{d['n_configs']} significant input effects (BH), "
-              f"max range {d['max_input_range_pct']:.1f}%, tie-aware agreement {d['tie_aware_agreement']:.3f}")
+              f"max range {'n/a' if rng is None else f'{rng:.1f}%'}, tie-aware agreement {d['tie_aware_agreement']:.3f}")
 
 
 def parse_args(argv=None):
