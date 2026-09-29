@@ -484,16 +484,57 @@ def analyze(host: str, in_dir: Path, other: str | None = None, do_loko: bool = T
     return res
 
 
+def evaluate_transfer(host: str, in_dir: Path, csv_path: Path, ref_csv: Path | None = None) -> dict:
+    """E11: apply the fitted parameters of ``host`` to calls of another checkpoint (other width), no refit.
+
+    Also reports the regret of a chunk table tuned on the reference checkpoint's calls (``ref_csv``,
+    keyed on length bucket, batch and alignment) and applied to the new calls.
+    """
+    res0 = json.loads((in_dir / f"cost_model_{host}.json").read_text())
+    theta = np.array([res0["params"][k] for k in PARAMS])
+    hw = HARDWARE[host]
+    stats = load_kernel_stats(in_dir, hw["arch"])
+    df = load_e2([csv_path])
+    chunks = chunk_columns(df)
+    choice, P = select_e2(theta, df, chunks, stats, hw)
+    out = {"experiment": "T1-transfer", "host": host, "calls": str(csv_path.name), "n_calls": int(len(df)),
+           "widths": sorted(int(w) for w in df["width"].unique()), "model_e2": e2_eval(df, chunks, choice, P),
+           "topk": topk_refinement(df, chunks, P)}
+    if ref_csv is not None and ref_csv.exists():
+        ref = load_e2([ref_csv])
+        key = ["L_bucket", "batch", "aligned"]
+        for d_ in (ref, df):
+            d_["aligned"] = (d_["L"] % 16 == 0).astype(int)
+        rlat = latency_matrix(ref, chunks)
+        table = {k: int(np.argmin(rlat[g.index.to_numpy()].mean(0))) for k, g in ref.groupby(key)}
+        glob = int(np.argmin((rlat / rlat.min(1, keepdims=True)).sum(0)))
+        pick = np.array([table.get(tuple(r), glob) for r in df[key].itertuples(index=False)])
+        out["reference_table_e2"] = e2_eval(df, chunks, pick)
+    return out
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--in-dir", type=Path, default=RESULTS_DIR)
     p.add_argument("--hosts", default="pro6000,vgpu3090")
     p.add_argument("--no-loko", action="store_true")
     p.add_argument("--ablation", action="store_true", help="refit without each mechanism (drop-one)")
+    p.add_argument("--transfer-calls", type=Path, default=None,
+                   help="E11: E2-style CSV of another checkpoint; evaluate the fitted model of --hosts[0] on it")
+    p.add_argument("--transfer-ref", type=Path, default=None, help="E11: reference-checkpoint CSV for the tuned table")
     p.add_argument("--pipelines-only", action="store_true",
                    help="only (re)compute V4 for Mamba-2 SSD and Gated DeltaNet into the existing result files")
     args = p.parse_args(argv)
     hosts = args.hosts.split(",")
+    if args.transfer_calls is not None:
+        res = evaluate_transfer(hosts[0], args.in_dir, args.transfer_calls, args.transfer_ref)
+        out = args.in_dir / f"cost_model_transfer_{args.transfer_calls.stem}.json"
+        write_json(out, res)
+        m = res["model_e2"]
+        print(f"{out.name}: widths {res['widths']}, model regret {m['mean_regret_pct']:.2f}% (tied "
+              f"{m['tie_aware_accuracy']:.2f})" + (f", reference-tuned table {res['reference_table_e2']['mean_regret_pct']:.2f}%"
+                                                   if "reference_table_e2" in res else ""))
+        return
     if args.pipelines_only:
         for h in hosts:
             path = args.in_dir / f"cost_model_{h}.json"

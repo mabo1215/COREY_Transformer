@@ -6,6 +6,8 @@
 #        twelve E4 keys (validates every chunk against the stock forward first)
 #   E9   value vs placement control (designs A/B/C), with the reference scan when available
 #   E10  single-session interleaved routed end-to-end rerun
+#   E11  (optional, only when listed in TPDS_R2_ONLY) larger checkpoints: batch-1 traces of 8
+#        layers of mamba-1.4b-hf and mamba-2.8b-hf, then the E2 chunk sweep of the Triton kernel
 # Prerequisite: tpds_r2_prep.sh (P1 build of selective_scan_chunk_cuda, traces present).
 #
 # Launch:  wsl bash src/revloop/remote.sh launch vgpu3090 tpds-r2 src/experiments/remote/tpds_lane_r2.sh
@@ -54,5 +56,23 @@ if want E10; then
   $RUN ${P}E10 -- bash -c "${L[*]} $PY -m src.experiments.tpds.e10_routed_interleaved $E10_ARGS --exclusive-guard \
       --out-dir '$OUT_DIR' --tag '$TAG' && $PY -m src.experiments.tpds.e10_routed_interleaved --analyze \
       --out-dir '$OUT_DIR' --tag '$TAG'"
+fi
+if want E11; then
+  # 8 captured layers per model: stride 6 of 48 (1.4B) and stride 8 of 64 (2.8B)
+  E11_CAP="--samples-per-regime 20 --longbench-per-task 8 --longbench-lengths 1024,2048,4096,8192 --max-tokens 8192"
+  E11_E2="--batches 1 --warmup 10 --repeats 50"
+  [ "${TPDS_SMOKE:-0}" = 1 ] && { E11_CAP="--samples-per-regime 1 --longbench-per-task 1 --max-tokens 1024 --limit-prompts 6"; E11_E2="--batches 1 --warmup 2 --repeats 3 --max-rows 6"; }
+  check_space src/outputs 40 || { lanelog "E11 needs ~40 GB for traces"; : > "$MARK_DIR/${P}E11.FAIL"; }
+  if [ ! -f "$MARK_DIR/${P}E11.FAIL" ]; then
+    # shellcheck disable=SC2086
+    $RUN ${P}E11 -- bash -c "set -e
+      for spec in 1p4b:state-spaces/mamba-1.4b-hf:6 2p8b:state-spaces/mamba-2.8b-hf:8; do
+        tag=\${spec%%:*}; rest=\${spec#*:}; mid=\${rest%:*}; stride=\${rest##*:}
+        $PY -m src.experiments.tpds.capture_traces --model mamba1 --model-id \$mid --layer-stride \$stride $E11_CAP \
+            --trace-dir src/outputs/tpds_traces_\$tag
+        ${L[*]} $PY -m src.experiments.tpds.e2_oracle_sweep --model mamba1 $E11_E2 \
+            --trace-dir src/outputs/tpds_traces_\$tag --out-dir '$OUT_DIR' --tag ${TAG}_\$tag
+      done"
+  fi
 fi
 lanelog "tpds-r2 lane done"

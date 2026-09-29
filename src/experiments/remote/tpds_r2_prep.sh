@@ -9,7 +9,7 @@
 #
 # Env: PY, TPDS_MAMBA_SRC (default /root/autodl-tmp/mamba_src), TPDS_MAMBA_REF (git tag of the
 #      source; default: the installed mamba_ssm version prefixed with v), TORCH_CUDA_ARCH_LIST
-#      (default: 8.6), TPDS_R2_REBUILD=1.
+#      (default: 8.6), TPDS_R2_REBUILD=1, TPDS_R2_E11=1 (also download the E11 checkpoints).
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/tpds_common.sh" 2>/dev/null || source src/experiments/remote/tpds_common.sh
 rc=0
@@ -68,6 +68,15 @@ try:
 except Exception as exc:  # noqa: BLE001
     print("HF cache scan failed:", exc)
 PYEOF
+
+if [ "${TPDS_R2_E11:-0}" = 1 ]; then
+  echo "== E11 checkpoints (download only)"
+  "$PY" - <<'PYEOF' || rc=1
+from huggingface_hub import snapshot_download
+for mid in ("state-spaces/mamba-1.4b-hf", "state-spaces/mamba-2.8b-hf"):
+    print(mid, snapshot_download(mid, allow_patterns=["*.json", "*.safetensors", "*.txt", "*.model"]))
+PYEOF
+fi
 
 echo "== static checks"
 for f in src/experiments/tpds/e8_refscan.py src/experiments/tpds/e9_placement.py \
