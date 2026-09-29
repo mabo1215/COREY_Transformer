@@ -35,7 +35,7 @@ if [ -x "$NVCC" ]; then "$NVCC" --version | tail -2; else echo "nvcc not found a
 echo "== P1: runtime-chunk build"
 MAMBA_SRC=${TPDS_MAMBA_SRC:-/root/autodl-tmp/mamba_src}
 REF=${TPDS_MAMBA_REF:-v$("$PY" -c 'import importlib.metadata as m; print(m.version("mamba_ssm"))')}
-if ! "$PY" -c "import selective_scan_chunk_cuda" 2>/dev/null || [ "${TPDS_R2_REBUILD:-0}" = 1 ]; then
+if ! "$PY" -c "import torch, selective_scan_chunk_cuda" 2>/dev/null || [ "${TPDS_R2_REBUILD:-0}" = 1 ]; then
   if [ ! -f "$MAMBA_SRC/csrc/selective_scan/selective_scan_fwd_kernel.cuh" ]; then
     ( [ -f /etc/network_turbo ] && source /etc/network_turbo
       git clone --depth 1 --branch "$REF" https://github.com/state-spaces/mamba.git "$MAMBA_SRC" ) || {
@@ -52,7 +52,7 @@ if ! "$PY" -c "import selective_scan_chunk_cuda" 2>/dev/null || [ "${TPDS_R2_REB
 else
   echo "selective_scan_chunk_cuda already importable (TPDS_R2_REBUILD=1 to rebuild)"
 fi
-"$PY" -c "import selective_scan_chunk_cuda as m; print('selective_scan_chunk_cuda:', m.__file__, [n for n in dir(m) if not n.startswith('_')])" || rc=1
+"$PY" -c "import torch, selective_scan_chunk_cuda as m; print('selective_scan_chunk_cuda:', m.__file__, [n for n in dir(m) if not n.startswith('_')])" || rc=1
 
 echo "== data and caches"
 if [ -d "$TRACE_DIR" ]; then

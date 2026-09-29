@@ -30,7 +30,7 @@ else
   E9_ARGS="--lengths 2048,8192 --rounds 5 --draws 3 --placements 10 --repeats 100 --cost-repeats 500"
   E10_ARGS=""
 fi
-REF_OK=0; "$PY" -c "import selective_scan_chunk_cuda" 2>/dev/null && REF_OK=1
+REF_OK=0; "$PY" -c "import torch, selective_scan_chunk_cuda" 2>/dev/null && REF_OK=1
 lanelog "tpds-r2 lane start on $TAG (runtime-chunk module: $REF_OK; experiments: $ONLY)"
 
 want() { case " $ONLY " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
