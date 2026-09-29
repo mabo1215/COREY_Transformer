@@ -484,6 +484,61 @@ def analyze(host: str, in_dir: Path, other: str | None = None, do_loko: bool = T
     return res
 
 
+# --------------------------------------------------------------------------- reference CUDA scan (E8)
+REF_THREADS = {128: 32, 256: 32, 512: 32, 1024: 64, 2048: 128}   # stock (kNThreads, kNItems = C / threads)
+REF_REGS = 168      # registers per thread reported by ptxas for most instantiations of the runtime-chunk build (sm_86)
+REF_PARAMS = ["t0", "tau_f", "tau_m", "tau_e", "tau_s", "tau_x", "W0", "W1"]
+
+
+def ref_predict(th, L, B, d, C, hw):
+    """Same form as Eq. (5) for the reference scan: one block per (batch, channel), kNThreads threads
+    walking ceil(L / C) chunks of kNItems elements per thread, a block scan over the threads per state."""
+    t0, tf, tm, te, ts, tx, W0, W1 = th
+    thr = np.vectorize(REF_THREADS.get)(C).astype(float)
+    items, warps = C / thr, thr / 32
+    alloc = np.ceil(REF_REGS / 8.0) * 8 * thr
+    k = np.maximum(1, np.minimum.reduce([np.full(len(C), hw["max_blocks_per_sm"]), np.floor(hw["max_warps_per_sm"] / warps),
+                                         np.floor(hw["regs_per_sm"] / alloc)]))
+    P = B * d
+    waves, m = np.ceil(P / (hw["n_sm"] * k)), np.minimum(k, np.ceil(P / hw["n_sm"]))
+    W = m * warps
+    A = tf + D_STATE * tm
+    I = D_STATE * (te * items + ts * np.log2(np.minimum(thr, 32)) + tx * (warps > 1) * np.log2(warps + 1))
+    return t0 + waves * np.ceil(L / C) * (A * np.minimum(1.0, W1 / W) + I * np.maximum(1.0, W / W0))
+
+
+def reference_scan_model(in_dir: Path, host: str = "vgpu3090") -> dict:
+    """Fit on the twelve E4 shape keys of the E8 sweep (5 chunks each), evaluate on the 2360 captured calls."""
+    hw = HARDWARE[host]
+    df = pd.read_csv(in_dir / f"e8_refscan_{host}.csv")
+    chunks = sorted(REF_THREADS)
+    keys, calls = df[df["regimes"] == "e4_key"], df[df["regimes"] != "e4_key"].reset_index(drop=True)
+
+    def long(d):
+        n = len(d)
+        return (np.tile(d["L"].to_numpy(float), len(chunks)), np.tile(d["batch"].to_numpy(float), len(chunks)),
+                np.tile(d["width"].to_numpy(float), len(chunks)), np.repeat(np.array(chunks, float), n))
+
+    L, B, d, C = long(keys)
+    y = np.log(np.concatenate([keys[f"lat_c{c}_mean"].to_numpy() for c in chunks]))
+    lo, hi = [0, 0, 0, 0, 0, 0, 1, 1], [1, 0.1, 0.1, 0.01, 0.01, 0.1, 64, 256]
+    best = None
+    for x0 in ([0.01, 1e-3, 1e-4, 1e-5, 1e-5, 1e-4, 8, 16], [0.02, 1e-4, 1e-5, 1e-6, 1e-6, 1e-5, 4, 8],
+               [0.005, 1e-3, 1e-3, 1e-4, 1e-4, 1e-3, 16, 32]):
+        sol = least_squares(lambda th: np.log(ref_predict(th, L, B, d, C, hw)) - y, x0, bounds=(lo, hi),
+                            loss="soft_l1", f_scale=0.1, x_scale="jac", max_nfev=20000)
+        if best is None or sol.cost < best.cost:
+            best = sol
+    th = best.x
+    fit_q = fit_quality(ref_predict(th, L, B, d, C, hw), np.exp(y))
+    Lc, Bc, dc, Cc = long(calls)
+    P = ref_predict(th, Lc, Bc, dc, Cc, hw).reshape(len(chunks), len(calls)).T
+    ev = e2_eval(calls, chunks, P.argmin(1), P)
+    return {"experiment": "T1-reference-scan", "host": host, "params": dict(zip(REF_PARAMS, map(float, th))),
+            "fixed": {"regs_per_thread": REF_REGS, "threads_per_chunk": {str(k): v for k, v in REF_THREADS.items()}},
+            "n_fit_points": int(len(y)), "fit": fit_q, "e8_calls": ev, "topk": topk_refinement(calls, chunks, P)}
+
+
 def evaluate_transfer(host: str, in_dir: Path, csv_path: Path, ref_csv: Path | None = None) -> dict:
     """E11: apply the fitted parameters of ``host`` to calls of another checkpoint (other width), no refit.
 
@@ -522,10 +577,20 @@ def main(argv=None):
     p.add_argument("--transfer-calls", type=Path, default=None,
                    help="E11: E2-style CSV of another checkpoint; evaluate the fitted model of --hosts[0] on it")
     p.add_argument("--transfer-ref", type=Path, default=None, help="E11: reference-checkpoint CSV for the tuned table")
+    p.add_argument("--reference", action="store_true",
+                   help="fit the model to the runtime-chunk reference CUDA scan (E8) and write cost_model_refscan_<host>.json")
     p.add_argument("--pipelines-only", action="store_true",
                    help="only (re)compute V4 for Mamba-2 SSD and Gated DeltaNet into the existing result files")
     args = p.parse_args(argv)
     hosts = args.hosts.split(",")
+    if args.reference:
+        res = reference_scan_model(args.in_dir, "vgpu3090")
+        write_json(args.in_dir / "cost_model_refscan_vgpu3090.json", res)
+        e = res["e8_calls"]
+        print(f"reference scan: fit R2 {res['fit']['r2_log']:.3f} on {res['n_fit_points']} timings; calls R2 "
+              f"{e['curve_fit']['r2_log']:.3f}, regret {e['mean_regret_pct']:.2f}% (p95 {e['p95_regret_pct']:.1f}), "
+              f"tied {e['tie_aware_accuracy']:.2f}; top-2 {res['topk']['top2']['mean_regret_pct']:.2f}%")
+        return
     if args.transfer_calls is not None:
         res = evaluate_transfer(hosts[0], args.in_dir, args.transfer_calls, args.transfer_ref)
         out = args.in_dir / f"cost_model_transfer_{args.transfer_calls.stem}.json"

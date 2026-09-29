@@ -1,0 +1,91 @@
+{
+  "experiment": "T1-reference-scan",
+  "host": "vgpu3090",
+  "params": {
+    "t0": 0.02609709327922959,
+    "tau_f": 0.00036867077075492655,
+    "tau_m": 0.0002800615283141686,
+    "tau_e": 4.213853725228362e-05,
+    "tau_s": 1.1450318180036923e-05,
+    "tau_x": 0.00012176572909771673,
+    "W0": 10.16519453541269,
+    "W1": 7.285193231058051
+  },
+  "fixed": {
+    "regs_per_thread": 168,
+    "threads_per_chunk": {
+      "128": 32,
+      "256": 32,
+      "512": 32,
+      "1024": 64,
+      "2048": 128
+    }
+  },
+  "n_fit_points": 60,
+  "fit": {
+    "n": 60,
+    "r2_log": 0.9832082325203868,
+    "median_rel_err": 0.11822855819103406,
+    "p90_rel_err": 0.30813787480984406
+  },
+  "e8_calls": {
+    "n": 2360,
+    "mean_regret_pct": 3.8136922217243288,
+    "p95_regret_pct": 13.20642436104016,
+    "max_regret_pct": 165.1479589996405,
+    "oracle_hit_rate": 0.6436440677966102,
+    "tie_aware_accuracy": 0.6788135593220339,
+    "accuracy": 0.6436440677966102,
+    "chosen_distribution": {
+      "512": 1016,
+      "128": 840,
+      "256": 264,
+      "2048": 240
+    },
+    "mean_regret_pct_aligned": 4.1208357092413745,
+    "mean_regret_pct_unaligned": 2.623193910604539,
+    "by_batch": {
+      "1": {
+        "mean_regret_pct": 5.3882201129769385,
+        "p95_regret_pct": 26.557130977791406
+      },
+      "4": {
+        "mean_regret_pct": 1.1168283206253022,
+        "p95_regret_pct": 6.561001764315637
+      },
+      "16": {
+        "mean_regret_pct": 0.5327241942609855,
+        "p95_regret_pct": 4.330936806019397
+      }
+    },
+    "curve_fit": {
+      "n": 11800,
+      "r2_log": 0.9649968024694499,
+      "median_rel_err": 0.18348518244047402,
+      "p90_rel_err": 0.41575135758931814
+    }
+  },
+  "topk": {
+    "top1": {
+      "profiled_chunks_per_shape": 1,
+      "mean_regret_pct": 3.8136922217243288,
+      "p95_regret_pct": 13.20642436104016
+    },
+    "top2": {
+      "profiled_chunks_per_shape": 2,
+      "mean_regret_pct": 2.505981026614931,
+      "p95_regret_pct": 9.854071942923731
+    },
+    "top3": {
+      "profiled_chunks_per_shape": 3,
+      "mean_regret_pct": 2.5046683580809668,
+      "p95_regret_pct": 9.854071942923731
+    },
+    "all_chunks_profiled": {
+      "profiled_chunks_per_shape": 5,
+      "mean_regret_pct": 2.4626462668328166,
+      "p95_regret_pct": 9.854071942923731,
+      "note": "exact-shape table chosen on the same calls: the floor of any shape-keyed policy"
+    }
+  }
+}
