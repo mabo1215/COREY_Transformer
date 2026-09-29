@@ -113,7 +113,7 @@
 11. **E11 大模型（审稿要点 5，§VI-E 表）**：1.4B / 2.8B batch-1；成本模型不重拟合迁移到新宽度 4.8% / 15.7%，优于 370M 调好的表（9.6% / 24.2%）和在新调用上训练的 shape 树（7.1% / 16.9%）；shape+熵 = shape。2.8B 计时在主机高负载下噪声较大，已在正文说明。
 12. **正文整合**：摘要（仅事实更新）、贡献、方法、Limitations、输出一致性段落均已更新；累计成本图移到补充材料以守住 14 页；编译通过（正文 14 页、补充 13 页，无 undefined、无 overfull）。
 
-13. **M1 标题与摘要（作者 2026-09-30 同意）**：新标题；摘要加入无收益界、成本模型、key-churn 三句（250 词）；正文与补充材料页眉、关键词（performance modeling）、投稿信、Title_Page.docx 同步（Code Ocean capsule 按作者指示不改）。
+13. **M1 标题与摘要（作者 2026-09-30 同意）**：新标题；摘要加入无收益界、成本模型、key-churn 三句（250 词）；正文与补充材料页眉、关键词（performance modeling）、投稿信、Title_Page.docx 同步（Code Ocean capsule 按作者指示不改）。2026-09-30 按作者确认修正 Title_Page.docx 的单位标号：Jinsong Wu 由 (3) 改为 (2)（桂林电子科技大学），并去掉作者行末多余的逗号。仓库 remote 由旧名 ADAMA_Transformer(_latex) 改为 COREY_Transformer(_latex)，`.gitmodules` 同步。
 14. **第一轮 Stage 9' 复核的修正**：头部余量改用样本外（交叉验证）估计；Theorem 1 的 o_min 写明与实现相关、条件为必要非充分；放置对照、TOST、Mamba-2 阈值、GDN、捕获调用上的误差、若干舍入、多 GPU 部署按设备建缓存等均已按意见修改。
 15. **第二轮 Stage 9' 复核（2026-09-30，无上下文子代理，全部数字对照结果文件）的修正**：
    - **样本外余量拆成两部分**：`cv_exact_headroom` 新增 covered / fallback 统计（结果写入 `e5b_*.json`、`e8_analysis_vgpu3090.json`，只增加字段、原数字不变）。训练折中出现过的 shape（2156 个调用）余量为 0.45 / 2.2 / 2.2 µs/调用，单个 shape 最大 4.4 / 6.7 / 14.5 µs（PRO 6000 / 3090 / 参考 scan），处处低于一次 host 同步。此前「3090 有 10 个 shape、参考 scan 有 12 个超过同步」全部来自只出现在单个 prompt 折、回退到桶表项的 204 个调用：那是「未调优 key 的 regret」（key-churn 分析处理），不是 Theorem 1 意义上的余量。正文 §VI-I、贡献列表、结论据此改写。
