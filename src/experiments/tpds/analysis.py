@@ -121,6 +121,7 @@ def cv_exact_headroom(df: pd.DataFrame, chunks: list[int], threshold_ms: float |
     orc = lat.min(1)
     aligned = (df["L"].to_numpy() % 16 == 0).astype(int)
     h = np.full(len(df), np.nan)
+    covered = np.zeros(len(df), dtype=bool)          # the call's exact shape has a training-fold entry
     source = {"exact": 0, "bucket_aligned": 0, "global": 0}
     folds = df["fold"].to_numpy()
     for f in np.unique(folds):
@@ -133,7 +134,7 @@ def cv_exact_headroom(df: pd.DataFrame, chunks: list[int], threshold_ms: float |
         for i in np.where(te)[0]:
             L, b, lb = int(df["L"].iat[i]), int(df["batch"].iat[i]), int(df["L_bucket"].iat[i])
             if (L, b) in exact:
-                j = exact[(L, b)]; source["exact"] += 1
+                j = exact[(L, b)]; source["exact"] += 1; covered[i] = True
             elif (lb, b, int(aligned[i])) in bucket:
                 j = bucket[(lb, b, int(aligned[i]))]; source["bucket_aligned"] += 1
             else:
@@ -150,5 +151,18 @@ def cv_exact_headroom(df: pd.DataFrame, chunks: list[int], threshold_ms: float |
         out["n_keys_above_threshold"] = int(len(above))
         out["calls_on_keys_above_threshold"] = int(sum(
             ((df["L"] == L) & (df["batch"] == b)).sum() for L, b in above.index))
+    # Theorem 1 concerns shapes whose table entry exists; calls served by a fallback measure the
+    # regret of an untuned key instead (the key-churn analysis). Report the two populations apart.
+    Ls, bs = df["L"].to_numpy(), df["batch"].to_numpy()
+    for name, sel in (("covered", covered), ("fallback", ~covered)):
+        if not sel.any():
+            out[name] = {"n_calls": 0}
+            continue
+        pk = pd.Series(h[sel]).groupby([Ls[sel], bs[sel]]).mean()
+        rec = {"n_calls": int(sel.sum()), "n_keys": int(len(pk)), "mean_ms": float(h[sel].mean()),
+               "mean_pct": float(100 * (h[sel] / orc[sel]).mean()), "max_key_ms": float(pk.max())}
+        if threshold_ms is not None:
+            rec["n_keys_above_threshold"] = int((pk > threshold_ms).sum())
+        out[name] = rec
     return out
 

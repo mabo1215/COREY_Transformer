@@ -17,9 +17,9 @@ The main contributions of the manuscript are:
 
 3. A predictor study showing that sequence length and shape explain the per-call optimum and that entropy adds no information beyond them, on our kernel, on the reference CUDA scan with a runtime chunk and on 1.4B and 2.8B checkpoints, together with an offline auto-tuning baseline and its cost.
 
-4. A no-gain bound: no policy that reads the activations can beat a shape-keyed table unless the table's oracle headroom exceeds the least decision cost; measured out of sample, this headroom is on average below one host synchronization.
+4. A no-gain bound: no policy that reads the activations can beat a shape-keyed table unless the table's oracle headroom exceeds the least decision cost; measured out of sample, this headroom is below one host synchronization at every shape that has a table entry.
 
-5. A shape-and-hardware cost model built from the compiled kernel's register allocation, spills and thread layout and eight per-GPU parameters, which selects the chunk without profiling with 0.9% and 3.2% mean regret on the two GPUs and carries over to the reference CUDA scan and to larger checkpoints.
+5. A shape-and-hardware cost model built from the compiled kernel's register allocation, spills and thread layout and eight per-GPU parameters, which selects the chunk without profiling with 0.9% and 3.2% mean regret on the two GPUs and stays within 2.1 points of an exact-shape table on the reference CUDA scan and on larger checkpoints.
 
 6. A single-session routed end-to-end study that separates decision quality from decision cost, with output agreement at every configuration and on 80 LongBench prompts.
 
