@@ -16,7 +16,10 @@ so the E2/E3 analysis applies unchanged. The entropy rule is Eq. (2) over the ro
 [128, 2048].
 
 ``--validate-only`` compares every chunk with the stock forward on synthetic inputs whose
-lengths are not a multiple of any chunk, and exits.
+lengths are not a multiple of any chunk, and exits. ``--analyze`` (CPU) writes
+``e8_analysis_<tag>.json``: chunk spread, static and stock-dispatch regret per batch size, the E3
+predictors (grouped cross-validation), conditional mutual information, and the oracle headroom
+over bucket, bucket-and-alignment and exact-shape tables (Theorem 1).
 
 Output: ``e8_refscan_<tag>.csv`` (resumable, one fsynced row per call), ``e8_refscan_<tag>.json``
 (metadata, validation, summary).
@@ -117,6 +120,54 @@ def validate(chunks, mods, log, lengths=(300, 1000, 3000, 5000), dim=64, bsz=2) 
     return out
 
 
+def analyze(csv_path: Path) -> dict:
+    import numpy as np
+    import pandas as pd
+
+    from src.experiments.tpds.analysis import chunk_columns, conditional_mutual_information, latency_matrix, regret_stats
+    from src.experiments.tpds.e3_predictors import evaluate
+
+    df = pd.read_csv(csv_path)
+    calls = df[df["regimes"] != "e4_key"].reset_index(drop=True)
+    chunks = chunk_columns(calls)
+    lat = latency_matrix(calls, chunks)
+    orc = lat.min(1)
+    stock = calls["lat_stock_mean"].to_numpy()
+    tied = [set(int(c) for c in str(t).split(";") if c) for t in calls["tied_chunks"].fillna("")]
+    spread = lat.max(1) / orc
+    out = {"experiment": "E8-analysis", "n_calls": int(len(calls)), "chunks": chunks,
+           "max_out_diff_vs_stock": float(df["max_out_diff_vs_stock"].max()),
+           "spread": {"median": float(np.median(spread)), "p95": float(np.percentile(spread, 95)),
+                      "max": float(spread.max())},
+           "stock_dispatch": {**regret_stats(stock / orc - 1),
+                              "tie_aware_accuracy": float(np.mean([c in t for c, t in zip(calls["stock_chunk"], tied)]))},
+           "by_batch": {}, "predictors": evaluate(calls, chunks)}
+    for b, g in calls.groupby("batch"):
+        i = g.index.to_numpy()
+        out["by_batch"][int(b)] = {
+            "n": int(len(i)),
+            "static_mean_regret_pct": {int(c): float(100 * (lat[i, j] / orc[i] - 1).mean()) for j, c in enumerate(chunks)},
+            "stock_mean_regret_pct": float(100 * (stock[i] / orc[i] - 1).mean()),
+            "oracle_distribution": {int(k): int(v) for k, v in g["oracle_chunk"].value_counts().items()}}
+    Lb = np.log2(calls["L_bucket"].to_numpy()).astype(int)
+    out["mi_entropy_oracle_given_Lbucket_batch"] = conditional_mutual_information(
+        calls["entropy_bits"].to_numpy(), calls["oracle_chunk"].to_numpy(), Lb * 100 + calls["batch"].to_numpy())
+    out["mi_logL_oracle_given_batch"] = conditional_mutual_information(
+        np.log2(calls["L"].to_numpy()), calls["oracle_chunk"].to_numpy(), calls["batch"].to_numpy())
+    calls["aligned"] = (calls["L"] % 16 == 0).astype(int)
+    out["headroom"] = {}
+    for name, keys in (("bucket", ["L_bucket", "batch"]), ("bucket_aligned", ["L_bucket", "batch", "aligned"]),
+                       ("exact", ["L", "batch"])):
+        h = np.zeros(len(calls))
+        for _, g in calls.groupby(keys):
+            i = g.index.to_numpy()
+            h[i] = lat[i, int(np.argmin(lat[i].mean(0)))] - orc[i]
+        per_key = pd.Series(h).groupby([calls[k] for k in keys]).mean()
+        out["headroom"][name] = {"n_keys": int(len(per_key)), "mean_ms": float(h.mean()),
+                                 "mean_pct": float(100 * (h / orc).mean()), "max_key_ms": float(per_key.max())}
+    return out
+
+
 def parse_args(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--trace-dir", type=Path, default=DEFAULT_TRACE_DIR)
@@ -127,6 +178,7 @@ def parse_args(argv=None):
     p.add_argument("--repeats", type=int, default=50)
     p.add_argument("--e4-keys", action="store_true", help="also time the twelve E4 shape keys")
     p.add_argument("--validate-only", action="store_true")
+    p.add_argument("--analyze", action="store_true", help="only write the analysis of an existing table (CPU)")
     p.add_argument("--exclusive-guard", action="store_true")
     p.add_argument("--guard-until", type=float, default=None)
     p.add_argument("--max-rows", type=int, default=None, help="stop after this many new rows (smoke)")
@@ -140,6 +192,16 @@ def parse_args(argv=None):
 def main(argv=None):
     args = parse_args(argv)
     tag = args.tag or host_name()
+    if args.analyze:
+        res = analyze(args.out_dir / f"e8_refscan_{tag}.csv")
+        write_json(args.out_dir / f"e8_analysis_{tag}.json", res)
+        pr = res["predictors"]
+        print(f"E8 analysis: spread median {res['spread']['median']:.2f}x; stock dispatch "
+              f"{res['stock_dispatch']['mean_regret_pct']:.2f}%; shape {pr['shape']['mean_regret_pct']:.2f}%, "
+              f"entropy only {pr['entropy_only']['mean_regret_pct']:.2f}%, shape+entropy "
+              f"{pr['shape+entropy']['mean_regret_pct']:.2f}%; exact-shape headroom "
+              f"{1000 * res['headroom']['exact']['mean_ms']:.2f} us (max {1000 * res['headroom']['exact']['max_key_ms']:.1f} us)")
+        return
     log = Logger(f"e8_refscan_{tag}")
     gpu_baseline = all_gpu_pids()
     check_disk(args.out_dir, need_gb=0.5, log=log)
