@@ -1,0 +1,85 @@
+{
+  "experiment": "T1-transfer",
+  "host": "vgpu3090",
+  "calls": "e2_mamba1_vgpu3090_2p8b.csv",
+  "n_calls": 1536,
+  "widths": [
+    5120
+  ],
+  "model_e2": {
+    "n": 1536,
+    "mean_regret_pct": 15.698683782010772,
+    "p95_regret_pct": 65.33932654335553,
+    "max_regret_pct": 134.64928922021807,
+    "oracle_hit_rate": 0.521484375,
+    "tie_aware_accuracy": 0.88671875,
+    "accuracy": 0.521484375,
+    "chosen_distribution": {
+      "64": 1160,
+      "32": 160,
+      "512": 152,
+      "1024": 64
+    },
+    "mean_regret_pct_aligned": 15.223267618184222,
+    "mean_regret_pct_unaligned": 17.165393223603317,
+    "by_batch": {
+      "1": {
+        "mean_regret_pct": 15.698683782010772,
+        "p95_regret_pct": 65.33932654335553
+      }
+    },
+    "curve_fit": {
+      "n": 9216,
+      "r2_log": 0.7815358593743444,
+      "median_rel_err": 0.32585465046528916,
+      "p90_rel_err": 0.5860409287770155
+    }
+  },
+  "topk": {
+    "top1": {
+      "profiled_chunks_per_shape": 1,
+      "mean_regret_pct": 15.698683782010772,
+      "p95_regret_pct": 65.33932654335553
+    },
+    "top2": {
+      "profiled_chunks_per_shape": 2,
+      "mean_regret_pct": 14.7598448329955,
+      "p95_regret_pct": 64.5061681718609
+    },
+    "top3": {
+      "profiled_chunks_per_shape": 3,
+      "mean_regret_pct": 14.191199505945065,
+      "p95_regret_pct": 63.496182006656944
+    },
+    "all_chunks_profiled": {
+      "profiled_chunks_per_shape": 6,
+      "mean_regret_pct": 13.611674675524494,
+      "p95_regret_pct": 61.44420633811303,
+      "note": "exact-shape table chosen on the same calls: the floor of any shape-keyed policy"
+    }
+  },
+  "reference_table_e2": {
+    "n": 1536,
+    "mean_regret_pct": 24.24996418531714,
+    "p95_regret_pct": 92.20169695775438,
+    "max_regret_pct": 174.78823095781425,
+    "oracle_hit_rate": 0.2942708333333333,
+    "tie_aware_accuracy": 0.80078125,
+    "accuracy": 0.2942708333333333,
+    "chosen_distribution": {
+      "128": 504,
+      "512": 416,
+      "1024": 232,
+      "64": 224,
+      "32": 160
+    },
+    "mean_regret_pct_aligned": 27.65879303551411,
+    "mean_regret_pct_unaligned": 13.733364541092444,
+    "by_batch": {
+      "1": {
+        "mean_regret_pct": 24.24996418531714,
+        "p95_regret_pct": 92.20169695775438
+      }
+    }
+  }
+}
