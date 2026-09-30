@@ -10,7 +10,7 @@ The registry never contains secrets.
 
 Login details (`.claude/rules/host-login.md`) are kept in `C:\source\.env`, in blocks of
 three lines: host label, `ssh -p <port> root@<host>`, password. A host's `login_ref` can
-name another file, for example `C:\work\9\saveway.txt` for the PRO 6000. Use them only to
+name another file: `C:\work\9\saveway.txt` holds the PRO 6000 and H800 blocks (labels `pro 6000`, `H800`). Use them only to
 set up SSH. Never copy a password into the repository, logs, commit messages, notes or
 chat.
 
