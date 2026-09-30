@@ -329,15 +329,20 @@ def _spin_cycles_per_ms() -> float:
 
 
 def cuda_time(fn: Callable[[], Any], warmup: int = 10, repeats: int = 50, flush_l2: bool = False,
-              pre_spin_ms: float = 0.0) -> list[float]:
+              pre_spin_ms: float | None = None) -> list[float]:
     """Time ``fn`` with CUDA events; returns per-repeat milliseconds.
 
     ``pre_spin_ms`` > 0 enqueues a GPU-side spin of that length before the timed repeats, so that
     the host can queue every (event, kernel, event) triple while the GPU is still busy. Host-side
     stalls (for example CPU load from other tenants) then cannot insert idle gaps between a start
-    event and its kernel. With 0 (the default) the behaviour is unchanged.
+    event and its kernel, and short kernels are timed without the host launch cost. With 0 the
+    behaviour is unchanged. ``None`` (the default) reads ``TPDS_PRE_SPIN_MS`` from the environment
+    (default 0), so that any experiment can be re-timed in device-time mode without new flags.
     """
     import torch
+
+    if pre_spin_ms is None:
+        pre_spin_ms = float(os.environ.get("TPDS_PRE_SPIN_MS", "0") or 0)
 
     for _ in range(warmup):
         fn()

@@ -24,6 +24,18 @@ floor, held-out and split-half headroom, within-block CV compared with E11.
 Host: vgpu3090. ~1 h download, ~2-3 h GPU. Peak VRAM ~12 GB (2.8B capture). Disk ~110 GB of
 traces (475 GB free). Result files: `e2_mamba1_vgpu3090_{1p4b,2p8b}_r3.{csv,json}`.
 
+## E15 — Both timing conventions on the RTX 3090 (author 2026-10-01)
+
+Finding from the E14 preview: back-to-back CUDA-event timing (the protocol of E1-E11) is floored
+by the host launch cost for calls shorter than about 100 us (median old/new ratio 5.0 below 20 us,
+2.9 at 20-40 us, 1.5 at 60-100 us, 1.00 above 100 us on the 1.4B batch-1 calls; within-block CV
+5.9% -> 0.5%); the per-call oracle differs for 30% of the batch-1 calls. The launch-inclusive
+latency is the relevant cost in eager execution, device time the relevant cost under CUDA graphs.
+E15 measures both so that the paper can state whether its conclusions hold under either: the 1.4B
+and 2.8B calls launch-inclusive (tags `_1p4b_r3plain`, `_2p8b_r3plain`), and the 370M cost-model
+calibration (E4 Mamba-1, E1 Mamba-1) plus the 2360 captured 370M calls in device time
+(tag `vgpu3090_r3spin`). Lane `tpds_lane_r3_e15.sh`, starts after E14. ~3 h on vgpu3090.
+
 ## E12 — Chunk sweep at tensor-parallel widths (M1c)
 
 Purpose: tensor parallelism over t devices splits the d_inner channels, so each
