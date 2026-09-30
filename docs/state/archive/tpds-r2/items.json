@@ -1,0 +1,321 @@
+{
+  "items": {
+    "M1": {
+      "created_at": "2026-09-28T22:49:41Z",
+      "exps": [],
+      "id": "M1",
+      "kind": "text",
+      "notes": [
+        {
+          "at": "2026-09-28T23:49:24Z",
+          "by": "bobsteam1215",
+          "text": "contributions, related work, discussion, limitations, conclusion updated; title/abstract await author (progress 0b); page budget 14/14 -> compress when E8/E10 are integrated"
+        },
+        {
+          "at": "2026-09-29T06:58:51Z",
+          "by": "bobsteam1215",
+          "text": "all other manuscript integration done; title/abstract await the author"
+        },
+        {
+          "at": "2026-09-29T09:19:59Z",
+          "by": "bobsteam1215",
+          "text": "author (2026-09-29): Code Ocean capsule is not to be updated; title/abstract still open"
+        },
+        {
+          "at": "2026-09-29T19:08:13Z",
+          "by": "bobsteam1215",
+          "text": "author 2026-09-30: title and abstract changed as recommended (new title; abstract 250 words adds no-gain bound, cost model, key churn); running heads, index terms, cover letter, Title_Page.docx updated; capsule unchanged per author; build clean, 14 pages"
+        },
+        {
+          "at": "2026-09-29T19:43:30Z",
+          "by": "bobsteam1215",
+          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
+        }
+      ],
+      "question": "Title and abstract direction (predictive-model narrative) — see progress.md 遗留问题 0b",
+      "status": "verified",
+      "title": "Manuscript integration: Sec IV restructure, related work (TFLA, Triton/TVM/Ansor), limitations, abstract/title",
+      "updated_at": "2026-09-29T19:43:30Z",
+      "updated_by": "bobsteam1215",
+      "where": "whole paper"
+    },
+    "P1": {
+      "created_at": "2026-09-28T22:49:40Z",
+      "exps": [],
+      "id": "P1",
+      "kind": "other",
+      "notes": [
+        {
+          "at": "2026-09-28T23:25:16Z",
+          "by": "bobsteam1215",
+          "text": "H800 unreachable since 2026-09-27 (tpds-r1 notes): re-implemented instead in src/kernels/mamba1_runtime_chunk (unchanged stock kernel, runtime chunk dispatch to the stock (kNThreads,kNItems) pairs, n_chunks=ceil(L/C)); needs build + validation on vgpu3090 (nvcc; no GPU needed for the build)"
+        },
+        {
+          "at": "2026-09-29T00:52:06Z",
+          "by": "bobsteam1215",
+          "text": "selective_scan_chunk_cuda built on vgpu3090 from mamba v2.3.2.post1 sources; validation PASS for chunks 128-2048 (fp16, L=300..5000): max rel 1.8e-4 (c128), 0 for c512-2048"
+        },
+        {
+          "at": "2026-09-29T19:43:30Z",
+          "by": "bobsteam1215",
+          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
+        }
+      ],
+      "status": "verified",
+      "title": "Recover runtime-chunk CUDA scan patch from the H800 (prereq for E8/E10)",
+      "updated_at": "2026-09-29T19:43:30Z",
+      "updated_by": "bobsteam1215",
+      "where": "src/kernels/"
+    },
+    "R2": {
+      "created_at": "2026-09-28T22:49:40Z",
+      "exps": [
+        "E8"
+      ],
+      "id": "R2",
+      "kind": "experiment",
+      "notes": [
+        {
+          "at": "2026-09-29T01:16:06Z",
+          "by": "bobsteam1215",
+          "text": "E8 done and analysed (e8_analysis_vgpu3090.json); paper integration pending"
+        },
+        {
+          "at": "2026-09-29T06:58:50Z",
+          "by": "bobsteam1215",
+          "text": "integrated in paper (2026-09-29): see paper commit 'integrate E8-E11'; build clean, 14 pages"
+        },
+        {
+          "at": "2026-09-29T19:43:30Z",
+          "by": "bobsteam1215",
+          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
+        }
+      ],
+      "question": "Power on vGPU 3090 (no-GPU mode first) to build P1 and run E8",
+      "status": "verified",
+      "title": "Reviewer point 2: chunk sensitivity on the production (reference CUDA) kernel",
+      "updated_at": "2026-09-29T19:43:30Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI-B/C, Table III reference block"
+    },
+    "R3": {
+      "created_at": "2026-09-28T22:49:40Z",
+      "exps": [
+        "E9"
+      ],
+      "id": "R3",
+      "kind": "experiment",
+      "notes": [
+        {
+          "at": "2026-09-29T02:08:44Z",
+          "by": "bobsteam1215",
+          "text": "E9 done and analysed; paper integration pending"
+        },
+        {
+          "at": "2026-09-29T06:58:50Z",
+          "by": "bobsteam1215",
+          "text": "integrated in paper (2026-09-29): see paper commit 'integrate E8-E11'; build clean, 14 pages"
+        },
+        {
+          "at": "2026-09-29T19:43:30Z",
+          "by": "bobsteam1215",
+          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
+        }
+      ],
+      "status": "verified",
+      "title": "Reviewer point 3: direct in-place overwrite / placement control of fixed-chunk input effects",
+      "updated_at": "2026-09-29T19:43:30Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI-A"
+    },
+    "R4": {
+      "created_at": "2026-09-28T22:49:40Z",
+      "exps": [
+        "E10"
+      ],
+      "id": "R4",
+      "kind": "experiment",
+      "notes": [
+        {
+          "at": "2026-09-29T03:22:37Z",
+          "by": "bobsteam1215",
+          "text": "E10 done and analysed (e10_routed_vgpu3090.json); paper integration pending (replaces/supplements Table IV)"
+        },
+        {
+          "at": "2026-09-29T06:58:50Z",
+          "by": "bobsteam1215",
+          "text": "integrated in paper (2026-09-29): see paper commit 'integrate E8-E11'; build clean, 14 pages"
+        },
+        {
+          "at": "2026-09-29T19:43:30Z",
+          "by": "bobsteam1215",
+          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
+        }
+      ],
+      "status": "verified",
+      "title": "Reviewer point 4: single-session interleaved routed end-to-end rerun with prefill timing",
+      "updated_at": "2026-09-29T19:43:30Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI-F, Table IV"
+    },
+    "R5": {
+      "created_at": "2026-09-28T22:49:40Z",
+      "exps": [
+        "E11"
+      ],
+      "id": "R5",
+      "kind": "experiment",
+      "notes": [
+        {
+          "at": "2026-09-29T01:11:11Z",
+          "by": "bobsteam1215",
+          "text": "author approved E11 (2026-09-29)"
+        },
+        {
+          "at": "2026-09-29T04:58:51Z",
+          "by": "bobsteam1215",
+          "text": "E11 done and analysed; paper integration pending"
+        },
+        {
+          "at": "2026-09-29T06:58:50Z",
+          "by": "bobsteam1215",
+          "text": "integrated in paper (2026-09-29): see paper commit 'integrate E8-E11'; build clean, 14 pages"
+        },
+        {
+          "at": "2026-09-29T19:43:31Z",
+          "by": "bobsteam1215",
+          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
+        }
+      ],
+      "status": "verified",
+      "title": "Reviewer point 5: larger checkpoints (1.4B/2.8B), test of T1 width dependence (optional)",
+      "updated_at": "2026-09-29T19:43:31Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI, Limitations"
+    },
+    "T1": {
+      "created_at": "2026-09-28T22:49:39Z",
+      "exps": [
+        "CM1"
+      ],
+      "id": "T1",
+      "kind": "experiment",
+      "notes": [
+        {
+          "at": "2026-09-28T23:13:25Z",
+          "by": "bobsteam1215",
+          "text": "kernel_stats.py (compile-only regs/spills/layout, sm86+sm120, resumable) running; cost_model.py WIP: E2 mean regret 0.87% PRO6000, 4.6% RTX3090 before unaligned stats"
+        },
+        {
+          "at": "2026-09-28T23:49:23Z",
+          "by": "bobsteam1215",
+          "text": "cost_model.py (8 params) + kernel_stats (Triton 3.4, sm86/sm120); E2 regret 0.88%/3.25%, top-2 0.52/2.30, LOKO 0.98/2.04; paper Sec IV-A, VI-D, Fig cost_model, Table III row, Supp cost-model section; build clean"
+        },
+        {
+          "at": "2026-09-28T23:55:18Z",
+          "by": "bobsteam1215",
+          "text": "V4 added: Mamba-2 SSD work-term model R2 0.985/0.992 on E2, regret 1.45/2.48%, C* 348/196, work-bound above B*L 17k/9.5k tokens; GDN C* 61/85 (>= max supported 64)"
+        },
+        {
+          "at": "2026-09-29T09:23:20Z",
+          "by": "bobsteam1215",
+          "text": "reference-scan fit added (cost_model_refscan_vgpu3090.json): 60 timings of 12 keys, calls R2 0.965, regret 3.8% (tied 68%), top-2 2.5% vs floor 2.46%, stock dispatch 6.6%; in Table IV and Sec VI-E"
+        },
+        {
+          "at": "2026-09-29T19:43:31Z",
+          "by": "bobsteam1215",
+          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
+        }
+      ],
+      "status": "verified",
+      "title": "Analytical shape-and-hardware chunk cost model (fit, V1-V4 validation, Table III row, figure)",
+      "updated_at": "2026-09-29T19:43:31Z",
+      "updated_by": "bobsteam1215",
+      "where": "new Sec IV, Table III, new figure"
+    },
+    "T2": {
+      "created_at": "2026-09-28T22:49:39Z",
+      "exps": [],
+      "id": "T2",
+      "kind": "text",
+      "notes": [
+        {
+          "at": "2026-09-28T23:49:24Z",
+          "by": "bobsteam1215",
+          "text": "Theorem 1 + proof in Sec IV; instantiated in Sec VI-G with exact-shape headroom (0.3/1.9 us mean, max 4.4/6.7 us < host sync); device-side o_min to be measured by E9"
+        },
+        {
+          "at": "2026-09-29T02:08:44Z",
+          "by": "bobsteam1215",
+          "text": "device-side o_min measured by E9 on the RTX 3090: 7.3 us (L=2048), 42 us (L=8192), above the exact-shape headroom"
+        },
+        {
+          "at": "2026-09-29T19:43:31Z",
+          "by": "bobsteam1215",
+          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
+        }
+      ],
+      "status": "verified",
+      "title": "No-gain theorem for activation-dependent policies (Theorem 1)",
+      "updated_at": "2026-09-29T19:43:31Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec IV, Sec VI-G, contributions, abstract"
+    },
+    "T3": {
+      "created_at": "2026-09-28T22:49:40Z",
+      "exps": [],
+      "id": "T3",
+      "kind": "experiment",
+      "notes": [
+        {
+          "at": "2026-09-28T23:13:24Z",
+          "by": "bobsteam1215",
+          "text": "e5b_key_churn.py: per-key N*=P_k/(o-h_k); median N* profile+host-sync 891 calls (PRO6000) / 2114 (3090); search+host-sync 1.0e5 / 3.2e5. Headroom falls 4x when alignment (L%16) is in the key. Figure + text pending."
+        },
+        {
+          "at": "2026-09-28T23:49:24Z",
+          "by": "bobsteam1215",
+          "text": "e5b_key_churn.py (alignment-aware keys); Sec VI-G key-churn paragraph + Eq. keychurn + Fig key_churn; build clean"
+        },
+        {
+          "at": "2026-09-29T19:43:31Z",
+          "by": "bobsteam1215",
+          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
+        }
+      ],
+      "status": "verified",
+      "title": "Key-churn break-even for any online policy vs shape-keyed cache",
+      "updated_at": "2026-09-29T19:43:31Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI-G, Discussion, new figure"
+    },
+    "T4": {
+      "created_at": "2026-09-28T22:49:40Z",
+      "exps": [],
+      "id": "T4",
+      "kind": "experiment",
+      "notes": [
+        {
+          "at": "2026-09-28T23:13:24Z",
+          "by": "bobsteam1215",
+          "text": "TOST added to e1_analysis (equivalence section); PRO6000: 16/84 configs equivalent at 2%, 48/84 at 5%; at C*: 4/18 and 13/18; RTX3090: 25/84, 65/84; at C*: 4/18, 15/18. Paper text pending."
+        },
+        {
+          "at": "2026-09-28T23:49:24Z",
+          "by": "bobsteam1215",
+          "text": "TOST in e1_analysis; Sec VI-A paragraph + Supp Table tost; build clean"
+        },
+        {
+          "at": "2026-09-29T19:43:31Z",
+          "by": "bobsteam1215",
+          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
+        }
+      ],
+      "status": "verified",
+      "title": "TOST equivalence testing for the invariance claim",
+      "updated_at": "2026-09-29T19:43:31Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI-A, supplement table"
+    }
+  }
+}

@@ -1,321 +1,393 @@
 {
   "items": {
-    "M1": {
-      "created_at": "2026-09-28T22:49:41Z",
+    "M1a": {
+      "created_at": "2026-09-30T04:42:18Z",
       "exps": [],
-      "id": "M1",
+      "id": "M1a",
       "kind": "text",
-      "notes": [
-        {
-          "at": "2026-09-28T23:49:24Z",
-          "by": "bobsteam1215",
-          "text": "contributions, related work, discussion, limitations, conclusion updated; title/abstract await author (progress 0b); page budget 14/14 -> compress when E8/E10 are integrated"
-        },
-        {
-          "at": "2026-09-29T06:58:51Z",
-          "by": "bobsteam1215",
-          "text": "all other manuscript integration done; title/abstract await the author"
-        },
-        {
-          "at": "2026-09-29T09:19:59Z",
-          "by": "bobsteam1215",
-          "text": "author (2026-09-29): Code Ocean capsule is not to be updated; title/abstract still open"
-        },
-        {
-          "at": "2026-09-29T19:08:13Z",
-          "by": "bobsteam1215",
-          "text": "author 2026-09-30: title and abstract changed as recommended (new title; abstract 250 words adds no-gain bound, cost model, key churn); running heads, index terms, cover letter, Title_Page.docx updated; capsule unchanged per author; build clean, 14 pages"
-        },
-        {
-          "at": "2026-09-29T19:43:30Z",
-          "by": "bobsteam1215",
-          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
-        }
-      ],
-      "question": "Title and abstract direction (predictive-model narrative) — see progress.md 遗留问题 0b",
-      "status": "verified",
-      "title": "Manuscript integration: Sec IV restructure, related work (TFLA, Triton/TVM/Ansor), limitations, abstract/title",
-      "updated_at": "2026-09-29T19:43:30Z",
+      "notes": [],
+      "status": "todo",
+      "title": "Heterogeneous-fleet framing of cross-GPU transfer; discuss tensor/sequence/context parallelism as shape transforms",
+      "updated_at": "2026-09-30T04:42:18Z",
       "updated_by": "bobsteam1215",
-      "where": "whole paper"
+      "where": "Sec I, Discussion, Limitations"
     },
-    "P1": {
-      "created_at": "2026-09-28T22:49:40Z",
+    "M1b": {
+      "created_at": "2026-09-30T04:42:18Z",
       "exps": [],
-      "id": "P1",
-      "kind": "other",
-      "notes": [
-        {
-          "at": "2026-09-28T23:25:16Z",
-          "by": "bobsteam1215",
-          "text": "H800 unreachable since 2026-09-27 (tpds-r1 notes): re-implemented instead in src/kernels/mamba1_runtime_chunk (unchanged stock kernel, runtime chunk dispatch to the stock (kNThreads,kNItems) pairs, n_chunks=ceil(L/C)); needs build + validation on vgpu3090 (nvcc; no GPU needed for the build)"
-        },
-        {
-          "at": "2026-09-29T00:52:06Z",
-          "by": "bobsteam1215",
-          "text": "selective_scan_chunk_cuda built on vgpu3090 from mamba v2.3.2.post1 sources; validation PASS for chunks 128-2048 (fp16, L=300..5000): max rel 1.8e-4 (c128), 0 for c512-2048"
-        },
-        {
-          "at": "2026-09-29T19:43:30Z",
-          "by": "bobsteam1215",
-          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
-        }
-      ],
-      "status": "verified",
-      "title": "Recover runtime-chunk CUDA scan patch from the H800 (prereq for E8/E10)",
-      "updated_at": "2026-09-29T19:43:30Z",
-      "updated_by": "bobsteam1215",
-      "where": "src/kernels/"
-    },
-    "R2": {
-      "created_at": "2026-09-28T22:49:40Z",
-      "exps": [
-        "E8"
-      ],
-      "id": "R2",
+      "id": "M1b",
       "kind": "experiment",
-      "notes": [
-        {
-          "at": "2026-09-29T01:16:06Z",
-          "by": "bobsteam1215",
-          "text": "E8 done and analysed (e8_analysis_vgpu3090.json); paper integration pending"
-        },
-        {
-          "at": "2026-09-29T06:58:50Z",
-          "by": "bobsteam1215",
-          "text": "integrated in paper (2026-09-29): see paper commit 'integrate E8-E11'; build clean, 14 pages"
-        },
-        {
-          "at": "2026-09-29T19:43:30Z",
-          "by": "bobsteam1215",
-          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
-        }
-      ],
-      "question": "Power on vGPU 3090 (no-GPU mode first) to build P1 and run E8",
-      "status": "verified",
-      "title": "Reviewer point 2: chunk sensitivity on the production (reference CUDA) kernel",
-      "updated_at": "2026-09-29T19:43:30Z",
+      "notes": [],
+      "status": "todo",
+      "title": "Serving-trace replay (Azure/BurstGPT): continuous batching, chunked prefill, varlen; key counts and key-churn break-even with cost-model default",
+      "updated_at": "2026-09-30T04:42:18Z",
       "updated_by": "bobsteam1215",
-      "where": "Sec VI-B/C, Table III reference block"
+      "where": "Sec VI break-even"
     },
-    "R3": {
-      "created_at": "2026-09-28T22:49:40Z",
-      "exps": [
-        "E9"
-      ],
-      "id": "R3",
+    "M1c": {
+      "created_at": "2026-09-30T04:42:18Z",
+      "exps": [],
+      "id": "M1c",
       "kind": "experiment",
-      "notes": [
-        {
-          "at": "2026-09-29T02:08:44Z",
-          "by": "bobsteam1215",
-          "text": "E9 done and analysed; paper integration pending"
-        },
-        {
-          "at": "2026-09-29T06:58:50Z",
-          "by": "bobsteam1215",
-          "text": "integrated in paper (2026-09-29): see paper commit 'integrate E8-E11'; build clean, 14 pages"
-        },
-        {
-          "at": "2026-09-29T19:43:30Z",
-          "by": "bobsteam1215",
-          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
-        }
-      ],
-      "status": "verified",
-      "title": "Reviewer point 3: direct in-place overwrite / placement control of fixed-chunk input effects",
-      "updated_at": "2026-09-29T19:43:30Z",
+      "notes": [],
+      "question": "Run the TP width study on the RTX 3090? (GPU 2-4 h)",
+      "status": "needs_author",
+      "title": "Tensor-parallel width study d/2,d/4,d/8 of 1.4B/2.8B (GPU, 2-4 h)",
+      "updated_at": "2026-09-30T04:42:18Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI cost model"
+    },
+    "M2a": {
+      "created_at": "2026-09-30T04:42:18Z",
+      "exps": [],
+      "id": "M2a",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "State reference-scan thread-count confound; scope 'three kernel families' claims",
+      "updated_at": "2026-09-30T04:42:18Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI-E, abstract, intro"
+    },
+    "M2b": {
+      "created_at": "2026-09-30T04:42:18Z",
+      "exps": [],
+      "id": "M2b",
+      "kind": "experiment",
+      "notes": [],
+      "question": "Run Mamba-2/GDN work-bound + real GDN traces (~1 GPU-day), or scope claims to Mamba-1?",
+      "status": "needs_author",
+      "title": "Mamba-2/GDN in work-bound regime + real GDN traces (GPU ~1 day)",
+      "updated_at": "2026-09-30T04:42:18Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI"
+    },
+    "M3a": {
+      "created_at": "2026-09-30T04:42:19Z",
+      "exps": [],
+      "id": "M3a",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "No-gain result as proposition; o = critical-path increment; excluded vs non-excluded policy classes; information evidence primary",
+      "updated_at": "2026-09-30T04:42:19Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec IV"
+    },
+    "M3b": {
+      "created_at": "2026-09-30T04:42:19Z",
+      "exps": [],
+      "id": "M3b",
+      "kind": "experiment",
+      "notes": [],
+      "status": "todo",
+      "title": "Independent-repeat / parametric-bootstrap headroom estimate",
+      "updated_at": "2026-09-30T04:42:19Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI break-even, Table IV"
+    },
+    "M3c": {
+      "created_at": "2026-09-30T04:42:19Z",
+      "exps": [],
+      "id": "M3c",
+      "kind": "experiment",
+      "notes": [],
+      "status": "todo",
+      "title": "Held-out headroom for 1.4B/2.8B",
+      "updated_at": "2026-09-30T04:42:19Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI-E, Table IV"
+    },
+    "M4a": {
+      "created_at": "2026-09-30T04:42:19Z",
+      "exps": [],
+      "id": "M4a",
+      "kind": "experiment",
+      "notes": [],
+      "status": "todo",
+      "title": "Nearest-calibrated-key and work-only baselines; within-shape Kendall tau; p95 and tied share on both GPUs",
+      "updated_at": "2026-09-30T04:42:19Z",
+      "updated_by": "bobsteam1215",
+      "where": "Table III, Sec VI-D"
+    },
+    "M4b": {
+      "created_at": "2026-09-30T04:42:19Z",
+      "exps": [],
+      "id": "M4b",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Declare cost-model form frozen and which data chose it; reference-scan variant as same methodology",
+      "updated_at": "2026-09-30T04:42:19Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec IV-A, VI-D"
+    },
+    "M4c": {
+      "created_at": "2026-09-30T04:42:19Z",
+      "exps": [],
+      "id": "M4c",
+      "kind": "experiment",
+      "notes": [],
+      "question": "Rent A100/H100/H800 to validate the frozen cost model (~0.5 GPU-day)?",
+      "status": "needs_author",
+      "title": "Third data-centre GPU with frozen form (GPU ~0.5 day)",
+      "updated_at": "2026-09-30T04:42:19Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI-D"
+    },
+    "M5a": {
+      "created_at": "2026-09-30T04:42:19Z",
+      "exps": [],
+      "id": "M5a",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Reposition around cost model, tuning cache/key churn, data-dependent dispatch bound; cite input-aware variant selection",
+      "updated_at": "2026-09-30T04:42:19Z",
+      "updated_by": "bobsteam1215",
+      "where": "Title, abstract, Sec I-II, contributions"
+    },
+    "M5b": {
+      "created_at": "2026-09-30T04:42:19Z",
+      "exps": [],
+      "id": "M5b",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Drop 'negative results'; shorten COREY section; routed table to supplement",
+      "updated_at": "2026-09-30T04:42:19Z",
+      "updated_by": "bobsteam1215",
+      "where": "Keywords, Sec III, Table V"
+    },
+    "M6a": {
+      "created_at": "2026-09-30T04:42:20Z",
+      "exps": [],
+      "id": "M6a",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Document clocks, L2, isolation, 48 GB board; tie criterion limits; mark or drop non-retained legacy results",
+      "updated_at": "2026-09-30T04:42:20Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec V timing protocol"
+    },
+    "M6b": {
+      "created_at": "2026-09-30T04:42:20Z",
+      "exps": [],
+      "id": "M6b",
+      "kind": "experiment",
+      "notes": [],
+      "question": "Run the placement control on the RTX PRO 6000 (~3 GPU-h)?",
+      "status": "needs_author",
+      "title": "PRO 6000 placement control + hardware counters (GPU ~3 h)",
+      "updated_at": "2026-09-30T04:42:20Z",
       "updated_by": "bobsteam1215",
       "where": "Sec VI-A"
     },
-    "R4": {
-      "created_at": "2026-09-28T22:49:40Z",
-      "exps": [
-        "E10"
-      ],
-      "id": "R4",
-      "kind": "experiment",
-      "notes": [
-        {
-          "at": "2026-09-29T03:22:37Z",
-          "by": "bobsteam1215",
-          "text": "E10 done and analysed (e10_routed_vgpu3090.json); paper integration pending (replaces/supplements Table IV)"
-        },
-        {
-          "at": "2026-09-29T06:58:50Z",
-          "by": "bobsteam1215",
-          "text": "integrated in paper (2026-09-29): see paper commit 'integrate E8-E11'; build clean, 14 pages"
-        },
-        {
-          "at": "2026-09-29T19:43:30Z",
-          "by": "bobsteam1215",
-          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
-        }
-      ],
-      "status": "verified",
-      "title": "Reviewer point 4: single-session interleaved routed end-to-end rerun with prefill timing",
-      "updated_at": "2026-09-29T19:43:30Z",
-      "updated_by": "bobsteam1215",
-      "where": "Sec VI-F, Table IV"
-    },
-    "R5": {
-      "created_at": "2026-09-28T22:49:40Z",
-      "exps": [
-        "E11"
-      ],
-      "id": "R5",
-      "kind": "experiment",
-      "notes": [
-        {
-          "at": "2026-09-29T01:11:11Z",
-          "by": "bobsteam1215",
-          "text": "author approved E11 (2026-09-29)"
-        },
-        {
-          "at": "2026-09-29T04:58:51Z",
-          "by": "bobsteam1215",
-          "text": "E11 done and analysed; paper integration pending"
-        },
-        {
-          "at": "2026-09-29T06:58:50Z",
-          "by": "bobsteam1215",
-          "text": "integrated in paper (2026-09-29): see paper commit 'integrate E8-E11'; build clean, 14 pages"
-        },
-        {
-          "at": "2026-09-29T19:43:31Z",
-          "by": "bobsteam1215",
-          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
-        }
-      ],
-      "status": "verified",
-      "title": "Reviewer point 5: larger checkpoints (1.4B/2.8B), test of T1 width dependence (optional)",
-      "updated_at": "2026-09-29T19:43:31Z",
-      "updated_by": "bobsteam1215",
-      "where": "Sec VI, Limitations"
-    },
-    "T1": {
-      "created_at": "2026-09-28T22:49:39Z",
-      "exps": [
-        "CM1"
-      ],
-      "id": "T1",
-      "kind": "experiment",
-      "notes": [
-        {
-          "at": "2026-09-28T23:13:25Z",
-          "by": "bobsteam1215",
-          "text": "kernel_stats.py (compile-only regs/spills/layout, sm86+sm120, resumable) running; cost_model.py WIP: E2 mean regret 0.87% PRO6000, 4.6% RTX3090 before unaligned stats"
-        },
-        {
-          "at": "2026-09-28T23:49:23Z",
-          "by": "bobsteam1215",
-          "text": "cost_model.py (8 params) + kernel_stats (Triton 3.4, sm86/sm120); E2 regret 0.88%/3.25%, top-2 0.52/2.30, LOKO 0.98/2.04; paper Sec IV-A, VI-D, Fig cost_model, Table III row, Supp cost-model section; build clean"
-        },
-        {
-          "at": "2026-09-28T23:55:18Z",
-          "by": "bobsteam1215",
-          "text": "V4 added: Mamba-2 SSD work-term model R2 0.985/0.992 on E2, regret 1.45/2.48%, C* 348/196, work-bound above B*L 17k/9.5k tokens; GDN C* 61/85 (>= max supported 64)"
-        },
-        {
-          "at": "2026-09-29T09:23:20Z",
-          "by": "bobsteam1215",
-          "text": "reference-scan fit added (cost_model_refscan_vgpu3090.json): 60 timings of 12 keys, calls R2 0.965, regret 3.8% (tied 68%), top-2 2.5% vs floor 2.46%, stock dispatch 6.6%; in Table IV and Sec VI-E"
-        },
-        {
-          "at": "2026-09-29T19:43:31Z",
-          "by": "bobsteam1215",
-          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
-        }
-      ],
-      "status": "verified",
-      "title": "Analytical shape-and-hardware chunk cost model (fit, V1-V4 validation, Table III row, figure)",
-      "updated_at": "2026-09-29T19:43:31Z",
-      "updated_by": "bobsteam1215",
-      "where": "new Sec IV, Table III, new figure"
-    },
-    "T2": {
-      "created_at": "2026-09-28T22:49:39Z",
+    "M6c": {
+      "created_at": "2026-09-30T04:42:20Z",
       "exps": [],
-      "id": "T2",
+      "id": "M6c",
+      "kind": "experiment",
+      "notes": [],
+      "question": "Re-run 2.8B unloaded and add batch 4/16 for 1.4B/2.8B (4-6 GPU-h)?",
+      "status": "needs_author",
+      "title": "Unloaded 2.8B rerun + batch 4/16 for 1.4B/2.8B (GPU 4-6 h)",
+      "updated_at": "2026-09-30T04:42:20Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI-E"
+    },
+    "M7a": {
+      "created_at": "2026-09-30T04:42:20Z",
+      "exps": [],
+      "id": "M7a",
       "kind": "text",
-      "notes": [
-        {
-          "at": "2026-09-28T23:49:24Z",
-          "by": "bobsteam1215",
-          "text": "Theorem 1 + proof in Sec IV; instantiated in Sec VI-G with exact-shape headroom (0.3/1.9 us mean, max 4.4/6.7 us < host sync); device-side o_min to be measured by E9"
-        },
-        {
-          "at": "2026-09-29T02:08:44Z",
-          "by": "bobsteam1215",
-          "text": "device-side o_min measured by E9 on the RTX 3090: 7.3 us (L=2048), 42 us (L=8192), above the exact-shape headroom"
-        },
-        {
-          "at": "2026-09-29T19:43:31Z",
-          "by": "bobsteam1215",
-          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
-        }
-      ],
-      "status": "verified",
-      "title": "No-gain theorem for activation-dependent policies (Theorem 1)",
-      "updated_at": "2026-09-29T19:43:31Z",
+      "notes": [],
+      "status": "todo",
+      "title": "Abstract with at most five numbers",
+      "updated_at": "2026-09-30T04:42:20Z",
       "updated_by": "bobsteam1215",
-      "where": "Sec IV, Sec VI-G, contributions, abstract"
+      "where": "Abstract"
     },
-    "T3": {
-      "created_at": "2026-09-28T22:49:40Z",
+    "M7b": {
+      "created_at": "2026-09-30T04:42:20Z",
       "exps": [],
-      "id": "T3",
-      "kind": "experiment",
-      "notes": [
-        {
-          "at": "2026-09-28T23:13:24Z",
-          "by": "bobsteam1215",
-          "text": "e5b_key_churn.py: per-key N*=P_k/(o-h_k); median N* profile+host-sync 891 calls (PRO6000) / 2114 (3090); search+host-sync 1.0e5 / 3.2e5. Headroom falls 4x when alignment (L%16) is in the key. Figure + text pending."
-        },
-        {
-          "at": "2026-09-28T23:49:24Z",
-          "by": "bobsteam1215",
-          "text": "e5b_key_churn.py (alignment-aware keys); Sec VI-G key-churn paragraph + Eq. keychurn + Fig key_churn; build clean"
-        },
-        {
-          "at": "2026-09-29T19:43:31Z",
-          "by": "bobsteam1215",
-          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
-        }
-      ],
-      "status": "verified",
-      "title": "Key-churn break-even for any online policy vs shape-keyed cache",
-      "updated_at": "2026-09-29T19:43:31Z",
+      "id": "M7b",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Value-invariance summary table; details to supplement; compress break-even text",
+      "updated_at": "2026-09-30T04:42:20Z",
       "updated_by": "bobsteam1215",
-      "where": "Sec VI-G, Discussion, new figure"
+      "where": "Sec VI-A, break-even"
     },
-    "T4": {
-      "created_at": "2026-09-28T22:49:40Z",
+    "M7c": {
+      "created_at": "2026-09-30T04:42:20Z",
       "exps": [],
-      "id": "T4",
-      "kind": "experiment",
-      "notes": [
-        {
-          "at": "2026-09-28T23:13:24Z",
-          "by": "bobsteam1215",
-          "text": "TOST added to e1_analysis (equivalence section); PRO6000: 16/84 configs equivalent at 2%, 48/84 at 5%; at C*: 4/18 and 13/18; RTX3090: 25/84, 65/84; at C*: 4/18, 15/18. Paper text pending."
-        },
-        {
-          "at": "2026-09-28T23:49:24Z",
-          "by": "bobsteam1215",
-          "text": "TOST in e1_analysis; Sec VI-A paragraph + Supp Table tost; build clean"
-        },
-        {
-          "at": "2026-09-29T19:43:31Z",
-          "by": "bobsteam1215",
-          "text": "Stage 9' round 2 fixes applied; Stage 11 gate passed (14 pp, clean build)"
-        }
-      ],
-      "status": "verified",
-      "title": "TOST equivalence testing for the invariance claim",
-      "updated_at": "2026-09-29T19:43:31Z",
+      "id": "M7c",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Merge Prop 1 and no-gain result; cost model own section",
+      "updated_at": "2026-09-30T04:42:20Z",
       "updated_by": "bobsteam1215",
-      "where": "Sec VI-A, supplement table"
+      "where": "Sec IV"
+    },
+    "N1": {
+      "created_at": "2026-09-30T04:42:20Z",
+      "exps": [],
+      "id": "N1",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Shorter title centred on cost model / data-dependent dispatch",
+      "updated_at": "2026-09-30T04:42:20Z",
+      "updated_by": "bobsteam1215",
+      "where": "Title"
+    },
+    "N10": {
+      "created_at": "2026-09-30T04:42:22Z",
+      "exps": [],
+      "id": "N10",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Output preservation to one sentence",
+      "updated_at": "2026-09-30T04:42:22Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI output preservation"
+    },
+    "N11": {
+      "created_at": "2026-09-30T04:42:22Z",
+      "exps": [],
+      "id": "N11",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Delete prospective-analyses supplement section and pointer",
+      "updated_at": "2026-09-30T04:42:22Z",
+      "updated_by": "bobsteam1215",
+      "where": "Supplement, Limitations"
+    },
+    "N12": {
+      "created_at": "2026-09-30T04:42:22Z",
+      "exps": [],
+      "id": "N12",
+      "kind": "citation",
+      "notes": [],
+      "status": "todo",
+      "title": "Update venues; add perf modelling, measurement bias, input-aware tuning, serving, 2025-26 kernels",
+      "updated_at": "2026-09-30T04:42:22Z",
+      "updated_by": "bobsteam1215",
+      "where": "references.bib"
+    },
+    "N13": {
+      "created_at": "2026-09-30T04:42:22Z",
+      "exps": [],
+      "id": "N13",
+      "kind": "other",
+      "notes": [],
+      "status": "todo",
+      "title": "Verify availability link anonymity",
+      "updated_at": "2026-09-30T04:42:22Z",
+      "updated_by": "bobsteam1215",
+      "where": "Code and Data Availability"
+    },
+    "N2": {
+      "created_at": "2026-09-30T04:42:21Z",
+      "exps": [],
+      "id": "N2",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Name GPUs with paired numbers; 'without timing the target shapes'",
+      "updated_at": "2026-09-30T04:42:21Z",
+      "updated_by": "bobsteam1215",
+      "where": "Abstract"
+    },
+    "N3": {
+      "created_at": "2026-09-30T04:42:21Z",
+      "exps": [],
+      "id": "N3",
+      "kind": "experiment",
+      "notes": [],
+      "status": "todo",
+      "title": "Batch-only predictor row; lead with shape+entropy = shape",
+      "updated_at": "2026-09-30T04:42:21Z",
+      "updated_by": "bobsteam1215",
+      "where": "Table III"
+    },
+    "N4": {
+      "created_at": "2026-09-30T04:42:21Z",
+      "exps": [],
+      "id": "N4",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Shape includes compiler specializations",
+      "updated_at": "2026-09-30T04:42:21Z",
+      "updated_by": "bobsteam1215",
+      "where": "Prop 1"
+    },
+    "N5": {
+      "created_at": "2026-09-30T04:42:21Z",
+      "exps": [],
+      "id": "N5",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Explain two-optimum cells; Mamba-2 regret is noise",
+      "updated_at": "2026-09-30T04:42:21Z",
+      "updated_by": "bobsteam1215",
+      "where": "Table I"
+    },
+    "N6": {
+      "created_at": "2026-09-30T04:42:21Z",
+      "exps": [],
+      "id": "N6",
+      "kind": "format",
+      "notes": [],
+      "status": "todo",
+      "title": "Awkward sentences; cramped floats",
+      "updated_at": "2026-09-30T04:42:21Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec IV-A, Tables IV-V, Fig 1"
+    },
+    "N7": {
+      "created_at": "2026-09-30T04:42:21Z",
+      "exps": [],
+      "id": "N7",
+      "kind": "figure",
+      "notes": [],
+      "status": "todo",
+      "title": "Fig 6 means vs text medians consistent",
+      "updated_at": "2026-09-30T04:42:21Z",
+      "updated_by": "bobsteam1215",
+      "where": "Fig 6"
+    },
+    "N8": {
+      "created_at": "2026-09-30T04:42:21Z",
+      "exps": [],
+      "id": "N8",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Remove legacy RTX 3070/H800 numbers from main text",
+      "updated_at": "2026-09-30T04:42:21Z",
+      "updated_by": "bobsteam1215",
+      "where": "Sec VI routed"
+    },
+    "N9": {
+      "created_at": "2026-09-30T04:42:21Z",
+      "exps": [],
+      "id": "N9",
+      "kind": "text",
+      "notes": [],
+      "status": "todo",
+      "title": "Note synthetic (truncated/rotated) length distribution",
+      "updated_at": "2026-09-30T04:42:21Z",
+      "updated_by": "bobsteam1215",
+      "where": "Break-even, churn"
     }
   }
 }
