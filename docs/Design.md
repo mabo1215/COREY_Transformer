@@ -40,6 +40,18 @@ traces, ncu and metric list for GB202, runtime-chunk build for sm_120). Lane
 ~3 h GPU. Peak VRAM < 4 GB. Result files: `e16_counters_pro6000.{jsonl,json}`,
 `e9_placement_pro6000_r3.{jsonl,json}`.
 
+E16c (counter-free substitute for E16b; author 2026-10-01): the AutoDL container denies Nsight
+Compute counters (ERR_NVGPUCTRPERM), so the L2 explanation is tested by intervention.
+`e16c_l2_placement.py` times design A (eight distributions, same buffers) and design C (one Gaussian
+draw in 20 placements: 10 fresh, 10 at offsets from 256 B to 64 MiB) with a warm L2 (as in E1/E9/E16)
+and a cold L2 (128 MiB overwrite before every repeat, untimed), L in {8192, 2048}, all six chunks,
+act mode, three rounds. At L=8192 the working set (~128 MiB) is the size of the GB202 L2; at L=2048
+it is a quarter of it. Per (design, L2 state, L, chunk): ANOVA with BH, range, residue correlations,
+Spearman rank stability of the placements across rounds and between warm and cold. Placement
+explanation supported if C has a stable warm-L2 effect at L=8192 that shrinks or reorders with a cold
+L2 and at L=2048, while A shows none. Lane `tpds_lane_r3_e16c.sh` (queues on the GPU lock after
+E16). ~30-45 min. Result files: `e16c_l2_placement_pro6000.{jsonl,json}`.
+
 ## E14 — Re-timed larger checkpoints (M6c; author 2026-10-01)
 
 Purpose: the E11 sweeps of the 1.4B and 2.8B checkpoints ran at batch 1 only and, for the
