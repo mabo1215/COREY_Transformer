@@ -12,14 +12,16 @@
 #
 # Launch:  wsl bash src/revloop/remote.sh launch vgpu3090 tpds-r3 src/experiments/remote/tpds_lane_r3.sh
 #          TPDS_R3_ONLY="E13" on the data-centre host.
-# Markers: src/logs/revloop/{E12,E13-*}.{START,OK,FAIL} (the host's TPDS_ID_PREFIX is prepended to E12,
-#          so the same experiment on two hosts has two ledger IDs, e.g. E12 and dc-E12).
+# Markers: src/logs/revloop/{E12,E13-*}.{START,OK,FAIL}, prefixed with TPDS_R3_PREFIX when set.
 # Resumable: every step skips completed rows. TPDS_SMOKE=1 runs a tiny version.
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/tpds_common.sh"
 L=(); [ "${TPDS_NO_GPU_LOCK:-0}" = 1 ] || L=(flock "$LOCK")
 ONLY=${TPDS_R3_ONLY:-E12}
-P=${ID_PREFIX:-}
+# Ledger IDs: E12 on the RTX 3090 (no prefix, unlike the replicated tpds-r1 runs of that host);
+# on another host set TPDS_R3_PREFIX (e.g. "dc-") so that its E12 gets its own ID.
+P=${TPDS_R3_PREFIX:-}
+[ "${TPDS_SMOKE:-0}" = 1 ] && P=smoke-$P
 check_space "$OUT_DIR" 2 || exit 1
 if [ "${TPDS_SMOKE:-0}" = 1 ]; then
   E12_ARGS="--widths 1024,512 --lengths 128,512 --batches 1,4 --rounds 2 --warmup 2 --repeats 5"
