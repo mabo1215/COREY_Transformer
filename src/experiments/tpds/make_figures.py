@@ -345,16 +345,27 @@ def fig_cost_model(curves, out_dir, lengths=(512, 2048, 8192, 2382)):
 
 
 def fig_key_churn(e5bs, out_dir):
-    """N* = P / (o - h) versus the per-call decision overhead o, per GPU and tuning cost."""
+    """N*_k = P_k / (o - h_k) versus the per-call decision overhead o, per GPU and tuning cost.
+
+    Lines are the median over shape keys (the statistic quoted in the paper); the band is the
+    interquartile range over keys. Keys with h_k >= o have unbounded N*_k and count as +inf.
+    """
     if not e5bs:
         return
     fig, ax = plt.subplots(figsize=(COL_W, 2.0))
     plabel = {"profile": "profile 6 chunks", "search": "full launch search"}
     for i, (h, d) in enumerate(e5bs.items()):
         o = np.array(d["curve"]["overhead_ms"])
+        hk = np.array([k["headroom_ms"] for k in d["keys"]], dtype=float)
         for j, pk in enumerate(("profile", "search")):
-            n = np.array([np.nan if v is None else v for v in d["curve"]["n_star_calls"][pk]], dtype=float)
-            ax.plot(o, n, color=OKABE[i], ls=STYLES[j], label=f"{HOST_LABEL.get(h, h)}, {plabel[pk]}")
+            Pk = np.array([k["P_s"][pk] for k in d["keys"]], dtype=float)
+            gap = o[:, None] - hk[None, :]
+            nk = np.where(gap > 0, 1000.0 * Pk[None, :] / np.where(gap > 0, gap, 1.0), np.inf)
+            q1, med, q3 = (np.percentile(nk, q, axis=1) for q in (25, 50, 75))
+            med = np.where(np.isfinite(med), med, np.nan)
+            ax.plot(o, med, color=OKABE[i], ls=STYLES[j], label=f"{HOST_LABEL.get(h, h)}, {plabel[pk]}")
+            ax.fill_between(o, np.where(np.isfinite(q1), q1, np.nan), np.where(np.isfinite(q3), q3, np.nan),
+                            color=OKABE[i], alpha=0.12, lw=0)
     d0 = next(iter(e5bs.values()))
     marks = {"host sync": d0["host_sync_ms"]}
     for name, key in (("1/8 histogram", "sampled_histogram"), ("full histogram", "full_histogram")):
