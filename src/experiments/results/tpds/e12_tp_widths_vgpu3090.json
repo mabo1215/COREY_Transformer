@@ -1,0 +1,148 @@
+{
+  "host": "vgpu3090",
+  "hostname": "autodl-container-5ea9tapmbb-6a673b83",
+  "utc": "2026-09-30T06:51:03Z",
+  "python": "3.12.3",
+  "platform": "Linux-5.15.0-119-generic-x86_64-with-glibc2.35",
+  "argv": [
+    "/root/autodl-tmp/COREY_Transformer_tpds/src/experiments/tpds/e12_tp_widths.py",
+    "--rounds",
+    "3",
+    "--warmup",
+    "10",
+    "--repeats",
+    "50",
+    "--record-gpu-state",
+    "--ref",
+    "--exclusive-guard",
+    "--out-dir",
+    "src/experiments/results/tpds",
+    "--tag",
+    "vgpu3090"
+  ],
+  "torch": "2.8.0+cu128",
+  "cuda_runtime": "12.8",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "gpu_mem_gb": 47.41,
+  "gpu_sm_count": 82,
+  "gpu_cc": "8.6",
+  "pkg_triton": "3.4.0",
+  "pkg_transformers": "5.6.2",
+  "pkg_mamba_ssm": "2.3.2.post1",
+  "pkg_fla-core": "0.5.2",
+  "pkg_flash-linear-attention": "0.5.2",
+  "pkg_numpy": "2.3.2",
+  "pkg_scikit-learn": "1.8.0",
+  "nvidia_smi": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+  "git_commit": "43ee734",
+  "experiment": "E12",
+  "own_gpu_pids": [
+    955952
+  ],
+  "widths": [
+    5120,
+    4096,
+    2560,
+    2048,
+    1280,
+    1024,
+    640,
+    512
+  ],
+  "lengths": [
+    128,
+    256,
+    512,
+    1024,
+    2048,
+    4096,
+    8192
+  ],
+  "batches": [
+    1,
+    4,
+    16
+  ],
+  "families": {
+    "triton": [
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024
+    ],
+    "ref": [
+      128,
+      256,
+      512,
+      1024,
+      2048
+    ]
+  },
+  "d_state": 16,
+  "model_widths": {
+    "370m": 2048,
+    "1.4b": 4096,
+    "2.8b": 5120
+  },
+  "mamba1_default_launch": {
+    "32": {
+      "block_t": 32,
+      "block_d": 8,
+      "num_warps": 2,
+      "num_stages": 1
+    },
+    "64": {
+      "block_t": 64,
+      "block_d": 8,
+      "num_warps": 2,
+      "num_stages": 1
+    },
+    "128": {
+      "block_t": 128,
+      "block_d": 8,
+      "num_warps": 2,
+      "num_stages": 1
+    },
+    "256": {
+      "block_t": 256,
+      "block_d": 4,
+      "num_warps": 2,
+      "num_stages": 1
+    },
+    "512": {
+      "block_t": 512,
+      "block_d": 4,
+      "num_warps": 2,
+      "num_stages": 1
+    },
+    "1024": {
+      "block_t": 1024,
+      "block_d": 4,
+      "num_warps": 4,
+      "num_stages": 1
+    }
+  },
+  "args": {
+    "widths": "5120,4096,2560,2048,1280,1024,640,512",
+    "lengths": "128,256,512,1024,2048,4096,8192",
+    "batches": "1,4,16",
+    "chunks": "32,64,128,256,512,1024",
+    "ref": "True",
+    "ref_chunks": "128,256,512,1024,2048",
+    "rounds": "3",
+    "warmup": "10",
+    "repeats": "50",
+    "exclusive_guard": "True",
+    "guard_until": "None",
+    "record_gpu_state": "True",
+    "max_rows": "None",
+    "out_dir": "src/experiments/results/tpds",
+    "tag": "vgpu3090",
+    "seed": "0"
+  },
+  "rows_done": 1008,
+  "rows_planned": 1008,
+  "finished_utc": "2026-09-30T09:31:25Z"
+}
