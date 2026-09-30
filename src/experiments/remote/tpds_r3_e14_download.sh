@@ -10,10 +10,12 @@ source "$(dirname "${BASH_SOURCE[0]}")/tpds_common.sh" 2>/dev/null || source src
 ROOT_DIR=${TPDS_E14_MODEL_ROOT:-/root/autodl-tmp/hf_models}
 DL_LOG=$LOG_DIR/e14_download.log
 MODELS=${TPDS_E14_MODELS:-state-spaces/mamba-1.4b-hf state-spaces/mamba-2.8b-hf}
-# TPDS_E14_TURBO=1 (default): source the AutoDL academic proxy and download from huggingface.co,
-# which is several times faster there than hf-mirror.com (measured 2026-10-01: 1.66 vs 0.28 MB/s
-# per connection; hf-mirror through the proxy is slower still). aria2 honours the proxy variables.
-if [ "${TPDS_E14_TURBO:-1}" = 1 ] && [ -f /etc/network_turbo ]; then
+# Endpoint. Default: hf-mirror.com without the AutoDL proxy. Measured on vgpu3090 on 2026-10-01:
+# with 16 aria2 connections per file, hf-mirror reached ~7 MiB/s in total, while huggingface.co
+# through /etc/network_turbo reached only ~2 MiB/s in total (the proxy caps aggregate throughput,
+# although a single connection through it is faster); hf-mirror through the proxy is slower still.
+# TPDS_E14_TURBO=1 selects huggingface.co through the proxy.
+if [ "${TPDS_E14_TURBO:-0}" = 1 ] && [ -f /etc/network_turbo ]; then
   # shellcheck disable=SC1091
   source /etc/network_turbo >/dev/null 2>&1
   EP=${TPDS_E14_ENDPOINT:-https://huggingface.co}
