@@ -1,0 +1,2507 @@
+{
+  "experiment": "T1-baselines",
+  "host": "h800_r3spin",
+  "n_calls": 2360,
+  "chunks": [
+    32,
+    64,
+    128,
+    256,
+    512,
+    1024
+  ],
+  "definitions": "T1 baselines - what the Mamba-1 cost model adds over simpler selectors (items M4a and N3).\n\nCPU-only; reads existing result files and writes ``cost_model_baselines_<host>.json``.\nEvery selector below picks one chunk per captured call (the 2360 E2 calls per GPU) and is\nscored exactly as in E3 and in the cost-model validation (``e2_eval``): relative regret\nlat(choice) / lat(per-call oracle) - 1 (mean, p95), and the tied share, i.e. the share of\ncalls whose chosen chunk lies in the call's statistically tied set (95% CIs overlapping the\noracle's, as recorded at capture time).\n\nSelectors that never see a captured-call timing (calibration data only: the E4 launch-space\nsweep, the E4 static re-measurements and the E1 medians):\n  cost_model              Eq. (5) with its eight fitted parameters (the stored fit; a refit\n                          is checked to reproduce it).\n  work_only               Eq. (5) restricted to its launch and work terms:\n                              T = max(t0 + waves * ceil(L / C) * N * (tau_m + tau_e * e), bytes / bw)\n                          i.e. launch floor t0, a per-tile state cost tau_m and a per-element scan\n                          cost tau_e, with the grid and the per-thread element count e as compiled.\n                          Shuffle (tau_s), spill (tau_q, tau_p), issue sharing (W0) and latency\n                          hiding (W1) are removed (W0 = 64 and W1 = 256 make both factors equal 1\n                          for every resident-warp count). Three free parameters, refit on the same\n                          calibration points as the full model.\n  work_only_no_reg_occupancy\n                          as work_only, but the resident programs per SM (hence the number of\n                          waves) follow the warp and block limits only, ignoring the register\n                          count from ptxas (no compile-time occupancy fact).\n  work_only_w1_eq_1       as work_only with the drop-one ablation's latency-hiding convention\n                          (W1 = 1, tile latency divided by the resident warps); sensitivity only.\n  work_term_model         the work-term form used for the multi-kernel pipelines,\n                              T = (F^p + W^p)^(1/p),  W = B * L * (a + b * C) + B * ceil(L / C) * g,\n                          which uses only (L, B, C): no compile facts, no occupancy, no launch\n                          configuration. Fitted, as for Mamba-2, on the calibration timings taken\n                          at the default launch configuration (E4 static re-measurements and E1\n                          medians); a fit on all calibration points is reported as a variant.\n  nearest_calibrated_key  a lookup table built from the calibration timings: every captured call\n                          is served with the best chunk (lowest E4 static re-measurement at the\n                          default launch configuration) of its nearest calibrated key. Distance is\n                          lexicographic: first |log2 B - log2 B_k|, then |log2 L - log2 L_k|, then\n                          |log2 d - log2 d_k|; a tie in log-length (a call halfway between two\n                          calibrated lengths in log2) goes to the shorter key. Every captured\n                          batch size is calibrated at every calibrated length, so ordering batch\n                          before length or length before batch gives the same key (checked).\n                          This is the \"12-key table\" of the break-even analysis (E5).\n                          Variants: ties to the longer key; E4 medians instead of means; the chunk of\n                          the autotuned launch configuration; E1 medians pooled in; and a log-length\n                          interpolation of the normalized latency curves of the two calibrated\n                          lengths that bracket the call (same batch), which needs no tie-break.\n\nSelectors trained on captured-call timings (grouped 5-fold cross-validation over the prompt\nfolds, exactly as in E3; numbers reproduced from ``e3_predictors.evaluate``):\n  best single chunk, entropy rule, length only, shape tree, entropy only, moments,\n  shape + entropy, all features, and\n  batch_only              a table keyed by batch size: for each fold, every batch value gets the\n                          chunk with the lowest total normalized latency over its training calls\n                          (the same regret-optimal label rule as the E3 tree leaves).\n\nRanking quality within a shape: for every call, Kendall tau-b between the selector's score\nover the six chunks (predicted latency for the models, the nearest key's measured latencies for\nthe lookup table, the training-cell mean normalized latency for the trees and tables) and the\ncall's measured mean latencies. Reported per call (mean, median) and per exact shape (L, batch)\nwith the latencies averaged over the shape's calls (mean, median over shapes).\n\nAlso reported for every selector: the ratio-of-means headroom used by E5,\n100 * (mean lat(choice) - mean lat(oracle)) / mean lat(choice), which is the 2.0% (RTX PRO 6000)\nquoted for the nearest-key table; it differs from the mean per-call regret.\n",
+  "rows": {
+    "cost_model": {
+      "n": 2360,
+      "mean_regret_pct": 3.0076917599546262,
+      "p95_regret_pct": 13.728917347628558,
+      "max_regret_pct": 50.168935161158345,
+      "oracle_hit_rate": 0.6949152542372882,
+      "tie_aware_accuracy": 0.7470338983050847,
+      "accuracy": 0.6949152542372882,
+      "chosen_distribution": {
+        "256": 1263,
+        "128": 416,
+        "32": 368,
+        "64": 264,
+        "1024": 32,
+        "512": 17
+      },
+      "mean_regret_pct_aligned": 2.6892693835844823,
+      "mean_regret_pct_unaligned": 4.2419074171248505,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 2.2676976133547075,
+          "p95_regret_pct": 13.383293659955548,
+          "tie_aware_accuracy": 0.84765625,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 6.257089849184609,
+          "p95_regret_pct": 14.063882179807722,
+          "tie_aware_accuracy": 0.41598360655737704,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 1.6711582529107043,
+          "p95_regret_pct": 8.77548152242788,
+          "tie_aware_accuracy": 0.7678571428571429,
+          "n": 336
+        }
+      },
+      "curve_fit": {
+        "n": 14160,
+        "r2_log": 0.9756051223382313,
+        "median_rel_err": 0.12083421126055804,
+        "p90_rel_err": 0.41632093947001364
+      },
+      "ratio_of_means_headroom_ms": 0.02679741016724857,
+      "ratio_of_means_headroom_pct": 5.057025527636235,
+      "policy_mean_latency_ms": 0.5299045856265288,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.8296705813410363,
+        "median": 0.8666666666666667,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.9427966101694916
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.7556794156032889,
+        "median": 0.8280786712108251,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.8596491228070176
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.8737126119562797,
+          "median": 0.8666666666666667,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 1.0
+        },
+        "4": {
+          "mean": 0.7699453551912568,
+          "median": 0.7333333333333333,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.8627049180327869
+        },
+        "16": {
+          "mean": 0.715079365079365,
+          "median": 0.7333333333333333,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.7976190476190477
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.7470338983050847,
+      "n_free_params": 8,
+      "uses_captured_call_timings": false,
+      "calibration_fit": {
+        "n": 2298,
+        "r2_log": 0.9886419889946387,
+        "median_rel_err": 0.11480243156240749,
+        "p90_rel_err": 0.307447857410531
+      }
+    },
+    "work_only": {
+      "n": 2360,
+      "mean_regret_pct": 3.532799314356046,
+      "p95_regret_pct": 16.17375944309301,
+      "max_regret_pct": 27.139719743858738,
+      "oracle_hit_rate": 0.6478813559322034,
+      "tie_aware_accuracy": 0.7016949152542373,
+      "accuracy": 0.6478813559322034,
+      "chosen_distribution": {
+        "256": 1312,
+        "32": 656,
+        "64": 224,
+        "128": 168
+      },
+      "mean_regret_pct_aligned": 4.444246472217628,
+      "mean_regret_pct_unaligned": 0.0,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 1.3533900820410611,
+          "p95_regret_pct": 12.754507206796466,
+          "tie_aware_accuracy": 0.8684895833333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 5.469882658363158,
+          "p95_regret_pct": 13.90687062785052,
+          "tie_aware_accuracy": 0.4344262295081967,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 10.682429995785649,
+          "p95_regret_pct": 19.456058430878713,
+          "tie_aware_accuracy": 0.3273809523809524,
+          "n": 336
+        }
+      },
+      "curve_fit": {
+        "n": 14160,
+        "r2_log": 0.9603053782884734,
+        "median_rel_err": 0.29901153183916246,
+        "p90_rel_err": 0.4473417305395804
+      },
+      "ratio_of_means_headroom_ms": 0.056386418268463356,
+      "ratio_of_means_headroom_pct": 10.078116872219573,
+      "policy_mean_latency_ms": 0.5594935937277435,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.7465083736575044,
+        "median": 0.8666666666666667,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.813135593220339
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.6416140465945293,
+        "median": 0.8280786712108251,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.7368421052631579
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.9061538846120101,
+          "median": 0.8666666666666667,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 1.0
+        },
+        "4": {
+          "mean": 0.5860090278438651,
+          "median": 0.7333333333333333,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.5389344262295082
+        },
+        "16": {
+          "mean": 0.24980651630909803,
+          "median": 0.16666666666666666,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.35714285714285715
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.7016949152542373,
+      "n_free_params": 3,
+      "uses_captured_call_timings": false,
+      "params": {
+        "t0": 1.0776841946392609e-13,
+        "tau_f": 0.0,
+        "tau_d": 0.0,
+        "tau_m": 0.0005817043514058632,
+        "tau_l": 0.0,
+        "tau_e": 8.637764531037074e-05,
+        "tau_s": 0.0,
+        "tau_x": 0.0,
+        "tau_q": 0.0,
+        "tau_p": 0.0,
+        "W0": 64.0,
+        "W1": 256.0
+      },
+      "calibration_fit": {
+        "n": 2298,
+        "r2_log": 0.7035386104206295,
+        "median_rel_err": 0.1948727718741225,
+        "p90_rel_err": 0.8560543377058354
+      }
+    },
+    "work_only_w1_eq_1": {
+      "n": 2360,
+      "mean_regret_pct": 8.62139472639918,
+      "p95_regret_pct": 43.33743297455916,
+      "max_regret_pct": 159.2529961805944,
+      "oracle_hit_rate": 0.5872881355932204,
+      "tie_aware_accuracy": 0.6419491525423728,
+      "accuracy": 0.5872881355932204,
+      "chosen_distribution": {
+        "256": 1152,
+        "32": 984,
+        "64": 224
+      },
+      "mean_regret_pct_aligned": 9.619743940016976,
+      "mean_regret_pct_unaligned": 4.751760171136818,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 3.6389062493147217,
+          "p95_regret_pct": 20.940068525852734,
+          "tie_aware_accuracy": 0.7591145833333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 21.835725292132036,
+          "p95_regret_pct": 46.673717132760856,
+          "tie_aware_accuracy": 0.5061475409836066,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 12.20624289522089,
+          "p95_regret_pct": 19.579507983196688,
+          "tie_aware_accuracy": 0.30357142857142855,
+          "n": 336
+        }
+      },
+      "curve_fit": {
+        "n": 14160,
+        "r2_log": 0.9329944803945764,
+        "median_rel_err": 0.38432077704640494,
+        "p90_rel_err": 0.7163892670382958
+      },
+      "ratio_of_means_headroom_ms": 0.10159260276114657,
+      "ratio_of_means_headroom_pct": 16.800502732136568,
+      "policy_mean_latency_ms": 0.6046997782204268,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.6699376424052348,
+        "median": 0.8666666666666667,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.809322033898305
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.5712140471197136,
+        "median": 0.8280786712108251,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.7192982456140351
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.8716292786229465,
+          "median": 0.8666666666666667,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 1.0
+        },
+        "4": {
+          "mean": 0.3494535519125684,
+          "median": 0.6,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.5204918032786885
+        },
+        "16": {
+          "mean": 0.21338372255409266,
+          "median": 0.1,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.35714285714285715
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.6419491525423728,
+      "n_free_params": 3,
+      "uses_captured_call_timings": false,
+      "params": {
+        "t0": 0.011868848507648098,
+        "tau_f": 0.0,
+        "tau_d": 0.0,
+        "tau_m": 0.0020438376222391445,
+        "tau_l": 0.0,
+        "tau_e": 0.00010878252983330278,
+        "tau_s": 0.0,
+        "tau_x": 0.0,
+        "tau_q": 0.0,
+        "tau_p": 0.0,
+        "W0": 64.0,
+        "W1": 1.0
+      },
+      "calibration_fit": {
+        "n": 2298,
+        "r2_log": 0.6838686278572779,
+        "median_rel_err": 0.3764605989837858,
+        "p90_rel_err": 0.8617201159132156
+      }
+    },
+    "work_only_no_reg_occupancy": {
+      "n": 2360,
+      "mean_regret_pct": 11.115329349729604,
+      "p95_regret_pct": 66.18903036847384,
+      "max_regret_pct": 84.48821245009488,
+      "oracle_hit_rate": 0.4872881355932203,
+      "tie_aware_accuracy": 0.5182203389830509,
+      "accuracy": 0.48686440677966103,
+      "chosen_distribution": {
+        "1024": 776,
+        "512": 477,
+        "64": 336,
+        "256": 267,
+        "128": 256,
+        "32": 248
+      },
+      "mean_regret_pct_aligned": 6.127503578068665,
+      "mean_regret_pct_unaligned": 30.44830692748978,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 12.766225522110828,
+          "p95_regret_pct": 70.2542990978746,
+          "tie_aware_accuracy": 0.728515625,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 9.429962822935114,
+          "p95_regret_pct": 14.182312959341537,
+          "tie_aware_accuracy": 0.11065573770491803,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 6.016169660140775,
+          "p95_regret_pct": 12.749444634393258,
+          "tie_aware_accuracy": 0.1488095238095238,
+          "n": 336
+        }
+      },
+      "curve_fit": {
+        "n": 14160,
+        "r2_log": 0.7866204593191426,
+        "median_rel_err": 0.6083795343356365,
+        "p90_rel_err": 1.9410882188458733
+      },
+      "ratio_of_means_headroom_ms": 0.06744470994105023,
+      "ratio_of_means_headroom_pct": 11.820959962953646,
+      "policy_mean_latency_ms": 0.5705518854003304,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.683081046188752,
+        "median": 0.7877263614433762,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.6800847457627118
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.6165073871982311,
+        "median": 0.6,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.6140350877192983
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.7092762585614355,
+          "median": 0.7877263614433762,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.724609375
+        },
+        "4": {
+          "mean": 0.6636913785488954,
+          "median": 0.8280786712108251,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.6782786885245902
+        },
+        "16": {
+          "mean": 0.5914926878667526,
+          "median": 0.4666666666666667,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.4791666666666667
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.5182203389830509,
+      "n_free_params": 3,
+      "uses_captured_call_timings": false,
+      "params": {
+        "t0": 2.2333926939797718e-17,
+        "tau_f": 0.0,
+        "tau_d": 0.0,
+        "tau_m": 0.0005280934394879423,
+        "tau_l": 0.0,
+        "tau_e": 0.00026949978995059477,
+        "tau_s": 0.0,
+        "tau_x": 0.0,
+        "tau_q": 0.0,
+        "tau_p": 0.0,
+        "W0": 64.0,
+        "W1": 256.0
+      },
+      "calibration_fit": {
+        "n": 2298,
+        "r2_log": 0.7748100092571129,
+        "median_rel_err": 0.4943581059656441,
+        "p90_rel_err": 2.0260335435632864
+      }
+    },
+    "work_term_model": {
+      "n": 2360,
+      "mean_regret_pct": 4.163996291727065,
+      "p95_regret_pct": 14.235335845835085,
+      "max_regret_pct": 24.552187457689634,
+      "oracle_hit_rate": 0.5766949152542373,
+      "tie_aware_accuracy": 0.6288135593220339,
+      "accuracy": 0.5766949152542373,
+      "chosen_distribution": {
+        "256": 1520,
+        "64": 336,
+        "128": 256,
+        "32": 248
+      },
+      "mean_regret_pct_aligned": 5.238289578078825,
+      "mean_regret_pct_unaligned": 0.0,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 1.3533900820410611,
+          "p95_regret_pct": 12.754507206796466,
+          "tie_aware_accuracy": 0.8684895833333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 8.828349229806594,
+          "p95_regret_pct": 14.165615210246473,
+          "tie_aware_accuracy": 0.1885245901639344,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 10.238064459271389,
+          "p95_regret_pct": 23.051462431074487,
+          "tie_aware_accuracy": 0.17261904761904762,
+          "n": 336
+        }
+      },
+      "curve_fit": {
+        "n": 14160,
+        "r2_log": 0.7903754342779121,
+        "median_rel_err": 0.35441478568334045,
+        "p90_rel_err": 0.7773116083179978
+      },
+      "ratio_of_means_headroom_ms": 0.06917141801601878,
+      "ratio_of_means_headroom_pct": 12.087018246822542,
+      "policy_mean_latency_ms": 0.572278593475299,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.5415596211874034,
+        "median": 0.6,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.514406779661017
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.5719298245614036,
+        "median": 0.6,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.6140350877192983
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.6306080985257848,
+          "median": 0.6,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.7076822916666666
+        },
+        "4": {
+          "mean": 0.3379781420765028,
+          "median": 0.2,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.16188524590163936
+        },
+        "16": {
+          "mean": 0.43015873015873024,
+          "median": 0.4666666666666667,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.14285714285714285
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.6288135593220339,
+      "n_free_params": 5,
+      "uses_captured_call_timings": false,
+      "n_fit_points": 90,
+      "params": {
+        "F": 0.03326320163890387,
+        "a": 8.559145742250397e-05,
+        "b": 2.883268999294149e-08,
+        "g": 0.0016179189314543812,
+        "p": 1.0000000000000002
+      },
+      "calibration_fit": {
+        "n": 90,
+        "r2_log": 0.9115390928575869,
+        "median_rel_err": 0.25218938575328487,
+        "p90_rel_err": 0.6154388910774253
+      },
+      "unconstrained_optimal_chunk": 236.88403776679965
+    },
+    "work_term_model_all_points": {
+      "n": 2360,
+      "mean_regret_pct": 28.500310163459268,
+      "p95_regret_pct": 71.13609649212486,
+      "max_regret_pct": 85.1571656829479,
+      "oracle_hit_rate": 0.3635593220338983,
+      "tie_aware_accuracy": 0.3635593220338983,
+      "accuracy": 0.3635593220338983,
+      "chosen_distribution": {
+        "128": 1776,
+        "64": 336,
+        "32": 248
+      },
+      "mean_regret_pct_aligned": 27.6589284889045,
+      "mean_regret_pct_unaligned": 31.7615333483038,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 38.41863949738286,
+          "p95_regret_pct": 72.09547554289905,
+          "tie_aware_accuracy": 0.359375,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 15.726435768189162,
+          "p95_regret_pct": 20.320659327855278,
+          "tie_aware_accuracy": 0.09836065573770492,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 1.7119079253199745,
+          "p95_regret_pct": 8.77548152242788,
+          "tie_aware_accuracy": 0.7678571428571429,
+          "n": 336
+        }
+      },
+      "curve_fit": {
+        "n": 14160,
+        "r2_log": 0.7685909595693186,
+        "median_rel_err": 0.5267475318309215,
+        "p90_rel_err": 1.5744772639942752
+      },
+      "ratio_of_means_headroom_ms": 0.09917975436611959,
+      "ratio_of_means_headroom_pct": 16.467193534296246,
+      "policy_mean_latency_ms": 0.6022869298253998,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.31725592109163686,
+        "median": 0.2,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.4610169491525424
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.15087719298245614,
+        "median": 0.06666666666666667,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.21052631578947367
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.3298984204272546,
+          "median": 0.2,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.46875
+        },
+        "4": {
+          "mean": 0.1314207650273224,
+          "median": 0.2,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.3442622950819672
+        },
+        "16": {
+          "mean": 0.5293650793650794,
+          "median": 0.6,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.5952380952380952
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.3635593220338983,
+      "n_free_params": 5,
+      "uses_captured_call_timings": false,
+      "n_fit_points": 2298,
+      "params": {
+        "F": 0.030119346358513006,
+        "a": 2.5624504299913685e-05,
+        "b": 4.5705945953439927e-07,
+        "g": 0.003929191722384968,
+        "p": 1.0000000000000002
+      },
+      "calibration_fit": {
+        "n": 2298,
+        "r2_log": 0.7248135376261524,
+        "median_rel_err": 0.5118039300029783,
+        "p90_rel_err": 1.1265606626753841
+      },
+      "unconstrained_optimal_chunk": 92.71825712164835
+    },
+    "nearest_calibrated_key": {
+      "n": 2360,
+      "mean_regret_pct": 28.847617283049953,
+      "p95_regret_pct": 97.20487700391739,
+      "max_regret_pct": 272.94127011592354,
+      "oracle_hit_rate": 0.5,
+      "tie_aware_accuracy": 0.5516949152542373,
+      "accuracy": 0.5,
+      "chosen_distribution": {
+        "128": 1056,
+        "256": 551,
+        "1024": 529,
+        "32": 224
+      },
+      "mean_regret_pct_aligned": 14.133696699226538,
+      "mean_regret_pct_unaligned": 85.87925987654732,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 32.653541723668624,
+          "p95_regret_pct": 96.45628471476668,
+          "tie_aware_accuracy": 0.4733072916666667,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 4.312153087880223,
+          "p95_regret_pct": 11.816533024140247,
+          "tie_aware_accuracy": 0.7315573770491803,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 47.08394640939676,
+          "p95_regret_pct": 270.6202780237485,
+          "tie_aware_accuracy": 0.6488095238095238,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.05060936760160506,
+      "ratio_of_means_headroom_pct": 9.139941407898334,
+      "policy_mean_latency_ms": 0.5537165430608852,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.7216745984946923,
+        "median": 0.7333333333333333,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.8008474576271186
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.672514619883041,
+        "median": 0.7333333333333333,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.7719298245614035
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.7193264230343797,
+          "median": 0.6,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.7864583333333334
+        },
+        "4": {
+          "mean": 0.71775956284153,
+          "median": 0.8666666666666667,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.7745901639344263
+        },
+        "16": {
+          "mean": 0.7380952380952381,
+          "median": 0.7333333333333333,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.9047619047619048
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.5516949152542373,
+      "uses_captured_call_timings": false,
+      "table": [
+        {
+          "key": "m1tune|L128|b1",
+          "L": 128,
+          "batch": 1,
+          "best_chunk": 128,
+          "n_calls_served": 720
+        },
+        {
+          "key": "m1tune|L128|b4",
+          "L": 128,
+          "batch": 4,
+          "best_chunk": 32,
+          "n_calls_served": 224
+        },
+        {
+          "key": "m1tune|L128|b16",
+          "L": 128,
+          "batch": 16,
+          "best_chunk": 128,
+          "n_calls_served": 160
+        },
+        {
+          "key": "m1tune|L512|b1",
+          "L": 512,
+          "batch": 1,
+          "best_chunk": 256,
+          "n_calls_served": 400
+        },
+        {
+          "key": "m1tune|L512|b4",
+          "L": 512,
+          "batch": 4,
+          "best_chunk": 256,
+          "n_calls_served": 151
+        },
+        {
+          "key": "m1tune|L512|b16",
+          "L": 512,
+          "batch": 16,
+          "best_chunk": 128,
+          "n_calls_served": 80
+        },
+        {
+          "key": "m1tune|L2048|b1",
+          "L": 2048,
+          "batch": 1,
+          "best_chunk": 1024,
+          "n_calls_served": 304
+        },
+        {
+          "key": "m1tune|L2048|b4",
+          "L": 2048,
+          "batch": 4,
+          "best_chunk": 1024,
+          "n_calls_served": 89
+        },
+        {
+          "key": "m1tune|L2048|b16",
+          "L": 2048,
+          "batch": 16,
+          "best_chunk": 128,
+          "n_calls_served": 72
+        },
+        {
+          "key": "m1tune|L8192|b1",
+          "L": 8192,
+          "batch": 1,
+          "best_chunk": 1024,
+          "n_calls_served": 112
+        },
+        {
+          "key": "m1tune|L8192|b4",
+          "L": 8192,
+          "batch": 4,
+          "best_chunk": 1024,
+          "n_calls_served": 24
+        },
+        {
+          "key": "m1tune|L8192|b16",
+          "L": 8192,
+          "batch": 16,
+          "best_chunk": 128,
+          "n_calls_served": 24
+        }
+      ]
+    },
+    "global_static": {
+      "n": 2360,
+      "mean_regret_pct": 50.887462824169496,
+      "p95_regret_pct": 258.75939572503034,
+      "max_regret_pct": 403.8796819026669,
+      "oracle_hit_rate": 0.30127118644067796,
+      "tie_aware_accuracy": 0.35338983050847456,
+      "accuracy": 0.30127118644067796,
+      "chosen_distribution": {
+        "256": 2360
+      },
+      "mean_regret_pct_aligned": 39.006512029177124,
+      "mean_regret_pct_unaligned": 96.9384208642639,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 28.3436276938018,
+          "p95_regret_pct": 115.16433172256559,
+          "tie_aware_accuracy": 0.5091145833333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 77.40078761875418,
+          "p95_regret_pct": 259.4817001378006,
+          "tie_aware_accuracy": 0.09016393442622951,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 115.4375469327631,
+          "p95_regret_pct": 400.2435409669033,
+          "tie_aware_accuracy": 0.023809523809523808,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.09217840052748061,
+      "ratio_of_means_headroom_pct": 15.484736107486444,
+      "policy_mean_latency_ms": 0.5952855759867608,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.26200564971751417,
+        "median": 0.2,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.1944915254237288
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.23742690058479532,
+        "median": 0.3333333333333333,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.08771929824561403
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.3250434027777778,
+          "median": 0.3333333333333333,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.21875
+        },
+        "4": {
+          "mean": 0.10956284153005465,
+          "median": 0.2,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.13729508196721313
+        },
+        "16": {
+          "mean": 0.19523809523809527,
+          "median": 0.2,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.16666666666666666
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.35338983050847456,
+      "uses_captured_call_timings": true
+    },
+    "batch_only": {
+      "n": 2360,
+      "mean_regret_pct": 24.70039986992975,
+      "p95_regret_pct": 114.6213086489254,
+      "max_regret_pct": 159.2529961805944,
+      "oracle_hit_rate": 0.4245762711864407,
+      "tie_aware_accuracy": 0.47923728813559324,
+      "accuracy": 0.4245762711864407,
+      "chosen_distribution": {
+        "256": 1536,
+        "32": 824
+      },
+      "mean_regret_pct_aligned": 20.026470189116928,
+      "mean_regret_pct_unaligned": 42.81670582283235,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 28.3436276938018,
+          "p95_regret_pct": 115.16433172256559,
+          "tie_aware_accuracy": 0.5091145833333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 21.835725292132036,
+          "p95_regret_pct": 46.673717132760856,
+          "tie_aware_accuracy": 0.5061475409836066,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 12.20624289522089,
+          "p95_regret_pct": 19.579507983196688,
+          "tie_aware_accuracy": 0.30357142857142855,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.10469628982861534,
+      "ratio_of_means_headroom_pct": 17.225352570016085,
+      "policy_mean_latency_ms": 0.6078034652878955,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.25793785310734463,
+        "median": 0.3333333333333333,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.288135593220339
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.17192982456140352,
+        "median": 0.2,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.15789473684210525
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.3250434027777778,
+          "median": 0.3333333333333333,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.21875
+        },
+        "4": {
+          "mean": 0.0401639344262295,
+          "median": 0.3333333333333333,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.45901639344262296
+        },
+        "16": {
+          "mean": 0.2674603174603175,
+          "median": 0.06666666666666667,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.35714285714285715
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.47923728813559324,
+      "uses_captured_call_timings": true
+    },
+    "batch_only_tree": {
+      "n": 2360,
+      "mean_regret_pct": 24.70039986992975,
+      "p95_regret_pct": 114.6213086489254,
+      "max_regret_pct": 159.2529961805944,
+      "oracle_hit_rate": 0.4245762711864407,
+      "tie_aware_accuracy": 0.47923728813559324,
+      "accuracy": 0.4245762711864407,
+      "chosen_distribution": {
+        "256": 1536,
+        "32": 824
+      },
+      "mean_regret_pct_aligned": 20.026470189116928,
+      "mean_regret_pct_unaligned": 42.81670582283235,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 28.3436276938018,
+          "p95_regret_pct": 115.16433172256559,
+          "tie_aware_accuracy": 0.5091145833333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 21.835725292132036,
+          "p95_regret_pct": 46.673717132760856,
+          "tie_aware_accuracy": 0.5061475409836066,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 12.20624289522089,
+          "p95_regret_pct": 19.579507983196688,
+          "tie_aware_accuracy": 0.30357142857142855,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.10469628982861534,
+      "ratio_of_means_headroom_pct": 17.225352570016085,
+      "policy_mean_latency_ms": 0.6078034652878955,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.25793785310734463,
+        "median": 0.3333333333333333,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.288135593220339
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.17192982456140352,
+        "median": 0.2,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.15789473684210525
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.3250434027777778,
+          "median": 0.3333333333333333,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.21875
+        },
+        "4": {
+          "mean": 0.0401639344262295,
+          "median": 0.3333333333333333,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.45901639344262296
+        },
+        "16": {
+          "mean": 0.2674603174603175,
+          "median": 0.06666666666666667,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.35714285714285715
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.47923728813559324,
+      "uses_captured_call_timings": true
+    },
+    "L_only": {
+      "n": 2360,
+      "mean_regret_pct": 4.188459282670831,
+      "p95_regret_pct": 14.168877081572582,
+      "max_regret_pct": 70.24489346873013,
+      "oracle_hit_rate": 0.6173728813559322,
+      "tie_aware_accuracy": 0.6694915254237288,
+      "accuracy": 0.6173728813559322,
+      "chosen_distribution": {
+        "256": 1320,
+        "64": 336,
+        "128": 256,
+        "32": 248,
+        "1024": 200
+      },
+      "mean_regret_pct_aligned": 4.191265098452672,
+      "mean_regret_pct_unaligned": 4.177583847946174,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 2.0421418264927826,
+          "p95_regret_pct": 12.91287128479912,
+          "tie_aware_accuracy": 0.9049479166666666,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 7.859924707673501,
+          "p95_regret_pct": 14.165615210246473,
+          "tie_aware_accuracy": 0.27049180327868855,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 8.667829774599936,
+          "p95_regret_pct": 16.618427350689398,
+          "tie_aware_accuracy": 0.17261904761904762,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.05001751225078643,
+      "ratio_of_means_headroom_pct": 9.042719184684863,
+      "policy_mean_latency_ms": 0.5531246877100666,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.8193076660097793,
+        "median": 0.8666666666666667,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.9122881355932203
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.7169590643274854,
+        "median": 0.7333333333333333,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.8947368421052632
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.9177730632268312,
+          "median": 0.8666666666666667,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 1.0
+        },
+        "4": {
+          "mean": 0.7330601092896174,
+          "median": 0.7333333333333333,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.9364754098360656
+        },
+        "16": {
+          "mean": 0.4944444444444444,
+          "median": 0.4,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.47619047619047616
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.6694915254237288,
+      "uses_captured_call_timings": true
+    },
+    "shape": {
+      "n": 2360,
+      "mean_regret_pct": 1.6260753146170925,
+      "p95_regret_pct": 12.545746835111512,
+      "max_regret_pct": 87.40123629183509,
+      "oracle_hit_rate": 0.8097457627118644,
+      "tie_aware_accuracy": 0.863135593220339,
+      "accuracy": 0.8097457627118644,
+      "chosen_distribution": {
+        "256": 1096,
+        "32": 440,
+        "128": 392,
+        "64": 224,
+        "1024": 208
+      },
+      "mean_regret_pct_aligned": 1.403910603630826,
+      "mean_regret_pct_unaligned": 2.4871930786878274,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 1.3533900820410611,
+          "p95_regret_pct": 12.754507206796466,
+          "tie_aware_accuracy": 0.8684895833333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 2.583551640899527,
+          "p95_regret_pct": 5.16227011011567,
+          "tie_aware_accuracy": 0.8114754098360656,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 1.4820159991735082,
+          "p95_regret_pct": 9.59888793982615,
+          "tie_aware_accuracy": 0.9136904761904762,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.017343476665600877,
+      "ratio_of_means_headroom_pct": 3.3323959908189997,
+      "policy_mean_latency_ms": 0.5204506521248811,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.8544489089476325,
+        "median": 0.8666666666666667,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.9483050847457627
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.7567251461988306,
+        "median": 0.8666666666666667,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.8596491228070176
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.8983286187823868,
+          "median": 1.0,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 1.0
+        },
+        "4": {
+          "mean": 0.8363387978142076,
+          "median": 0.8666666666666667,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.930327868852459
+        },
+        "16": {
+          "mean": 0.6801587301587302,
+          "median": 0.8666666666666667,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.7380952380952381
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.863135593220339,
+      "uses_captured_call_timings": true
+    },
+    "entropy_only": {
+      "n": 2360,
+      "mean_regret_pct": 42.25965957317362,
+      "p95_regret_pct": 250.407958664303,
+      "max_regret_pct": 402.2847077030756,
+      "oracle_hit_rate": 0.31610169491525425,
+      "tie_aware_accuracy": 0.3597457627118644,
+      "accuracy": 0.31610169491525425,
+      "chosen_distribution": {
+        "256": 1915,
+        "64": 249,
+        "32": 143,
+        "128": 48,
+        "1024": 5
+      },
+      "mean_regret_pct_aligned": 38.164469749101976,
+      "mean_regret_pct_unaligned": 58.132750709451365,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 27.96012757185908,
+          "p95_regret_pct": 114.68917412892026,
+          "tie_aware_accuracy": 0.490234375,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 59.69777103717436,
+          "p95_regret_pct": 253.16538913861214,
+          "tie_aware_accuracy": 0.12704918032786885,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 82.30216778622957,
+          "p95_regret_pct": 362.5894583835548,
+          "tie_aware_accuracy": 0.10119047619047619,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.09245635680131359,
+      "ratio_of_means_headroom_pct": 15.524180342334752,
+      "policy_mean_latency_ms": 0.5955635322605938,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.298728813559322,
+        "median": 0.3333333333333333,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.28135593220338984
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.26081871345029245,
+        "median": 0.3333333333333333,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.15789473684210525
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.35160590277777776,
+          "median": 0.3333333333333333,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.3131510416666667
+        },
+        "4": {
+          "mean": 0.15683060109289618,
+          "median": 0.2,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.20491803278688525
+        },
+        "16": {
+          "mean": 0.2630952380952381,
+          "median": 0.2,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.24702380952380953
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.3597457627118644,
+      "uses_captured_call_timings": true
+    },
+    "moments": {
+      "n": 2360,
+      "mean_regret_pct": 30.827691255979584,
+      "p95_regret_pct": 135.56854107949943,
+      "max_regret_pct": 401.51489665696386,
+      "oracle_hit_rate": 0.3686440677966102,
+      "tie_aware_accuracy": 0.4067796610169492,
+      "accuracy": 0.3686440677966102,
+      "chosen_distribution": {
+        "256": 1517,
+        "64": 587,
+        "32": 214,
+        "128": 38,
+        "1024": 4
+      },
+      "mean_regret_pct_aligned": 30.44988008687949,
+      "mean_regret_pct_unaligned": 32.29209983703697,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 24.948612882202447,
+          "p95_regret_pct": 114.70114147397639,
+          "tie_aware_accuracy": 0.5501302083333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 37.50983487374641,
+          "p95_regret_pct": 250.73426569186478,
+          "tie_aware_accuracy": 0.15163934426229508,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 47.99845999601373,
+          "p95_regret_pct": 361.9401892215853,
+          "tie_aware_accuracy": 0.12202380952380952,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.10758827951171634,
+      "ratio_of_means_headroom_pct": 17.617337518391384,
+      "policy_mean_latency_ms": 0.6106954549709965,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.3963579151603962,
+        "median": 0.3333333333333333,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.37754237288135595
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.3426900584795322,
+        "median": 0.3333333333333333,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.24561403508771928
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.448483949508595,
+          "median": 0.4666666666666667,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.4388020833333333
+        },
+        "4": {
+          "mean": 0.24617486338797812,
+          "median": 0.2,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.23770491803278687
+        },
+        "16": {
+          "mean": 0.3761904761904762,
+          "median": 0.3333333333333333,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.3005952380952381
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.4067796610169492,
+      "uses_captured_call_timings": true
+    },
+    "shape+entropy": {
+      "n": 2360,
+      "mean_regret_pct": 1.6260753146170925,
+      "p95_regret_pct": 12.545746835111512,
+      "max_regret_pct": 87.40123629183509,
+      "oracle_hit_rate": 0.8097457627118644,
+      "tie_aware_accuracy": 0.863135593220339,
+      "accuracy": 0.8097457627118644,
+      "chosen_distribution": {
+        "256": 1096,
+        "32": 440,
+        "128": 392,
+        "64": 224,
+        "1024": 208
+      },
+      "mean_regret_pct_aligned": 1.403910603630826,
+      "mean_regret_pct_unaligned": 2.4871930786878274,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 1.3533900820410611,
+          "p95_regret_pct": 12.754507206796466,
+          "tie_aware_accuracy": 0.8684895833333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 2.583551640899527,
+          "p95_regret_pct": 5.16227011011567,
+          "tie_aware_accuracy": 0.8114754098360656,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 1.4820159991735082,
+          "p95_regret_pct": 9.59888793982615,
+          "tie_aware_accuracy": 0.9136904761904762,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.017343476665600877,
+      "ratio_of_means_headroom_pct": 3.3323959908189997,
+      "policy_mean_latency_ms": 0.5204506521248811,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.8544489089476325,
+        "median": 0.8666666666666667,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.9483050847457627
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.7567251461988306,
+        "median": 0.8666666666666667,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.8596491228070176
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.8983286187823868,
+          "median": 1.0,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 1.0
+        },
+        "4": {
+          "mean": 0.8363387978142076,
+          "median": 0.8666666666666667,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.930327868852459
+        },
+        "16": {
+          "mean": 0.6801587301587302,
+          "median": 0.8666666666666667,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.7380952380952381
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.863135593220339,
+      "uses_captured_call_timings": true
+    },
+    "all": {
+      "n": 2360,
+      "mean_regret_pct": 1.6260753146170925,
+      "p95_regret_pct": 12.545746835111512,
+      "max_regret_pct": 87.40123629183509,
+      "oracle_hit_rate": 0.8097457627118644,
+      "tie_aware_accuracy": 0.863135593220339,
+      "accuracy": 0.8097457627118644,
+      "chosen_distribution": {
+        "256": 1096,
+        "32": 440,
+        "128": 392,
+        "64": 224,
+        "1024": 208
+      },
+      "mean_regret_pct_aligned": 1.403910603630826,
+      "mean_regret_pct_unaligned": 2.4871930786878274,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 1.3533900820410611,
+          "p95_regret_pct": 12.754507206796466,
+          "tie_aware_accuracy": 0.8684895833333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 2.583551640899527,
+          "p95_regret_pct": 5.16227011011567,
+          "tie_aware_accuracy": 0.8114754098360656,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 1.4820159991735082,
+          "p95_regret_pct": 9.59888793982615,
+          "tie_aware_accuracy": 0.9136904761904762,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.017343476665600877,
+      "ratio_of_means_headroom_pct": 3.3323959908189997,
+      "policy_mean_latency_ms": 0.5204506521248811,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.8544489089476325,
+        "median": 0.8666666666666667,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.9483050847457627
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.7567251461988306,
+        "median": 0.8666666666666667,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.8596491228070176
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.8983286187823868,
+          "median": 1.0,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 1.0
+        },
+        "4": {
+          "mean": 0.8363387978142076,
+          "median": 0.8666666666666667,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.930327868852459
+        },
+        "16": {
+          "mean": 0.6801587301587302,
+          "median": 0.8666666666666667,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.7380952380952381
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.863135593220339,
+      "uses_captured_call_timings": true
+    },
+    "entropy_rule": {
+      "n": 2360,
+      "mean_regret_pct": 50.887462824169496,
+      "p95_regret_pct": 258.75939572503034,
+      "max_regret_pct": 403.8796819026669,
+      "oracle_hit_rate": 0.30127118644067796,
+      "tie_aware_accuracy": 0.35338983050847456,
+      "accuracy": 0.30127118644067796,
+      "chosen_distribution": {
+        "256": 2360
+      },
+      "mean_regret_pct_aligned": 39.006512029177124,
+      "mean_regret_pct_unaligned": 96.9384208642639,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 28.3436276938018,
+          "p95_regret_pct": 115.16433172256559,
+          "tie_aware_accuracy": 0.5091145833333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 77.40078761875418,
+          "p95_regret_pct": 259.4817001378006,
+          "tie_aware_accuracy": 0.09016393442622951,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 115.4375469327631,
+          "p95_regret_pct": 400.2435409669033,
+          "tie_aware_accuracy": 0.023809523809523808,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.09217840052748061,
+      "ratio_of_means_headroom_pct": 15.484736107486444,
+      "policy_mean_latency_ms": 0.5952855759867608,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "uses_captured_call_timings": false
+    }
+  },
+  "variants_nearest_calibrated_key": {
+    "tie_to_longer_key": {
+      "n": 2360,
+      "mean_regret_pct": 24.932149895210202,
+      "p95_regret_pct": 97.20487700391739,
+      "max_regret_pct": 272.94127011592354,
+      "oracle_hit_rate": 0.611864406779661,
+      "tie_aware_accuracy": 0.6427966101694915,
+      "accuracy": 0.6114406779661017,
+      "chosen_distribution": {
+        "128": 888,
+        "1024": 856,
+        "256": 448,
+        "32": 168
+      },
+      "mean_regret_pct_aligned": 9.208055422413205,
+      "mean_regret_pct_unaligned": 85.87925987654732,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 27.186780311445176,
+          "p95_regret_pct": 96.45628471476668,
+          "tie_aware_accuracy": 0.587890625,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 2.583551640899527,
+          "p95_regret_pct": 5.16227011011567,
+          "tie_aware_accuracy": 0.8114754098360656,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 47.08394640939676,
+          "p95_regret_pct": 270.6202780237485,
+          "tie_aware_accuracy": 0.6488095238095238,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.04788272955745343,
+      "ratio_of_means_headroom_pct": 8.690309771827712,
+      "policy_mean_latency_ms": 0.5509899050167336,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.7790251801340731,
+        "median": 0.8666666666666667,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.8889830508474577
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.6842105263157895,
+        "median": 0.7333333333333333,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.8070175438596491
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.7847001465601645,
+          "median": 0.8666666666666667,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.880859375
+        },
+        "4": {
+          "mean": 0.8068306010928962,
+          "median": 0.8666666666666667,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.8545081967213115
+        },
+        "16": {
+          "mean": 0.7126984126984126,
+          "median": 0.6,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.9761904761904762
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.6427966101694915
+    },
+    "e4_static_median": {
+      "n": 2360,
+      "mean_regret_pct": 28.847617283049953,
+      "p95_regret_pct": 97.20487700391739,
+      "max_regret_pct": 272.94127011592354,
+      "oracle_hit_rate": 0.5,
+      "tie_aware_accuracy": 0.5516949152542373,
+      "accuracy": 0.5,
+      "chosen_distribution": {
+        "128": 1056,
+        "256": 551,
+        "1024": 529,
+        "32": 224
+      },
+      "mean_regret_pct_aligned": 14.133696699226538,
+      "mean_regret_pct_unaligned": 85.87925987654732,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 32.653541723668624,
+          "p95_regret_pct": 96.45628471476668,
+          "tie_aware_accuracy": 0.4733072916666667,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 4.312153087880223,
+          "p95_regret_pct": 11.816533024140247,
+          "tie_aware_accuracy": 0.7315573770491803,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 47.08394640939676,
+          "p95_regret_pct": 270.6202780237485,
+          "tie_aware_accuracy": 0.6488095238095238,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.05060936760160506,
+      "ratio_of_means_headroom_pct": 9.139941407898334,
+      "policy_mean_latency_ms": 0.5537165430608852,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.7216745984946923,
+        "median": 0.7333333333333333,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.8008474576271186
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.672514619883041,
+        "median": 0.7333333333333333,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.7719298245614035
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.7193264230343797,
+          "median": 0.6,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.7864583333333334
+        },
+        "4": {
+          "mean": 0.71775956284153,
+          "median": 0.8666666666666667,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.7745901639344263
+        },
+        "16": {
+          "mean": 0.7380952380952381,
+          "median": 0.7333333333333333,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.9047619047619048
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.5516949152542373
+    },
+    "tuned_launch_config_chunk": {
+      "n": 2360,
+      "mean_regret_pct": 29.080194178106954,
+      "p95_regret_pct": 104.98650261736655,
+      "max_regret_pct": 245.2105553791986,
+      "oracle_hit_rate": 0.30635593220338986,
+      "tie_aware_accuracy": 0.3597457627118644,
+      "accuracy": 0.30635593220338986,
+      "chosen_distribution": {
+        "256": 1232,
+        "128": 944,
+        "64": 184
+      },
+      "mean_regret_pct_aligned": 19.84246074280261,
+      "mean_regret_pct_unaligned": 64.8859543529643,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 24.7880941853419,
+          "p95_regret_pct": 96.45628471476668,
+          "tie_aware_accuracy": 0.5091145833333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 47.26246793788399,
+          "p95_regret_pct": 241.77726561721622,
+          "tie_aware_accuracy": 0.09016393442622951,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 22.293634636785345,
+          "p95_regret_pct": 108.68601887002991,
+          "tie_aware_accuracy": 0.06845238095238096,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.06578556961567783,
+      "ratio_of_means_headroom_pct": 11.563791274400913,
+      "policy_mean_latency_ms": 0.568892745074958,
+      "oracle_mean_latency_ms": 0.5031071754592802
+    },
+    "pooled_with_e1_medians": {
+      "n": 2360,
+      "mean_regret_pct": 28.847617283049953,
+      "p95_regret_pct": 97.20487700391739,
+      "max_regret_pct": 272.94127011592354,
+      "oracle_hit_rate": 0.5,
+      "tie_aware_accuracy": 0.5516949152542373,
+      "accuracy": 0.5,
+      "chosen_distribution": {
+        "128": 1056,
+        "256": 551,
+        "1024": 529,
+        "32": 224
+      },
+      "mean_regret_pct_aligned": 14.133696699226538,
+      "mean_regret_pct_unaligned": 85.87925987654732,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 32.653541723668624,
+          "p95_regret_pct": 96.45628471476668,
+          "tie_aware_accuracy": 0.4733072916666667,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 4.312153087880223,
+          "p95_regret_pct": 11.816533024140247,
+          "tie_aware_accuracy": 0.7315573770491803,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 47.08394640939676,
+          "p95_regret_pct": 270.6202780237485,
+          "tie_aware_accuracy": 0.6488095238095238,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.05060936760160506,
+      "ratio_of_means_headroom_pct": 9.139941407898334,
+      "policy_mean_latency_ms": 0.5537165430608852,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.7216745984946923,
+        "median": 0.7333333333333333,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.8008474576271186
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.672514619883041,
+        "median": 0.7333333333333333,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.7719298245614035
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.7193264230343797,
+          "median": 0.6,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.7864583333333334
+        },
+        "4": {
+          "mean": 0.71775956284153,
+          "median": 0.8666666666666667,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.7745901639344263
+        },
+        "16": {
+          "mean": 0.7380952380952381,
+          "median": 0.7333333333333333,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.9047619047619048
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.5516949152542373,
+      "n_keys_with_e1": 3
+    },
+    "interpolated_log_length": {
+      "n": 2360,
+      "mean_regret_pct": 23.418545704900176,
+      "p95_regret_pct": 97.20487700391739,
+      "max_regret_pct": 272.94127011592354,
+      "oracle_hit_rate": 0.5983050847457627,
+      "tie_aware_accuracy": 0.65,
+      "accuracy": 0.5983050847457627,
+      "chosen_distribution": {
+        "128": 888,
+        "256": 783,
+        "1024": 464,
+        "32": 224,
+        "512": 1
+      },
+      "mean_regret_pct_aligned": 9.662010013704531,
+      "mean_regret_pct_unaligned": 76.73933280548496,
+      "by_batch": {
+        "1": {
+          "mean_regret_pct": 24.339256758292503,
+          "p95_regret_pct": 96.45628471476668,
+          "tie_aware_accuracy": 0.6243489583333334,
+          "n": 1536
+        },
+        "4": {
+          "mean_regret_pct": 4.22635960915947,
+          "p95_regret_pct": 11.816533024140247,
+          "tie_aware_accuracy": 0.7315573770491803,
+          "n": 488
+        },
+        "16": {
+          "mean_regret_pct": 47.08394640939676,
+          "p95_regret_pct": 270.6202780237485,
+          "tie_aware_accuracy": 0.6488095238095238,
+          "n": 336
+        }
+      },
+      "ratio_of_means_headroom_ms": 0.044251415072829925,
+      "ratio_of_means_headroom_pct": 8.084538333418916,
+      "policy_mean_latency_ms": 0.5473585905321101,
+      "oracle_mean_latency_ms": 0.5031071754592802,
+      "kendall_tau_per_call": {
+        "mean": 0.7801531406798916,
+        "median": 0.8666666666666667,
+        "n": 2360,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.8627118644067797
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.7099415204678363,
+        "median": 0.7333333333333333,
+        "n": 57,
+        "n_undefined": 0,
+        "share_tau_ge_0p6": 0.8070175438596491
+      },
+      "kendall_tau_per_call_by_batch": {
+        "1": {
+          "mean": 0.8089158498293473,
+          "median": 0.8666666666666667,
+          "n": 1536,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.880859375
+        },
+        "4": {
+          "mean": 0.7185792349726775,
+          "median": 0.8666666666666667,
+          "n": 488,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.7766393442622951
+        },
+        "16": {
+          "mean": 0.7380952380952381,
+          "median": 0.7333333333333333,
+          "n": 336,
+          "n_undefined": 0,
+          "share_tau_ge_0p6": 0.9047619047619048
+        }
+      },
+      "predicted_argmin_in_tied_set": 0.65
+    }
+  },
+  "checks": {
+    "cost_model_refit_max_rel_param_diff": 0.0,
+    "cost_model_choice_equals_stored": true,
+    "cost_model_stored_vs_recomputed": {
+      "mean_regret_pct": [
+        3.0076917599546262,
+        3.0076917599546262
+      ],
+      "p95_regret_pct": [
+        13.728917347628558,
+        13.728917347628558
+      ],
+      "tie_aware_accuracy": [
+        0.7470338983050847,
+        0.7470338983050847
+      ]
+    },
+    "nearest_key_batch_first_equals_length_first": true,
+    "n_calls_on_log_length_tie": 767,
+    "e3_stored_vs_recomputed_mean_regret_pct": {
+      "global_static": [
+        50.887462824169496,
+        50.887462824169496,
+        50.887462824169496
+      ],
+      "entropy_rule": [
+        50.887462824169496,
+        50.887462824169496,
+        50.887462824169496
+      ],
+      "L_only": [
+        4.188459282670831,
+        4.188459282670831,
+        4.188459282670831
+      ],
+      "shape": [
+        1.6260753146170925,
+        1.6260753146170925,
+        1.6260753146170925
+      ],
+      "entropy_only": [
+        42.25965957317362,
+        42.25965957317362,
+        42.25965957317362
+      ],
+      "moments": [
+        30.827691255979584,
+        30.827691255979584,
+        30.827691255979584
+      ],
+      "shape+entropy": [
+        1.6260753146170925,
+        1.6260753146170925,
+        1.6260753146170925
+      ],
+      "all": [
+        1.6260753146170925,
+        1.6260753146170925,
+        1.6260753146170925
+      ]
+    },
+    "e3_scored_trees_match_e3": true
+  },
+  "batch1_trained_within_batch1": {
+    "global_static": {
+      "mean_regret_pct": 28.3436276938018,
+      "p95_regret_pct": 115.16433172256559,
+      "max_regret_pct": 117.56385728361937,
+      "tie_aware_accuracy": 0.5091145833333334,
+      "accuracy": 0.4290364583333333,
+      "ratio_of_means_headroom_pct": 7.176504918369081,
+      "kendall_tau_per_call": {
+        "mean": 0.3250434027777778,
+        "median": 0.3333333333333333
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.27843137254901956,
+        "median": 0.3333333333333333
+      }
+    },
+    "batch_only": {
+      "mean_regret_pct": 28.3436276938018,
+      "p95_regret_pct": 115.16433172256559,
+      "max_regret_pct": 117.56385728361937,
+      "tie_aware_accuracy": 0.5091145833333334,
+      "accuracy": 0.4290364583333333,
+      "ratio_of_means_headroom_pct": 7.176504918369081,
+      "kendall_tau_per_call": {
+        "mean": 0.3250434027777778,
+        "median": 0.3333333333333333
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.27843137254901956,
+        "median": 0.3333333333333333
+      }
+    },
+    "batch_only_tree": {
+      "mean_regret_pct": 28.3436276938018,
+      "p95_regret_pct": 115.16433172256559,
+      "max_regret_pct": 117.56385728361937,
+      "tie_aware_accuracy": 0.5091145833333334,
+      "accuracy": 0.4290364583333333,
+      "ratio_of_means_headroom_pct": 7.176504918369081,
+      "kendall_tau_per_call": {
+        "mean": 0.3250434027777778,
+        "median": 0.3333333333333333
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.27843137254901956,
+        "median": 0.3333333333333333
+      }
+    },
+    "L_only": {
+      "mean_regret_pct": 1.364123408805297,
+      "p95_regret_pct": 12.568473795612134,
+      "max_regret_pct": 59.07814321470095,
+      "tie_aware_accuracy": 0.8893229166666666,
+      "accuracy": 0.8092447916666666,
+      "ratio_of_means_headroom_pct": 4.787056773148151,
+      "kendall_tau_per_call": {
+        "mean": 0.9011063965601643,
+        "median": 1.0
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.8117647058823529,
+        "median": 0.8666666666666667
+      }
+    },
+    "shape": {
+      "mean_regret_pct": 1.2938773158958932,
+      "p95_regret_pct": 12.157460636339984,
+      "max_regret_pct": 59.07814321470095,
+      "tie_aware_accuracy": 0.8951822916666666,
+      "accuracy": 0.833984375,
+      "ratio_of_means_headroom_pct": 4.613042883083103,
+      "kendall_tau_per_call": {
+        "mean": 0.9070959798934979,
+        "median": 1.0
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.8156862745098039,
+        "median": 0.8666666666666667
+      }
+    },
+    "entropy_only": {
+      "mean_regret_pct": 24.796620453788854,
+      "p95_regret_pct": 114.7491542809004,
+      "max_regret_pct": 166.01939559929363,
+      "tie_aware_accuracy": 0.5390625,
+      "accuracy": 0.4615885416666667,
+      "ratio_of_means_headroom_pct": 8.015767759680253,
+      "kendall_tau_per_call": {
+        "mean": 0.4153242272863727,
+        "median": 0.3333333333333333
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.388235294117647,
+        "median": 0.4
+      }
+    },
+    "moments": {
+      "mean_regret_pct": 15.311875628364536,
+      "p95_regret_pct": 87.32878535829813,
+      "max_regret_pct": 284.44480000656307,
+      "tie_aware_accuracy": 0.6516927083333334,
+      "accuracy": 0.5729166666666666,
+      "ratio_of_means_headroom_pct": 10.927442318574478,
+      "kendall_tau_per_call": {
+        "mean": 0.5401536629060787,
+        "median": 0.6
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.49411764705882355,
+        "median": 0.4666666666666667
+      }
+    },
+    "shape+entropy": {
+      "mean_regret_pct": 1.2938773158958932,
+      "p95_regret_pct": 12.157460636339984,
+      "max_regret_pct": 59.07814321470095,
+      "tie_aware_accuracy": 0.8951822916666666,
+      "accuracy": 0.833984375,
+      "ratio_of_means_headroom_pct": 4.613042883083103,
+      "kendall_tau_per_call": {
+        "mean": 0.9070959798934979,
+        "median": 1.0
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.8156862745098039,
+        "median": 0.8666666666666667
+      }
+    },
+    "all": {
+      "mean_regret_pct": 1.2938773158958932,
+      "p95_regret_pct": 12.157460636339984,
+      "max_regret_pct": 59.07814321470095,
+      "tie_aware_accuracy": 0.8951822916666666,
+      "accuracy": 0.833984375,
+      "ratio_of_means_headroom_pct": 4.613042883083103,
+      "kendall_tau_per_call": {
+        "mean": 0.9070959798934979,
+        "median": 1.0
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.8156862745098039,
+        "median": 0.8666666666666667
+      }
+    },
+    "entropy_rule": {
+      "mean_regret_pct": 28.3436276938018,
+      "p95_regret_pct": 115.16433172256559,
+      "max_regret_pct": 117.56385728361937,
+      "tie_aware_accuracy": 0.5091145833333334,
+      "accuracy": 0.4290364583333333,
+      "ratio_of_means_headroom_pct": 7.176504918369081
+    }
+  },
+  "summary": {
+    "cost_model": {
+      "mean_regret_pct": 3.0076917599546262,
+      "p95_regret_pct": 13.728917347628558,
+      "max_regret_pct": 50.168935161158345,
+      "tie_aware_accuracy": 0.7470338983050847,
+      "accuracy": 0.6949152542372882,
+      "ratio_of_means_headroom_pct": 5.057025527636235,
+      "kendall_tau_per_call": {
+        "mean": 0.8296705813410363,
+        "median": 0.8666666666666667
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.7556794156032889,
+        "median": 0.8280786712108251
+      }
+    },
+    "work_only": {
+      "mean_regret_pct": 3.532799314356046,
+      "p95_regret_pct": 16.17375944309301,
+      "max_regret_pct": 27.139719743858738,
+      "tie_aware_accuracy": 0.7016949152542373,
+      "accuracy": 0.6478813559322034,
+      "ratio_of_means_headroom_pct": 10.078116872219573,
+      "kendall_tau_per_call": {
+        "mean": 0.7465083736575044,
+        "median": 0.8666666666666667
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.6416140465945293,
+        "median": 0.8280786712108251
+      }
+    },
+    "work_only_w1_eq_1": {
+      "mean_regret_pct": 8.62139472639918,
+      "p95_regret_pct": 43.33743297455916,
+      "max_regret_pct": 159.2529961805944,
+      "tie_aware_accuracy": 0.6419491525423728,
+      "accuracy": 0.5872881355932204,
+      "ratio_of_means_headroom_pct": 16.800502732136568,
+      "kendall_tau_per_call": {
+        "mean": 0.6699376424052348,
+        "median": 0.8666666666666667
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.5712140471197136,
+        "median": 0.8280786712108251
+      }
+    },
+    "work_only_no_reg_occupancy": {
+      "mean_regret_pct": 11.115329349729604,
+      "p95_regret_pct": 66.18903036847384,
+      "max_regret_pct": 84.48821245009488,
+      "tie_aware_accuracy": 0.5182203389830509,
+      "accuracy": 0.48686440677966103,
+      "ratio_of_means_headroom_pct": 11.820959962953646,
+      "kendall_tau_per_call": {
+        "mean": 0.683081046188752,
+        "median": 0.7877263614433762
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.6165073871982311,
+        "median": 0.6
+      }
+    },
+    "work_term_model": {
+      "mean_regret_pct": 4.163996291727065,
+      "p95_regret_pct": 14.235335845835085,
+      "max_regret_pct": 24.552187457689634,
+      "tie_aware_accuracy": 0.6288135593220339,
+      "accuracy": 0.5766949152542373,
+      "ratio_of_means_headroom_pct": 12.087018246822542,
+      "kendall_tau_per_call": {
+        "mean": 0.5415596211874034,
+        "median": 0.6
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.5719298245614036,
+        "median": 0.6
+      }
+    },
+    "work_term_model_all_points": {
+      "mean_regret_pct": 28.500310163459268,
+      "p95_regret_pct": 71.13609649212486,
+      "max_regret_pct": 85.1571656829479,
+      "tie_aware_accuracy": 0.3635593220338983,
+      "accuracy": 0.3635593220338983,
+      "ratio_of_means_headroom_pct": 16.467193534296246,
+      "kendall_tau_per_call": {
+        "mean": 0.31725592109163686,
+        "median": 0.2
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.15087719298245614,
+        "median": 0.06666666666666667
+      }
+    },
+    "nearest_calibrated_key": {
+      "mean_regret_pct": 28.847617283049953,
+      "p95_regret_pct": 97.20487700391739,
+      "max_regret_pct": 272.94127011592354,
+      "tie_aware_accuracy": 0.5516949152542373,
+      "accuracy": 0.5,
+      "ratio_of_means_headroom_pct": 9.139941407898334,
+      "kendall_tau_per_call": {
+        "mean": 0.7216745984946923,
+        "median": 0.7333333333333333
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.672514619883041,
+        "median": 0.7333333333333333
+      }
+    },
+    "global_static": {
+      "mean_regret_pct": 50.887462824169496,
+      "p95_regret_pct": 258.75939572503034,
+      "max_regret_pct": 403.8796819026669,
+      "tie_aware_accuracy": 0.35338983050847456,
+      "accuracy": 0.30127118644067796,
+      "ratio_of_means_headroom_pct": 15.484736107486444,
+      "kendall_tau_per_call": {
+        "mean": 0.26200564971751417,
+        "median": 0.2
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.23742690058479532,
+        "median": 0.3333333333333333
+      }
+    },
+    "batch_only": {
+      "mean_regret_pct": 24.70039986992975,
+      "p95_regret_pct": 114.6213086489254,
+      "max_regret_pct": 159.2529961805944,
+      "tie_aware_accuracy": 0.47923728813559324,
+      "accuracy": 0.4245762711864407,
+      "ratio_of_means_headroom_pct": 17.225352570016085,
+      "kendall_tau_per_call": {
+        "mean": 0.25793785310734463,
+        "median": 0.3333333333333333
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.17192982456140352,
+        "median": 0.2
+      }
+    },
+    "batch_only_tree": {
+      "mean_regret_pct": 24.70039986992975,
+      "p95_regret_pct": 114.6213086489254,
+      "max_regret_pct": 159.2529961805944,
+      "tie_aware_accuracy": 0.47923728813559324,
+      "accuracy": 0.4245762711864407,
+      "ratio_of_means_headroom_pct": 17.225352570016085,
+      "kendall_tau_per_call": {
+        "mean": 0.25793785310734463,
+        "median": 0.3333333333333333
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.17192982456140352,
+        "median": 0.2
+      }
+    },
+    "L_only": {
+      "mean_regret_pct": 4.188459282670831,
+      "p95_regret_pct": 14.168877081572582,
+      "max_regret_pct": 70.24489346873013,
+      "tie_aware_accuracy": 0.6694915254237288,
+      "accuracy": 0.6173728813559322,
+      "ratio_of_means_headroom_pct": 9.042719184684863,
+      "kendall_tau_per_call": {
+        "mean": 0.8193076660097793,
+        "median": 0.8666666666666667
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.7169590643274854,
+        "median": 0.7333333333333333
+      }
+    },
+    "shape": {
+      "mean_regret_pct": 1.6260753146170925,
+      "p95_regret_pct": 12.545746835111512,
+      "max_regret_pct": 87.40123629183509,
+      "tie_aware_accuracy": 0.863135593220339,
+      "accuracy": 0.8097457627118644,
+      "ratio_of_means_headroom_pct": 3.3323959908189997,
+      "kendall_tau_per_call": {
+        "mean": 0.8544489089476325,
+        "median": 0.8666666666666667
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.7567251461988306,
+        "median": 0.8666666666666667
+      }
+    },
+    "entropy_only": {
+      "mean_regret_pct": 42.25965957317362,
+      "p95_regret_pct": 250.407958664303,
+      "max_regret_pct": 402.2847077030756,
+      "tie_aware_accuracy": 0.3597457627118644,
+      "accuracy": 0.31610169491525425,
+      "ratio_of_means_headroom_pct": 15.524180342334752,
+      "kendall_tau_per_call": {
+        "mean": 0.298728813559322,
+        "median": 0.3333333333333333
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.26081871345029245,
+        "median": 0.3333333333333333
+      }
+    },
+    "moments": {
+      "mean_regret_pct": 30.827691255979584,
+      "p95_regret_pct": 135.56854107949943,
+      "max_regret_pct": 401.51489665696386,
+      "tie_aware_accuracy": 0.4067796610169492,
+      "accuracy": 0.3686440677966102,
+      "ratio_of_means_headroom_pct": 17.617337518391384,
+      "kendall_tau_per_call": {
+        "mean": 0.3963579151603962,
+        "median": 0.3333333333333333
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.3426900584795322,
+        "median": 0.3333333333333333
+      }
+    },
+    "shape+entropy": {
+      "mean_regret_pct": 1.6260753146170925,
+      "p95_regret_pct": 12.545746835111512,
+      "max_regret_pct": 87.40123629183509,
+      "tie_aware_accuracy": 0.863135593220339,
+      "accuracy": 0.8097457627118644,
+      "ratio_of_means_headroom_pct": 3.3323959908189997,
+      "kendall_tau_per_call": {
+        "mean": 0.8544489089476325,
+        "median": 0.8666666666666667
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.7567251461988306,
+        "median": 0.8666666666666667
+      }
+    },
+    "all": {
+      "mean_regret_pct": 1.6260753146170925,
+      "p95_regret_pct": 12.545746835111512,
+      "max_regret_pct": 87.40123629183509,
+      "tie_aware_accuracy": 0.863135593220339,
+      "accuracy": 0.8097457627118644,
+      "ratio_of_means_headroom_pct": 3.3323959908189997,
+      "kendall_tau_per_call": {
+        "mean": 0.8544489089476325,
+        "median": 0.8666666666666667
+      },
+      "kendall_tau_per_shape": {
+        "mean": 0.7567251461988306,
+        "median": 0.8666666666666667
+      }
+    },
+    "entropy_rule": {
+      "mean_regret_pct": 50.887462824169496,
+      "p95_regret_pct": 258.75939572503034,
+      "max_regret_pct": 403.8796819026669,
+      "tie_aware_accuracy": 0.35338983050847456,
+      "accuracy": 0.30127118644067796,
+      "ratio_of_means_headroom_pct": 15.484736107486444
+    }
+  },
+  "summary_batch1_calls": {
+    "cost_model": {
+      "mean_regret_pct": 2.2676976133547075,
+      "p95_regret_pct": 13.383293659955548,
+      "tie_aware_accuracy": 0.84765625,
+      "kendall_tau_per_call_mean": 0.8737126119562797
+    },
+    "work_only": {
+      "mean_regret_pct": 1.3533900820410611,
+      "p95_regret_pct": 12.754507206796466,
+      "tie_aware_accuracy": 0.8684895833333334,
+      "kendall_tau_per_call_mean": 0.9061538846120101
+    },
+    "work_only_w1_eq_1": {
+      "mean_regret_pct": 3.6389062493147217,
+      "p95_regret_pct": 20.940068525852734,
+      "tie_aware_accuracy": 0.7591145833333334,
+      "kendall_tau_per_call_mean": 0.8716292786229465
+    },
+    "work_only_no_reg_occupancy": {
+      "mean_regret_pct": 12.766225522110828,
+      "p95_regret_pct": 70.2542990978746,
+      "tie_aware_accuracy": 0.728515625,
+      "kendall_tau_per_call_mean": 0.7092762585614355
+    },
+    "work_term_model": {
+      "mean_regret_pct": 1.3533900820410611,
+      "p95_regret_pct": 12.754507206796466,
+      "tie_aware_accuracy": 0.8684895833333334,
+      "kendall_tau_per_call_mean": 0.6306080985257848
+    },
+    "work_term_model_all_points": {
+      "mean_regret_pct": 38.41863949738286,
+      "p95_regret_pct": 72.09547554289905,
+      "tie_aware_accuracy": 0.359375,
+      "kendall_tau_per_call_mean": 0.3298984204272546
+    },
+    "nearest_calibrated_key": {
+      "mean_regret_pct": 32.653541723668624,
+      "p95_regret_pct": 96.45628471476668,
+      "tie_aware_accuracy": 0.4733072916666667,
+      "kendall_tau_per_call_mean": 0.7193264230343797
+    },
+    "global_static": {
+      "mean_regret_pct": 28.3436276938018,
+      "p95_regret_pct": 115.16433172256559,
+      "tie_aware_accuracy": 0.5091145833333334,
+      "kendall_tau_per_call_mean": 0.3250434027777778
+    },
+    "batch_only": {
+      "mean_regret_pct": 28.3436276938018,
+      "p95_regret_pct": 115.16433172256559,
+      "tie_aware_accuracy": 0.5091145833333334,
+      "kendall_tau_per_call_mean": 0.3250434027777778
+    },
+    "batch_only_tree": {
+      "mean_regret_pct": 28.3436276938018,
+      "p95_regret_pct": 115.16433172256559,
+      "tie_aware_accuracy": 0.5091145833333334,
+      "kendall_tau_per_call_mean": 0.3250434027777778
+    },
+    "L_only": {
+      "mean_regret_pct": 2.0421418264927826,
+      "p95_regret_pct": 12.91287128479912,
+      "tie_aware_accuracy": 0.9049479166666666,
+      "kendall_tau_per_call_mean": 0.9177730632268312
+    },
+    "shape": {
+      "mean_regret_pct": 1.3533900820410611,
+      "p95_regret_pct": 12.754507206796466,
+      "tie_aware_accuracy": 0.8684895833333334,
+      "kendall_tau_per_call_mean": 0.8983286187823868
+    },
+    "entropy_only": {
+      "mean_regret_pct": 27.96012757185908,
+      "p95_regret_pct": 114.68917412892026,
+      "tie_aware_accuracy": 0.490234375,
+      "kendall_tau_per_call_mean": 0.35160590277777776
+    },
+    "moments": {
+      "mean_regret_pct": 24.948612882202447,
+      "p95_regret_pct": 114.70114147397639,
+      "tie_aware_accuracy": 0.5501302083333334,
+      "kendall_tau_per_call_mean": 0.448483949508595
+    },
+    "shape+entropy": {
+      "mean_regret_pct": 1.3533900820410611,
+      "p95_regret_pct": 12.754507206796466,
+      "tie_aware_accuracy": 0.8684895833333334,
+      "kendall_tau_per_call_mean": 0.8983286187823868
+    },
+    "all": {
+      "mean_regret_pct": 1.3533900820410611,
+      "p95_regret_pct": 12.754507206796466,
+      "tie_aware_accuracy": 0.8684895833333334,
+      "kendall_tau_per_call_mean": 0.8983286187823868
+    },
+    "entropy_rule": {
+      "mean_regret_pct": 28.3436276938018,
+      "p95_regret_pct": 115.16433172256559,
+      "tie_aware_accuracy": 0.5091145833333334,
+      "kendall_tau_per_call_mean": null
+    }
+  }
+}
