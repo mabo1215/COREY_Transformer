@@ -188,7 +188,9 @@ def analyze_family(df: pd.DataFrame, fam: str, host: str, in_dir: Path) -> dict:
                 continue
             sub = tab[tab["d"] == d]
             sel = dict(selectors)
-            sel["unsharded_table"] = table_choice(sub, lambda _d, full=full: full) if t > 1 else None
+            sel["unsharded_table"] = (table_choice(tab[tab["d"].isin([d, full])],
+                                                   lambda _d, full=full, d=d: full if _d == d else None)
+                                      if t > 1 else None)
             entry = {"d": int(d), "oracle_distribution": {int(k): int(v) for k, v in
                                                         sub["oracle"].value_counts().items()}}
             if t > 1 and full in widths:
