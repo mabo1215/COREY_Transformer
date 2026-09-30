@@ -89,7 +89,7 @@ def regret(tab: pd.DataFrame, chunks: list[int], choice: dict) -> dict:
 
 
 def triton_model_choice(tab: pd.DataFrame, chunks: list[int], host: str, in_dir: Path) -> dict:
-    hw = CM.HARDWARE[host]
+    hw = CM.hardware(host, in_dir)
     stats = CM.load_kernel_stats(in_dir, hw["arch"])
     import json
     p = json.loads((in_dir / f"cost_model_{host}.json").read_text())["params"]
@@ -110,7 +110,7 @@ def triton_model_choice(tab: pd.DataFrame, chunks: list[int], host: str, in_dir:
 
 def ref_model_choice(tab: pd.DataFrame, chunks: list[int], host: str, in_dir: Path) -> dict:
     import json
-    hw = CM.HARDWARE[host]
+    hw = CM.hardware(host, in_dir)
     p = json.loads((in_dir / f"cost_model_refscan_{host}.json").read_text())["params"]
     th = np.array([p[k] for k in ("t0", "tau_f", "tau_m", "tau_e", "tau_s", "tau_x", "W0", "W1")], float)
     C = np.array(chunks)

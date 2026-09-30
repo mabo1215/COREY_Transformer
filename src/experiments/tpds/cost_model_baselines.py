@@ -155,7 +155,7 @@ def _brief(st: dict) -> dict:
 
 # --------------------------------------------------------------------------- model-based selectors
 def model_selectors(host: str, in_dir: Path, df: pd.DataFrame, chunks: list[int]) -> tuple[dict, dict]:
-    hw = cm.HARDWARE[host]
+    hw = cm.hardware(host, in_dir)
     stats = cm.load_kernel_stats(in_dir, hw["arch"])
     points = cm.load_points(host, in_dir)
     f = cm.features(points, stats, hw)

@@ -104,6 +104,45 @@ HARDWARE = {
                  "regs_per_sm": 65536, "max_warps_per_sm": 48, "max_blocks_per_sm": 16, "mem_bw_gbs": 936.0,
                  "l2_mb": 6.0, "l1_kb": 128.0},
 }
+# Occupancy limits per compute capability (CUDA occupancy calculator) and L1/shared capacity.
+CC_LIMITS = {80: {"regs_per_sm": 65536, "max_warps_per_sm": 64, "max_blocks_per_sm": 32, "l1_kb": 192.0},
+             86: {"regs_per_sm": 65536, "max_warps_per_sm": 48, "max_blocks_per_sm": 16, "l1_kb": 128.0},
+             89: {"regs_per_sm": 65536, "max_warps_per_sm": 48, "max_blocks_per_sm": 24, "l1_kb": 128.0},
+             90: {"regs_per_sm": 65536, "max_warps_per_sm": 64, "max_blocks_per_sm": 32, "l1_kb": 256.0},
+             120: {"regs_per_sm": 65536, "max_warps_per_sm": 48, "max_blocks_per_sm": 32, "l1_kb": 128.0}}
+# Vendor memory bandwidth (GB/s) and L2 size (MB) of data-centre GPUs, matched on the device name.
+DC_MEMORY = [("H20", 4000.0, 60.0), ("H100 80GB HBM3", 3350.0, 50.0), ("H100 PCIe", 2000.0, 50.0),
+             ("H800 PCIe", 2000.0, 50.0), ("H800", 3350.0, 50.0), ("A800 80GB PCIe", 1935.0, 40.0),
+             ("A800", 2039.0, 40.0), ("A100-SXM4-80GB", 2039.0, 40.0), ("A100 80GB PCIe", 1935.0, 40.0),
+             ("A100", 1555.0, 40.0), ("L40S", 864.0, 96.0), ("L20", 864.0, 96.0),
+             ("RTX 3070", 448.0, 4.0), ("RTX 4080", 716.8, 64.0)]
+
+
+def hardware(host: str, in_dir: Path | None = None) -> dict:
+    """Per-GPU constants: the table above, or derived from the run metadata of a new host
+    (SM count and compute capability from ``e2_mamba1_<host>.json``, memory from DC_MEMORY)."""
+    if host in HARDWARE:
+        return HARDWARE[host]
+    in_dir = in_dir or RESULTS_DIR
+    meta = {}
+    for name in (f"e2_mamba1_{host}.json", f"e12_tp_widths_{host}.json", f"e4_{host}.json"):
+        pth = in_dir / name
+        if pth.exists():
+            d = json.loads(pth.read_text())
+            meta = d.get("meta", d)
+            if meta.get("gpu_sm_count"):
+                break
+    if not meta.get("gpu_sm_count"):
+        raise KeyError(f"no hardware constants for host {host!r} (add it to HARDWARE or run E2/E12 there first)")
+    cc = int(round(float(meta["gpu_cc"]) * 10))
+    lim = CC_LIMITS.get(cc)
+    mem = next(((bw, l2) for key, bw, l2 in DC_MEMORY if key.lower() in str(meta.get("gpu", "")).lower()), None)
+    if lim is None or mem is None:
+        raise KeyError(f"host {host!r}: unknown compute capability {cc} or memory of {meta.get('gpu')!r}")
+    return {"gpu": meta["gpu"], "arch": cc, "n_sm": int(meta["gpu_sm_count"]), **lim,
+            "mem_bw_gbs": mem[0], "l2_mb": mem[1], "derived_from_metadata": True}
+
+
 DEFAULT_LAUNCH = {32: (8, 2), 64: (8, 2), 128: (8, 2), 256: (4, 2), 512: (4, 2), 1024: (4, 4)}
 D_STATE = 16
 PARAMS = ["t0", "tau_f", "tau_d", "tau_m", "tau_l", "tau_e", "tau_s", "tau_x", "tau_q", "tau_p", "W0", "W1"]
@@ -435,7 +474,7 @@ def pipeline_model(host: str, in_dir: Path, family: str) -> dict | None:
 
 def analyze(host: str, in_dir: Path, other: str | None = None, do_loko: bool = True,
             do_ablation: bool = False) -> dict:
-    hw = HARDWARE[host]
+    hw = hardware(host, in_dir)
     stats = load_kernel_stats(in_dir, hw["arch"])
     points = load_points(host, in_dir)
     f = features(points, stats, hw)
@@ -466,7 +505,7 @@ def analyze(host: str, in_dir: Path, other: str | None = None, do_loko: bool = T
         res["ablation"] = ablation(f, fitted["lat"].to_numpy(), df, chunks, stats, hw, theta)
     res["V4_pipelines"] = {fam: m for fam in ("mamba2", "gdn") if (m := pipeline_model(host, in_dir, fam))}
     if other:
-        ohw = HARDWARE[other]
+        ohw = hardware(other, in_dir)
         ostats = load_kernel_stats(in_dir, ohw["arch"])
         odf = load_e2([in_dir / f"e2_mamba1_{other}.csv"])
         oc, _ = select_e2(theta, odf, chunks, ostats, ohw)
@@ -547,7 +586,7 @@ def evaluate_transfer(host: str, in_dir: Path, csv_path: Path, ref_csv: Path | N
     """
     res0 = json.loads((in_dir / f"cost_model_{host}.json").read_text())
     theta = np.array([res0["params"][k] for k in PARAMS])
-    hw = HARDWARE[host]
+    hw = hardware(host, in_dir)
     stats = load_kernel_stats(in_dir, hw["arch"])
     df = load_e2([csv_path])
     chunks = chunk_columns(df)
