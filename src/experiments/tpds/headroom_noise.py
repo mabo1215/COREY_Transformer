@@ -106,6 +106,13 @@ DATASETS = [
     ("refscan_vgpu3090", "Mamba-1 370M, reference CUDA scan, RTX 3090", "e8_refscan_vgpu3090.csv", "vgpu3090"),
     ("mamba1_1p4b_vgpu3090", "Mamba-1 1.4B, Triton scan, RTX 3090, batch 1", "e2_mamba1_vgpu3090_1p4b.csv", "vgpu3090"),
     ("mamba1_2p8b_vgpu3090", "Mamba-1 2.8B, Triton scan, RTX 3090, batch 1", "e2_mamba1_vgpu3090_2p8b.csv", "vgpu3090"),
+    # tpds-r3 E14/E15: re-timed larger checkpoints (batch 1, 4, 16) in device time and launch-inclusive,
+    # and the 370M calls in device time
+    ("mamba1_1p4b_r3_vgpu3090", "Mamba-1 1.4B, Triton scan, RTX 3090, device time", "e2_mamba1_vgpu3090_1p4b_r3.csv", "vgpu3090"),
+    ("mamba1_2p8b_r3_vgpu3090", "Mamba-1 2.8B, Triton scan, RTX 3090, device time", "e2_mamba1_vgpu3090_2p8b_r3.csv", "vgpu3090"),
+    ("mamba1_1p4b_r3plain_vgpu3090", "Mamba-1 1.4B, Triton scan, RTX 3090, launch-inclusive", "e2_mamba1_vgpu3090_1p4b_r3plain.csv", "vgpu3090"),
+    ("mamba1_2p8b_r3plain_vgpu3090", "Mamba-1 2.8B, Triton scan, RTX 3090, launch-inclusive", "e2_mamba1_vgpu3090_2p8b_r3plain.csv", "vgpu3090"),
+    ("mamba1_r3spin_vgpu3090", "Mamba-1 370M, Triton scan, RTX 3090, device time", "e2_mamba1_vgpu3090_r3spin.csv", "vgpu3090"),
 ]
 
 # Existing published values used as a reproduction check: (dataset, source json, path, recomputed path)
