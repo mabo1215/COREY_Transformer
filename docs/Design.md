@@ -4,7 +4,41 @@ The author selected two of the five GPU experiments of the tpds-r3 review
 (`docs/revision_suggestions.tex`): M1c (tensor-parallel widths) and M4c (a
 data-centre GPU). M2b, M6b and M6c are not run; the manuscript states their
 absence in Limitations. Lane: `src/experiments/remote/tpds_lane_r3.sh`
-(`TPDS_R3_ONLY` selects E12 or E13).
+(`TPDS_R3_ONLY` selects E12 or E13). M6c was later run as E14/E15; M6b was
+reinstated by the author on 2026-10-01 as E16/E16b below.
+
+## E16 / E16b — Placement control plus hardware counters on the RTX PRO 6000 (M6b; author 2026-10-01)
+
+Purpose: the fixed-chunk input effects of up to 43% (E1/E1c: Triton Mamba-1, L=8192, chunks
+32-256, 12/84 and 12/66 configurations significant after BH) were seen on the RTX PRO 6000, but
+the placement control (E9) ran only on the RTX 3090, where the effects are <= 4.3%. Run the
+control where the claim is contested, and measure which hardware quantity moves with the latency.
+
+E16 (timing, `e9_placement.py`, tag `pro6000_r3`): the E9 designs on the RTX PRO 6000:
+A same buffers (values copied in place), B fresh buffers per input (as E1), C one Gaussian draw in
+ten placements (five fresh, five at fixed byte offsets). Eight distributions x three draws, act and
+all modes, L in {8192, 2048}, batch 1, all six chunks, five rounds shuffled, exclusive-GPU guard,
+SM clock / power / throttle reasons per cell; the runtime-chunk reference scan (A and C) when the
+module builds for sm_120. Decision rule as E9: A without input effects and C with placement effects
+-> the text says the PRO 6000 residuals are placement, tested directly on that GPU; A with effects
+-> report them as a value effect and quantify them at the selected chunk.
+
+E16b (counters, `e16_counters.py`): Nsight Compute on the same designs (two draws, ten placements,
+two rounds, two profiled launches per cell after five unprofiled ones; natural clocks and warm L2:
+`--clock-control none --cache-control none`). Metrics: duration, SM cycles, SM and DRAM clock,
+instructions executed, global-load requests and sectors, store sectors, L1 and L2 hit rates, L2
+read sectors, DRAM bytes read/written, achieved occupancy, long-scoreboard stalls. Analysis per
+(design, L, mode, chunk): range over inputs/placements of every metric; whether instruction and
+request counts are identical across inputs (data-obliviousness, directly); duration = cycles /
+clock split (DVFS vs. stall); the metric that tracks the duration most closely. Expected if the
+placement explanation holds: instructions and requests invariant in A, B and C; duration range
+small in A; in B/C the duration tracks L2 hit rate / DRAM bytes / sectors, not the clock.
+
+Host: pro6000 (RTX PRO 6000 96 GB). Prep in no-GPU mode: `tpds_r3_e16_prep.sh` (environment,
+traces, ncu and metric list for GB202, runtime-chunk build for sm_120). Lane
+`tpds_lane_r3_e16.sh` runs E16b first (fails fast without counter permission), then E16.
+~3 h GPU. Peak VRAM < 4 GB. Result files: `e16_counters_pro6000.{jsonl,json}`,
+`e9_placement_pro6000_r3.{jsonl,json}`.
 
 ## E14 — Re-timed larger checkpoints (M6c; author 2026-10-01)
 
