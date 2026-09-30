@@ -307,8 +307,36 @@ def l2_flush() -> None:
     _FLUSH_BUF.zero_()
 
 
-def cuda_time(fn: Callable[[], Any], warmup: int = 10, repeats: int = 50, flush_l2: bool = False) -> list[float]:
-    """Time ``fn`` with CUDA events; returns per-repeat milliseconds."""
+_SPIN_CYCLES_PER_MS: float | None = None
+
+
+def _spin_cycles_per_ms() -> float:
+    """GPU clock cycles per millisecond of ``torch.cuda._sleep``, measured once."""
+    import torch
+
+    global _SPIN_CYCLES_PER_MS
+    if _SPIN_CYCLES_PER_MS is None:
+        cycles = 10_000_000
+        torch.cuda._sleep(cycles)          # warm up
+        torch.cuda.synchronize()
+        s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+        s.record()
+        torch.cuda._sleep(cycles)
+        e.record()
+        torch.cuda.synchronize()
+        _SPIN_CYCLES_PER_MS = cycles / max(s.elapsed_time(e), 1e-3)
+    return _SPIN_CYCLES_PER_MS
+
+
+def cuda_time(fn: Callable[[], Any], warmup: int = 10, repeats: int = 50, flush_l2: bool = False,
+              pre_spin_ms: float = 0.0) -> list[float]:
+    """Time ``fn`` with CUDA events; returns per-repeat milliseconds.
+
+    ``pre_spin_ms`` > 0 enqueues a GPU-side spin of that length before the timed repeats, so that
+    the host can queue every (event, kernel, event) triple while the GPU is still busy. Host-side
+    stalls (for example CPU load from other tenants) then cannot insert idle gaps between a start
+    event and its kernel. With 0 (the default) the behaviour is unchanged.
+    """
     import torch
 
     for _ in range(warmup):
@@ -316,6 +344,8 @@ def cuda_time(fn: Callable[[], Any], warmup: int = 10, repeats: int = 50, flush_
     torch.cuda.synchronize()
     starts = [torch.cuda.Event(enable_timing=True) for _ in range(repeats)]
     ends = [torch.cuda.Event(enable_timing=True) for _ in range(repeats)]
+    if pre_spin_ms > 0:
+        torch.cuda._sleep(int(pre_spin_ms * _spin_cycles_per_ms()))
     for i in range(repeats):
         if flush_l2:
             l2_flush()

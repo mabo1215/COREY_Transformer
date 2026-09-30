@@ -6,6 +6,24 @@ data-centre GPU). M2b, M6b and M6c are not run; the manuscript states their
 absence in Limitations. Lane: `src/experiments/remote/tpds_lane_r3.sh`
 (`TPDS_R3_ONLY` selects E12 or E13).
 
+## E14 — Re-timed larger checkpoints (M6c; author 2026-10-01)
+
+Purpose: the E11 sweeps of the 1.4B and 2.8B checkpoints ran at batch 1 only and, for the
+2.8B model, while the host CPU was heavily loaded (median within-block CV 129%), so the
+paper could not decide the per-shape headroom there. Re-time both checkpoints at batch 1,
+4 and 16 with a GPU-side pre-spin in front of every timing block (the host queues all
+repeats while the GPU is busy, so host load cannot insert gaps between a start event and
+its kernel), and log the host load average every 30 s.
+
+Setup: download the checkpoints again (aria2, hf-mirror; `tpds_r3_e14_download.sh`),
+capture the traces of 8 layers each (stride 6 of 48 for 1.4B, 8 of 64 for 2.8B; same 192
+prompts), then E2 (`e2_oracle_sweep.py --pre-spin-ms 20`) at batch 1, 4, 16 (2360 calls per
+model). Metrics: E3 predictors, cost-model transfer (3090 parameters, no refit), exact-shape
+floor, held-out and split-half headroom, within-block CV compared with E11.
+
+Host: vgpu3090. ~1 h download, ~2-3 h GPU. Peak VRAM ~12 GB (2.8B capture). Disk ~110 GB of
+traces (475 GB free). Result files: `e2_mamba1_vgpu3090_{1p4b,2p8b}_r3.{csv,json}`.
+
 ## E12 — Chunk sweep at tensor-parallel widths (M1c)
 
 Purpose: tensor parallelism over t devices splits the d_inner channels, so each

@@ -170,6 +170,8 @@ def parse_args(argv=None):
     p.add_argument("--warmup", type=int, default=10)
     p.add_argument("--repeats", type=int, default=50)
     p.add_argument("--flush-l2", action="store_true")
+    p.add_argument("--pre-spin-ms", type=float, default=0.0,
+                   help="GPU-side spin before each timed block so host load cannot insert gaps (0 = off)")
     p.add_argument("--max-rows", type=int, default=None, help="stop after this many new rows (smoke)")
     p.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
     p.add_argument("--tag", default=None)
@@ -232,7 +234,7 @@ def main(argv=None):
             else:
                 max_diff = max(max_diff, float((y - ref).abs().max()))
             del y
-            stats[c] = summarize(cuda_time(fn, args.warmup, args.repeats, args.flush_l2))
+            stats[c] = summarize(cuda_time(fn, args.warmup, args.repeats, args.flush_l2, args.pre_spin_ms))
         del ref
         oracle = min(stats, key=lambda c: stats[c]["mean_ms"])
         tied = [c for c in chunks if stats[c]["ci95_lo_ms"] <= stats[oracle]["ci95_hi_ms"]]

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # TPDS cycle tpds-r3 GPU lane. Experiments are selected with TPDS_R3_ONLY (default "E12").
+#   E14  (M6c) re-timed larger checkpoints: capture the 1.4B and 2.8B Mamba-1 traces again and run
+#        the per-call chunk sweep at batch 1, 4 and 16 with a GPU-side pre-spin per timing block
+#        (host load cannot insert gaps), logging the host load average. ~2-3 h plus the download
+#        (tpds_r3_e14_download.sh).
 #   E12  chunk sweep at the tensor-parallel widths d/t of the 370M, 1.4B and 2.8B checkpoints
 #        (synthetic inputs; Triton kernel, plus the runtime-chunk reference scan when the module
 #        selective_scan_chunk_cuda is importable). Review item M1c. ~1 h on an RTX 3090.
@@ -60,6 +64,51 @@ if want E13; then
   $RUN ${P}E13-E2 -- "${L[@]}" "$PY" -m src.experiments.tpds.e2_oracle_sweep $E13_E2 \
     --trace-dir "$TRACE_DIR" --out-dir "$OUT_DIR" --tag "$TAG" || lanelog "E2 failed (continuing)"
   ONLY="$ONLY E12"
+fi
+
+if want E14; then
+  # M6c: re-time the larger checkpoints (batch 1, 4, 16) with a GPU-side pre-spin per timing block,
+  # logging the host load average every 30 s. Needs the checkpoints of tpds_r3_e14_download.sh.
+  E14_CAP="--samples-per-regime 20 --longbench-per-task 8 --longbench-lengths 1024,2048,4096,8192 --max-tokens 8192 --max-gb 100"
+  E14_E2="--batches 1,4,16 --warmup 10 --repeats 50 --pre-spin-ms 20"
+  E14_SPECS="1p4b:state-spaces/mamba-1.4b-hf:6 2p8b:state-spaces/mamba-2.8b-hf:8"
+  E14_ROOT=${TPDS_E14_MODEL_ROOT:-/root/autodl-tmp/hf_models}
+  if [ "${TPDS_SMOKE:-0}" = 1 ]; then
+    E14_CAP="--layers 0,24 --samples-per-regime 1 --longbench-per-task 1 --max-tokens 1024 --limit-prompts 6"
+    E14_E2="--batches 1,4 --warmup 2 --repeats 3 --max-rows 8 --pre-spin-ms 5"
+    E14_SPECS="370m:state-spaces/mamba-370m-hf:24"
+  else
+    DL_LOG=$LOG_DIR/e14_download.log
+    waited=0
+    until grep -q "^ARIA_EXIT" "$DL_LOG" 2>/dev/null; do
+      sleep 60; waited=$((waited + 60))
+      [ "$waited" -ge "${TPDS_WAIT_MAX_S:-14400}" ] && break
+    done
+    rc=$(grep "^ARIA_EXIT" "$DL_LOG" 2>/dev/null | tail -1 | awk '{print $2}')
+    if [ "${rc:-none}" != 0 ]; then
+      lanelog "E14: checkpoint download not complete (aria2 exit ${rc:-none})"
+      echo "E14: checkpoint download not complete (aria2 exit ${rc:-none})" >> "$MARK_DIR/${P}E14.log"
+      : > "$MARK_DIR/${P}E14.FAIL"
+    fi
+    check_space src/outputs 130 || { lanelog "E14 needs ~130 GB for traces"; : > "$MARK_DIR/${P}E14.FAIL"; }
+  fi
+  if [ ! -f "$MARK_DIR/${P}E14.FAIL" ]; then
+    (while :; do echo "$(date +%s) $(cat /proc/loadavg)"; sleep 30; done) >> "$LOG_DIR/e14_loadavg.log" &
+    LOADLOG=$!
+    # shellcheck disable=SC2086
+    $RUN ${P}E14 -- bash -c "set -e
+      for spec in $E14_SPECS; do
+        tag=\${spec%%:*}; rest=\${spec#*:}; mid=\${rest%:*}; stride=\${rest##*:}
+        local_dir=$E14_ROOT/\${mid##*/}
+        [ -f \$local_dir/config.json ] && mid=\$local_dir
+        if [ '${TPDS_SMOKE:-0}' = 1 ]; then cap_layers=''; else cap_layers=\"--layer-stride \$stride\"; fi
+        $PY -m src.experiments.tpds.capture_traces --model mamba1 --model-id \$mid \$cap_layers $E14_CAP \
+            --trace-dir ${TPDS_E14_TRACE_ROOT:-src/outputs}/tpds_traces_\$tag
+        ${L[*]} $PY -m src.experiments.tpds.e2_oracle_sweep --model mamba1 $E14_E2 \
+            --trace-dir ${TPDS_E14_TRACE_ROOT:-src/outputs}/tpds_traces_\$tag --out-dir '$OUT_DIR' --tag ${TAG}_\${tag}_r3
+      done"
+    kill "$LOADLOG" 2>/dev/null
+  fi
 fi
 
 if want E12; then
