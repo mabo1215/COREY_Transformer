@@ -132,6 +132,10 @@ clone, venv, checkpoint download). Peak VRAM ~20 GB. Disk: ~35 GB of traces.
 Result files: `e2_mamba1_<dc>.csv`, `e4_<dc>.jsonl`, `e1_<dc>.jsonl`,
 `kernel_stats_sm<arch>.json`, `cost_model_<dc>.json`, `e12_*_<dc>.*`.
 
+E13b (author 2026-10-01): on the H800 the lane then repeats the calibration (E4 Mamba-1, E1 Mamba-1)
+and the 2360-call E2 sweep in device time (20 ms GPU pre-spin per timing block, tag `h800_r3spin`),
+as E15 did on the RTX 3090, so the third GPU is reported under both timing conventions. ~1.5-2 h.
+
 # Experiment Design — Cycle tpds-r2 (proposed 2026-09-29): from negative result to predictive model
 
 Status: PROPOSAL, written after the post-tpds-r1 assessment. Not yet
