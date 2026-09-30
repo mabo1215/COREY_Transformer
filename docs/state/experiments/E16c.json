@@ -3,7 +3,7 @@
   "created_at": "2026-09-30T21:03:15Z",
   "design_ref": "docs/Design.md#E16",
   "est_hours": 0.75,
-  "eta": "2026-09-30T21:35:00Z",
+  "eta": null,
   "host": "pro6000",
   "id": "E16c",
   "items": [
@@ -20,9 +20,19 @@
       "at": "2026-09-30T21:23:51Z",
       "by": "NZA1LT32KT324",
       "text": "smoke ok on GPU (10:21 NZDT); full run started 10:21 NZDT, 14/72 (length, round, chunk, L2) blocks after 2 min"
+    },
+    {
+      "at": "2026-09-30T21:32:47Z",
+      "by": "NZA1LT32KT324",
+      "text": "auto: all declared result files are present locally"
+    },
+    {
+      "at": "2026-09-30T21:32:58Z",
+      "by": "NZA1LT32KT324",
+      "text": "pulled 10:33 NZDT (rsync), 2016 timings. L=8192 placements (C): warm L2 6/6 significant, range 29-41% at chunks 32-256 (8.2% at 512, 2.6% at 1024), per-placement ranking stable across rounds (median Spearman 0.96); cold L2 range 0.5-2.3%. Same-buffer inputs (A) at L=8192: <=0.6% warm, <=0.3% cold. L=2048 (working set a quarter of L2): no stable placement ranking (Spearman 0.12), 0/6 significant warm. Conclusion: the PRO 6000 fixed-chunk effects are L2 residency of the ~128 MiB working set, set by buffer placement, not values"
     }
   ],
-  "progress": 20,
+  "progress": 100,
   "purpose": "Test the L2-residency explanation of the placement effects by intervention, since counters are denied (review M6b)",
   "results": [
     "src/experiments/results/tpds/e16c_l2_placement_pro6000.jsonl",
@@ -30,9 +40,9 @@
   ],
   "screen": "tpds-r3-e16c",
   "started_at": "2026-09-30T21:23:51Z",
-  "status": "running",
+  "status": "pulled",
   "title": "L2 warm vs cold placement control on the RTX PRO 6000 (counter-free substitute for E16b)",
-  "updated_at": "2026-09-30T21:23:51Z",
+  "updated_at": "2026-09-30T21:32:58Z",
   "updated_by": "NZA1LT32KT324",
   "vram_gb": 4.0
 }
