@@ -1,3 +1,61 @@
+# Experiment Design — Cycle tpds-r3 (2026-09-30): GPU experiments selected by the author
+
+The author selected two of the five GPU experiments of the tpds-r3 review
+(`docs/revision_suggestions.tex`): M1c (tensor-parallel widths) and M4c (a
+data-centre GPU). M2b, M6b and M6c are not run; the manuscript states their
+absence in Limitations. Lane: `src/experiments/remote/tpds_lane_r3.sh`
+(`TPDS_R3_ONLY` selects E12 or E13).
+
+## E12 — Chunk sweep at tensor-parallel widths (M1c)
+
+Purpose: tensor parallelism over t devices splits the d_inner channels, so each
+device runs the scan at width d/t. Test whether the frozen cost model, calibrated
+once at d = 2048, predicts the chunk at unseen widths, and how much a chunk table
+tuned at the unsharded width loses after sharding.
+
+Setup: widths {5120, 4096, 2560, 2048, 1280, 1024, 640, 512} (full d_inner of the
+2.8B, 1.4B and 370M checkpoints and their shards t = 2, 4, 8); L in {128, 256, 512,
+1024, 2048, 4096, 8192}; batch {1, 4, 16}: 168 shapes. Every chunk of the Triton
+Mamba-1 scan (32..1024, default launch of each chunk) and, when the runtime-chunk
+module is available, of the reference CUDA scan (128..2048). Synthetic Gaussian
+inputs (the kernels are data-oblivious; E1/E9 bound value effects at the selected
+chunk to a few percent), one draw per shape. Three rounds with shapes and chunks
+shuffled per round (block noise shows up between rounds); 10 warmup, 50 repeats;
+exclusive-GPU guard; NVML state per shape.
+
+Metrics (`e12_analysis.py`, CPU): per shape the oracle over round means and its tie
+set (overlapping 95% CIs over rounds); per model and TP degree the mean / p95 regret
+and tied share of (a) the frozen cost model (Triton: Eq. (5) with the RTX 3090
+parameters; reference: the refscan instance), (b) the unsharded-width table,
+(c) the d = 2048 table, (d) the nearest calibration key, (e) the best static
+chunk; share of shapes whose oracle moves beyond the tie set after sharding;
+agreement of the per-round argmin.
+
+Host: vgpu3090 (RTX 3090 48 GB). Runtime ~1 h. Peak VRAM ~6 GB (b16, d5120, L8192,
+fp16). Result files: `e12_tp_widths_vgpu3090.{jsonl,json}`, `e12_analysis_vgpu3090.json`.
+
+## E13 — Frozen cost model on a data-centre GPU (M4c)
+
+Purpose: both GPUs so far are consumer-lineage dies. Test the frozen model form on
+a data-centre GPU (A100/A800, sm_80, or H800/H100/H20, sm_90), refitting only the
+eight per-GPU parameters on the same calibration protocol, and evaluate chunk
+selection on the 2360 captured Mamba-1 calls timed on that GPU.
+
+Setup (same protocol and software versions as the other GPUs: torch 2.8.0 cu128,
+Triton 3.4.0): kernel_stats for the native architecture; capture the 370M Mamba-1
+traces (8 layers, 192 prompts); E4 Mamba-1 launch sweep at the twelve keys; E1
+Mamba-1 value invariance at L in {512, 2048, 8192}, batch 1; E2 per-call sweep of
+the 2360 captured calls; then E12 on the same GPU. Offline: add the GPU to
+`cost_model.HARDWARE` (SM count from the run metadata), fit with
+`cost_model.py --hosts <dc>` (form frozen), report V1/V2/LOKO/top-k as for the other
+GPUs, cross-GPU transfer from the RTX PRO 6000 and RTX 3090 parameters, and the
+Table III rows (cost model, nearest calibration key, shape tree) on that GPU.
+
+Host: to be rented by the author (AutoDL). Runtime ~3 h GPU (prep in no-GPU mode:
+clone, venv, checkpoint download). Peak VRAM ~20 GB. Disk: ~35 GB of traces.
+Result files: `e2_mamba1_<dc>.csv`, `e4_<dc>.jsonl`, `e1_<dc>.jsonl`,
+`kernel_stats_sm<arch>.json`, `cost_model_<dc>.json`, `e12_*_<dc>.*`.
+
 # Experiment Design — Cycle tpds-r2 (proposed 2026-09-29): from negative result to predictive model
 
 Status: PROPOSAL, written after the post-tpds-r1 assessment. Not yet
