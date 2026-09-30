@@ -3,6 +3,7 @@
   "created_at": "2026-09-30T06:43:37Z",
   "design_ref": "docs/Design.md#E13",
   "est_hours": 3.0,
+  "eta": "2026-10-01T01:17:19Z",
   "host": "h800",
   "id": "E13",
   "items": [
@@ -24,6 +25,11 @@
       "at": "2026-09-30T21:08:58Z",
       "by": "NZA1LT32KT324",
       "text": "prep ok on h800 (no-GPU mode, 2026-10-01): code rsynced (host has no GitHub credentials; result_channel=rsync); venv .venv with python 3.12.3, torch 2.8.0+cu128, Triton 3.4.0, transformers 5.6.2, numpy 2.3.2, scikit-learn 1.8.0, mamba-ssm 2.3.2.post1 (Triton only), fla 0.5.2; mamba-370m-hf and mamba2-370m-hf cached in /root/autodl-tmp/hf_home; 441 GB free; bash -n on all lanes, py_compile of src/experiments/tpds/*.py, capture corpus (192 prompts) and SSD/GDN imports pass. Not doable without a GPU: selective_scan_chunk_cuda sm_90 build (cc1plus OOM under the 2 GB no-GPU cap) and kernel_stats (Triton needs the CUDA driver). GPU session: rerun tpds_r3_e13_prep.sh (~5 min), then TPDS_R3_ONLY=E13 lane."
+    },
+    {
+      "at": "2026-09-30T22:02:19Z",
+      "by": "NZA1LT32KT324",
+      "text": "11:02 NZDT launched on h800 (H800 PCIe 80 GB): smoke of every step OK on the GPU (ref scan sm_90 built in 2 min; kstats sm90 reused from the smoke run, identical config); results via rsync fetch"
     }
   ],
   "progress": 0,
@@ -33,9 +39,10 @@
     "src/experiments/results/tpds/kernel_stats_sm90*"
   ],
   "screen": "tpds-r3-e13",
-  "status": "prepped",
+  "started_at": "2026-09-30T22:02:19Z",
+  "status": "running",
   "title": "Frozen cost model on a data-centre GPU: capture, E4/E1 calibration, E2 2360 calls, E12",
-  "updated_at": "2026-09-30T21:09:29Z",
+  "updated_at": "2026-09-30T22:02:19Z",
   "updated_by": "NZA1LT32KT324",
   "vram_gb": 20.0
 }
