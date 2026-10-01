@@ -86,7 +86,7 @@
 
 ### 1. M7b：是否进一步压缩 VII-H（break-even / key churn / serving）【需要你决策】
 
-2026-10-01 的独立复核（Stage 9'）认为其余 31 项均已解决（已标为 verified），只有 M7b 仍算"部分完成"：值不变性一节已压缩，但 VII-H（break-even + key churn + serving traces）仍约 1.3 栏，审稿意见要求"compress the break-even discussion"。正文目前正好 14 页，压缩会腾出空间，但要删哪些内容涉及取舍。
+2026-10-01 的独立复核（Stage 9'）认为除 M7b 外的条目均已解决：30 项标为 verified，M2b 仍为作者选择的 dropped；只有 M7b 仍算"部分完成"：值不变性一节已压缩，但 VII-H（break-even + key churn + serving traces）仍约 1.3 栏，审稿意见要求"compress the break-even discussion"。正文目前正好 14 页，压缩会腾出空间，但要删哪些内容涉及取舍。
 
 需要你提供/决策：
 1. 是否压缩 VII-H？A) 压缩到约 0.8 栏：保留 Eq. (7) 和结论，把 serving trace 的逐数据集数字移到 Supplement（推荐）；B) 保持现状，把 M7b 视为已回应。
