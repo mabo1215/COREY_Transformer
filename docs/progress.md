@@ -1883,12 +1883,14 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 1. 是否压缩 VII-H？A) 压缩到约 0.8 栏：保留 Eq. (7) 和结论，把 serving trace 的逐数据集数字移到 Supplement（推荐）；B) 保持现状，把 M7b 视为已回应。
    A:
 
-### 0b. vGPU 3090 与 PRO 6000 当前开机但没有任务【需要你决策】
+### 0b. vGPU 3090 与 PRO 6000 当前开机但没有任务【已解决 2026-10-03】
+
+作者决定（2026-10-03）：vGPU 3090 不再需要（所有实验已回填，只剩文字项 M7b），已关机（关机前核实：GPU 0 %，显存 0 MiB，无 screen，无他人任务）；PRO 6000 保持无卡模式；两个备份目录不删。原问题保留如下。
 
 2026-10-03 检查：vGPU 3090 **开着 GPU**（显存占用 0 MiB，没有任务，按 GPU 时长计费），PRO 6000 为无卡模式。两台主机上各有一个 pull 前挪出的备份目录：`/root/autodl-tmp/pre_pull_backup_20261003_0436`（vGPU 3090，17 个文件，13 MB）和 `/root/autodl-tmp/pre_pull_backup_20261003_0437`（PRO 6000，4 个文件，8.1 MB），已逐个核对与 GitHub 上的版本完全一致（17/17、4/4），属于冗余副本。
 
 需要你提供/决策：
 1. 是否关机？A) 两台都关（推荐，当前没有待跑实验）；B) 只关 vGPU 3090 的 GPU；C) 保持开机。
-   A:
+   A: C（文件内 2026-10-03 09:48）→ 同日对话改为 B：vGPU 3090 不需要则关机（已执行）
 2. 是否删除上述两个备份目录？（不删也不影响任何东西）
-   A:
+   A: 不
