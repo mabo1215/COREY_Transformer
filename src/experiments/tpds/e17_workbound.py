@@ -178,9 +178,9 @@ def main(argv=None):
                 del y
                 cell = time_cell(fn, args, log)
                 if cell is None:
-                    log("guard gave up; stopping")
+                    log("guard gave up; stopping (restart resumes)")
                     w.close()
-                    return
+                    raise SystemExit(3)
                 cells[str(c)] = cell
             del ref
             best = min(cells, key=lambda c: cells[c]["mean_ms"])

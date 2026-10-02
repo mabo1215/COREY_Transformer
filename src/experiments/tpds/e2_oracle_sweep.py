@@ -249,7 +249,7 @@ def main(argv=None):
                 if waited is None:
                     log("GPU still busy at the guard deadline; stopping (restart resumes)")
                     w.close()
-                    return
+                    raise SystemExit(3)
             before = foreign_gpu_pids() if args.exclusive_guard else None
             order = list(chunks)
             rng.shuffle(order)
