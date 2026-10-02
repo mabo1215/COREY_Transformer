@@ -8,7 +8,7 @@
 #
 #   wsl bash src/revloop/remote.sh exec pro6000 src/experiments/remote/tpds_r3_e16_prep.sh
 set -uo pipefail
-source "$(dirname "${BASH_SOURCE[0]}")/tpds_common.sh" 2>/dev/null || source src/experiments/remote/tpds_common.sh
+source "$(dirname "${BASH_SOURCE[0]:-}")/tpds_common.sh" 2>/dev/null || source src/experiments/remote/tpds_common.sh
 rc=0
 lanelog "tpds-r3 E16 prep on $(hostname) with $PY"
 check_space . 10 || rc=1

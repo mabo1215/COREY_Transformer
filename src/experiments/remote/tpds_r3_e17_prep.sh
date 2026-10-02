@@ -9,7 +9,7 @@
 #
 #   wsl bash src/revloop/remote.sh exec pro6000 src/experiments/remote/tpds_r3_e17_prep.sh
 set -uo pipefail
-source "$(dirname "${BASH_SOURCE[0]}")/tpds_common.sh" 2>/dev/null || source src/experiments/remote/tpds_common.sh
+source "$(dirname "${BASH_SOURCE[0]:-}")/tpds_common.sh" 2>/dev/null || source src/experiments/remote/tpds_common.sh
 rc=0
 E17_ROOT=${TPDS_E17_MODEL_ROOT:-/root/autodl-tmp/hf_models}
 lanelog "tpds-r3 E17 prep on $(hostname) with $PY"
