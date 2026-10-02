@@ -32,15 +32,16 @@ import torch
 from src.algorithms.torch_entropy import activation_entropy
 from src.experiments.tpds import kernels as K
 from src.experiments.tpds.capture_traces import load_call, load_manifest, load_params
-from src.experiments.tpds.common import (DEFAULT_TRACE_DIR, MAMBA1_CHUNKS, MAMBA2_CHUNKS, RESULTS_DIR, CsvWriter,
-                                         Logger, check_disk, cuda_time, entropy_rule_chunk, env_metadata, host_name,
-                                         peak_vram_gb, summarize, write_json)
+from src.experiments.tpds.common import (DEFAULT_TRACE_DIR, GDN_CHUNKS, MAMBA1_CHUNKS, MAMBA2_CHUNKS, RESULTS_DIR,
+                                         CsvWriter, Logger, all_gpu_pids, check_disk, cuda_time, entropy_rule_chunk,
+                                         env_metadata, foreign_gpu_pids, host_name, peak_vram_gb,
+                                         register_own_gpu_pids, summarize, wait_for_exclusive_gpu, write_json)
 
 FEATURES = ["entropy_bits", "entropy_norm", "variance", "kurtosis", "sparsity", "mean_abs", "delta_entropy_bits"]
 
 
 def chunks_for(kind):
-    return MAMBA1_CHUNKS if kind == "mamba1" else MAMBA2_CHUNKS
+    return {"mamba1": MAMBA1_CHUNKS, "mamba2": MAMBA2_CHUNKS, "gdn": GDN_CHUNKS}[kind]
 
 
 def columns_for(kind):
@@ -118,6 +119,14 @@ def stack_inputs(kind, trace_dir, members, layer, params):
         inp["A"] = params["A"].contiguous()
         inp["D"] = params["D"].float()
         act, dlt = inp["u"], inp["delta"]
+    elif kind == "gdn":
+        # production kernel path: raw q, k, v, a_proj output g and b_proj output beta, all bf16 as in the checkpoint
+        inp = {k: torch.cat([c[k][:, :Lmin] for c in calls], 0).contiguous().to(torch.bfloat16)
+               for k in ("q", "k", "v", "g", "beta")}
+        inp.update({"A_log": params["A_log"], "dt_bias": params["dt_bias"],
+                    "allow_neg_eigval": bool(params["allow_neg_eigval"].item()) if "allow_neg_eigval" in params
+                    else False})
+        act, dlt = inp["v"], inp["g"]
     else:
         inp = {k: torch.cat([c[k][:, :Lmin] for c in calls], 0).contiguous() for k in ("x", "dt", "B", "C")}
         inp.update({"A": params["A"], "D": params["D"].float(), "dt_bias": params["dt_bias"].float()})
@@ -130,6 +139,9 @@ def make_fn(kind, inp, chunk):
         out = torch.empty_like(inp["u"])
         return lambda: K.mamba1_scan(inp["u"], inp["delta"], inp["A"], inp["B"], inp["C"], inp["D"], inp["z"],
                                      None, True, chunk=chunk, out=out)
+    if kind == "gdn":
+        return lambda: K.gdn_chunk_prod(inp["q"], inp["k"], inp["v"], inp["g"], inp["beta"], inp["A_log"],
+                                        inp["dt_bias"], chunk_size=chunk, allow_neg_eigval=inp["allow_neg_eigval"])
     return lambda: K.mamba2_ssd(inp["x"], inp["dt"], inp["A"], inp["B"], inp["C"], chunk, D=inp["D"],
                                 dt_bias=inp["dt_bias"])
 
@@ -162,7 +174,10 @@ def summarize_csv(csv_path: Path, kind: str) -> dict:
 # --------------------------------------------------------------------------- main
 def parse_args(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--model", choices=("mamba1", "mamba2"), required=True)
+    p.add_argument("--model", choices=("mamba1", "mamba2", "gdn"), required=True)
+    p.add_argument("--exclusive-guard", action="store_true",
+                   help="pause while other processes use the GPU and re-time calls they overlapped")
+    p.add_argument("--guard-until", type=float, default=None, help="epoch seconds after which the guard gives up")
     p.add_argument("--trace-dir", type=Path, default=DEFAULT_TRACE_DIR)
     p.add_argument("--batches", default="1,4,16")
     p.add_argument("--layers", default=None, help="subset of captured layers (default: all captured)")
@@ -186,6 +201,10 @@ def main(argv=None):
     tag = args.tag or host_name()
     log = Logger(f"e2_{kind}_{tag}")
     check_disk(args.out_dir, need_gb=0.5, log=log)
+    gpu_baseline = all_gpu_pids()
+    torch.zeros(1, device="cuda")
+    torch.cuda.synchronize()
+    own = register_own_gpu_pids(gpu_baseline, log=log) if args.exclusive_guard else set()
     manifest = load_manifest(args.trace_dir, kind)
     if not manifest:
         raise SystemExit(f"no captured traces for {kind} under {args.trace_dir}; run capture_traces first")
@@ -200,7 +219,7 @@ def main(argv=None):
     w = CsvWriter(csv_path, columns_for(kind))
     meta = env_metadata()
     meta.update({"experiment": "E2", "model": kind, "args": vars(args), "layers": layers,
-                 "n_prompts": len(manifest), "chunks": chunks,
+                 "n_prompts": len(manifest), "chunks": chunks, "own_gpu_pids": sorted(own),
                  "mamba1_default_launch": {str(c): K.default_mamba1_config(c).as_dict() for c in chunks}
                  if kind == "mamba1" else None})
     params = {l: load_params(args.trace_dir, kind, l) for l in layers}
@@ -223,19 +242,33 @@ def main(argv=None):
         feats = activation_features(act, dlt)
         torch.cuda.synchronize()
         feat_ms = (time.perf_counter() - t0) * 1e3
-        order = list(chunks)
-        rng.shuffle(order)
-        stats, ref, max_diff = {}, None, 0.0
-        for c in order:
-            fn = make_fn(kind, inp, c)
-            y = fn().float()
-            if ref is None:
-                ref = y.clone()
-            else:
-                max_diff = max(max_diff, float((y - ref).abs().max()))
-            del y
-            stats[c] = summarize(cuda_time(fn, args.warmup, args.repeats, args.flush_l2, args.pre_spin_ms))
-        del ref
+        retimed = 0
+        while True:
+            if args.exclusive_guard:
+                waited = wait_for_exclusive_gpu(args.guard_until, log)
+                if waited is None:
+                    log("GPU still busy at the guard deadline; stopping (restart resumes)")
+                    w.close()
+                    return
+            before = foreign_gpu_pids() if args.exclusive_guard else None
+            order = list(chunks)
+            rng.shuffle(order)
+            stats, ref, max_diff = {}, None, 0.0
+            for c in order:
+                fn = make_fn(kind, inp, c)
+                y = fn().float()
+                if ref is None:
+                    ref = y.clone()
+                else:
+                    max_diff = max(max_diff, float((y - ref).abs().max()))
+                del y
+                stats[c] = summarize(cuda_time(fn, args.warmup, args.repeats, args.flush_l2, args.pre_spin_ms))
+            del ref
+            after = foreign_gpu_pids() if args.exclusive_guard else None
+            if not (before or after):
+                break
+            retimed += 1
+            log(f"foreign GPU processes {before or after} during {key}; re-timing")
         oracle = min(stats, key=lambda c: stats[c]["mean_ms"])
         tied = [c for c in chunks if stats[c]["ci95_lo_ms"] <= stats[oracle]["ci95_hi_ms"]]
         width = act.shape[1] if kind == "mamba1" else act.shape[2] * act.shape[3]
@@ -246,7 +279,8 @@ def main(argv=None):
                "fold": members[0]["fold"], "layer": layer, "batch": b,
                "n_unique_prompts": len({m["prompt_id"] for m in members}), "L": Lmin,
                "L_bucket": length_bucket(Lmin), "width": width,
-               "d_state": inp["A"].shape[1] if kind == "mamba1" else inp["B"].shape[-1],
+               "d_state": (inp["A"].shape[1] if kind == "mamba1" else inp["k"].shape[-1] if kind == "gdn"
+                           else inp["B"].shape[-1]),
                **{k: round(v, 6) for k, v in feats.items()},
                "entropy_rule_chunk": entropy_rule_chunk(feats["entropy_norm"]),
                "oracle_chunk": oracle, "oracle_mean_ms": stats[oracle]["mean_ms"],

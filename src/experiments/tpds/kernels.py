@@ -310,6 +310,22 @@ def gdn_chunk(q, k, v, g, beta, chunk_size: int = 64):
     return o
 
 
+def gdn_chunk_prod(q, k, v, g, beta, A_log, dt_bias, chunk_size: int = 64, allow_neg_eigval: bool = False):
+    """Gated DeltaNet chunked forward as the FLA layer of a checkpoint calls it (production path).
+
+    q, k, v: (b, T, H, K / V) raw projections (q and k are L2-normalized inside the kernel); g: (b, T, H),
+    the output of ``a_proj``, turned into the log-gate inside the kernel with ``A_log`` and ``dt_bias``;
+    beta: (b, T, H), the output of ``b_proj``, passed through the sigmoid inside the kernel. These are the
+    tensors ``capture_gdn_traces.py`` stores.
+    """
+    fn = _load_gdn()
+    o, _ = fn(q=q, k=k, v=v, g=g, beta=beta, A_log=A_log, dt_bias=dt_bias, initial_state=None,
+              output_final_state=False, use_qk_l2norm_in_kernel=True, use_gate_in_kernel=True,
+              use_beta_sigmoid_in_kernel=True, allow_neg_eigval=allow_neg_eigval, state_v_first=True,
+              chunk_size=chunk_size)
+    return o
+
+
 def ref_gdn(q, k, v, g, beta):
     from fla.ops.gated_delta_rule.naive import naive_recurrent_gated_delta_rule  # type: ignore
 

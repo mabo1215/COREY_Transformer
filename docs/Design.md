@@ -52,6 +52,69 @@ explanation supported if C has a stable warm-L2 effect at L=8192 that shrinks or
 L2 and at L=2048, while A shows none. Lane `tpds_lane_r3_e16c.sh` (queues on the GPU lock after
 E16). ~30-45 min. Result files: `e16c_l2_placement_pro6000.{jsonl,json}`.
 
+## E17 — Production kernels out of the launch floor; real Gated DeltaNet traces (M2b; author 2026-10-03)
+
+Purpose: the reviewer's second major concern is that the chunk matters materially only on the
+study's own Triton Mamba-1 kernel: Mamba-2 SSD is flat (every policy within 2.4% of the oracle) and
+Gated DeltaNet is always optimal at its largest chunk, both measured at 370M-class widths where the
+SSD pipeline is bound by launch overhead up to L = 2048. M2b asks to push both production kernels out
+of the launch floor (2.7B-class widths, batch 16, 8K tokens) and to capture real Gated DeltaNet
+traces from a public checkpoint. The author dropped M2b on 2026-09-30 and reinstated it on
+2026-10-03 (about 3 GPU-h instead of the reviewer's 1 GPU-day estimate, because the captures reuse
+the E2/E14 pipeline and the synthetic sweep reuses E12).
+
+E17c (synthetic, `e17_workbound.py`, tag `pro6000`): Mamba-2 SSD (`mamba_chunk_scan_combined`,
+head dim 64, one group, state 128) at d_inner 2048 / 4096 / 5120 (the 370M, 1.3B and 2.7B
+checkpoints) and Gated DeltaNet (`chunk_gated_delta_rule`, plain path as in the paper's synthetic
+study) at head layouts H x K x V = 4x256x256 (the 340M/1.3B public checkpoints), 4x256x512 (the
+paper's synthetic layout), 16x128x128, 32x128x128 and 64x128x128 (production hybrids); L in {512,
+1024, 2048, 4096, 8192}, batch {1, 4, 16}, every chunk (SSD 32..512; GDN 16/32/64, the kernel
+rejects larger chunks); three rounds, shapes and chunks shuffled, exclusive-GPU guard, clock state
+per shape; the empty-kernel launch floor is timed once. Analysis: per shape the best chunk, its tie
+set and the spread max/min; the token count (L x batch) at which the spread leaves the tie margin
+and at which the best chunk moves; comparison with the work-term cost model of the paper.
+
+E17a (real traces, Mamba-2 2.7B): `capture_traces.py --model mamba2 --model-id AntonV/mamba2-2.7b-hf`
+(80 heads x 64, state 128; 8 of 64 layers, stride 8; the same 192 prompts as E2/E14; ~20 GB of
+traces), then `e2_oracle_sweep.py --model mamba2` at batch 1/4/16 in device time (pre-spin 20 ms) with
+the exclusive guard; tag `pro6000_2p7b_r3` -> `e2_mamba2_pro6000_2p7b_r3.{csv,json}`. Offline: E3
+predictors (shape, entropy, shape + entropy), static regret and tie share per batch, held-out
+headroom (`cv_exact_headroom`), work-term cost-model prediction.
+
+E17b (real traces, Gated DeltaNet 1.4B): new `capture_gdn_traces.py` loads
+`Idiap/gated-deltanet-swa-1.4B-30B` (a 1.4B hybrid of 12 Gated DeltaNet layers, 8 heads x 256,
+hidden 2048, alternating with 12 sliding-window attention layers; trained on 30B tokens; the only
+public checkpoint above 1B whose weight layout matches fla 0.5.2 -- the pure 1.3B
+`linear-moe-hub/Gated-Deltanet-1.3B` was saved by an older fork with a fused MLP and an extra
+`D` parameter that the current layer does not implement, so it cannot be loaded faithfully)
+through the FLA model classes and wraps the two kernel entry points the layer imports, so it
+stores exactly the kernel inputs (raw q, k, v, the `a_proj` output g and the `b_proj` output beta;
+the kernel applies the L2 norm, the gate and the sigmoid itself) plus A_log and dt_bias per layer;
+6 of the 12 Gated DeltaNet layers (every second), 192 prompts, ~16 GB. Prompts of 64 tokens or
+fewer take the recurrent path in the model; they are captured as well (the manifest records the
+path) and timed with the chunk kernel like the others. A stored-input round trip against the live
+kernel output is logged for the first prompt. Then `e2_oracle_sweep.py --model gdn` (new kind:
+production kernel path via `kernels.gdn_chunk_prod`, chunks 16/32/64, features on v and g) at
+batch 1/4/16; tag `pro6000_1p4b_r3` -> `e2_gdn_pro6000_1p4b_r3.{csv,json}`. Offline: as E17a.
+Local smoke test: the pure 360M `puigde/gated-deltanet-360M-15B-slimpajama` (same layout).
+
+Decision rules: (a) if the SSD spread stays within the tie margin at every shape up to 2.7B x
+batch 16 x 8K, the paper states that the chunk of the production SSD pipeline does not matter at
+deployed sizes and the Mamba-1 results are the stress case; (b) if the spread opens at large token
+counts, report the shapes where it does and whether a shape-keyed table captures it (Mamba-1
+story generalizes); (c) Gated DeltaNet: if chunk 64 stays optimal on the real traces at every batch,
+the "always the largest chunk" statement is confirmed on a checkpoint; otherwise the per-call
+analysis applies. Either way "Gated DeltaNet is studied with synthetic inputs only" leaves the
+Limitations, and the kernel-family claims are rescoped to what is measured.
+
+Host: pro6000 (RTX PRO 6000 96 GB; shared with other projects: the captures run alongside them,
+the sweeps wait for an exclusive GPU). Prep (CPU): `tpds_r3_e17_prep.sh` (environment, disk,
+checkpoint download to `/root/autodl-tmp/hf_models`, static checks). Lane `tpds_lane_r3_e17.sh`:
+E17a-cap -> E17b-cap -> E17c -> E17a -> E17b. ~2.5-3 h GPU exclusive. Peak VRAM ~12 GB (2.7B fp32
+capture), ~11 GB (SSD 5120 x b16 x 8192 at chunk 32). Disk ~45 GB (traces + checkpoints) of
+100 GB free. Result files: `e17_workbound_pro6000.{jsonl,json}`, `e2_mamba2_pro6000_2p7b_r3.{csv,json}`,
+`e2_gdn_pro6000_1p4b_r3.{csv,json}`, `e3_mamba2_pro6000_2p7b_r3.json`, `e3_gdn_pro6000_1p4b_r3.json`.
+
 ## E14 — Re-timed larger checkpoints (M6c; author 2026-10-01)
 
 Purpose: the E11 sweeps of the 1.4B and 2.8B checkpoints ran at batch 1 only and, for the

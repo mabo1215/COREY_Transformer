@@ -1,0 +1,35 @@
+{
+  "cmd": "TPDS_E17_ONLY='E17b-cap E17b' src/experiments/remote/tpds_lane_r3_e17.sh",
+  "created_at": "2026-10-02T21:22:57Z",
+  "design_ref": "docs/Design.md#E17",
+  "est_hours": 1.0,
+  "host": "pro6000",
+  "id": "E17b",
+  "items": [
+    "M2b"
+  ],
+  "log": "src/logs/revloop/E17b.log",
+  "notes": [
+    {
+      "at": "2026-10-02T21:22:57Z",
+      "by": "bobsteam1215",
+      "text": "capture_gdn_traces.py (new) wraps fla's chunk/fused_recurrent entry points; e2 kind gdn uses the production kernel path"
+    },
+    {
+      "at": "2026-10-02T21:40:02Z",
+      "by": "bobsteam1215",
+      "text": "checkpoint changed to Idiap 1.4B hybrid: linear-moe-hub 1.3B has an old fla layout (fused MLP, D param) that fla 0.5.2 cannot load faithfully; local smoke uses puigde 360M"
+    }
+  ],
+  "progress": 0,
+  "purpose": "First real-trace Gated DeltaNet measurement: is chunk 64 always optimal on a checkpoint's calls (review M2b part 2)",
+  "results": [
+    "src/experiments/results/tpds/e2_gdn_pro6000_1p4b_r3.csv",
+    "src/experiments/results/tpds/e2_gdn_pro6000_1p4b_r3.json"
+  ],
+  "status": "code_ready",
+  "title": "Gated DeltaNet 1.4B hybrid (Idiap/gated-deltanet-swa-1.4B-30B): real kernel-input traces of 6 GDN layers, per-call sweep at chunks 16/32/64",
+  "updated_at": "2026-10-02T21:40:02Z",
+  "updated_by": "bobsteam1215",
+  "vram_gb": 6.0
+}
