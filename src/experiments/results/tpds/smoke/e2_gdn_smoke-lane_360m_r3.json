@@ -1,0 +1,172 @@
+{
+  "meta": {
+    "host": "bobsteam1215",
+    "hostname": "bobsteam1215",
+    "utc": "2026-10-02T21:44:42Z",
+    "python": "3.11.15",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "argv": [
+      "/mnt/c/source/COREY_Transformer/src/experiments/tpds/e2_oracle_sweep.py",
+      "--model",
+      "gdn",
+      "--batches",
+      "1,4",
+      "--warmup",
+      "2",
+      "--repeats",
+      "3",
+      "--max-rows",
+      "8",
+      "--pre-spin-ms",
+      "5",
+      "--exclusive-guard",
+      "--guard-until",
+      "1790981049",
+      "--trace-dir",
+      "src/outputs/smoke_e17/tpds_traces_gdn_360m",
+      "--out-dir",
+      "src/experiments/results/tpds/smoke",
+      "--tag",
+      "smoke-lane_360m_r3"
+    ],
+    "torch": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3070",
+    "gpu_mem_gb": 8.0,
+    "gpu_sm_count": 46,
+    "gpu_cc": "8.6",
+    "pkg_triton": "3.6.0",
+    "pkg_transformers": "5.5.1",
+    "pkg_mamba_ssm": "2.3.1",
+    "pkg_fla-core": "0.5.2",
+    "pkg_flash-linear-attention": "0.5.2",
+    "pkg_numpy": "2.4.4",
+    "pkg_scikit-learn": null,
+    "nvidia_smi": "NVIDIA GeForce RTX 3070, 617.14, 8192 MiB, 2100 MHz",
+    "git_commit": "c8b0a3d",
+    "experiment": "E2",
+    "model": "gdn",
+    "args": {
+      "model": "gdn",
+      "exclusive_guard": true,
+      "guard_until": 1790981049.0,
+      "trace_dir": "src/outputs/smoke_e17/tpds_traces_gdn_360m",
+      "batches": "1,4",
+      "layers": null,
+      "chunks": null,
+      "warmup": 2,
+      "repeats": 3,
+      "flush_l2": false,
+      "pre_spin_ms": 5.0,
+      "max_rows": 8,
+      "out_dir": "src/experiments/results/tpds/smoke",
+      "tag": "smoke-lane_360m_r3",
+      "seed": 0
+    },
+    "layers": [
+      0,
+      7,
+      14
+    ],
+    "n_prompts": 6,
+    "chunks": [
+      16,
+      32,
+      64
+    ],
+    "own_gpu_pids": [],
+    "mamba1_default_launch": null
+  },
+  "summary": {
+    "rows": 8,
+    "by_batch": {
+      "1": {
+        "rows": 8,
+        "oracle_distribution": {
+          "64": 7,
+          "16": 1
+        },
+        "static_regret": {
+          "static_16": {
+            "n": 8,
+            "mean_regret_pct": 101.74258340213756,
+            "p95_regret_pct": 174.11195163596605,
+            "max_regret_pct": 179.461508532537,
+            "oracle_hit_rate": 0.125
+          },
+          "static_32": {
+            "n": 8,
+            "mean_regret_pct": 19.87250252785615,
+            "p95_regret_pct": 44.57690287415373,
+            "max_regret_pct": 47.69403111544519,
+            "oracle_hit_rate": 0.0
+          },
+          "static_64": {
+            "n": 8,
+            "mean_regret_pct": 4.276818654917985,
+            "p95_regret_pct": 22.239457005573506,
+            "max_regret_pct": 34.21454923934388,
+            "oracle_hit_rate": 0.875
+          },
+          "entropy_rule": {
+            "n": 8,
+            "mean_regret_pct": 4.276818654917985,
+            "p95_regret_pct": 22.239457005573506,
+            "max_regret_pct": 34.21454923934388,
+            "oracle_hit_rate": 0.875
+          },
+          "best_static": "static_64"
+        },
+        "entropy_bits_range": [
+          5.955716,
+          6.537422
+        ]
+      }
+    },
+    "entropy_by_regime_b1": {
+      "code_repo": {
+        "mean": 6.1045514999999995,
+        "std": 0.14883550000000012,
+        "min": 5.955716,
+        "max": 6.253387,
+        "n": 2
+      },
+      "logs_uuid": {
+        "mean": 6.14898,
+        "std": 0.010736999999999775,
+        "min": 6.138243,
+        "max": 6.159717,
+        "n": 2
+      },
+      "long_doc_qa": {
+        "mean": 6.402816,
+        "std": 0.0,
+        "min": 6.402816,
+        "max": 6.402816,
+        "n": 1
+      },
+      "repetition_policy": {
+        "mean": 6.537422,
+        "std": 0.0,
+        "min": 6.537422,
+        "max": 6.537422,
+        "n": 1
+      },
+      "short_chat": {
+        "mean": 6.509681,
+        "std": 0.0,
+        "min": 6.509681,
+        "max": 6.509681,
+        "n": 1
+      },
+      "tables_csv": {
+        "mean": 6.026513,
+        "std": 0.0,
+        "min": 6.026513,
+        "max": 6.026513,
+        "n": 1
+      }
+    },
+    "max_out_diff_across_chunks": 3.0517578125e-05
+  }
+}

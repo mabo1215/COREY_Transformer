@@ -1,0 +1,121 @@
+{
+  "host": "bobsteam1215",
+  "hostname": "bobsteam1215",
+  "utc": "2026-10-02T21:24:46Z",
+  "python": "3.11.15",
+  "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "argv": [
+    "/mnt/c/source/COREY_Transformer/src/experiments/tpds/e17_workbound.py",
+    "--ssd-widths",
+    "2048",
+    "--gdn-shapes",
+    "4x256x256",
+    "--lengths",
+    "256,1024",
+    "--batches",
+    "1,4",
+    "--rounds",
+    "1",
+    "--warmup",
+    "2",
+    "--repeats",
+    "5",
+    "--exclusive-guard",
+    "--guard-until",
+    "1790979719",
+    "--out-dir",
+    "src/experiments/results/tpds/smoke",
+    "--tag",
+    "smoke-lane"
+  ],
+  "torch": "2.11.0+cu128",
+  "cuda_runtime": "12.8",
+  "gpu": "NVIDIA GeForce RTX 3070",
+  "gpu_mem_gb": 8.0,
+  "gpu_sm_count": 46,
+  "gpu_cc": "8.6",
+  "pkg_triton": "3.6.0",
+  "pkg_transformers": "5.5.1",
+  "pkg_mamba_ssm": "2.3.1",
+  "pkg_fla-core": "0.5.2",
+  "pkg_flash-linear-attention": "0.5.2",
+  "pkg_numpy": "2.4.4",
+  "pkg_scikit-learn": null,
+  "nvidia_smi": "NVIDIA GeForce RTX 3070, 617.14, 8192 MiB, 2100 MHz",
+  "git_commit": "c8b0a3d",
+  "experiment": "E17c",
+  "own_gpu_pids": [],
+  "lengths": [
+    256,
+    1024
+  ],
+  "batches": [
+    1,
+    4
+  ],
+  "families": {
+    "ssd": {
+      "shapes": [
+        2048
+      ],
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512
+      ]
+    },
+    "gdn": {
+      "shapes": [
+        [
+          4,
+          256,
+          256
+        ]
+      ],
+      "chunks": [
+        16,
+        32,
+        64
+      ]
+    }
+  },
+  "ssd_layout": {
+    "headdim": 64,
+    "ngroups": 1,
+    "dstate": 128
+  },
+  "gdn_path": "plain (pre-normalized k, log-gate g, sigmoid beta; as the paper's synthetic study)",
+  "empty_kernel": {
+    "n": 500,
+    "mean_ms": 0.026863615887239574,
+    "std_ms": 0.09572603883916504,
+    "ci95_lo_ms": 0.018472858628842178,
+    "ci95_hi_ms": 0.035254373145636966,
+    "median_ms": 0.004095999989658594,
+    "min_ms": 0.0030720001086592674
+  },
+  "args": {
+    "families": "ssd,gdn",
+    "ssd_widths": "2048",
+    "ssd_chunks": "32,64,128,256,512",
+    "gdn_shapes": "4x256x256",
+    "gdn_chunks": "16,32,64",
+    "lengths": "256,1024",
+    "batches": "1,4",
+    "rounds": "1",
+    "warmup": "2",
+    "repeats": "5",
+    "exclusive_guard": "True",
+    "guard_until": "1790979719.0",
+    "record_gpu_state": "False",
+    "max_rows": "None",
+    "out_dir": "src/experiments/results/tpds/smoke",
+    "tag": "smoke-lane",
+    "seed": "0"
+  },
+  "rows_done": 8,
+  "rows_planned": 8,
+  "finished_utc": "2026-10-02T21:27:20Z"
+}

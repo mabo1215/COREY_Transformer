@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "host": "bobsteam1215",
+    "hostname": "bobsteam1215",
+    "utc": "2026-10-02T21:27:23Z",
+    "python": "3.11.15",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "argv": [
+      "/mnt/c/source/COREY_Transformer/src/experiments/tpds/e2_oracle_sweep.py",
+      "--model",
+      "mamba2",
+      "--batches",
+      "1,4",
+      "--warmup",
+      "2",
+      "--repeats",
+      "3",
+      "--max-rows",
+      "8",
+      "--pre-spin-ms",
+      "5",
+      "--exclusive-guard",
+      "--guard-until",
+      "1790979719",
+      "--trace-dir",
+      "src/outputs/smoke_e17/tpds_traces_m2_370m",
+      "--out-dir",
+      "src/experiments/results/tpds/smoke",
+      "--tag",
+      "smoke-lane_370m_r3"
+    ],
+    "torch": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3070",
+    "gpu_mem_gb": 8.0,
+    "gpu_sm_count": 46,
+    "gpu_cc": "8.6",
+    "pkg_triton": "3.6.0",
+    "pkg_transformers": "5.5.1",
+    "pkg_mamba_ssm": "2.3.1",
+    "pkg_fla-core": "0.5.2",
+    "pkg_flash-linear-attention": "0.5.2",
+    "pkg_numpy": "2.4.4",
+    "pkg_scikit-learn": null,
+    "nvidia_smi": "NVIDIA GeForce RTX 3070, 617.14, 8192 MiB, 2100 MHz",
+    "git_commit": "c8b0a3d",
+    "experiment": "E2",
+    "model": "mamba2",
+    "args": {
+      "model": "mamba2",
+      "exclusive_guard": true,
+      "guard_until": 1790979719.0,
+      "trace_dir": "src/outputs/smoke_e17/tpds_traces_m2_370m",
+      "batches": "1,4",
+      "layers": null,
+      "chunks": null,
+      "warmup": 2,
+      "repeats": 3,
+      "flush_l2": false,
+      "pre_spin_ms": 5.0,
+      "max_rows": 8,
+      "out_dir": "src/experiments/results/tpds/smoke",
+      "tag": "smoke-lane_370m_r3",
+      "seed": 0
+    },
+    "layers": [
+      0,
+      12,
+      24,
+      36
+    ],
+    "n_prompts": 6,
+    "chunks": [
+      32,
+      64,
+      128,
+      256,
+      512
+    ],
+    "own_gpu_pids": [],
+    "mamba1_default_launch": null
+  },
+  "summary": {
+    "rows": 8,
+    "by_batch": {
+      "1": {
+        "rows": 8,
+        "oracle_distribution": {
+          "256": 6,
+          "64": 1,
+          "128": 1
+        },
+        "static_regret": {
+          "static_32": {
+            "n": 8,
+            "mean_regret_pct": 423.72674416790534,
+            "p95_regret_pct": 1510.2550668523786,
+            "max_regret_pct": 2173.576225233943,
+            "oracle_hit_rate": 0.0
+          },
+          "static_64": {
+            "n": 8,
+            "mean_regret_pct": 236.13560938363364,
+            "p95_regret_pct": 1066.6244819425965,
+            "max_regret_pct": 1611.3894920788368,
+            "oracle_hit_rate": 0.125
+          },
+          "static_128": {
+            "n": 8,
+            "mean_regret_pct": 52.65210000632467,
+            "p95_regret_pct": 234.70292187872127,
+            "max_regret_pct": 351.1369391552896,
+            "oracle_hit_rate": 0.125
+          },
+          "static_256": {
+            "n": 8,
+            "mean_regret_pct": 100.88275837653049,
+            "p95_regret_pct": 456.1163648972572,
+            "max_regret_pct": 578.8154714765734,
+            "oracle_hit_rate": 0.75
+          },
+          "static_512": {
+            "n": 8,
+            "mean_regret_pct": 107.76001722817017,
+            "p95_regret_pct": 412.5927344577005,
+            "max_regret_pct": 463.09792832111276,
+            "oracle_hit_rate": 0.0
+          },
+          "entropy_rule": {
+            "n": 8,
+            "mean_regret_pct": 100.88275837653049,
+            "p95_regret_pct": 456.1163648972572,
+            "max_regret_pct": 578.8154714765734,
+            "oracle_hit_rate": 0.75
+          },
+          "best_static": "static_128"
+        },
+        "entropy_bits_range": [
+          3.846976,
+          4.999292
+        ]
+      }
+    },
+    "entropy_by_regime_b1": {
+      "code_repo": {
+        "mean": 4.329694,
+        "std": 0.482718,
+        "min": 3.846976,
+        "max": 4.812412,
+        "n": 2
+      },
+      "logs_uuid": {
+        "mean": 4.4128395000000005,
+        "std": 0.2585725000000001,
+        "min": 4.154267,
+        "max": 4.671412,
+        "n": 2
+      },
+      "long_doc_qa": {
+        "mean": 4.828156,
+        "std": 0.0,
+        "min": 4.828156,
+        "max": 4.828156,
+        "n": 1
+      },
+      "repetition_policy": {
+        "mean": 4.968275,
+        "std": 0.0,
+        "min": 4.968275,
+        "max": 4.968275,
+        "n": 1
+      },
+      "short_chat": {
+        "mean": 4.999292,
+        "std": 0.0,
+        "min": 4.999292,
+        "max": 4.999292,
+        "n": 1
+      },
+      "tables_csv": {
+        "mean": 4.73894,
+        "std": 0.0,
+        "min": 4.73894,
+        "max": 4.73894,
+        "n": 1
+      }
+    },
+    "max_out_diff_across_chunks": 0.0625
+  }
+}
