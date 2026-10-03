@@ -113,6 +113,9 @@ DATASETS = [
     ("mamba1_1p4b_r3plain_vgpu3090", "Mamba-1 1.4B, Triton scan, RTX 3090, launch-inclusive", "e2_mamba1_vgpu3090_1p4b_r3plain.csv", "vgpu3090"),
     ("mamba1_2p8b_r3plain_vgpu3090", "Mamba-1 2.8B, Triton scan, RTX 3090, launch-inclusive", "e2_mamba1_vgpu3090_2p8b_r3plain.csv", "vgpu3090"),
     ("mamba1_r3spin_vgpu3090", "Mamba-1 370M, Triton scan, RTX 3090, device time", "e2_mamba1_vgpu3090_r3spin.csv", "vgpu3090"),
+    # tpds-r3 E17 (M2b): production kernels on larger checkpoints, RTX 3090, device time
+    ("mamba2_2p7b_r3_vgpu3090", "Mamba-2 2.7B, SSD scan, RTX 3090, device time", "e2_mamba2_vgpu3090_2p7b_r3.csv", "vgpu3090"),
+    ("gdn_1p4b_r3_vgpu3090", "Gated DeltaNet 1.4B, FLA chunk kernel, RTX 3090, device time", "e2_gdn_vgpu3090_1p4b_r3.csv", "vgpu3090"),
 ]
 
 # Existing published values used as a reproduction check: (dataset, source json, path, recomputed path)
@@ -142,7 +145,21 @@ def load_dataset(path: Path) -> pd.DataFrame:
     df = load_e2([path])
     if "regimes" in df.columns:  # the reference-scan table also holds the twelve E4 tuning keys
         df = df[df["regimes"] != "e4_key"]
-    return df.reset_index(drop=True)
+    df = df.reset_index(drop=True)
+    # Chunks the kernel cannot run at a call's shape (Mamba-2 SSD beyond its 32-bit indexing) are stored as
+    # +inf. The estimators average and difference latencies, so they get a finite stand-in instead: ten times
+    # the slowest available chunk of that call with zero spread, which no table or oracle ever selects.
+    chunks = chunk_columns(df)
+    mean = df[[f"lat_c{c}_mean" for c in chunks]].to_numpy(dtype=float)
+    bad = ~np.isfinite(mean)
+    if bad.any():
+        fill = 10.0 * np.nanmax(np.where(bad, np.nan, mean), axis=1)
+        for j, c in enumerate(chunks):
+            rows = np.where(bad[:, j])[0]
+            df.loc[rows, f"lat_c{c}_mean"] = fill[rows]
+            df.loc[rows, f"lat_c{c}_std"] = 0.0
+        df.attrs["unavailable_cells"] = int(bad.sum())
+    return df
 
 
 class TableStructure:
