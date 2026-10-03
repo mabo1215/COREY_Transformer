@@ -170,3 +170,7 @@ Then run `wsl bash src/revloop/remote.sh shutdown <host> --yes`, followed by `sy
   is skipped.
 - Remote commits identify themselves as `revloop-<host>`; do not change the host's global
   git config.
+- Never `remote.sh sync` a host while a job appends to a result file that git already tracks
+  (for example one the watcher committed after an earlier failure): `git pull --autostash`
+  replaces the file and every row written afterwards goes to the deleted inode. Rerun such a
+  job under a new (untracked) tag instead.
