@@ -1922,7 +1922,7 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 1. Code Ocean：capsule 已推送新版本，但 Metadata 由网页管理——请把 Metadata 标题改为新标题 "Shape Sets the Chunk: A Compile-Informed Cost Model and a No-Gain Bound for Data-Dependent Dispatch of Chunked Linear-Recurrence Kernels"，点 Reproducible Run 确认跑通，然后发布新版本（论文里的链接不带版本号，会自动指向最新版）。
    A:
 2. 联系邮箱：投稿信用 rcn4743@aut.ac.nz，Title_Page.docx 用 amabo1215@gmail.com。投稿系统里用哪个？两份文件是否统一？
-   A:
+   A: amabo1215@gmail.com（2026-10-03 已统一：投稿信改为该邮箱，Title_Page.docx 原本即是）
 
 ### 0b. vGPU 3090 与 PRO 6000 当前开机但没有任务【已解决 2026-10-03】
 
