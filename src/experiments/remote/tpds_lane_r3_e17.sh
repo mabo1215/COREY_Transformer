@@ -67,6 +67,14 @@ if want E17c; then
   $RUN ${P}E17c -- "${L[@]}" "$PY" -m src.experiments.tpds.e17_workbound $E17C --exclusive-guard \
     --guard-until "$GUARD_UNTIL" --out-dir "$OUT_DIR" --tag "$TAG" || lanelog "E17c failed (continuing)"
 fi
+# Traces captured on another host and copied over (e.g. through /autodl-fs): with TPDS_E17_WAIT_TRACES=1
+# the per-call sweeps start only once the copy has written $TRACE_ROOT/.complete (at most 6 h).
+if [ "${TPDS_E17_WAIT_TRACES:-0}" = 1 ] && { want E17a || want E17b; }; then
+  waited=0
+  until [ -f "$TRACE_ROOT/.complete" ] || [ $waited -ge 21600 ]; do sleep 60; waited=$((waited + 60)); done
+  [ -f "$TRACE_ROOT/.complete" ] && lanelog "traces complete at $TRACE_ROOT (waited ${waited}s)" \
+    || lanelog "traces at $TRACE_ROOT still incomplete after 6 h"
+fi
 if want E17a; then
   if [ -f "$M2_TRACES/mamba2/manifest.jsonl" ]; then
     # shellcheck disable=SC2086
