@@ -32,12 +32,13 @@ ROOT = Path(__file__).resolve().parents[2]
 CAPSULE = ROOT / "codeocean"
 CREDENTIAL_HELPER = ROOT / "src" / "revloop" / "codeocean_credential.sh"
 
-TITLE = ("When Activation-Driven Chunk Scheduling Does Not Pay: A Characterization of "
-         "Entropy-Guided Scheduling for Chunked Linear-Recurrence Kernels")
-DESCRIPTION = ("Code, measurements and analysis scripts for a characterization study of "
-               "activation-entropy chunk scheduling for Mamba-1, Mamba-2 SSD and Gated DeltaNet "
-               "kernels. The reproducible run recomputes the analyses, tables and figures from "
-               "the stored measurements on the CPU.")
+TITLE = ("Shape Sets the Chunk: A Compile-Informed Cost Model and a No-Gain Bound for "
+         "Data-Dependent Dispatch of Chunked Linear-Recurrence Kernels")
+DESCRIPTION = ("Code, measurements and analysis scripts for a study of chunk selection in chunked "
+               "linear-recurrence GPU kernels (Mamba-1 selective scan, Mamba-2 SSD, Gated DeltaNet): "
+               "a compile-informed cost model, a no-gain bound for data-dependent dispatch, and "
+               "key-churn analysis. The reproducible run recomputes analyses, tables and figures "
+               "from the stored measurements on the CPU.")
 
 # Entry scripts of the experiments reported in the paper and its supplement.
 ENTRIES = [
@@ -65,9 +66,12 @@ EXTRA = [
     "src/data/longbench_subset_remote_min/**/*",
     "src/data/longbench_push120/**/*",
     "src/requirements.txt",
+    "src/kernels/mamba1_runtime_chunk/**/*",          # reference CUDA scan with a runtime chunk (source)
 ]
 # Generated run outputs (src/outputs/, the capsule's own results) are never packaged.
-EXCLUDE = ["*_e1b.*", "*/smoke/*", "*localsmoke*", "*/__pycache__/*", "src/outputs/*"]
+# e17_workbound_vgpu3090.*: first E17c run, rows lost to a git autostash; superseded by *_vgpu3090full.*
+EXCLUDE = ["*_e1b.*", "*/smoke/*", "*localsmoke*", "*/__pycache__/*", "src/outputs/*",
+           "*/e17_workbound_vgpu3090.*"]
 
 # Identifying strings that must not appear in the package (checked case-insensitively).
 IDENTIFYING = [r"mabo", r"bo\s+ma\b", r"weiqi", r"jinsong", r"aut\.ac\.nz", r"\brcn\d{3,}", r"auckland",
@@ -168,6 +172,7 @@ OUT="${RESULTS_DIR:-../results}"
 WORK="$OUT/analysis"
 mkdir -p "$WORK" "$OUT/figures" "$OUT/tables"
 cp src/experiments/results/tpds/*.json src/experiments/results/tpds/*.csv "$WORK"/
+cp src/experiments/results/tpds/e17_workbound_vgpu3090full.jsonl "$WORK"/
 for tag in pro6000 vgpu3090 pro6000_e1c; do
   "$PY" -u -m src.experiments.tpds.e1_analysis --in-dir "$WORK" --tag "$tag"
 done
@@ -179,6 +184,9 @@ for host in pro6000 vgpu3090; do
 done
 "$PY" -u -m src.experiments.tpds.make_tables --in-dir "$WORK" --host pro6000 redraw > "$OUT/tables/table_redraw_pro6000.tex"
 "$PY" -u -m src.experiments.tpds.make_tables --in-dir "$WORK" --host vgpu3090 reference > "$OUT/tables/table_reference_vgpu3090.tex"
+# Production kernels at larger widths (E17): synthetic sweep and captured Mamba-2 2.7B / Gated DeltaNet 1.4B calls
+"$PY" -u -m src.experiments.tpds.e17_analysis --in-dir "$WORK" --tag vgpu3090full \
+  --per-call e2_mamba2_vgpu3090_2p7b_r3.csv,e2_gdn_vgpu3090_1p4b_r3.csv
 """
 
 README = """# {title}
@@ -188,26 +196,34 @@ analyses, tables and figures from the stored measurements on the CPU; it does no
 
 ## Layout
 
-- `src/experiments/tpds/` - kernel-level study: Triton Mamba-1 selective scan and kernel
-  wrappers (`kernels.py`), value invariance at fixed shape (`e1_value_invariance.py`,
-  `e1_analysis.py`, `e1_from_log.py`), per-call oracle on captured traces
-  (`capture_traces.py`, `e2_oracle_sweep.py`), predictors (`e3_predictors.py`), auto-tuning
-  (`e4_autotune.py`), break-even model (`e5_breakeven.py`), comparison with the reference
-  CUDA selective scan (`e7_reference_scan.py`), entropy band (`entropy_band.py`), tables and
-  figures (`make_tables.py`, `make_figures.py`).
-- `src/experiments/results/tpds/` - measurements and analyses: `*_pro6000.*` (RTX PRO 6000),
-  `*_vgpu3090.*` (RTX 3090), `*_pro6000_e1c.*` (control run with independent redraws; its
-  rows were rebuilt from the run log `e1_pro6000_e1c.log`).
+- `src/experiments/tpds/` - kernels and experiments: Triton Mamba-1 selective scan and kernel
+  wrappers (`kernels.py`); value invariance and placement controls (`e1_value_invariance.py`,
+  `e1_analysis.py`, `e9_placement.py`, `e16_counters.py`); captured prefill traces
+  (`capture_traces.py`, `capture_gdn_traces.py`) and per-call chunk sweeps (`e2_oracle_sweep.py`);
+  predictors (`e3_predictors.py`); auto-tuning (`e4_autotune.py`); compile facts and the cost
+  model (`kernel_stats.py`, `cost_model.py`, `cost_model_baselines.py`); break-even and key
+  churn (`e5_breakeven.py`, `e5b_key_churn.py`, `serving_key_churn.py`); the reference CUDA scan
+  (`e7_reference_scan.py`, `e8_refscan.py`); routed end-to-end study (`e10_routed_interleaved.py`);
+  tensor-parallel widths (`e12_tp_widths.py`, `e12_analysis.py`); production kernels at larger
+  widths (`e17_workbound.py`, `e17_analysis.py`); oracle headroom and timing noise
+  (`headroom_noise.py`); tables and figures (`make_tables.py`, `make_figures.py`).
+- `src/kernels/mamba1_runtime_chunk/` - the reference Mamba-1 CUDA selective scan rebuilt with the
+  chunk as a runtime argument.
+- `src/experiments/results/tpds/` - measurements and analyses, tagged by GPU: `*_pro6000*`
+  (RTX PRO 6000), `*_vgpu3090*` (RTX 3090), `*_h800*` (H800); `_r3spin` and `_r3` tags are
+  device-time re-timings.
 - `src/experiments/run_*.py`, `src/corey_selective_scan_dispatch.py`, `src/algorithms/` -
-  routed end-to-end study with a patched live scan kernel, output agreement on LongBench,
-  inline-hook overhead, and the supplementary analyses.
-- `src/data/` - LongBench prompt subsets used by the end-to-end and output-agreement runs.
+  earlier routed end-to-end study, output agreement on LongBench, inline-hook overhead, and
+  supplementary analyses.
+- `src/data/` - LongBench prompt subsets used by the trace capture and the end-to-end runs.
 
 ## Reproducible run (CPU)
 
-`run` recomputes, into `../results/`: the E1 analyses (`analysis/e1_analysis_*.json`), the
-break-even model (`analysis/e5_*.json`), the entropy band (`analysis/entropy_band_*.json`),
-the supplementary tables (`tables/`) and the figures (`figures/`).
+`run` recomputes, into `../results/`: the value-invariance analyses
+(`analysis/e1_analysis_*.json`), the break-even model (`analysis/e5_*.json`), the entropy band
+(`analysis/entropy_band_*.json`), the analysis of the production kernels at larger widths
+(`analysis/e17_analysis_vgpu3090full.json`), the supplementary tables (`tables/`) and the
+figures (`figures/`).
 
 ## GPU experiments
 
@@ -234,7 +250,12 @@ chunk as a runtime argument (see `src/corey_selective_scan_dispatch.py`).
 
 # Host names and absolute host paths recorded in result metadata are replaced in the copies.
 SANITIZE = [(re.compile(r"autodl-container-[A-Za-z0-9-]+"), "gpu-host"),
-            (re.compile(r"/root/autodl-tmp"), "/data")]
+            (re.compile(r"/root/autodl-tmp"), "/data"),
+            (re.compile(r"/autodl-fs/data"), "/shared"),
+            # analyses run on the authors' workstation record its host name, checkout path and kernel
+            (re.compile(r"bobsteam\d*", re.I), "workstation"),
+            (re.compile(r"/mnt/c/source/[A-Za-z_]+", re.I), "/repo"),
+            (re.compile(r"Linux-\d+\.\d+\.\d+(?:\.\d+)?[A-Za-z0-9_.+-]*"), "Linux")]
 
 
 def sanitize_results(code: Path) -> int:

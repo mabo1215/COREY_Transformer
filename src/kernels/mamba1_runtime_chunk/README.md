@@ -34,11 +34,11 @@ weights are built.
 ## Build (on the GPU host; no GPU needed for compilation)
 
 ```bash
-# mamba_ssm source matching the installed wheel (2.3.2.post1 on vgpu3090)
-source /etc/network_turbo   # AutoDL hosts
-git clone --depth 1 --branch v2.3.2.post1 https://github.com/state-spaces/mamba.git /root/autodl-tmp/mamba_src
+# mamba_ssm source matching the installed wheel (2.3.2.post1 on the RTX 3090 host)
+MAMBA_SRC=$HOME/mamba_src
+git clone --depth 1 --branch v2.3.2.post1 https://github.com/state-spaces/mamba.git $MAMBA_SRC
 cd src/kernels/mamba1_runtime_chunk
-MAMBA_CSRC=/root/autodl-tmp/mamba_src/csrc/selective_scan TORCH_CUDA_ARCH_LIST=8.6 \
+MAMBA_CSRC=$MAMBA_SRC/csrc/selective_scan TORCH_CUDA_ARCH_LIST=8.6 \
     pip install --no-build-isolation -v .
 ```
 
