@@ -39,7 +39,9 @@ else
   CAP="--samples-per-regime 20 --longbench-per-task 8 --longbench-lengths 1024,2048,4096,8192 --max-tokens 8192"
   E2="--batches 1,4,16 --warmup 10 --repeats 50 --pre-spin-ms 20"
   E17C="--rounds 3 --warmup 10 --repeats 50 --record-gpu-state"
-  check_space "$TRACE_ROOT" 60 || { lanelog "E17 needs ~60 GB for traces"; exit 1; }
+  # only the captures write traces (check_space creates the directory, so skip it when the traces are copied in)
+  case " ${TPDS_E17_ONLY:-E17a-cap E17b-cap} " in *-cap*)
+    check_space "$TRACE_ROOT" 60 || { lanelog "E17 needs ~60 GB for traces"; exit 1; } ;; esac
 fi
 check_space "$OUT_DIR" 2 || exit 1
 # a local checkpoint copy replaces the Hub id when it is complete
