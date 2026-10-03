@@ -1917,10 +1917,10 @@ Recorded here per rules (`If a patch conflicts with the paper's actual current w
 1. E17 计时怎么安排？A) 等 HKVLM 自己空出来，超时后我重新 launch（不用你操作）；B) 你暂停 HKVLM 的任务约 3 小时，E17 会自动开始；C) 开第二台卡（如 vGPU 3090）只跑 E17 计时：需要把 37 GB traces 拷过去或在那边重新捕获（约 20 分钟）。
    A: C（vGPU 3090 有卡模式开机，经 autodl-fs 拷贝；跑完拉回结果、关机、回填论文）
 
-### 3. 投稿前需要你在网页上完成的事【需要你操作】
+### 3. 投稿前需要你在网页上完成的事【已解决 2026-10-03】
 
 1. Code Ocean：capsule 已推送新版本，但 Metadata 由网页管理——请把 Metadata 标题改为新标题 "Shape Sets the Chunk: A Compile-Informed Cost Model and a No-Gain Bound for Data-Dependent Dispatch of Chunked Linear-Recurrence Kernels"，点 Reproducible Run 确认跑通，然后发布新版本（论文里的链接不带版本号，会自动指向最新版）。
-   A:
+   A: 已发布（作者 2026-10-03）；capsule 远端记录 Metadata 标题已改为新标题（ffe5c61），子模块已同步
 2. 联系邮箱：投稿信用 rcn4743@aut.ac.nz，Title_Page.docx 用 amabo1215@gmail.com。投稿系统里用哪个？两份文件是否统一？
    A: amabo1215@gmail.com（2026-10-03 已统一：投稿信改为该邮箱，Title_Page.docx 原本即是）
 
