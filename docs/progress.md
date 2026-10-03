@@ -134,7 +134,7 @@
 6. **投稿包**：投稿信日期改为 October 2026，作者单位与 Title_Page.docx 对齐（Jinsong Wu 为桂林电子科技大学）；ReproducibilityChecklist.pdf 是 AAAI 时期文件，TPDS 投稿不需要上传。
 
 ### 未修改或部分修改
-- 无。PRO 6000 上的原始 traces（src/outputs，约 37 GB）与 /autodl-fs/data/corey_e17_traces（37 GB 副本）都保留着，是否删除由你决定（不删不影响任何东西）。
+- 无。E17 原始 traces 已按作者要求删除（2026-10-03）：PRO 6000 上 src/outputs 的两份（38 GB）和 /autodl-fs/data/corey_e17_traces（38 GB）；结果都在 git 里，若要重跑 E17a/E17b 需重新捕获（约 7 分钟）。下载的 checkpoint（/root/autodl-tmp/hf_models，约 12 GB）仍保留。
 
 ## 2026-10-01 tpds-r3：M6b（PRO 6000 放置对照 + L2 干预）与 M4c（H800 数据中心 GPU）完成并回填
 
