@@ -231,6 +231,7 @@ def main(argv=None):
         plan += [(b, gid, layer, members) for gid, layer, members in build_groups(manifest, layers, b, args.seed)]
     log(f"{kind}: {len(manifest)} prompts, layers {layers}, {len(plan)} calls planned, {len(w.done)} already done")
     t_start = time.time()
+    n_skipped_calls = 0
     for i, (b, gid, layer, members) in enumerate(plan):
         key = f"{kind}|b{b}|{gid}|layer{layer}"
         if key in w.done:
@@ -253,8 +254,14 @@ def main(argv=None):
             before = foreign_gpu_pids() if args.exclusive_guard else None
             order = list(chunks)
             rng.shuffle(order)
-            stats, ref, max_diff = {}, None, 0.0
+            stats, ref, max_diff, skipped = {}, None, 0.0, []
             for c in order:
+                if kind == "mamba2" and not K.ssd_chunk_feasible(inp["x"], inp["B"], c):
+                    # beyond the SSD kernel's 32-bit indexing: the chunk cannot run, record it as unavailable
+                    skipped.append(c)
+                    stats[c] = {"mean_ms": math.inf, "std_ms": math.nan, "ci95_lo_ms": math.inf,
+                                "ci95_hi_ms": math.inf}
+                    continue
                 fn = make_fn(kind, inp, c)
                 y = fn().float()
                 if ref is None:
@@ -298,12 +305,16 @@ def main(argv=None):
             torch.cuda.empty_cache()
             write_json(args.out_dir / f"e2_{kind}_{tag}.json", {"meta": meta, "summary": summarize_csv(csv_path, kind)})
         el = time.time() - t_start
+        if skipped:
+            n_skipped_calls += 1
         log(f"[{i + 1}/{len(plan)}] {key} L={Lmin} H={feats['entropy_bits']:.2f} oracle={oracle} "
             f"rule={row['entropy_rule_chunk']} {stats[oracle]['mean_ms']:.4f} ms tied={row['tied_chunks']} "
             f"({el / 60:.1f} min, peak {row['peak_vram_gb']} GB)")
     w.close()
+    meta["ssd_index_limit"] = K.SSD_INDEX_LIMIT if kind == "mamba2" else None
+    meta["calls_with_unavailable_chunks_this_run"] = n_skipped_calls
     write_json(args.out_dir / f"e2_{kind}_{tag}.json", {"meta": meta, "summary": summarize_csv(csv_path, kind)})
-    log(f"E2 {kind} done ({new_rows} new rows)")
+    log(f"E2 {kind} done ({new_rows} new rows, {n_skipped_calls} with chunks beyond the SSD index limit)")
 
 
 if __name__ == "__main__":

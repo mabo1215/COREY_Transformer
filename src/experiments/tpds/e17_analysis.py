@@ -69,8 +69,10 @@ def synthetic(rows: list[dict], floor_ms: float | None, tie_pct: float, floor_fa
     shapes = []
     for (fam, shape), cs in sorted(by_shape.items()):
         cs = sorted(cs, key=lambda c: (c["tokens"], c["L"]))
-        chunks = cs[0]["chunks"]
-        reg = {ch: [c["mean_ms"][str(ch)] / c["best_ms"] - 1 for c in cs] for ch in chunks}
+        chunks = sorted({ch for c in cs for ch in c["chunks"]})
+        # a chunk the kernel cannot run at a shape (SSD beyond 32-bit indexing) counts as infinite regret there
+        reg = {ch: [c["mean_ms"][str(ch)] / c["best_ms"] - 1 if str(ch) in c["mean_ms"] else math.inf for c in cs]
+               for ch in chunks}
         best_static = min(chunks, key=lambda ch: statistics.fmean(reg[ch]))
         small_tuned = cs[0]["best_chunk"]
         opened = next((c for c in cs if c["spread"] > 1 + tie_pct / 100 and len(c["tied_margin"]) < len(chunks)), None)
@@ -88,6 +90,7 @@ def synthetic(rows: list[dict], floor_ms: float | None, tie_pct: float, floor_fa
                                          "max": 100 * max(reg[max(chunks)])},
             "first_tokens_spread_beyond_margin": None if opened is None else opened["tokens"],
             "cells_above_launch_floor": sum(1 for c in cs if c["above_launch_floor"]),
+            "unavailable_cells_per_chunk": {str(ch): sum(1 for c in cs if str(ch) not in c["mean_ms"]) for ch in chunks},
         })
     return {"cells": per_cell, "shapes": shapes}
 
@@ -101,11 +104,15 @@ def per_call(csv: Path, sync_ms: float | None) -> dict:
         return {"source": csv.name, "n_calls": 0}
     chunks = chunk_columns(df)
     lat = latency_matrix(df, chunks)
-    spread = lat.max(1) / lat.min(1)
+    fin = np.where(np.isfinite(lat), lat, np.nan)
+    spread = np.nanmax(fin, 1) / np.nanmin(fin, 1)      # over the chunks the kernel can run
     tied_n = df["tied_chunks"].fillna("").map(lambda s: len([c for c in str(s).split(";") if c]))
     out = {"source": csv.name, "n_calls": int(len(df)), "chunks": chunks,
            "spread_median": float(np.median(spread)), "spread_p95": float(np.percentile(spread, 95)),
-           "tied_with_oracle_mean_count": float(tied_n.mean()), "by_batch": {}}
+           "tied_with_oracle_mean_count": float(tied_n.mean()),
+           "calls_with_unavailable_chunks": int((~np.isfinite(lat)).any(1).sum()),
+           "unavailable_per_chunk": {str(c): int((~np.isfinite(lat[:, j])).sum()) for j, c in enumerate(chunks)},
+           "by_batch": {}}
     for b, sub in df.groupby("batch"):
         t = static_regret_table(sub, chunks)
         bs = int(t["best_static"].split("_")[1])
@@ -119,7 +126,8 @@ def per_call(csv: Path, sync_ms: float | None) -> dict:
             "largest_chunk_regret_pct": [t[f"static_{max(chunks)}"]["mean_regret_pct"],
                                          t[f"static_{max(chunks)}"]["p95_regret_pct"]],
             "oracle_distribution": {str(int(k)): int(v) for k, v in sub["oracle_chunk"].value_counts().items()},
-            "median_latency_ms": float(np.median(lat[sub.index].min(1)))}
+            "median_latency_ms": float(np.median(lat[sub.index].min(1))),
+            "calls_with_unavailable_chunks": int((~np.isfinite(lat[sub.index])).any(1).sum())}
     if df["fold"].nunique() > 1:
         out["cv_exact_headroom"] = cv_exact_headroom(df, chunks, threshold_ms=sync_ms)
     return out

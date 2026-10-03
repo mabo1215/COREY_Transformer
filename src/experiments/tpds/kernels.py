@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import importlib.util
 import math
+import os
 import sys
 import types
 from dataclasses import dataclass
@@ -249,6 +250,23 @@ def ssd_available() -> bool:
         return True
     except Exception:
         return False
+
+
+# The Triton SSD kernels of mamba_ssm index the chunk-state tensor (b, ceil(L/chunk), h, p, n) with 32-bit
+# offsets: above 2**31 elements they fault with an illegal memory access (measured on the RTX 3090 with
+# mamba_ssm 2.3.2: d_inner 5120, batch 16, L >= 6656 at chunk 32), which also poisons the CUDA context.
+# Callers skip such chunks and record them as unavailable. TPDS_SSD_INDEX_LIMIT lowers the limit for tests.
+SSD_INDEX_LIMIT = int(os.environ.get("TPDS_SSD_INDEX_LIMIT", str(2**31)))
+
+
+def ssd_state_elems(bsz: int, L: int, nheads: int, headdim: int, dstate: int, chunk_size: int) -> int:
+    return bsz * -(-L // chunk_size) * nheads * headdim * dstate
+
+
+def ssd_chunk_feasible(x, B, chunk_size: int) -> bool:
+    """False when the SSD chunk-state tensor of this call would exceed the kernel's 32-bit indexing."""
+    bsz, L, h, p = x.shape
+    return ssd_state_elems(bsz, L, h, p, B.shape[-1], chunk_size) <= SSD_INDEX_LIMIT
 
 
 def mamba2_ssd(x, dt, A, B, C, chunk_size: int, D=None, dt_bias=None, dt_softplus=True, z=None):

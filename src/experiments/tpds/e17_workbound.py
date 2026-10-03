@@ -142,7 +142,7 @@ def main(argv=None):
                                   "chunks": d["chunks"]} for f, d in fams.items()},
                  "ssd_layout": {"headdim": SSD_HEADDIM, "ngroups": SSD_NGROUPS, "dstate": SSD_DSTATE},
                  "gdn_path": "plain (pre-normalized k, log-gate g, sigmoid beta; as the paper's synthetic study)",
-                 "empty_kernel": floor, "args": {k: str(v) for k, v in vars(args).items()}})
+                 "empty_kernel": floor, "ssd_index_limit": K.SSD_INDEX_LIMIT, "args": {k: str(v) for k, v in vars(args).items()}})
     w = JsonlWriter(args.out_dir / f"e17_workbound_{tag}.jsonl", meta=meta)
     cells_plan = [(f, s, L, b) for f, d in fams.items() for s in d["shapes"] for L in lengths for b in batches]
     rng = random.Random(args.seed)
@@ -167,8 +167,11 @@ def main(argv=None):
             s0 = gpu_state() if args.record_gpu_state else None
             chunks = list(fams[f]["chunks"])
             rng.shuffle(chunks)
-            cells, ref, max_diff = {}, None, 0.0
+            cells, ref, max_diff, skipped = {}, None, 0.0, []
             for c in chunks:
+                if f == "ssd" and not K.ssd_chunk_feasible(inp["x"], inp["B"], c):
+                    skipped.append(c)      # beyond the kernel's 32-bit indexing: unavailable, not timed
+                    continue
                 fn = ssd_runner(inp, c) if f == "ssd" else gdn_runner(inp, c)
                 y = fn().float()
                 if ref is None:
@@ -186,7 +189,8 @@ def main(argv=None):
             best = min(cells, key=lambda c: cells[c]["mean_ms"])
             tied = sorted(int(c) for c in cells if cells[c]["ci95_lo_ms"] <= cells[best]["ci95_hi_ms"])
             row = {"kind": "timing", "key": key, "family": f, "shape": shape_tag(f, s), "L": L, "batch": b,
-                   "round": r, "cells": cells, "best_chunk": int(best), "tied_chunks": tied,
+                   "round": r, "cells": cells, "skipped_chunks_int32": sorted(skipped),
+                   "best_chunk": int(best), "tied_chunks": tied,
                    "spread": cells[max(cells, key=lambda c: cells[c]["mean_ms"])]["mean_ms"] / cells[best]["mean_ms"],
                    "max_out_diff_across_chunks": max_diff, "gpu_state_before": s0,
                    "gpu_state_after": gpu_state() if args.record_gpu_state else None, "peak_vram_gb": peak_vram_gb()}
@@ -200,7 +204,7 @@ def main(argv=None):
             del inp
             torch.cuda.empty_cache()
             log(f"{f} {shape_tag(f, s)} L={L} b={b} r{r}: best {best} (tied {tied}), spread {row['spread']:.2f}x, "
-                f"{cells[best]['mean_ms']:.3f} ms")
+                f"{cells[best]['mean_ms']:.3f} ms" + (f", unavailable (int32) {sorted(skipped)}" if skipped else ""))
             if new_rows % 20 == 0:
                 log(f"{len(w.done)}/{total} rows ({new_rows} new, {(time.time() - t_start) / 60:.1f} min)")
     w.close()
