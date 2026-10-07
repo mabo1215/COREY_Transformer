@@ -6,222 +6,404 @@
 \setlist{itemsep=2pt,topsep=3pt}
 
 \title{Independent Review and Revision Plan for IEEE TPDS\\
-\large Shape, Not Values, Sets the Chunk: A Cost Model and a No-Gain Bound
-for Activation-Driven Scheduling of Chunked Linear-Recurrence Kernels}
-\date{Cycle tpds-r3, opened 2026-09-30}
+\large Shape Sets the Chunk: A Compile-Informed Cost Model and a No-Gain Bound
+for Data-Dependent Dispatch of Chunked Linear-Recurrence Kernels}
+\date{Cycle tpds-r4, opened 2026-10-07}
 
 \begin{document}
 \maketitle
+\sloppy
 
 \section*{Scope and Inputs}
 
-This file opens revision cycle tpds-r3. It is a fresh, independent review
-of the current manuscript (main body, 14 pages, and supplement) written
-from the paper alone, without reference to earlier review rounds, against
-the standard of the IEEE Transactions on Parallel and Distributed Systems
-(regular paper, double-anonymous, 14 formatted pages). The author opened
-the cycle on 2026-09-30. Items that need new GPU experiments are listed
-with an effort estimate; they are run only after the author selects them.
+This file opens revision cycle tpds-r4. It synthesizes a fresh, independent five-reviewer panel
+(Editor-in-Chief, methodology, domain, serving-practitioner perspective, devil's advocate) that
+reviewed the current manuscript (main body, 14 formatted pages; Supplementary Material, 16 pages)
+jointly from the sources alone, without reference to earlier rounds, against the standard of the
+IEEE Transactions on Parallel and Distributed Systems (regular paper, double-anonymous, 14
+formatted pages including references). The reports and the editorial decision letter (with the
+arbitration of reviewer disagreements and acceptance criteria A1--A10) are in
+\texttt{docs/review\_reports/tpds\_r4\_*.md}. Each concern cites the findings it merges (EIC F$n$,
+R1 $n$, R2 F$n$, R3 F$n$, DA C$n$). Nothing from earlier cycles is carried over.
 
-Effort classes: (a) text only; (b) offline analysis of existing result
-files; (c) new GPU measurements.
+Effort classes: (a) text only; (b) offline analysis of existing result files; (c) new GPU
+measurement, with GPU-hour estimate and host. Items of class (c) are run only after the author
+selects them. Every (c) item except M2a and M2b has an (a) or (b) fallback; M2a and M2b are
+required because they resolve the two CRITICAL methodology findings at about one GPU-hour.
+Numbering follows the manuscript: Sec.~I--X, Results VII-A to VII-I, Tables~I (value invariance),
+II (oracle regret), III (predictors), IV (reference scan), V (routed study), VI (replication).
 
 \section*{Summary and Recommendation}
 
-The paper asks whether a per-call activation statistic (the entropy-driven
-COREY scheduler) can choose the chunk size of chunked linear-recurrence
-GPU kernels better than shape-keyed tuning. It argues from
-data-obliviousness that it cannot, states a no-gain bound (gain is at most
-oracle headroom minus decision cost), and measures value invariance,
-per-call oracles and predictors on captured Mamba-1 and Mamba-2 prefill
-calls on two GPUs. It adds an eight-parameter cost model of the Mamba-1
-scan built from compile facts that selects the chunk with 0.9\% and 3.2\%
-mean regret without timing the target shapes. The measurement work is
-careful and candid.
+\begin{center}\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrrrl}
+\toprule
+Reviewer & Nov.\ (20) & Meth.\ (25) & Exp.\ (25) & Clar.\ (15) & Sig.\ (15) & Weighted & Recommendation \\
+\midrule
+EIC              & 66 & 74 & 72 & 66 & 58 & 68.3 & Major Revision \\
+R1 Methodology   & 70 & 62 & 70 & 66 & 66 & 66.8 & Major Revision \\
+R2 Domain        & 58 & 63 & 66 & 70 & 62 & 63.7 & Major Revision \\
+R3 Perspective   & 62 & 70 & 64 & 68 & 58 & 64.8 & Major Revision \\
+Devil's Advocate & 55 & 62 & 66 & 65 & 48 & 60.0 & Major Revision \\
+\midrule
+Panel mean       & 62.2 & 66.2 & 67.6 & 67.0 & 58.4 & \textbf{64.7} & \textbf{Major Revision} \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-\textbf{Recommendation: major revision.} The work is sound but narrow:
-the chunk matters materially only on the authors' own Triton kernel, the
-theorem is close to a tautology whose numerical verdict depends on a
-debatable minimum decision cost, the cost model has thin out-of-sample
-evidence, there is no parallel or distributed dimension, and the paper is
-still organized around refuting the authors' own scheduler.
+\textbf{Decision: Major Revision} (unanimous; panel mean 64.7/100, inside the Major band). The
+panel agrees that the measurement discipline is above the TPDS norm and that Sec.~IX is exemplary,
+and that the headline claims outrun the evidence: the chunk effect exists only on the Triton scan
+written for this study (two CRITICAL findings); the RTX PRO~6000 headline numbers are
+launch-inclusive and rest on a single-block oracle (two CRITICAL findings); the parallel dimension
+is argued, not measured. One CRITICAL venue item (public Code Ocean URL) blocks re-review.
+\textbf{GPU budget:} required M2a+M2b about 1.1 GPU-h; all optional (c) items about 20--31 GPU-h
+(24--33 if M4c replaces M4b); all (c) items together about 21--32 GPU-h.
 
 \section*{Major Concerns}
 
-\subsection*{M1. Venue fit: no parallel or distributed dimension}
-Everything is one kernel on one GPU; batches stack equal-length prompts;
-multi-GPU deployment gets one sentence (Scope of batching; Discussion;
-Limitations). TPDS reviewers will ask why the paper is not at an ML or
-kernel venue.
-\begin{enumerate}[label=M1\alph*.]
-  \item (a) Present the zero-shot cross-device transfer of the cost model
-        as a heterogeneous-fleet result, and discuss tensor, sequence and
-        context parallelism: tensor parallelism shards the channel width
-        (per-device width $d/t$), sequence or context parallelism shards
-        the length (per-device length $L/p$), and both change the grid,
-        wave and occupancy terms of the cost model.
-  \item (b) Replay public request-length traces of LLM serving (for
-        example the Azure LLM inference traces and BurstGPT) under
-        continuous batching, chunked prefill and variable-length packing;
-        count distinct shape keys and how often each recurs; apply the
-        key-churn break-even with the measured per-key call counts and the
-        cost model as the default for unseen keys. This turns the
-        break-even section into a systems result.
-  \item (c, 2--4 GPU-h, single GPU) Tensor-parallel width study: predict
-        the chunk offline for per-device widths $d/2$, $d/4$, $d/8$ of the
-        1.4B and 2.8B checkpoints, then time them on one GPU.
+% STAGE: 10 (revision) + src
+% RULES: academic-paper/agents/argument_builder_agent.md
+\subsection*{M1. The headline chunk effect belongs to the study's own Triton kernel}
+EIC F2; R2 F1 (CRITICAL), F2, F9; R3 F7; DA C1 (CRITICAL), Secs.~5(1), 6. The Triton scan is
+1.23$\times$ (geomean) the reference scan (Sec.~VI-B); its 8.52$\times$ spread vs 1.25$\times$ (SSD)
+and 2.00$\times$ (GDN) (Table~I) follows from its own tiling (255 registers, spills at $C\ge512$,
+Table~S-compile). SSD chunk 256 is the oracle of 375/397 above-floor calls (at most 0.24\% loss),
+GDN chunk 64 of 154/155, the reference scan's stock rule is within 6.6\%. Sec.~IX concedes this;
+the title, abstract, Contribution~1 and Sec.~X do not. ``Chunk'' also names three mechanically
+different parameters, while Sec.~I para.~1 claims one mechanism.
+\begin{enumerate}[label=M1\alph*., leftmargin=*]
+\item (a) In the title, abstract, Contribution~1, the opening of Sec.~VII and Sec.~X, attribute the
+8.5$\times$ spread, the 13--24\% batched static regret, the 63\% sharding loss and the 0.9/3.2/3.5\%
+regrets to ``the Triton Mamba-1 scan of this study (1.23$\times$ the reference scan)''; place the
+reference-scan (6.6\%; 2.2\% pooled), SSD (0.24\%) and GDN (chunk 64) figures next to them; state in
+the abstract that the library defaults suffice for SSD and GDN; reword ``Runtimes tune it offline
+per shape'' (SSD: config constant; FLA: compile-time constant; Mamba-1 CUDA: template length rule).
+\item (c, 4--6 GPU-h, RTX~3090; optional, the only way to keep the general title) One independently
+written public chunked kernel with a wide chunk range (TFLA mLSTM per R2, or FLA kernels per DA) at
+the 370M--2.8B layouts, $L\in\{512,\dots,8192\}$, batch $\{1,4,16\}$, three rounds, with an
+Eq.~(5)-style fit. If the optimum does not move, state that shape-keyed tuning is enough and often
+unnecessary.
+\item (a) Chunk-taxonomy table in Sec.~II or VI-B (kernel; what $C$ controls; parallel across
+chunks; where the sequential pass runs; cost scaling in $C$; dominant trade-off); rewrite Sec.~I
+para.~1 accordingly.
+\item (a) State that GDN's chunk 64 is the FLA default and design limit of the version used and is
+not tested beyond (the fitted optimum of 85 on the RTX~3090 suggests 128 might win).
 \end{enumerate}
 
-\subsection*{M2. Practical stakes: the chunk matters mainly for the authors' kernel}
-Mamba-2 SSD is flat (every policy within 2.4\% of the oracle), Gated
-DeltaNet is capped at chunk 64 which is always optimal, and the 8.5$\times$
-spread comes from a Triton kernel written for the study that is
-1.23$\times$ slower than the reference scan (geometric mean) and whose
-chunk curve is driven by register spills. The reference-scan sweep helps,
-but it confounds chunk with thread count.
-\begin{enumerate}[label=M2\alph*.]
-  \item (a) State the thread-count confound of the reference-scan sweep;
-        scope headline claims to what is measured (drop ``three kernel
-        families'' from the headline unless Gated DeltaNet is measured on
-        real traces and above chunk 64).
-  \item (c, about 1 GPU-day) Push Mamba-2 SSD and Gated DeltaNet out of the
-        launch floor (2.7B-class widths, batch 16, 8K tokens) and capture
-        real Gated DeltaNet traces from a public checkpoint.
+% STAGE: 10 (revision) + src
+% RULES: academic-paper/agents/argument_builder_agent.md
+\subsection*{M2. PRO 6000 headline numbers are launch-inclusive and rest on a single-block oracle}
+R1 1 (CRITICAL), R1 2 (CRITICAL), R1 5; DA C6.4, C6.5. 64\% of the captured 370M calls are
+launch-bound; on the RTX~3090 device time moves the static regret 17.7$\to$32.9\%, the shape tree
+1.9$\to$0.4\%, the model 3.2$\to$3.6\%, the headroom 2.16$\to$0.03~$\mu$s (Table~S-conventions), but
+no PRO~6000 device-time rows exist although 0.9\%, 0.45~$\mu$s and 94\% tied are its numbers. The
+oracle is the argmin of one 50-repeat block, while re-timings of the identical kernel differ
+significantly in 68--74\% of pairs (median 2\%, p90 about 30\%), inflating p95 regrets (135.5\%,
+383.9\%) and deflating tie shares; CI overlap is a lenient, not ``conservative'', tie test.
+\begin{enumerate}[label=M2\alph*., leftmargin=*]
+\item (c, 0.5 GPU-h, RTX PRO~6000; \textbf{required}) Re-time the 2360 captured Mamba-1 370M calls
+and the 2298-timing calibration sweep in device time; refit; add a PRO~6000 row pair to
+Table~S-conventions; report headline regret, tie share and headroom in both conventions or name
+the convention in the abstract.
+\item (c, about 0.6 GPU-h: 0.3 PRO~6000 with M2a, 0.3 RTX~3090; \textbf{required}) Time every
+captured 370M call in at least three rounds with the chunk order shuffled per call; define the
+oracle on round medians; re-derive Tables~II--III and the headroom.
+\item (b) Report tie shares under 2\% and 5\% equivalence margins (as the TOST analysis does);
+if CI overlap is kept, use the between-round variance of M2b; correct ``conservative''.
 \end{enumerate}
 
-\subsection*{M3. Theorem 1 is near-tautological and its bite depends on $o_{\min}$}
-The proof follows in one line from the definition of the headroom. The
-minimum decision cost is defined over any statistic that depends on the
-activations, which includes statistics fused into a preceding kernel,
-overlapped on another stream, or evaluated by a device-side conditional
-graph node; these can cost less than the measured 7.3\,$\mu$s. For the
-1.4B and 2.8B checkpoints the in-sample headroom (10.7 and 86\,$\mu$s)
-exceeds one host synchronization and no held-out value is given.
-\begin{enumerate}[label=M3\alph*.]
-  \item (a) Rename the result a proposition; define $o$ as the
-        critical-path increment; state which policy classes the numerical
-        verdict excludes (host-side and separate-kernel decisions) and
-        which it does not (fused, overlapped, conditional-node decisions);
-        make the information evidence (shape plus entropy equals shape) the
-        primary argument.
-  \item (b) Estimate the headroom with an independent-repeat oracle (choose
-        the argmin on one half of the repeats, score on the other), or a
-        parametric bootstrap from the stored per-chunk mean and standard
-        deviation, so that noise-driven headroom is separated from real
-        headroom.
-  \item (b) Report held-out headroom for the 1.4B and 2.8B checkpoints.
+% STAGE: 10 (revision) + src
+% RULES: academic-paper/agents/argument_builder_agent.md
+\subsection*{M3. The kernel-level timing regime (warm L2, eager launch floor) is not the serving regime}
+R1 8; R2 F3, F4; R3 F4; EIC F8; DA C7, Sec.~5(3). Repeats run back to back on a warm L2
+(Sec.~VI-D); at $L=8192$ placements differ by 29--41\% warm vs 0.5--2.3\% cold (Table~S-l2), and
+whether the best chunk or the model selection changes cold is unreported. Triton's
+\texttt{do\_bench} flushes L2 before every repeat, so VII-F's tuning ``in the style of the Triton
+autotuner'' is not. Mamba-2 device-time timings were discarded (85\% within-block variation, Supp.~S7);
+the floor falls from about 740 to 320~$\mu$s without the Python launch cost, so all Mamba-2 rows are
+eager-mode; the work-term model defaults to chunk 32 when launch-bound, the worst chunk once the
+floor drops.
+\begin{enumerate}[label=M3\alph*., leftmargin=*]
+\item (c, 1--2 GPU-h, RTX PRO~6000) Re-time the twelve tuning keys at six chunks (and captured calls
+with $L\ge2048$ if cheap) with L2 overwritten before every repeat; report per-key best chunk,
+oracle agreement, Table~III regrets of the shape tree and of the cold-refitted model, the spread and
+the exact-shape headroom, warm vs cold.
+\item (c, about 3 GPU-h, RTX~3090) CUDA-graph capture per (shape, chunk) of the SSD pipeline (370M,
+2.7B), GDN and the Mamba-1 scan; $\ge$50 replays, warm and flushed; re-derive the Mamba-2 rows of
+Tables~I--III and the 1.4B/2.7B headroom of Table~S-largewidth-calls on all captured calls.
+\item (b) Set the launch-bound default of the work-term model to the work-bound optimum (256);
+re-report the Mamba-2 regret; restate the ``launch-bound up to about 17,000 / 9,500 tokens'' boundary
+for the 320~$\mu$s floor.
+\item (a) State in Secs.~VI-D and VII-F that the Triton autotuner flushes L2 and this protocol does
+not, and which one a tuning cache should use; if M3b is not run, state next to every Mamba-2 claim
+and in Sec.~IX that it holds for eager execution.
 \end{enumerate}
 
-\subsection*{M4. Cost-model validation}
-The fit uses timings that contain no captured call and leave-one-key-out
-gives 1.0\% / 2.0\%. However: the model form was chosen with ablations
-scored on the captured calls; the effective sample is about twelve keys;
-$R^2$ on log latency is dominated by the work term and says little about
-the ranking of chunks within one shape; the reference-scan model is a
-re-specification; and the RTX 3090 tied share (69\%) and p95 regret
-(15.4\%) are not in the main text. The nearest-tuned-key table built from
-the same calibration data is a missing baseline.
-\begin{enumerate}[label=M4\alph*.]
-  \item (b) Add ``nearest calibrated key'' and ``work-only model'' rows to
-        the predictor table; report within-shape rank agreement (Kendall
-        $\tau$), p95 regret and tied share on both GPUs.
-  \item (a) Declare the model form frozen and state which data chose it;
-        describe the reference-scan variant as an instance of the same
-        methodology.
-  \item (c, about 0.5 GPU-day) Test the frozen form on a third,
-        data-centre GPU (A100, H100 or H800), fitting only the per-GPU
-        parameters.
+% STAGE: 10 (revision) + src
+% RULES: academic-paper/agents/argument_builder_agent.md
+\subsection*{M4. The parallel dimension is argued through shapes, and the ``63\%'' is misattributed}
+EIC F3; R2 F8; R3 F2, Sec.~3(2); DA C6.2, C11. No multi-GPU job is run (Sec.~IX); shard widths are
+timed on one GPU with synthetic inputs; serving is a simulated scheduler without TTFT or
+throughput. The abstract's ``a table tuned for one GPU loses up to 63\%'' is the $t=8$ shard (width
+512) of the 1.4B model on the Triton kernel (Table~S-tp), not a device transfer (14.1--48.8\%,
+VII-I); the reference scan is width-insensitive (2.2\%). TP degree is fixed at deployment and
+retuning costs seconds, so the model's TP value is cold start (R2; arbitrated as mandatory).
+\begin{enumerate}[label=M4\alph*., leftmargin=*]
+\item (a, required) Abstract, Contribution~1, Sec.~VIII: separate cross-device (14--49\%) from
+unsharded-to-sharded (63\%) loss, name the kernel, state reference-scan width-insensitivity,
+present the TP result as ``no retuning needed after sharding, at 0.7--15\% regret'' with the
+retuning cost beside it, state that the trace study is simulated; unless M4b or M4c is done,
+reframe ``Parallel deployments'' and the abstract to ``the single-device shapes that tensor
+parallelism and chunked prefill produce'' and drop ``mixed GPU fleets'' and the ``LLM serving'' keyword.
+\item (c, 4--8 GPU-h, 2 GPUs: 2$\times$RTX~3090 or 2$\times$H800; EIC's preferred option) 1.4B or
+2.8B Mamba-1 under 2-way TP, prefill at 512/2048/8192 tokens, two batch sizes, 30 interleaved
+rounds; compare the per-shard chunk from the unsharded table, the 370M-calibrated model and the
+per-shard oracle; report prefill ms and paired differences including the all-reduce.
+\item (c, 8--10 GPU-h, single GPU plus 2 GPUs, about two engineer-days; R3's alternative, subsumes
+M4b and serves M6) Replay one hour of the Azure conversation trace through vLLM
+(\texttt{state-spaces/mamba-2.8b-hf}, chunked prefill, budget 2048) with three policies (stock rule;
+model with top-2 first-sight profiling; exact-key table); TTFT p50/p99, TPOT, tokens/s at loads
+0.2/0.5/0.85; once at TP\,=\,2. A null result is publishable.
+\item (c, about 2 GPU-h, single GPU) Extend the width sweep to unsharded widths 8192 and 16384 and
+their $t=2/4/8$ shards.
 \end{enumerate}
 
-\subsection*{M5. The framing still reads as a refutation of the authors' own method}
-The keywords include ``negative results''; a full section describes
-COREY; the cost model is the sixth of seven contribution bullets; the
-routed table mostly shows that a naive histogram with a host
-synchronization is slow, which depends on the implementation, yet
-``24 to 193\%'' is in the abstract; and no external work proposes
-activation-driven chunk choice, so readers will ask why the question
-matters.
-\begin{enumerate}[label=M5\alph*.]
-  \item (a) Reposition the paper around the cost model, the tuning-cache
-        and key-churn analysis, and a general bound for data-dependent
-        dispatch; present COREY as one instance of input-aware variant
-        selection and cite that line of work (input-aware autotuning,
-        algorithmic choice, sparse-format selection).
-  \item (a) Drop ``negative results'' from the keywords; shorten the COREY
-        section; move the full routed table to the supplement and keep a
-        few representative rows in the main text.
+% STAGE: 10 (revision) + src
+% RULES: academic-paper/agents/argument_builder_agent.md
+\subsection*{M5. The cost-model form was selected on the test calls, and the baselines are weak}
+EIC F6; R1 4; R2 F7; DA C4, C5. Sec.~V: the captured calls are ``a clean test set for the fitted
+parameters ... but not for the choice of terms''; the selection had leverage (0.87--8.45\% and
+3.24--17.19\% across forms, Table~S-model-ablation). Where the test is clean the model ties trivial
+selectors: the three-parameter restriction selects better on the RTX~3090 (2.5\% vs 3.2\%); on the
+H800 a length tree (4.0\%) and launch-and-work (4.1\%) nearly tie 3.5\%; at shards the width-tuned
+table (2.2\%) matches the model (2.9\%). Only nearest-key is compared; no learned regressor; TFLA,
+``the closest analysis'', is never instantiated; three instantiations are presented as one model.
+\begin{enumerate}[label=M5\alph*., leftmargin=*]
+\item (b) Clean selection: re-select terms on the calibration sweep plus leave-one-key-out, or freeze
+on the PRO~6000 and test on the RTX~3090; also select on one GPU, test on the other two; report the
+regrets next to 0.9/3.2/3.5\%.
+\item (b) Baseline table (three GPUs, shard widths, cross-GPU), all fitted on calibration data and
+scored on captured calls: full model; three-parameter restriction; nearest key; log-linear
+interpolation of the twelve keys in $(\log L,\log B)$; length-only tree; gradient-boosted regressor
+and small MLP on log latency with shape, launch and compile-fact features; TFLA's runtime
+expression. Add rows to Tables~III, IV and S-tp; state where the analytical form wins.
+\item (a) Lead the abstract and conclusion with form-blind numbers (H800 3.5\%, width transfer,
+shards); label 0.9/3.2\% ``form selected on these calls''; give mean and p95 together.
+\item (a) One framework table in Sec.~V (kernel; compile facts; terms; parameters; calibration size
+and time; regret) and the term selection written as a procedure for a new kernel.
 \end{enumerate}
 
-\subsection*{M6. Measurement rigor}
-Value invariance uses three rounds per cell and TOST at 2\% is at the
-resolution limit; the 43\% fixed-chunk effects on the RTX PRO 6000 are
-attributed to buffer placement, but the placement control ran only on the
-RTX 3090; ``tied'' uses within-session confidence intervals; the protocol
-does not state clock, power, thermal or L2 policy (the per-call sweeps run
-with a warm L2); the 2.8B sweep ran under heavy host load; the 48\,GB RTX
-3090 board and its isolation are not described; some legacy routed results
-rely on a build or per-run records that were not retained.
-\begin{enumerate}[label=M6\alph*.]
-  \item (a) Document clocks, L2 state, isolation and the 48\,GB board in
-        the timing protocol; state the tie criterion's limits and pair it
-        with a practical margin; remove from the evidence base results
-        whose code or per-run records were not retained, or mark them
-        clearly as legacy.
-  \item (c, about 3 GPU-h) Placement control plus hardware counters on the
-        RTX PRO 6000.
-  \item (c, 4--6 GPU-h) Re-run the 2.8B sweep on an unloaded host and add
-        batch 4 and 16 for the 1.4B and 2.8B checkpoints.
+% STAGE: 10 (revision) + src
+% RULES: academic-paper/agents/argument_builder_agent.md
+\subsection*{M6. The practical gain is not stated in deployment units; the model's niche is not argued}
+EIC F5; R3 F3, F5, F8, Sec.~3(1); DA C9. Table~V: static 512, static 2048 and the stock rule are
+within 0.9\% at 4096 tokens, ``about 46~ms whatever the chunk'' at 256/976. Profiling six chunks
+costs 0.03--0.05~s per key against 8--14~min calibration; VII-H gives the model's own regret as
+``7 and 15~$\mu$s per call ... above one synchronization on 5 and 10 of the 33 keys'', 3--30$\times$
+the headroom used to dismiss data-dependent dispatch, and its break-even is never computed. No
+recipe; no tail regret for the top-2 hybrid.
+\begin{enumerate}[label=M6\alph*., leftmargin=*]
+\item (b) Deployment-units table: per kernel, length and batch, kernel regret of the default
+chunk, the model and the tuned table as prefill ms per request (difference $\times$ layers;
+sanity check 17.4 predicted vs 16.8~ms measured); per trace and mode of Supp.~S9, ms per request
+and share of prefill and total GPU time; state that the SSD and GDN gain is about zero.
+\item (b) Break-even $N^*=P_k/\mathrm{regret}$ of the model against a six-chunk profile per key and
+the share of trace calls below it (as Table~S-serving does for online policies); startup cost and
+regret of profiling every bucket key, next to the model's 8--14~min and 0.9--3.5\%; address the
+headroom-versus-model-regret tension explicitly.
+\item (a) Half-column ``Deployment recipe'' box in Sec.~VIII: key fields; compile facts for Triton
+and CUDA (\texttt{ptxas -v}, \texttt{cuobjdump}) offline per architecture; calibration cost per SKU;
+dispatch = rank by Eq.~(5), profile top-2 on first sight, cache; failure modes; the top-2 hybrid as
+the recommendation; the niche (non-enumerable keys, untimeable targets, 3.8\% compile-facts-only
+H800 transfer, pruning to two candidates).
+\item (b) p95/p99 regret of top-2 and top-3 on all three GPUs and at shard widths.
 \end{enumerate}
 
-\subsection*{M7. Density and readability}
-The abstract has about fifteen numbers, uses COREY without defining it,
-contains a ``2.1 points'' without a referent and ends on a dangling
-sentence; the value-invariance subsection packs about forty numbers into
-seventy-five lines; the break-even discussion is hard to parse.
-\begin{enumerate}[label=M7\alph*.]
-  \item (a) Rewrite the abstract with at most five numbers.
-  \item (a) Summarize value invariance in one table and move the ANOVA,
-        redraw and placement details to the supplement; compress the
-        break-even discussion.
-  \item (a) Merge Proposition 1 and the no-gain result; give the cost
-        model its own section.
+% STAGE: 10 (revision) + src
+% RULES: academic-paper/agents/argument_builder_agent.md
+\subsection*{M7. The negative result targets a self-built policy; ``cannot help'' overstates the cost side}
+EIC F4; R3 F6; R2 F12.6; DA C3, C8, Sec.~5(2); R1 6. No external proponent of value-dependent
+dispatch for dense kernels is cited (``COREY is the instance we measure'', Sec.~II), yet Sec.~III and
+five of nine results subsections concern it. The bound ``is elementary'' (Sec.~IV); the sync
+verdict assumes a blocking readback, and Sec.~IV itself says that for fused or device-side
+mechanisms ``the argument rests on information rather than cost''. The decisive information test is
+a depth-3 tree without CIs; the exact-shape headroom and conditional MI (0.046 vs 1.23 bits) are
+stronger.
+\begin{enumerate}[label=M7\alph*., leftmargin=*]
+\item (a) Introduction: state whether any published runtime or paper proposes value-dependent
+dispatch for dense chunked kernels; if none, present the bound as closing a practitioners' design
+question.
+\item (a) Reduce Sec.~III to at most half a column (three policy classes, Fig.~1); move Eqs.~(1)--(2),
+the variants and the saturation material (Fig.~4) to the supplement.
+\item (a) Replace ``cannot help'' in the abstract and Sec.~X by the quantitative bound at zero
+decision cost (``gains at most 0.9\% over a bucket table and 0.2\% over an exact-shape table, whatever
+its mechanism''); reorder Sec.~IV and the abstract so the information result leads and the sync
+bound is a secondary statement about host-side implementations.
+\item (b) Prompt-grouped bootstrap CIs on every regret column of Tables~III--IV with an equivalence
+margin for ``adds nothing''; exact-key stratified permutation test of entropy and moments;
+conditional MI given the exact key; GBT or depth-6 predictors; lead VII-C with the headroom.
+\item (c, under 1 GPU-h, RTX~3090; optional) Zero-sync variant (epilogue-written device scalar or
+lagged readback deciding layer $l{+}1$ from layer $l$): critical-path cost at $L=512/2048/8192$,
+batch 1 and 16; fix the learned-table control so it no longer computes the histogram.
+\end{enumerate}
+
+% STAGE: 10 (revision) + src
+% RULES: academic-paper/agents/argument_builder_agent.md
+\subsection*{M8. Headroom and regret: unsupported per-shape claims, three estimators, selective abstract}
+R1 3, 7, 12; DA C6 (1, 3, 5, 6). The abstract's ``below one host synchronization at every tuned
+shape'' (1.4B/2.8B) has no tabulated count; Table~S-headroom-noise still lists superseded ``Above
+sync 1/1'' and ``7/5'' rows; ``at most 4.7~$\mu$s'' (VII-E) is nowhere in the supplement; the ``held-out''
+4.4/6.7/14.5~$\mu$s (VII-H) are the in-sample column. ``Regret'' is a per-call relative mean (23.4\%,
+Table~III), a latency-weighted share (10.6\%, same policy and calls, VII-H) and $\mu$s/call (Tables~IV,
+VI). The abstract gives means only, the histogram's 2\% but not the sync policy's 42/93\%, and no
+device-time result.
+\begin{enumerate}[label=M8\alph*., leftmargin=*]
+\item (b) After M2b, replace the superseded rows by re-timed rows (in-sample, held-out, split-half,
+above-sync, both conventions); add a held-out per-shape maximum column; source 4.7~$\mu$s; name the
+convention and decision cost (host sync 20~$\mu$s; device reduction 7.3--42~$\mu$s) in the abstract.
+\item (a)+(b) Definitions paragraph in Sec.~VI-D for the three estimators; name the one each table
+uses; use the latency-weighted or absolute form where results feed Eqs.~(7)--(8); reconcile 23.4
+vs 10.6\%.
+\item (a) Abstract and contributions carry mean and p95, all three GPUs, both kernels for sharding,
+both policies for traces, and the device-time result (RTX~3090: model 3.6\% vs shape tree 0.4\%).
+\end{enumerate}
+
+% STAGE: 10 (revision) + src
+% RULES: academic-paper/agents/argument_builder_agent.md
+\subsection*{M9. The reference CUDA scan sweep confounds chunk with thread count}
+R2 F5; DA C2; R3 Sec.~3(3). Each chunk runs with the stock thread count (32 to 128), so the
+5.4$\times$ median spread is largely intra-block parallelism; ``at least as chunk-sensitive as ours''
+(VII-E) is not established, and this is the only production Mamba-1 evidence for M1.
+\begin{enumerate}[label=M9\alph*., leftmargin=*]
+\item (c, 1--2 GPU-h with five compilations, RTX~3090) Fixed-thread instantiation
+(\texttt{kNThreads}\,=\,32, \texttt{kNItems}$\in\{4,\dots,64\}$, or 128 threads); re-sweep the 2360
+calls; spread, oracle and model regret next to the stock variant in Table~IV.
+\item (a, required if M9a is not run) Delete the claim; state that the sensitivity is that of the
+stock dispatch configuration (VII-E, Contribution~1, Sec.~IX).
+\end{enumerate}
+
+% STAGE: 10 (revision) + src
+% RULES: academic-paper/agents/argument_builder_agent.md
+\subsection*{M10. Serving replay: packed calls unmeasured, a thin key carries a headline, batch-1 routing}
+R3 F1; R1 9, 10; DA C11. Engines issue packed variable-length calls; the paper's batched calls
+stack cropped same-length prompts (2--10 distinct prompts per batch-16 call, stated only in the
+supplement) and the replay costs packed calls as batch-1 scans. The batched regrets (13.0/23.8\%,
+Table~II; ``up to 42 and 93\%'', VII-H) arise in shapes production prefill does not produce; the
+RTX~3090's 93\% rests on one key with 11 calls; the routed study is batch-1 only.
+\begin{enumerate}[label=M10\alph*., leftmargin=*]
+\item (c, about 3 GPU-h, single GPU) Time the varlen entry points (\texttt{query\_start\_loc};
+\texttt{cu\_seqlens}/\texttt{seq\_idx} for SSD) on about 200 packed steps from the replay at
+$T=512/2048/8192$, every chunk, three rounds; oracle, model regret, held-out headroom under the
+packed-length key, and the batch-1 proxy error.
+\item (c, under 0.2 GPU-h, RTX~3090, then b) $\ge$50 calls of the unaligned bucket-2048 batch-4 key;
+re-estimate $h_k$; re-run the replay; per trace row, the calls on keys with fewer than 30 captures.
+\item (a) Move the 42/93\% budget-step numbers to the supplement; state that the production key is
+(packed length, number of sequences, alignment); state prompt reuse in the main text.
+\item (c, 1--2 GPU-h, RTX~3090; optional) A batch-8 $\times$ 2048 routed configuration, 30 rounds
+(about 1 GPU-h more under CUDA-graph capture).
+\end{enumerate}
+
+% STAGE: 10 (revision)
+% RULES: academic-paper/agents/draft_writer_agent.md
+\subsection*{M11. Positioning against prior performance predictors is missing}
+EIC F7; R2 F6, F10, F11, Sec.~4; DA C5; R3 F7. Sec.~II cites only Hong--Kim, Volkov and Roofline;
+``model, then profile top-$k$'' and compile-fact pruning exist in Triton's
+\texttt{prune\_configs\_by} (\texttt{perf\_model}, \texttt{top\_k}, \texttt{early\_config\_prune}).
+\begin{enumerate}[label=M11\alph*., leftmargin=*]
+\item (a) Cite and position: Baghsorkhi et al.\ (PPoPP 2010), GPUPerf (PPoPP 2012), Zhang--Owens
+(HPCA 2011), Konstantinidis--Cotronis (JPDC 2017), GPUMech (MICRO 2014); Habitat (ATC 2021), TLP
+(ASPLOS 2023), Transfer-Tuning (PACT 2022), TenSet; DietCode (MLSys 2022), Nimble (MLSys 2021);
+Triton \texttt{autotune}/\texttt{do\_bench} documentation; Hua et al.\ (ICML 2022) and RetNet for the
+chunkwise form (``made hardware-efficient for gated recurrences by GLA''); OpenTuner, Active Harmony;
+Mooncake (FAST 2025); Jamba and Qwen3-Next as production anchors. Correct the Ansor sentence.
+\item (a) Scope the Sec.~V novelty to ``a fitted eight-parameter latency model whose chunk
+dependence enters only through assembler-reported registers, spills and the Triton tile layout,
+calibrated once per GPU''; compare top-$k$ profiling with Triton's \texttt{perf\_model}/\texttt{top\_k}
+(VII-D, VII-F); one sentence on what Eq.~(5) adds over Habitat/GPUMech.
+\item (b, optional) Replay the Mooncake trace through the existing simulator.
+\end{enumerate}
+
+% STAGE: 10 (revision)
+% RULES: academic-paper/agents/draft_writer_agent.md
+\subsection*{M12. Readability and the 14-page budget}
+EIC F9, F10; R3 F9; DA, R1 (Clarity). VII-D packs more than 25 numbers into three paragraphs; VII-H
+stacks eight percentages in two sentences; the body has zero slack.
+\begin{enumerate}[label=M12\alph*., leftmargin=*]
+\item (a) Move secondary numbers (rank correlation, top-$k$, leave-one-key-out, batch-1
+calibration) into tables; one number per claim; merge VII-F into VII-D; compress VII-G to about
+half a column (Table~S-routed-full holds the rest). With M7b this funds M1a, M5d, M6c, M11.
+\item (a) One figure of mean and p95 regret versus calibration budget (none / top-2 / top-3 / grid
+profile / full tune) per GPU and kernel; fill the H800 ``--'' rows of Table~VI.
+\item (a) Verify 14 pages after every batch of edits.
+\item (a, optional) A short main-text paragraph on the placement finding (up to 43.6\%, vanishing
+with a cold L2).
 \end{enumerate}
 
 \section*{Minor Issues}
-\begin{enumerate}[label=N\arabic*.]
-  \item Title: 21 words and centred on activation-driven scheduling;
-        shorten and centre it on the cost model and data-dependent
-        dispatch.
-  \item Abstract wording: name the GPUs next to paired numbers; say
-        ``without timing the target shapes'' rather than ``without
-        profiling'' (the model needs a one-time calibration).
-  \item The contrast ``shape-keyed 0.7\% versus entropy 21\%'' is not
-        like-for-like; add a batch-only predictor row and lead with
-        ``shape plus entropy equals shape''.
-  \item Proposition 1: ``shape'' must include every compiler
-        specialization (divisibility, strides, dtype).
-  \item Table I: explain cells with two optimal chunks; note that on
-        Mamba-2 the regret is measurement noise (maximum regret exceeds
-        the chunk spread).
-  \item Fix awkward sentences in the cost-model subsection and relieve
-        cramped floats (column separation of Table IV, Table V, tiny
-        labels in Fig.~1).
-  \item Fig.~6 plots call-weighted means while the text quotes medians;
-        make them consistent.
-  \item Remove legacy RTX 3070 / H800 numbers from the main text.
-  \item State where the break-even and churn results are interpreted that
-        prompt lengths were truncated and rotated by design, so the length
-        distribution is synthetic.
-  \item Reduce output preservation to one sentence (it holds by
-        construction).
-  \item Delete the supplement section on prospective analyses and the
-        main-text pointer to it.
-  \item References: update venues of arXiv entries that have since been
-        published; add GPU performance modelling, measurement bias,
-        input-aware tuning, LLM serving, and 2025--2026 linear-recurrence
-        kernel and model work.
-  \item Verify that the code and data availability link is anonymous for
-        double-anonymous review.
+
+% STAGE: 10 (revision) + src
+% RULES: academic-paper/agents/draft_writer_agent.md
+\subsection*{N1. Number mismatches (R1 Sec.~4, R2 F12.1): reconcile each pair}
+\begin{enumerate}[label=N1.\arabic*., leftmargin=*]
+\item VII-C ``$R^2$ of 0.985 and 0.992'' vs Table~S-pipeline-model ``0.983 / 0.998'' (fitting data).
+\item VII-E (TP) ``95th percentile 30\%'' vs Supp.\ TP section ``31\%''.
+\item VII-E ``at most 4.7~$\mu$s at any tuned shape'' vs supplement means only and superseded ``1/1'', ``7/5'' rows.
+\item VII-H ``at most 4.4, 6.7 and 14.5~$\mu$s'' as held-out vs Table~S-headroom-noise in-sample entries.
+\item Table~III best single chunk ``23.4'' (\%) vs VII-H ``34~$\mu$s per call (10.6\%)'' for the same policy.
+\item VII-H ``$o=4.43$~ms'' vs Table~V 188.8~ms / 48 $=3.9$~ms and Table~S-overhead 1.27--5.06~ms.
+\item VII-C ``9\% and 23\% mean regret at a held-out key'' vs Table~S-model-params rank ``4.5 / 22.0'' only.
+\item Table~V ``+16.8 $\pm$ 1.5'' (\%) vs VII-G ``16.8 $\pm$ 1.4~ms slower''; give the absolute prefill time.
+\item VII-H ``about 40 and 55 requests'': 2700/48 $=56$.
+\end{enumerate}
+
+% STAGE: 10 (revision) + src
+% RULES: academic-paper/agents/draft_writer_agent.md
+\subsection*{N2--N8. Bibliography, typesetting, protocol, artifact and wording}
+\begin{enumerate}[label=N\arabic*., leftmargin=*, start=2]
+\item Bibliography (EIC F12, R2 Sec.~4): remove \texttt{dao2024flashlinearattention} (duplicate of
+\texttt{gu2024mamba2}); cite or remove \texttt{vaswani2017attention}, \texttt{merity2017pointer},
+\texttt{biderman2023pythia}, \texttt{mambaforgekernel2024}, \texttt{marshall2011inequalities};
+normalize \texttt{booktitle} to the IEEE abbreviation style.
+\item Typesetting (EIC F12): \verb|\eqref| in Table~III; fix the underfull \verb|\hbox| in the proof
+of Proposition~1 and the underfull \verb|\vbox|; one label for the proposition; give the H800
+replication its own paragraph heading for \texttt{sec:res\_datacentre} or drop the label.
+\item Protocol (R1 13): a supplement table per experiment (GPU, convention, rounds, repeats, order
+randomization, exclusive-GPU guard, clock logging, seed); state seeds; define $\mu$ with the L1
+capacity per GPU; note the non-stock 48~GB RTX~3090; define or drop Kendall ``for the shape tree''.
+\item Artifact (R1 14): map every result file to a section or table in the README; correct its
+statements that GDN has no checkpoint and the stock CUDA scan is not built.
+\item Routed table (DA C10): move the full-histogram rows (188.8~ms, about 100$\times$ the bandwidth
+floor) to the supplement or add a floor row; (c, optional, 0.5 GPU-h) a fused histogram.
+\item Technical statements (R2 F12.2--F12.5): replace ``subnormal arithmetic'' (Sec.~IV) by switching
+activity and tensor-core power; add Triton's specialization on arguments equal to 1 and 16-byte
+alignment to the key; state that Mamba-2's \texttt{@triton.autotune} keys on chunk, head and state
+size, not $L$ or batch; state whether the SSD source differs between \texttt{mamba\_ssm} 2.2.2 and
+2.3.2.post1 (Table~VI).
+\item Wording (R3 Sec.~3(3), DA C11): one H800 PCIe card is not ``data-centre GPUs''; narrow the
+``LLM serving'' keyword unless M4b/M4c is done.
+\end{enumerate}
+
+\section*{Venue Compliance (IEEE TPDS, double-anonymous): MUST FIX}
+
+% STAGE: 10 (revision)
+% RULES: academic-paper/agents/draft_writer_agent.md
+\subsection*{V1--V6. From the EIC compliance table (EIC Sec.~4, F1, F10, F11; R3 F10; R1 14)}
+\begin{enumerate}[label=V\arabic*., leftmargin=*]
+\item \textbf{Availability link (CRITICAL, conditional).} Replace
+\nolinkurl{codeocean.com/capsule/3457679/tree} by an anonymized review link (private peer-review
+link, anonymized mirror, or artifact provided to the editor); DOI at camera-ready; withdraw a
+named public capsule from the review package; verify in a logged-out browser.
+\item \textbf{Self-identifying wording.} Sec.~I ``we built one, COREY'': if anything public carries
+the name, use ``an entropy-driven scheduler'' in the review version.
+\item \textbf{Reproducibility checklist.} \texttt{ReproducibilityChecklist.tex} is an AAAI-2027
+form that answers ``no'' to statistical testing and ``partial'' on released data, contradicting the
+paper: remove it or re-target it with correct answers.
+\item \textbf{Third-party identifier.} Supp.~S6 names \texttt{Idiap/gated-deltanet-swa-1.4B-30B};
+cite by reference if the authors are affiliated with that organization.
+\item \textbf{Page limit.} 14 pages with zero slack; every addition must be offset (M7b, M12a).
+\item \textbf{PDF metadata.} Check \texttt{/Author} and \texttt{/Title} with \texttt{pdfinfo} on the
+final main and supplement PDFs.
 \end{enumerate}
 
 \end{document}
