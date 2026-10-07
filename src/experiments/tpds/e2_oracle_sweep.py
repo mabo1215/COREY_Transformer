@@ -46,6 +46,13 @@ length drawn without replacement from the lengths of the bucket with the
 requested alignment (L mod 16), cropped to that target (a prefix of a causal
 scan input is itself a valid scan input; the kernels are value-invariant, so
 the latency depends on the shape). Layers rotate over the captured layers.
+
+CUDA-graph timing (``--cuda-graph``, review M3b): every (call, chunk) is captured once into a CUDA
+graph (two eager runs on a side stream first, so that Triton compilation and autotuning happen
+outside the capture) and the graph replay is timed instead of the eager call, with the same
+warmup / repeats / ``--flush-l2`` / ``--pre-spin-ms`` handling (the L2 flush runs between replays,
+outside the graph). This removes the per-kernel Python launch cost of multi-kernel pipelines (Mamba-2
+SSD, Gated DeltaNet), as a serving engine running under CUDA graphs would.
 """
 from __future__ import annotations
 
@@ -226,6 +233,22 @@ def make_fn(kind, inp, chunk):
 
 
 # --------------------------------------------------------------------------- timing
+def capture_graph(fn):
+    """Capture one call of ``fn`` into a CUDA graph; returns (replay, graph). The graph must stay alive while
+    ``replay`` is used. Two eager runs on a side stream precede the capture, as PyTorch requires."""
+    side = torch.cuda.Stream()
+    side.wait_stream(torch.cuda.current_stream())
+    with torch.cuda.stream(side):
+        for _ in range(2):
+            fn()
+    torch.cuda.current_stream().wait_stream(side)
+    graph = torch.cuda.CUDAGraph()
+    with torch.cuda.graph(graph):
+        fn()
+    torch.cuda.synchronize()
+    return graph.replay, graph
+
+
 def time_chunks(kind, inp, order, args):
     """Time each chunk of ``order`` once (one warmup + repeats block); max output difference across chunks."""
     stats, ref, max_diff, skipped = {}, None, 0.0, []
@@ -243,15 +266,20 @@ def time_chunks(kind, inp, order, args):
         else:
             max_diff = max(max_diff, float((y - ref).abs().max()))
         del y
-        stats[c] = summarize(cuda_time(fn, args.warmup, args.repeats, args.flush_l2, args.pre_spin_ms))
+        timed, graph = (capture_graph(fn) if args.cuda_graph else (fn, None))
+        stats[c] = summarize(cuda_time(timed, args.warmup, args.repeats, args.flush_l2, args.pre_spin_ms))
+        del timed, graph
     del ref
     return stats, max_diff, skipped
 
 
 def round_settings(args) -> dict:
     """Timing settings stored with every round row; rows with other settings are not reused on restart."""
-    return {"warmup": args.warmup, "repeats": args.repeats, "flush_l2": bool(args.flush_l2),
-            "pre_spin_ms": float(args.pre_spin_ms)}
+    settings = {"warmup": args.warmup, "repeats": args.repeats, "flush_l2": bool(args.flush_l2),
+                "pre_spin_ms": float(args.pre_spin_ms)}
+    if args.cuda_graph:  # only when set, so that rounds written before this option existed stay reusable
+        settings["cuda_graph"] = True
+    return settings
 
 
 def pool_rounds(per_round: list[dict]) -> dict:
@@ -350,6 +378,8 @@ def parse_args(argv=None):
     p.add_argument("--warmup", type=int, default=10)
     p.add_argument("--repeats", type=int, default=50)
     p.add_argument("--flush-l2", action="store_true")
+    p.add_argument("--cuda-graph", action="store_true",
+                   help="time CUDA-graph replays of every (call, chunk) instead of eager calls (review M3b)")
     p.add_argument("--pre-spin-ms", type=float, default=0.0,
                    help="GPU-side spin before each timed block so host load cannot insert gaps (0 = off)")
     p.add_argument("--rounds", type=int, default=1,
