@@ -18,8 +18,8 @@
 # Launch:  wsl bash src/revloop/remote.sh launch pro6000 tpds-r4 src/experiments/remote/tpds_lane_r4_pro6000.sh
 # Markers: src/logs/revloop/{CAPTURE-r4,E18,E20}.{START,OK,FAIL} (TPDS_SMOKE=1: smoke- prefix)
 # Env:     TPDS_R4_ONLY (default "E18 E20"), TPDS_R4_SPIN_MS (20), TPDS_R4_ROUNDS (3),
-#          TPDS_R4_GUARD (1: the E2 sweeps pause while other processes use the GPU and re-time the
-#          calls they overlapped; 0 saves ~0.2 s of nvidia-smi queries per call), TPDS_R4_GUARD_H (12).
+#          TPDS_R4_GUARD (1: every timing step (E4 keys, E1 cells, E2 calls) pauses while other processes
+#          use the GPU and re-times the units they overlapped; 0 saves ~0.2 s of nvidia-smi queries per call), TPDS_R4_GUARD_H (12).
 # Every GPU step holds the exclusive timing lock. Resumable: every step skips completed rows (the
 # E2 sweeps also completed rounds); a failed step does not stop the others, its marker records it.
 # TPDS_SMOKE=1 runs a tiny version on the smoke traces (outputs in the smoke directory).
@@ -56,8 +56,8 @@ COMMON="--trace-dir '$TRACE_DIR' --out-dir '$OUT_DIR'"
 if want E18; then
   # shellcheck disable=SC2086
   $RUN ${P}E18 -- bash -c "rc=0
-    TPDS_PRE_SPIN_MS=$SPIN ${L[*]} $PY -m src.experiments.tpds.e4_autotune $E4A $COMMON --tag ${TAG}_r4spin || rc=1
-    TPDS_PRE_SPIN_MS=$SPIN ${L[*]} $PY -m src.experiments.tpds.e1_value_invariance $E1A $COMMON --tag ${TAG}_r4spin || rc=1
+    TPDS_PRE_SPIN_MS=$SPIN ${L[*]} $PY -m src.experiments.tpds.e4_autotune $E4A $GUARD $COMMON --tag ${TAG}_r4spin || rc=1
+    TPDS_PRE_SPIN_MS=$SPIN ${L[*]} $PY -m src.experiments.tpds.e1_value_invariance $E1A $GUARD $COMMON --tag ${TAG}_r4spin || rc=1
     ${L[*]} $PY -m src.experiments.tpds.e2_oracle_sweep --model mamba1 $E2A --rounds $ROUNDS --pre-spin-ms $SPIN \
         $GUARD $COMMON --tag ${TAG}_r4spin || rc=1
     ${L[*]} $PY -m src.experiments.tpds.e2_oracle_sweep --model mamba1 $E2A --rounds $ROUNDS --pre-spin-ms 0 \
@@ -68,8 +68,8 @@ fi
 if want E20; then
   # shellcheck disable=SC2086
   $RUN ${P}E20 -- bash -c "rc=0
-    TPDS_PRE_SPIN_MS=$SPIN ${L[*]} $PY -m src.experiments.tpds.e4_autotune $E4A --flush-l2 $COMMON --tag ${TAG}_r4cold || rc=1
-    TPDS_PRE_SPIN_MS=$SPIN ${L[*]} $PY -m src.experiments.tpds.e1_value_invariance $E1A --flush-l2 $COMMON \
+    TPDS_PRE_SPIN_MS=$SPIN ${L[*]} $PY -m src.experiments.tpds.e4_autotune $E4A --flush-l2 $GUARD $COMMON --tag ${TAG}_r4cold || rc=1
+    TPDS_PRE_SPIN_MS=$SPIN ${L[*]} $PY -m src.experiments.tpds.e1_value_invariance $E1A --flush-l2 $GUARD $COMMON \
         --tag ${TAG}_r4cold || rc=1
     ${L[*]} $PY -m src.experiments.tpds.e2_oracle_sweep --model mamba1 $E2A --rounds $ROUNDS --flush-l2 \
         --min-length $MINLEN --pre-spin-ms $SPIN $GUARD $COMMON --tag ${TAG}_r4cold || rc=1

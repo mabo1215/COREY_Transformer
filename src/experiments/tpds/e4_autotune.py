@@ -49,9 +49,10 @@ import torch  # noqa: E402
 from src.algorithms.torch_entropy import activation_entropy  # noqa: E402
 from src.experiments.tpds import kernels as K  # noqa: E402
 from src.experiments.tpds.common import (DEFAULT_TRACE_DIR, MAMBA1_CHUNKS, MAMBA2_CHUNKS, RESULTS_DIR,  # noqa: E402
-                                         JsonlWriter, Logger, check_disk, cuda_time, dedupe_by_key,
-                                         entropy_rule_chunk, env_metadata, host_name, peak_vram_gb, read_jsonl,
-                                         summarize, write_json)
+                                         JsonlWriter, Logger, all_gpu_pids, check_disk, cuda_time, dedupe_by_key,
+                                         entropy_rule_chunk, env_metadata, foreign_gpu_pids, host_name, peak_vram_gb,
+                                         read_jsonl, register_own_gpu_pids, summarize,
+                                         wait_for_exclusive_gpu, write_json)
 from src.experiments.tpds.e1_value_invariance import _fit_time, _longest_call  # noqa: E402
 
 BLOCK_DS = (4, 8, 16, 32)
@@ -143,6 +144,42 @@ def time_sync(repeats: int) -> dict:
     return summarize(ts)
 
 
+def tune_m1_key(args, inp, out) -> dict:
+    """Search the Mamba-1 launch space for one key, then time the tuned and the static configurations."""
+    search, compile_s, bench_s = [], 0.0, 0.0
+    t_key = time.perf_counter()
+    for cfg in mamba1_space(MAMBA1_CHUNKS):
+        fn = m1_fn(inp, cfg, out)
+        t0 = time.perf_counter()
+        try:
+            fn()
+            torch.cuda.synchronize()
+        except Exception as exc:  # e.g. out of shared memory / registers for this config
+            search.append({**cfg.as_dict(), "error": repr(exc)[:200]})
+            continue
+        compile_s += time.perf_counter() - t0
+        t1 = time.perf_counter()
+        ms = statistics.median(cuda_time(fn, args.search_warmup, args.search_repeats, args.flush_l2))
+        bench_s += time.perf_counter() - t1
+        search.append({**cfg.as_dict(), "median_ms": ms})
+    tune_s = time.perf_counter() - t_key
+    ok = [s for s in search if "median_ms" in s]
+    best = min(ok, key=lambda s: s["median_ms"])
+    best_cfg = K.LaunchConfig(best["block_t"], best["block_d"], best["num_warps"], best["num_stages"])
+    # Cost of the cheaper offline alternative: profiling only the chunk (default launch).
+    t_prof = time.perf_counter()
+    for c in MAMBA1_CHUNKS:
+        cuda_time(m1_fn(inp, K.default_mamba1_config(c), out), args.search_warmup, args.search_repeats,
+                  args.flush_l2)
+    profile_static_s = time.perf_counter() - t_prof
+    final = {"tuned": summarize(cuda_time(m1_fn(inp, best_cfg, out), args.warmup, args.repeats, args.flush_l2))}
+    for c in MAMBA1_CHUNKS:
+        final[f"static_{c}"] = summarize(cuda_time(m1_fn(inp, K.default_mamba1_config(c), out),
+                                                   args.warmup, args.repeats, args.flush_l2))
+    return {"search": search, "compile_s": compile_s, "bench_s": bench_s, "tune_s": tune_s,
+            "profile_static_s": profile_static_s, "final": final, "best": best}
+
+
 # --------------------------------------------------------------------------- main
 def parse_args(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -160,6 +197,10 @@ def parse_args(argv=None):
     p.add_argument("--keep-triton-cache", action="store_true", help="do not start from an empty Triton cache")
     p.add_argument("--flush-l2", action="store_true",
                    help="overwrite the L2 cache before every timed repeat of parts m1/m2 (cold L2, as do_bench)")
+    p.add_argument("--exclusive-guard", action="store_true",
+                   help="part m1: wait while other processes use the GPU and re-time a key they overlapped")
+    p.add_argument("--guard-until", type=float, default=None,
+                   help="epoch seconds after which a still-busy GPU ends the run with exit code 3 (restart resumes)")
     return p.parse_args(argv)
 
 
@@ -168,8 +209,12 @@ def main(argv=None):
     tag = args.tag or host_name()
     log = Logger(f"e4_{tag}")
     check_disk(args.out_dir, need_gb=0.5, log=log)
+    gpu_baseline = all_gpu_pids() if args.exclusive_guard else None
+    torch.zeros(1, device="cuda")
+    torch.cuda.synchronize()
+    own = register_own_gpu_pids(gpu_baseline, log=log) if args.exclusive_guard else set()
     meta = env_metadata()
-    meta.update({"experiment": "E4", "args": vars(args), "triton_cache_dir": os.environ.get("TRITON_CACHE_DIR"),
+    meta.update({"experiment": "E4", "args": vars(args), "own_gpu_pids": sorted(own), "triton_cache_dir": os.environ.get("TRITON_CACHE_DIR"),
                  "search_space_mamba1": {"block_t": list(MAMBA1_CHUNKS), "block_d": list(BLOCK_DS),
                                          "num_warps": list(WARPS), "num_stages": list(STAGES),
                                          "max_tile": MAX_TILE}})
@@ -186,44 +231,30 @@ def main(argv=None):
             inp, source = mamba1_key_inputs(L, b, args.trace_dir)
             ent = float(activation_entropy(inp["u"].float(), num_bins=256))
             out = torch.empty_like(inp["u"])
-            search, compile_s, bench_s = [], 0.0, 0.0
-            t_key = time.perf_counter()
-            for cfg in mamba1_space(MAMBA1_CHUNKS):
-                fn = m1_fn(inp, cfg, out)
-                t0 = time.perf_counter()
-                try:
-                    fn()
-                    torch.cuda.synchronize()
-                except Exception as exc:  # e.g. out of shared memory / registers for this config
-                    search.append({**cfg.as_dict(), "error": repr(exc)[:200]})
-                    continue
-                compile_s += time.perf_counter() - t0
-                t1 = time.perf_counter()
-                ms = statistics.median(cuda_time(fn, args.search_warmup, args.search_repeats, args.flush_l2))
-                bench_s += time.perf_counter() - t1
-                search.append({**cfg.as_dict(), "median_ms": ms})
-            tune_s = time.perf_counter() - t_key
-            ok = [s for s in search if "median_ms" in s]
-            best = min(ok, key=lambda s: s["median_ms"])
-            best_cfg = K.LaunchConfig(best["block_t"], best["block_d"], best["num_warps"], best["num_stages"])
-            # Cost of the cheaper offline alternative: profiling only the chunk (default launch).
-            t_prof = time.perf_counter()
-            for c in MAMBA1_CHUNKS:
-                cuda_time(m1_fn(inp, K.default_mamba1_config(c), out), args.search_warmup, args.search_repeats,
-                          args.flush_l2)
-            profile_static_s = time.perf_counter() - t_prof
-            final = {"tuned": summarize(cuda_time(m1_fn(inp, best_cfg, out), args.warmup, args.repeats,
-                                                  args.flush_l2))}
-            for c in MAMBA1_CHUNKS:
-                final[f"static_{c}"] = summarize(cuda_time(m1_fn(inp, K.default_mamba1_config(c), out),
-                                                           args.warmup, args.repeats, args.flush_l2))
+            retimed = 0
+            while True:
+                if args.exclusive_guard and wait_for_exclusive_gpu(args.guard_until, log) is None:
+                    w.close()
+                    raise SystemExit(3)
+                before = foreign_gpu_pids() if args.exclusive_guard else None
+                row = tune_m1_key(args, inp, out)
+                after = foreign_gpu_pids() if args.exclusive_guard else None
+                if not (before or after):
+                    break
+                retimed += 1
+                log(f"foreign GPU processes {before or after} during key {key}; re-timing it")
+            search, compile_s, bench_s, tune_s, profile_static_s, final, best = (
+                row["search"], row["compile_s"], row["bench_s"], row["tune_s"], row["profile_static_s"],
+                row["final"], row["best"])
             rule_c = entropy_rule_chunk(ent / 8.0)
             final["entropy_rule"] = dict(final[f"static_{rule_c}"])
+            ok = [x for x in search if "median_ms" in x]
             row = {"kind": "m1tune", "key": key, "family": "mamba1", "L": L, "batch": b, "width": 2048,
                    "input_source": source, "entropy_bits": ent, "entropy_rule_chunk": rule_c,
                    "tuning_wall_s": tune_s, "tuning_first_call_s": compile_s, "tuning_bench_s": bench_s,
                    "profile_static_wall_s": profile_static_s, "n_configs": len(search), "n_failed": len(search) - len(ok), "best_config": best,
-                   "final": final, "search": search, "flush_l2": args.flush_l2, "peak_vram_gb": peak_vram_gb()}
+                   "final": final, "search": search, "flush_l2": args.flush_l2, "peak_vram_gb": peak_vram_gb(),
+                   "retimed": retimed}
             w.write(row)
             best_static = min((k for k in final if k.startswith("static_")), key=lambda k: final[k]["mean_ms"])
             log(f"mamba1 L={L} b={b}: tuned {final['tuned']['mean_ms']:.4f} ms {best} | best static "

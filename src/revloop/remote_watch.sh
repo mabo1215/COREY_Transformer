@@ -121,7 +121,38 @@ while true; do
   sleep "$INTERVAL"
 done
 
+# others_active: print the screen sessions and GPU compute processes that do not belong to this
+# watch (other projects sharing the host); exit 0 if there are any. The lane screens of the watched
+# experiments (ledger field "screen") and the watcher's own screen are ours.
+others_active() {
+  local mine="revloop-watch" s name out="" gpu
+  for id in "${IDS[@]}"; do
+    s=$(state exp show "$id" --field screen 2>/dev/null)
+    [ -n "$s" ] && [ "$s" != "None" ] && mine="$mine $s"
+  done
+  while read -r name; do
+    case " $mine " in *" $name "*) ;; *) out="$out screen:$name" ;; esac
+  done < <(screen -ls 2>/dev/null | awk '/(Detached|Attached)/ {sub(/^[0-9]+\./, "", $1); print $1}')
+  gpu=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | tr -d ' ' | grep -v '^$' | tr '\n' ' ')
+  [ -n "$gpu" ] && out="$out gpu-pids:$gpu"
+  [ -n "$out" ] && { echo "$out"; return 0; }
+  return 1
+}
+
 if [ "$SHUTDOWN" = 1 ]; then
+  # Never power off a host that other projects are still using: postpone until their screens and GPU
+  # processes are gone (re-checked every interval), and give up after WATCH_OTHERS_MAX_H hours.
+  waited=0
+  max_s=$(( ${WATCH_OTHERS_MAX_H:-24} * 3600 ))
+  while busy=$(others_active); do
+    if [ "$waited" -ge "$max_s" ]; then
+      log "NOT shutting down: other sessions still active after ${WATCH_OTHERS_MAX_H:-24} h:$busy"
+      exit 0
+    fi
+    [ "$waited" -eq 0 ] && log "postponing shutdown: other sessions active:$busy (re-check every ${INTERVAL}s)"
+    sleep "$INTERVAL"
+    waited=$((waited + INTERVAL))
+  done
   persists=$(host_field disk_persists)
   if [ "$push_ok" != 1 ] && [ "$persists" != "True" ] && [ "$persists" != "true" ]; then
     log "NOT shutting down: results were not pushed and this host's disk may not persist"
