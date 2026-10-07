@@ -1,0 +1,278 @@
+{
+  "meta": {
+    "host": "vgpu3090",
+    "hostname": "autodl-container-5ea9tapmbb-6a673b83",
+    "utc": "2026-10-07T21:59:48Z",
+    "python": "3.12.3",
+    "platform": "Linux-5.15.0-119-generic-x86_64-with-glibc2.35",
+    "argv": [
+      "/root/autodl-tmp/COREY_Transformer_tpds/src/experiments/tpds/e2_oracle_sweep.py",
+      "--model",
+      "mamba1",
+      "--synth-calls",
+      "64",
+      "--synth-bucket",
+      "2048",
+      "--synth-batch",
+      "4",
+      "--synth-align",
+      "unaligned",
+      "--warmup",
+      "10",
+      "--repeats",
+      "50",
+      "--rounds",
+      "3",
+      "--pre-spin-ms",
+      "0",
+      "--exclusive-guard",
+      "--guard-until",
+      "1791488261",
+      "--trace-dir",
+      "/autodl-fs/data/corey_r4_traces_vgpu3090",
+      "--out-dir",
+      "src/experiments/results/tpds",
+      "--tag",
+      "vgpu3090_r4plain_u2048b4"
+    ],
+    "torch": "2.8.0+cu128",
+    "cuda_runtime": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "gpu_mem_gb": 47.41,
+    "gpu_sm_count": 82,
+    "gpu_cc": "8.6",
+    "pkg_triton": "3.4.0",
+    "pkg_transformers": "5.6.2",
+    "pkg_mamba_ssm": "2.3.2.post1",
+    "pkg_fla-core": "0.5.2",
+    "pkg_flash-linear-attention": "0.5.2",
+    "pkg_numpy": "2.3.2",
+    "pkg_scikit-learn": "1.8.0",
+    "nvidia_smi": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+    "git_commit": "b9f202b",
+    "experiment": "E2",
+    "model": "mamba1",
+    "args": {
+      "model": "mamba1",
+      "exclusive_guard": true,
+      "guard_until": 1791488261.0,
+      "trace_dir": "/autodl-fs/data/corey_r4_traces_vgpu3090",
+      "batches": "1,4,16",
+      "layers": null,
+      "chunks": null,
+      "warmup": 10,
+      "repeats": 50,
+      "flush_l2": false,
+      "cuda_graph": false,
+      "pre_spin_ms": 0.0,
+      "rounds": 3,
+      "min_length": null,
+      "synth_calls": 64,
+      "synth_bucket": 2048,
+      "synth_batch": 4,
+      "synth_align": "unaligned",
+      "max_rows": null,
+      "out_dir": "src/experiments/results/tpds",
+      "tag": "vgpu3090_r4plain_u2048b4",
+      "seed": 0
+    },
+    "layers": [
+      0,
+      6,
+      12,
+      18,
+      24,
+      30,
+      36,
+      42
+    ],
+    "n_prompts": 192,
+    "chunks": [
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024
+    ],
+    "own_gpu_pids": [
+      146474
+    ],
+    "mamba1_default_launch": {
+      "32": {
+        "block_t": 32,
+        "block_d": 8,
+        "num_warps": 2,
+        "num_stages": 1
+      },
+      "64": {
+        "block_t": 64,
+        "block_d": 8,
+        "num_warps": 2,
+        "num_stages": 1
+      },
+      "128": {
+        "block_t": 128,
+        "block_d": 8,
+        "num_warps": 2,
+        "num_stages": 1
+      },
+      "256": {
+        "block_t": 256,
+        "block_d": 4,
+        "num_warps": 2,
+        "num_stages": 1
+      },
+      "512": {
+        "block_t": 512,
+        "block_d": 4,
+        "num_warps": 2,
+        "num_stages": 1
+      },
+      "1024": {
+        "block_t": 1024,
+        "block_d": 4,
+        "num_warps": 4,
+        "num_stages": 1
+      }
+    },
+    "ssd_index_limit": null,
+    "calls_with_unavailable_chunks_this_run": 0
+  },
+  "summary": {
+    "rows": 64,
+    "by_batch": {
+      "4": {
+        "rows": 64,
+        "oracle_distribution": {
+          "512": 34,
+          "256": 30
+        },
+        "static_regret": {
+          "static_32": {
+            "n": 64,
+            "mean_regret_pct": 13.168026487885104,
+            "p95_regret_pct": 20.25778448353395,
+            "max_regret_pct": 21.196934878359496,
+            "oracle_hit_rate": 0.0
+          },
+          "static_64": {
+            "n": 64,
+            "mean_regret_pct": 43.73796213922957,
+            "p95_regret_pct": 52.28224480379341,
+            "max_regret_pct": 52.517368073685944,
+            "oracle_hit_rate": 0.0
+          },
+          "static_128": {
+            "n": 64,
+            "mean_regret_pct": 10.661244213176474,
+            "p95_regret_pct": 16.20682984743051,
+            "max_regret_pct": 16.54445707050678,
+            "oracle_hit_rate": 0.0
+          },
+          "static_256": {
+            "n": 64,
+            "mean_regret_pct": 2.439210672376739,
+            "p95_regret_pct": 5.86527895297486,
+            "max_regret_pct": 6.085148896724579,
+            "oracle_hit_rate": 0.46875
+          },
+          "static_512": {
+            "n": 64,
+            "mean_regret_pct": 1.0387975036200796,
+            "p95_regret_pct": 3.870969981446637,
+            "max_regret_pct": 4.563812746184337,
+            "oracle_hit_rate": 0.53125
+          },
+          "static_1024": {
+            "n": 64,
+            "mean_regret_pct": 22.45033792934627,
+            "p95_regret_pct": 36.57875416027656,
+            "max_regret_pct": 36.71803565359228,
+            "oracle_hit_rate": 0.0
+          },
+          "entropy_rule": {
+            "n": 64,
+            "mean_regret_pct": 2.439210672376739,
+            "p95_regret_pct": 5.86527895297486,
+            "max_regret_pct": 6.085148896724579,
+            "oracle_hit_rate": 0.46875
+          },
+          "best_static": "static_512"
+        },
+        "entropy_bits_range": [
+          3.260649,
+          4.547147
+        ]
+      }
+    },
+    "max_out_diff_across_chunks": 0.00390625,
+    "round_median": {
+      "rounds": 3,
+      "oracle_agreement_pooled_vs_median": 0.984375,
+      "between_round_cv_median": 0.0022548670100756302,
+      "between_round_cv_p90": 0.004518995880234051,
+      "by_batch": {
+        "4": {
+          "rows": 64,
+          "oracle_distribution": {
+            "512": 33,
+            "256": 31
+          },
+          "static_regret": {
+            "static_32": {
+              "n": 64,
+              "mean_regret_pct": 13.166586534349046,
+              "p95_regret_pct": 20.298421586099487,
+              "max_regret_pct": 21.281136397290968,
+              "oracle_hit_rate": 0.0
+            },
+            "static_64": {
+              "n": 64,
+              "mean_regret_pct": 43.775514925168515,
+              "p95_regret_pct": 52.30629612442669,
+              "max_regret_pct": 52.537299742759444,
+              "oracle_hit_rate": 0.0
+            },
+            "static_128": {
+              "n": 64,
+              "mean_regret_pct": 10.673756710741051,
+              "p95_regret_pct": 16.4474353713454,
+              "max_regret_pct": 16.669249703051904,
+              "oracle_hit_rate": 0.0
+            },
+            "static_256": {
+              "n": 64,
+              "mean_regret_pct": 2.4528200998733216,
+              "p95_regret_pct": 5.797420971415927,
+              "max_regret_pct": 6.231158828500782,
+              "oracle_hit_rate": 0.484375
+            },
+            "static_512": {
+              "n": 64,
+              "mean_regret_pct": 1.0688254155059258,
+              "p95_regret_pct": 4.000003405779051,
+              "max_regret_pct": 4.513433876102169,
+              "oracle_hit_rate": 0.515625
+            },
+            "static_1024": {
+              "n": 64,
+              "mean_regret_pct": 22.478274241711173,
+              "p95_regret_pct": 36.73848496131881,
+              "max_regret_pct": 37.07678793641782,
+              "oracle_hit_rate": 0.0
+            },
+            "entropy_rule": {
+              "n": 64,
+              "mean_regret_pct": 2.4528200998733216,
+              "p95_regret_pct": 5.797420971415927,
+              "max_regret_pct": 6.231158828500782,
+              "oracle_hit_rate": 0.484375
+            },
+            "best_static": "static_512"
+          }
+        }
+      }
+    }
+  }
+}
