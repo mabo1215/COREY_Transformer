@@ -79,3 +79,38 @@ Paper text must cite them through the result files, never by script name.
 - N1.8: static 512 prefill 100.41 +/- 0.85 ms; static 128 117.22 ms; paired diff 16.81 +/- 1.41 ms =
   16.79 +/- 1.47%: give absolute prefill, keep +/-1.4 ms next to +/-1.5%.
 - N1.9: median N* 1901 / 2662 calls = 39.6 / 55.5 requests: write "1900 and 2660 calls".
+
+## Headroom rows, N1.1/1.2/1.7, M3c - headroom_r4.json (seed 20260930, 200 draws)
+- Reproduction: 12,409 stored values in headroom_noise*.json identical; e5b/e8 checks 21/21; 13/14 printed
+  table entries match; superseded 2.8B split-half upper bound printed 10.6, true 10.548 -> 10.5.
+- M8a replacement rows (us/call; cov = tuned shapes; counts naive/split-half; H800 sync = 20 us assumed):
+  row | in-sample (max) | held-out all/cov | held-out max (cov) | split-half cov [95%] | >sync | >7.3 us
+  370M PRO6000 LI   | 0.34 (4.4) | 0.65/0.45 | 4.4  | 0.13 [0.09,0.17] | 0/0 | 0/0
+  370M 3090 LI      | 1.86 (6.7) | 4.89/2.16 | 6.7  | 1.78 [1.72,1.83] | 0/0 | 0/0
+  370M 3090 device  | 0.03 (0.5) | 14.8/0.03 | 0.5  | 0.02 [0.01,0.03] | 0/0 | 0/0
+  370M H800 LI      | 0.79 (8.5) | 1.05/1.15 | 11.6 | 0.69 [0.63,0.74] | 0/0 | 1/1
+  370M H800 device  | 0.29 (8.2) | 0.34/0.37 | 10.8 | 0.37 [0.36,0.37] | 0/0 | 1/1
+  Ref scan 3090 LI  | 2.07 (14.5)| 6.21/2.16 | 14.5 | 2.05 [1.99,2.10] | 0/0 | 3/3
+  1.4B 3090 LI      | 2.14 (11.7)| 31.6/2.59 | 11.7 | 2.11 [2.02,2.19] | 0/0 | 3/2
+  1.4B 3090 device  | 0.17 (4.7) | 6.15/0.18 | 4.7  | 0.11 [0.06,0.15] | 0/0 | 0/0
+  2.8B 3090 LI      | 4.14 (11.0)| 41.8/4.80 | 11.0 | 4.49 [4.40,4.67] | 0/0 | 7/6
+  2.8B 3090 device  | 0.29 (4.5) | 8.31/0.32 | 4.5  | 0.23 [0.18,0.28] | 0/0 | 0/0
+  No Mamba-1 shape above 42 us. Size-interpolated device cost: ref 0, 1.4B LI 1/0, 2.8B LI 5/5.
+  Held-out max (cov) for other rows: Mamba-2 PRO6000 13.7, Mamba-2 3090 43.0, Mamba-2 2.7B 80.0, GDN 52.5.
+- 4.7 us = held-out per-shape max of 1.4B device time (4.69 at L=256, b16; headroom_noise_r3.json);
+  2.8B 4.47; launch-inclusive maxima 11.7 / 11.0.
+- 4.4/6.7/14.5 us: held-out maxima equal the in-sample ones (same largest shape kept in every fold);
+  main text is correct; table needs the held-out-max column. With untuned fallback shapes: 16.4/328/784.
+- N1.1: 0.985/0.992 = R^2 of log latency on captured calls (11,800 latencies); 0.983/0.998 = R^2 on the
+  75 fitting timings. Name the data set for each.
+- N1.2: pooled-shard p95 = 30.52% -> main text should say 31% (mean 6.51%).
+- N1.7: LOKO, model as full auto-tuner over 184 configs: mean 8.92% (max 53.4%) PRO6000, 23.14% (max 95.3%)
+  RTX 3090; reproduced by refit. Add to Table S-model-params.
+- M3c: model predicts exact ties for all calls <= 512 tokens (1096/2360), ties default to chunk 32.
+  Sending ties to 256: 370M PRO6000 LI 1.45 -> 1.56%; 370M 3090 LI 2.48 -> 2.36%; 370M 3090 device
+  5.72 -> 5.61%; 2.7B 3090 device all 11.40 -> 12.74%; 2.7B above floor (397) 0.24 -> 0.19%; synthetic
+  3 widths 1.46 -> 1.63%. Premise does not hold: tied calls lie below the floor and chunk 32 is never
+  clearly worst there. Work-term-only ranking: 1.52, 2.49, 5.62, 11.68, 1.65%.
+  -> Paper: state the tie rule explicitly and report both defaults; no change of headline.
+- Launch-bound boundary F/(a+2 sqrt(bg)) at a 320 us floor: ~3,900 tokens on the RTX 3090 (3,878, from
+  9,513; per batch ~3,880/970/240); PRO 6000 ~11,800 (from 17,321) but 320 us was measured on the 3090 only.
