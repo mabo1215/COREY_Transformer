@@ -82,6 +82,21 @@ The two lanes run concurrently but every GPU step holds an exclusive `flock`
 (`src/logs/tpds/gpu_timing.lock`), so no kernel timing ever overlaps another
 GPU job; set `TPDS_NO_GPU_LOCK=1` only for debugging.
 
+### Cycle tpds-r4 lanes (review M2a/M2b, M3a, M10b)
+
+| Lane | Host | Steps |
+|---|---|---|
+| `tpds_lane_r4_pro6000.sh` | RTX PRO 6000 (`pro6000`) | E18: device-time calibration (E4 Mamba-1, E1 Mamba-1; tag `<host>_r4spin`), then the 2360 captured 370M Mamba-1 calls in three rounds, device time (`_r4spin`) and launch-inclusive (`_r4plain`). E20: cold L2 (`--flush-l2`), device time: E4 Mamba-1, E1 Mamba-1, captured calls with L >= 2048 in three rounds (`_r4cold`). |
+| `tpds_lane_r4_3090.sh` | RTX 3090 (`vgpu3090`) | E19: the 2360 calls in three rounds, `_r4spin` and `_r4plain`. E21: 64 synthesized calls of the key (bucket 2048, batch 4, L mod 16 != 0), three rounds, `_r4spin_u2048b4` and `_r4plain_u2048b4`. |
+
+Both lanes first run `capture_traces --check-only` (no model load) and re-capture the 370M
+Mamba-1 traces only if they are missing or incomplete. Options added for them:
+`e2_oracle_sweep --rounds N` (per-call and per-round shuffled chunk order; per-round rows in
+`e2_<model>_<tag>_rounds.jsonl`; round-median columns `lat_c<C>_med`, `oracle_chunk_med`,
+`tied_chunks_med` appended to the CSV; `analysis.round_median_view` gives the round-median table
+in the single-round format; N = 1 is the unchanged single-round sweep), `--min-length`,
+`--synth-calls/--synth-bucket/--synth-batch/--synth-align`, and `e4_autotune --flush-l2`.
+
 ## Outputs
 
 `src/experiments/results/tpds/`: `e1_<host>.json(l)`, `e2_<model>_<host>.csv/json`,

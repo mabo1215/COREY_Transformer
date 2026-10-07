@@ -58,6 +58,25 @@ check_space() {  # check_space <path> <min_free_gb>
   case "$ifree" in ''|-) ;; *) if [ "$ifree" -lt 20000 ]; then lanelog "NOT ENOUGH INODES at $p"; return 1; fi ;; esac
 }
 
+# ensure_traces <marker ID> [model]: verify that the captured traces of $CAP_ARGS are complete in
+# $TRACE_DIR (no model load); otherwise (re-)capture them under the GPU timing lock (the capture
+# resumes and skips captured prompts). Needs ~25 GB for the full 370M Mamba-1 corpus.
+ensure_traces() {
+  local id=$1 model=${2:-mamba1}
+  # shellcheck disable=SC2086
+  if "$PY" -m src.experiments.tpds.capture_traces --model "$model" $CAP_ARGS --trace-dir "$TRACE_DIR" --check-only \
+      >> "$LOG_DIR/lanes.log" 2>&1; then
+    lanelog "traces complete at $TRACE_DIR/$model; no capture needed"
+    return 0
+  fi
+  lanelog "traces at $TRACE_DIR/$model missing or incomplete; capturing"
+  check_space "$TRACE_DIR" "${TPDS_TRACE_NEED_GB:-30}" || return 1
+  # shellcheck disable=SC2086
+  $RUN "$id" -- "${GPU_LOCK[@]}" "$PY" -m src.experiments.tpds.capture_traces --model "$model" $CAP_ARGS \
+    --trace-dir "$TRACE_DIR"
+}
+GPU_LOCK=(); [ "${TPDS_NO_GPU_LOCK:-0}" = 1 ] || GPU_LOCK=(flock "$LOCK")
+
 # Experiment sizes. TPDS_SMOKE=1 selects a tiny configuration (local smoke test of the lanes;
 # results go to the smoke directory and marker IDs get a "smoke-" prefix).
 if [ "${TPDS_SMOKE:-0}" = 1 ]; then

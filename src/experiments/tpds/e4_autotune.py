@@ -14,6 +14,10 @@ starting from an empty Triton cache.
 Part B (Mamba-2 SSD): search over chunk_size per key (SSD's own internal
 block-size autotuning is included in the tuning wall clock).
 
+``--flush-l2`` overwrites the L2 cache before every timed repeat of parts A and B
+(search, profiling and re-measurement), as ``triton.testing.do_bench`` does; the
+default times repeats back to back on a warm L2.
+
 Part C (decision overhead): isolated cost of the entropy scheduler's
 per-call decision on real captured activations: K=256 histogram entropy on the
 full tensor (and on every 8th element), Eq. (2) mapping and the host
@@ -154,6 +158,8 @@ def parse_args(argv=None):
     p.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
     p.add_argument("--tag", default=None)
     p.add_argument("--keep-triton-cache", action="store_true", help="do not start from an empty Triton cache")
+    p.add_argument("--flush-l2", action="store_true",
+                   help="overwrite the L2 cache before every timed repeat of parts m1/m2 (cold L2, as do_bench)")
     return p.parse_args(argv)
 
 
@@ -193,7 +199,7 @@ def main(argv=None):
                     continue
                 compile_s += time.perf_counter() - t0
                 t1 = time.perf_counter()
-                ms = statistics.median(cuda_time(fn, args.search_warmup, args.search_repeats))
+                ms = statistics.median(cuda_time(fn, args.search_warmup, args.search_repeats, args.flush_l2))
                 bench_s += time.perf_counter() - t1
                 search.append({**cfg.as_dict(), "median_ms": ms})
             tune_s = time.perf_counter() - t_key
@@ -203,19 +209,21 @@ def main(argv=None):
             # Cost of the cheaper offline alternative: profiling only the chunk (default launch).
             t_prof = time.perf_counter()
             for c in MAMBA1_CHUNKS:
-                cuda_time(m1_fn(inp, K.default_mamba1_config(c), out), args.search_warmup, args.search_repeats)
+                cuda_time(m1_fn(inp, K.default_mamba1_config(c), out), args.search_warmup, args.search_repeats,
+                          args.flush_l2)
             profile_static_s = time.perf_counter() - t_prof
-            final = {"tuned": summarize(cuda_time(m1_fn(inp, best_cfg, out), args.warmup, args.repeats))}
+            final = {"tuned": summarize(cuda_time(m1_fn(inp, best_cfg, out), args.warmup, args.repeats,
+                                                  args.flush_l2))}
             for c in MAMBA1_CHUNKS:
                 final[f"static_{c}"] = summarize(cuda_time(m1_fn(inp, K.default_mamba1_config(c), out),
-                                                           args.warmup, args.repeats))
+                                                           args.warmup, args.repeats, args.flush_l2))
             rule_c = entropy_rule_chunk(ent / 8.0)
             final["entropy_rule"] = dict(final[f"static_{rule_c}"])
             row = {"kind": "m1tune", "key": key, "family": "mamba1", "L": L, "batch": b, "width": 2048,
                    "input_source": source, "entropy_bits": ent, "entropy_rule_chunk": rule_c,
                    "tuning_wall_s": tune_s, "tuning_first_call_s": compile_s, "tuning_bench_s": bench_s,
                    "profile_static_wall_s": profile_static_s, "n_configs": len(search), "n_failed": len(search) - len(ok), "best_config": best,
-                   "final": final, "search": search, "peak_vram_gb": peak_vram_gb()}
+                   "final": final, "search": search, "flush_l2": args.flush_l2, "peak_vram_gb": peak_vram_gb()}
             w.write(row)
             best_static = min((k for k in final if k.startswith("static_")), key=lambda k: final[k]["mean_ms"])
             log(f"mamba1 L={L} b={b}: tuned {final['tuned']['mean_ms']:.4f} ms {best} | best static "
@@ -240,10 +248,10 @@ def main(argv=None):
                 torch.cuda.synchronize()
                 compile_s += time.perf_counter() - t0
                 search.append({"chunk_size": c, "median_ms": statistics.median(
-                    cuda_time(fn, args.search_warmup, args.search_repeats))})
+                    cuda_time(fn, args.search_warmup, args.search_repeats, args.flush_l2))})
             tune_s = time.perf_counter() - t_key
             best = min(search, key=lambda s: s["median_ms"])
-            final = {f"static_{c}": summarize(cuda_time(m2_fn(inp, c), args.warmup, args.repeats))
+            final = {f"static_{c}": summarize(cuda_time(m2_fn(inp, c), args.warmup, args.repeats, args.flush_l2))
                      for c in MAMBA2_CHUNKS}
             final["tuned"] = dict(final[f"static_{best['chunk_size']}"])
             rule_c = entropy_rule_chunk(ent / 8.0)
@@ -251,7 +259,7 @@ def main(argv=None):
             w.write({"kind": "m2tune", "key": key, "family": "mamba2", "L": L, "batch": b, "width": 2048,
                      "input_source": source, "entropy_bits": ent, "entropy_rule_chunk": rule_c,
                      "tuning_wall_s": tune_s, "tuning_first_call_s": compile_s, "best_config": best,
-                     "final": final, "search": search, "peak_vram_gb": peak_vram_gb()})
+                     "final": final, "search": search, "flush_l2": args.flush_l2, "peak_vram_gb": peak_vram_gb()})
             log(f"mamba2 L={L} b={b}: tuned chunk {best['chunk_size']} {final['tuned']['mean_ms']:.4f} ms | "
                 f"rule c={rule_c} {final['entropy_rule']['mean_ms']:.4f} ms | tuning {tune_s:.1f} s")
             del inp

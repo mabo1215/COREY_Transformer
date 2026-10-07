@@ -1,3 +1,39 @@
+# Experiment Design - Cycle tpds-r4 (2026-10-08): independent TPDS review, major revision
+
+Review: `docs/revision_suggestions.tex` (M1-M12, N1-N8, V1-V6); decision letter
+`docs/review_reports/tpds_r4_editorial_decision.md`. Offline analyses (no GPU): E3b information
+tests (`e3b_information.py`, M7d/M2c), deployment units and break-even (`deployment_units.py`,
+M6a/M6b/M10b/N1), headroom replacement rows (`headroom_r4.py`, M8a/M3c/N1), cost-model baselines and
+clean form selection (`cost_model_baselines_r4.py`, M5a/M5b/M6d). Notes: `docs/tmp/tpds_r4_analysis_notes.md`.
+GPU lanes: `src/experiments/remote/tpds_lane_r4_pro6000.sh` (E18, E20) and `tpds_lane_r4_3090.sh`
+(E19, E21); smoke-tested on the local RTX 3070. Both hosts must re-capture the 370M traces (about
+22 GB; at least 30 GB free under `src/outputs`) and need `state-spaces/mamba-370m-hf`. The
+exclusive-GPU guard is on by default (`TPDS_R4_GUARD=0` disables it; about 8 min per sweep).
+
+## E18 - PRO 6000 headline numbers in device time with a multi-round oracle (M2a, M2b; required)
+Calibration of the cost model in device time (E4 Mamba-1 launch sweep and E1 Mamba-1 medians with a
+20 ms GPU pre-spin, tag `pro6000_r4spin`), then the 2360 captured 370M Mamba-1 calls in three rounds
+with the chunk order shuffled per call and per round, in device time (`pro6000_r4spin`) and
+launch-inclusive (`pro6000_r4plain`). The per-call oracle is defined on round medians; ties use the
+between-round CI. Analysis: refit the model, Tables II-III, headroom and tie shares (CI overlap,
+2%, 5%) in both conventions. About 1.5 GPU-h, peak 9.5 GB.
+
+## E19 - RTX 3090 multi-round oracle (M2b; required)
+The same three-round sweep on the RTX 3090 (`vgpu3090_r4spin`, `vgpu3090_r4plain`); the device-time
+calibration exists (E15, `vgpu3090_r3spin`). About 1.75 GPU-h, peak 9.5 GB.
+
+## E20 - Cold-L2 re-timing on the PRO 6000 (M3a; optional package A)
+The twelve E4 tuning keys at six chunks and the captured calls with L >= 2048, with the L2 overwritten
+before every repeat (as Triton's `do_bench`), three rounds, tag `pro6000_r4cold`. Report per-key best
+chunk, oracle agreement, shape-tree and cold-refitted model regret, spread and exact-shape headroom,
+warm vs cold. About 0.55 GPU-h.
+
+## E21 - The thin serving key (M10b; optional package A)
+64 calls of key (bucket 2048, batch 4, unaligned): distinct unaligned lengths in 2049-4095, each call
+stacking four prompts of one fold cropped to the target length (the kernels are value-invariant),
+three rounds in both conventions (tags `vgpu3090_r4spin_u2048b4`, `vgpu3090_r4plain_u2048b4`).
+Re-estimate h_k and re-run the serving replay. About 0.1 GPU-h.
+
 # Experiment Design — Cycle tpds-r3 (2026-09-30): GPU experiments selected by the author
 
 The author selected two of the five GPU experiments of the tpds-r3 review

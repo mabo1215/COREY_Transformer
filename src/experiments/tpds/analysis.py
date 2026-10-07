@@ -40,6 +40,31 @@ def latency_matrix(df: pd.DataFrame, chunks: list[int]) -> np.ndarray:
     return df[[f"lat_c{c}_mean" for c in chunks]].to_numpy(dtype=float)
 
 
+def round_median_view(df: pd.DataFrame) -> pd.DataFrame:
+    """E2 table of a multi-round sweep (``--rounds`` > 1) with the round medians as latencies.
+
+    Returns a copy in which ``lat_c<C>_mean`` holds the median over rounds of the round means and
+    ``oracle_chunk`` / ``oracle_mean_ms`` / ``tied_chunks`` hold the round-median oracle and its tie set
+    (between-round CI overlap), so every reader of the single-round format evaluates the oracle on
+    round medians unchanged. ``lat_c<C>_std`` becomes the between-round standard deviation of the round
+    means and ``repeats`` the number of rounds; the pooled values stay in ``lat_c<C>_pooled``.
+    """
+    chunks = chunk_columns(df)
+    missing = [c for c in chunks if f"lat_c{c}_med" not in df.columns]
+    if missing or "oracle_chunk_med" not in df.columns:
+        raise ValueError("not a multi-round E2 table (no lat_c<C>_med / oracle_chunk_med columns)")
+    out = df.copy()
+    for c in chunks:
+        out[f"lat_c{c}_pooled"] = df[f"lat_c{c}_mean"]
+        out[f"lat_c{c}_mean"] = df[f"lat_c{c}_med"]
+        out[f"lat_c{c}_std"] = df[f"lat_c{c}_rsd"]
+    out["oracle_chunk"] = df["oracle_chunk_med"]
+    out["oracle_mean_ms"] = df["oracle_med_ms"]
+    out["tied_chunks"] = df["tied_chunks_med"]
+    out["repeats"] = df["rounds"]
+    return out
+
+
 def regret_of_choice(df: pd.DataFrame, chosen: np.ndarray, chunks: list[int]) -> np.ndarray:
     """Relative regret (latency of the chosen chunk / per-call oracle latency - 1)."""
     lat = latency_matrix(df, chunks)

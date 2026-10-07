@@ -20,6 +20,10 @@ Storage: fp16, one file per (prompt, layer) under ``<trace-dir>/<model>/``,
 plus ``manifest.jsonl`` (one fsynced row per completed prompt; completed
 prompts are skipped on restart) and a byte-size guard.
 
+``--check-only`` loads no model: it exits 0 if every prompt of the corpus selected
+by the same arguments is in the manifest with all its layer files and the layer
+constants present, else 1 (lanes use it to skip a capture that is complete).
+
 Example (smoke):
     python -m src.experiments.tpds.capture_traces --model mamba1 --layers 0,24 \
         --samples-per-regime 1 --longbench-per-task 1 --max-tokens 2048 --limit-prompts 4 \
@@ -239,19 +243,13 @@ def parse_args(argv=None):
     p.add_argument("--max-gb", type=float, default=40.0, help="size guard for stored traces")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--log-name", default=None)
+    p.add_argument("--check-only", action="store_true",
+                   help="verify that the traces of this corpus are complete (exit 0) or not (exit 1); no model")
     return p.parse_args(argv)
 
 
-@torch.no_grad()
-def main(argv=None):
-    args = parse_args(argv)
-    kind = args.model
-    model_id = args.model_id or MODEL_IDS[kind]
-    log = Logger(args.log_name or f"capture_{kind}")
-    mdir = model_dir(args.trace_dir, kind)
-    mdir.mkdir(parents=True, exist_ok=True)
-    check_disk(mdir, need_gb=min(args.max_gb, 200.0) * 1.1 + 1.0, need_inodes=20000, log=log)
-
+def select_corpus(args) -> list[dict]:
+    """The prompts captured for these arguments (``--limit-prompts`` keeps the regime mix)."""
     lengths = tuple(int(x) for x in args.longbench_lengths.split(",") if x)
     corpus = build_corpus(args.samples_per_regime, args.longbench_per_task, lengths, args.seed)
     if args.limit_prompts:
@@ -265,6 +263,49 @@ def main(argv=None):
                 if by_reg[reg] and len(picked) < args.limit_prompts:
                     picked.append(by_reg[reg].pop(0))
         corpus = picked
+    return corpus
+
+
+def check_traces(args) -> tuple[bool, str]:
+    """Whether the captured traces of this corpus are complete (manifest rows, layer files, constants)."""
+    kind = args.model
+    mdir = model_dir(args.trace_dir, kind)
+    rows = {r["prompt_id"]: r for r in load_manifest(args.trace_dir, kind)}
+    metas = [r for r in read_jsonl(mdir / "manifest.jsonl", kind="meta")]
+    if not rows or not metas:
+        return False, f"no manifest at {mdir}"
+    if args.layers:
+        layers = [int(x) for x in args.layers.split(",")]
+    else:
+        layers = list(range(0, int(metas[-1]["n_layers"]), args.layer_stride))
+    corpus = select_corpus(args)
+    missing = [it["id"] for it in corpus if it["id"] not in rows]
+    if missing:
+        return False, f"{len(missing)} of {len(corpus)} prompts not captured (e.g. {missing[:3]})"
+    bad = [(pid, l) for pid in (it["id"] for it in corpus) for l in layers
+           if l not in rows[pid]["layers"] or not call_path(args.trace_dir, kind, pid, l).is_file()
+           or call_path(args.trace_dir, kind, pid, l).stat().st_size == 0]
+    bad += [("params", l) for l in layers if not param_path(args.trace_dir, kind, l).is_file()]
+    if bad:
+        return False, f"{len(bad)} missing layer files (e.g. {bad[:3]})"
+    return True, f"{len(corpus)} prompts x {len(layers)} layers complete at {mdir}"
+
+
+@torch.no_grad()
+def main(argv=None):
+    args = parse_args(argv)
+    kind = args.model
+    if args.check_only:
+        ok, msg = check_traces(args)
+        print(f"trace check ({kind}): {'complete' if ok else 'incomplete'}: {msg}", flush=True)
+        raise SystemExit(0 if ok else 1)
+    model_id = args.model_id or MODEL_IDS[kind]
+    log = Logger(args.log_name or f"capture_{kind}")
+    mdir = model_dir(args.trace_dir, kind)
+    mdir.mkdir(parents=True, exist_ok=True)
+    check_disk(mdir, need_gb=min(args.max_gb, 200.0) * 1.1 + 1.0, need_inodes=20000, log=log)
+
+    corpus = select_corpus(args)
     log(f"corpus: {len(corpus)} prompts, model {model_id}")
 
     tok, model = load_model(kind, model_id)
