@@ -30,9 +30,10 @@ ONLY=${TPDS_R4AB_ONLY:-E24 E22 E23}
 SPIN=${TPDS_R4_SPIN_MS:-20}
 GUARD="--exclusive-guard --guard-until $(( $(date +%s) + ${TPDS_R4_GUARD_H:-24} * 3600 ))"
 MODEL_ROOT=${TPDS_R4_MODEL_ROOT:-/root/autodl-tmp/hf_models}
-TRACE_ROOT=$(dirname "$TRACE_DIR")
+TRACE_ROOT=$TRACE_DIR   # the 2.7B and GDN traces go next to the 370M ones (<root>/mamba1, <root>/mamba2)
 if [ "${TPDS_SMOKE:-0}" = 1 ]; then
   TAG=${TPDS_TAG:-smoke-r4ab}
+  GUARD=""   # a smoke run next to a real run must not wait for it (the real run's guard pauses instead)
   SPIN=${TPDS_R4_SPIN_MS:-5}
   E24A="--layouts tiny:2:64:128 --lengths 512,1024 --batches 1,2 --chunks 64,128,256 --rounds 1 --warmup 2 --repeats 3"
   E2A="--batches 1,4 --warmup 2 --repeats 3 --max-rows 4"
@@ -58,9 +59,10 @@ want() { case " $ONLY " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 local_or_id() { local d="$MODEL_ROOT/${1##*/}"; if [ -f "$d/config.json" ] && ls "$d"/*.safetensors >/dev/null 2>&1
   then echo "$d"; else echo "$1"; fi; }
 M2_SRC=AntonV/mamba2-370m-hf
-if [ -n "${TPDS_R4_HF_SHARED:-}" ]; then
-  M2_SRC=$(HF_HUB_CACHE=$TPDS_R4_HF_SHARED "$PY" -c "from huggingface_hub import snapshot_download as s; \
-print(s('AntonV/mamba2-370m-hf', local_files_only=True))" 2>/dev/null || echo AntonV/mamba2-370m-hf)
+M2_HUB=${TPDS_R4_HF_SHARED:-}/models--AntonV--mamba2-370m-hf
+if [ -n "${TPDS_R4_HF_SHARED:-}" ] && [ -f "$M2_HUB/refs/main" ] \
+   && [ -f "$M2_HUB/snapshots/$(cat "$M2_HUB/refs/main")/config.json" ]; then
+  M2_SRC=$M2_HUB/snapshots/$(cat "$M2_HUB/refs/main")   # a snapshot folder in a shared hub cache
 fi
 M2B_SRC=$(local_or_id AntonV/mamba2-2.7b-hf); GDN_SRC=$(local_or_id Idiap/gated-deltanet-swa-1.4B-30B)
 lanelog "tpds-r4 3090 A/B lane on $TAG (steps: $ONLY; traces $TRACE_ROOT; mamba2 $M2_SRC; 2.7b $M2B_SRC; gdn $GDN_SRC)"
