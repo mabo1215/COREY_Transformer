@@ -34,6 +34,48 @@ stacking four prompts of one fold cropped to the target length (the kernels are 
 three rounds in both conventions (tags `vgpu3090_r4spin_u2048b4`, `vgpu3090_r4plain_u2048b4`).
 Re-estimate h_k and re-run the serving replay. About 0.1 GPU-h.
 
+## Packages A and B (author 2026-10-08): E22-E24 on the RTX 3090
+The author chose the optional packages A (M3a = E20, M9a, M10b = E21, M3b) and B (M1b). Title
+decision: keep the title if the optimum moves with the shape on the public kernel of E24, otherwise
+narrow it. Lane `src/experiments/remote/tpds_lane_r4_3090_ab.sh` starts after E21 (E24, E22, E23 in
+that order); all timing steps hold the GPU lock and the exclusive-GPU guard (shared host). Traces live
+on `/autodl-fs/data/corey_r4_traces_vgpu3090` (the host's local disk has 29 GB free; 1545 files per
+370M corpus, inode quota permitting); checkpoints of the 2.7B Mamba-2 and 1.4B Gated DeltaNet models
+are copied from the PRO 6000 to `/autodl-fs/data/corey_r4_models`.
+
+### E24 - Public chunked kernel with a wide chunk range (M1b; package B)
+Kernel: TFLA mLSTM forward (`mlstm_kernels` 2.0.6, `chunkwise--triton_xl_chunk`), independently
+written, chunk 32..2048 (`chunk_size` = intra-chunk tile; the state kernel uses min(128, chunk), the
+library heuristic; default 128). Shapes: 4/8/10 heads of value dim 512 and query/key dim 256 (value
+widths 2048/4096/5120, the 370M/1.4B/2.8B d_inner; xLSTM-7B head shape), L in {512, 1024, 2048, 3072,
+4096, 6144, 8192}, batch 1/4/16, every chunk dividing L; synthetic bf16 q/k/v, fp32 gates; 3 rounds,
+shuffled; device time (pre-spin) and launch-inclusive. Metrics (`--analyze`): per-shape round-median
+oracle and tie set, spread, regret of the library default, best static chunk, tables keyed by length /
+batch / layout, and an Eq.-(5)-style NNLS cost model (launch, intra-chunk O(L C) work, state
+materialization, sequential chunk steps, streaming) evaluated leave-one-shape-out. Decision: the
+optimum moves (several oracle chunks, default/static regret beyond the tie margin) -> keep the title
+and add the kernel as the public evidence; otherwise state that shape-keyed tuning is enough and
+often unnecessary, and narrow the title. About 1.5 GPU-h; peak about 30 GB (chunk 32 at batch 16,
+10 heads, L 8192; out-of-memory cells are recorded as infeasible).
+
+### E22 - CUDA-graph timing (M3b; package A)
+`e2_oracle_sweep.py --cuda-graph`: every (call, chunk) captured once into a CUDA graph and >= 50
+replays timed (warmup 10, repeats 50). Runs: 370M Mamba-2 calls warm and L2-flushed (re-derive the
+Mamba-2 rows of Tables I-III), 370M Mamba-1 calls warm, Mamba-2 2.7B calls warm (flushed for
+L >= 2048) and Gated DeltaNet 1.4B calls warm and flushed (Table S-largewidth-calls headroom); the
+370M Mamba-2, 2.7B Mamba-2 (8 of 64 layers) and Gated DeltaNet (6 of 12 layers) traces are captured
+first with the E2/E17 settings. Metrics as E2/E3/E17 (oracle, ties, static/model regret, floor,
+headroom), graph vs eager. About 3 GPU-h; peak about 12 GB (2.7B capture).
+
+### E23 - Reference scan at a fixed thread count (M9a; package A)
+`selective_scan_chunk_cuda.fwd_with_chunk_threads` (new fp16 instantiations: 32 threads x 32 / 64
+items for chunks 1024 / 2048; the stock pairing already uses 32 threads up to chunk 512), validated
+against the stock forward at every (threads, chunk) (max relative difference 1.8e-4). Sweep: the 2360
+captured 370M Mamba-1 calls, batch 1/4/16, stock pairing and the 32-thread family side by side in one
+session, device time (pre-spin 20 ms), warmup 10, repeats 50 (`e8_refscan.py --thread-families 32`).
+Metrics: spread, oracle, static and model regret of the 32-thread family next to the stock pairing
+(Table IV); share of the stock-pairing spread that remains at fixed threads. About 3 GPU-h; peak < 2 GB.
+
 # Experiment Design — Cycle tpds-r3 (2026-09-30): GPU experiments selected by the author
 
 The author selected two of the five GPU experiments of the tpds-r3 review

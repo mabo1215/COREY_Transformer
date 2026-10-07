@@ -1,0 +1,32 @@
+{
+  "cmd": "TPDS_R4AB_ONLY=E22 src/experiments/remote/tpds_lane_r4_3090_ab.sh",
+  "created_at": "2026-10-07T20:09:06Z",
+  "design_ref": "docs/Design.md#E22",
+  "est_hours": 3.0,
+  "host": "vgpu3090",
+  "id": "E22",
+  "items": [
+    "M3"
+  ],
+  "notes": [
+    {
+      "at": "2026-10-07T20:09:06Z",
+      "by": "bobsteam1215",
+      "text": "--cuda-graph smoke ok on the local RTX 3070 (Mamba-1, warm and flushed); SSD/GDN graph smoke running on vgpu3090"
+    }
+  ],
+  "progress": 0,
+  "purpose": "Production-kernel claims without the eager launch floor (review M3b, package A)",
+  "results": [
+    "src/experiments/results/tpds/e2_mamba2_vgpu3090*r4graph*.csv",
+    "src/experiments/results/tpds/e2_mamba1_vgpu3090_r4graph.csv",
+    "src/experiments/results/tpds/e2_gdn_vgpu3090_1p4b_r4graph*.csv",
+    "src/experiments/results/tpds/e2_*_vgpu3090*r4graph*.json",
+    "src/experiments/results/tpds/e2_*_vgpu3090*r4graph*_rounds.jsonl"
+  ],
+  "status": "code_ready",
+  "title": "CUDA-graph timing: 370M Mamba-2 (warm+flushed), 370M Mamba-1, Mamba-2 2.7B and GDN 1.4B calls",
+  "updated_at": "2026-10-07T20:09:06Z",
+  "updated_by": "bobsteam1215",
+  "vram_gb": 12.0
+}
