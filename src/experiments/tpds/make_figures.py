@@ -10,6 +10,8 @@ plus marker/line-style redundancy for colorblind safety):
   tpds_breakeven.pdf          cumulative cost vs number of calls (E5)
   tpds_cost_model.pdf         measured vs cost-model latency per chunk, both GPUs (T1; full width)
   tpds_key_churn.pdf          key-churn break-even N* vs decision overhead, both GPUs (T3)
+  tpds_calibration_budget.pdf mean and p95 regret vs calibration budget (default chunk, cost model,
+                              model top-2 / top-3, all chunks profiled), three GPUs (T1 round 4)
 
 Example:
     python -m src.experiments.tpds.make_figures --in-dir src/experiments/results/tpds --host pro6000 \
@@ -391,6 +393,76 @@ def fig_key_churn(e5bs, out_dir):
     _save(fig, out_dir, "tpds_key_churn.pdf")
 
 
+BUDGET_TAGS = ("pro6000", "vgpu3090", "h800")
+BUDGET_LABEL = {"pro6000": "RTX PRO 6000", "vgpu3090": "RTX 3090", "h800": "H800 PCIe"}
+# Stored default-chunk mean regrets (deployment_units.json) that the recomputation must reproduce.
+BUDGET_DEFAULT_CHUNK = 256
+
+
+def default_chunk_regrets(in_dir: Path, tags=BUDGET_TAGS, chunk=BUDGET_DEFAULT_CHUNK) -> dict:
+    """Per-call relative regret of one fixed chunk on the captured Mamba-1 calls of each tag.
+
+    regret = lat[chunk] / min over chunks of lat - 1 (per-call oracle of the E2 table); mean and
+    95th percentile in percent with the repository's convention (numpy percentile). The mean is
+    checked against the default-chunk entry of ``deployment_units.json`` when that file exists.
+    """
+    from src.experiments.tpds.analysis import chunk_columns, latency_matrix
+
+    stored = _load_json(in_dir / "deployment_units.json")
+    out = {}
+    for tag in tags:
+        df = load_e2([in_dir / f"e2_mamba1_{tag}.csv"])
+        if df.empty:
+            continue
+        chunks = chunk_columns(df)
+        lat = latency_matrix(df, chunks)
+        reg = lat[:, chunks.index(chunk)] / np.nanmin(lat, axis=1) - 1.0
+        rec = {"n": int(len(reg)), "mean_regret_pct": float(100 * reg.mean()),
+               "p95_regret_pct": float(100 * np.percentile(reg, 95))}
+        if stored:
+            ref = stored["kernels"][f"mamba1_triton_370m_{tag}"]["pooled"]["all"]["default"]["regret_pct_rel"]
+            if abs(ref - rec["mean_regret_pct"]) > 1e-6:
+                raise SystemExit(f"default-chunk mean regret of {tag} ({rec['mean_regret_pct']:.4f}%) does not "
+                                 f"match deployment_units.json ({ref:.4f}%)")
+        out[tag] = rec
+    return out
+
+
+def fig_calibration_budget(summary, default_regrets, out_dir):
+    """Mean (left) and 95th-percentile (right) per-call regret of the Triton Mamba-1 scan on the
+    captured 370M calls versus the calibration budget, one line per GPU (launch-inclusive tags).
+
+    Levels: the default chunk (256, no calibration); the cost model of Eq. (5) (calibration sweep
+    only); the model's two and three best chunks profiled per exact shape (top-2, top-3); every
+    chunk profiled per exact shape (the exact-shape table). Values from
+    ``cost_model_baselines_r4_summary.json`` (``topk_cost_model``) and, for the default chunk,
+    from the E2 tables (``default_chunk_regrets``).
+    """
+    topk = summary.get("topk_cost_model", {})
+    tags = [t for t in BUDGET_TAGS if t in topk and t in default_regrets]
+    if not tags:
+        return
+    levels = ["default", "model", "top-2", "top-3", "all 6"]
+    keys = [None, "top1", "top2", "top3", "all_chunks_profiled"]
+    fig, axes = plt.subplots(1, 2, figsize=(COL_W, 1.75), sharex=True)
+    x = np.arange(len(levels))
+    for i, tag in enumerate(tags):
+        for ax, stat in zip(axes, ("mean_regret_pct", "p95_regret_pct")):
+            vals = [default_regrets[tag][stat] if k is None else topk[tag][k][stat] for k in keys]
+            ax.plot(x, vals, color=OKABE[i], marker=MARKERS[i], ls=STYLES[i], label=BUDGET_LABEL.get(tag, tag))
+    for ax, title in zip(axes, ("mean regret (%)", "95th-percentile regret (%)")):
+        _plain_log_y(ax)
+        ax.set_xticks(x)
+        ax.set_xticklabels(levels, rotation=35, ha="right")
+        ax.set_title(title, loc="left")
+        ax.grid(True, which="major", axis="y")
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=len(tags), frameon=False, bbox_to_anchor=(0.5, 1.0),
+               handlelength=2.2, columnspacing=1.0)
+    fig.tight_layout(w_pad=0.8)
+    _save(fig, out_dir, "tpds_calibration_budget.pdf")
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--in-dir", type=Path, default=RESULTS_DIR)
@@ -427,6 +499,9 @@ def main(argv=None):
     e5bs = {h: j for h in cross if (j := _load_json(args.in_dir / f"e5b_{h}.json"))}
     if e5bs:
         jobs.append(lambda: fig_key_churn(e5bs, args.out_dir))
+    budget = _load_json(args.in_dir / "cost_model_baselines_r4_summary.json")
+    if budget:
+        jobs.append(lambda: fig_calibration_budget(budget, default_chunk_regrets(args.in_dir), args.out_dir))
     if not jobs:
         print("no results found; nothing to plot")
     for job in jobs:
