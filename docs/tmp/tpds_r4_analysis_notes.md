@@ -114,3 +114,40 @@ Paper text must cite them through the result files, never by script name.
   -> Paper: state the tie rule explicitly and report both defaults; no change of headline.
 - Launch-bound boundary F/(a+2 sqrt(bg)) at a 320 us floor: ~3,900 tokens on the RTX 3090 (3,878, from
   9,513; per batch ~3,880/970/240); PRO 6000 ~11,800 (from 17,321) but 320 us was measured on the 3090 only.
+
+## Cost-model baselines and clean selection (M5a, M5b, M6d) - cost_model_baselines_r4_<tag>.json
+- Reproduction exact: model 0.878 / 3.249 / 3.543%, all 11 ablation forms, three-parameter restriction,
+  work-term, nearest key, top-k, stored LOKO 0.98/2.04/3.95, E12 pooled model 6.51/2.91, width-2048
+  table 16.46/2.20, V3 transfers 5.13, 2.54, 3.81, 5.44. Deterministic (two runs identical).
+- Captured calls, calibration-only selectors (mean/p95 %, tied share) PRO6000 | 3090 | H800:
+  cost model 0.88/4.0 (.90) | 3.25/15.4 (.69) | 3.54/14.1 (.79)
+  three-param restriction 4.48/50.1 | 2.49/13.1 (.78) | 4.13/17.4
+  nearest key 5.24/16.0 | 4.54/20.5 | 14.38/78.3
+  log-linear interpolation (log L, log B) 3.88/12.8 | 4.16/19.4 | 14.34/78.3
+  length tree 2.67/10.7 | 9.87/53.0 | 19.92/78.3
+  gradient boosting basic/structural 3.05/1.26 | 6.45/6.18 | 9.28/6.26
+  MLP basic/structural 9.63/3.95 | 5.69/4.15 | 8.89/4.79
+  TFLA fitted 12.70/88.1 | 7.62/31.8 | 10.58/67.4; TFLA literal 106.0 | 17.7 | 152.1
+  ("structural" = learner also gets Eq. (5) derived quantities: occupancy, waves, ...)
+- TFLA: App. G.1 no-overlap runtime with App. F per-chunk byte/FLOP counts; every channel a head
+  (d_hv=1), d_qk=16, fp16 activations, fp32 state, F_causal=0.5, ceil(L/C) chunks; alpha, beta fitted on
+  the 90 default-launch calibration timings; LS optimum alpha -> inf on all GPUs (data reject the C^2
+  FLOP term; memory term only). Datasheet ratios 64-256 FLOP/byte pick chunk 32 always (148/29/76%).
+- M5a clean selection over 12 forms (target GPU mean/p95): calibration-only leave-one-shape-out:
+  PRO6000 picks drop-shuffle 1.34/5.7 (two exactly tied alternatives score 0.88); 3090 picks
+  drop-L1-miss 3.61/19.0 (tied alternative 3.25); H800 picks drop-scan-work 7.25/62.5. Adding the
+  three-param restriction as candidate changes only the 3090 pick (2.49).
+  Selected on another GPU's calls: PRO6000 0.88 (chosen on 3090), 4.80 (on H800); 3090 3.72 (on PRO6000),
+  12.72 (on H800); H800 3.74 (on PRO6000), 3.54 (on 3090); chosen on the other two together:
+  2.68 / 4.52 / 3.54.
+  -> calibration-only selection is unstable; leave-one-shape-out often cannot separate forms.
+- M6d top-k (mean/p95/p99): top-2 0.52/1.79/10.8 | 2.30/13.4/28.7 | 0.73/1.90/13.3;
+  top-3 0.36/1.21/5.0 | 2.06/12.7/27.9 | 0.72/1.85/13.3. Max regret does not drop.
+- Shard widths (126 pooled shard shapes; 3090 | H800): model 6.51/30.5 | 2.91/13.1; three-param
+  6.14 | 6.02; GB structural 6.53 | 3.41; TFLA 12.92 | 3.32; interpolation 21.8 | 3.53; nearest key
+  22.2 | 3.66; width-2048 table 16.46 | 2.20; top-2 3.00/15.9/25.2 | 0.22/0.60/5.5; top-3 1.92/12.4/18.9 |
+  0.03/0.01/0.73.
+- Cross-GPU transfer of the model: H800->PRO6000 0.87, H800->3090 4.70; three-param restriction to
+  3090 2.48; learned regressors 3.5-23.
+- Learned regressors swing 0.47-9.6% across tags; none wins consistently. MLP trained with Adam,
+  300 epochs (L-BFGS too slow).
