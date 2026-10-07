@@ -50,15 +50,17 @@ push_results() {  # push_results <message>; returns 0 if main or a fallback bran
   local msg=$1 attempt branch
   git -c user.name="revloop-$HOST" -c user.email="revloop@$HOST" commit --quiet -m "$msg [revloop@$HOST]" \
     || { log "nothing to commit"; return 0; }
-  for attempt in 1 2 3; do
+  # Several attempts with a growing pause: GitHub access from some hosts is intermittent.
+  for attempt in 1 2 3 4 5 6; do
     # -X theirs keeps this host's own result/state changes when replaying onto origin.
-    if git -c user.name="revloop-$HOST" -c user.email="revloop@$HOST" pull --rebase --autostash -X theirs --quiet origin "$BRANCH" \
+    if timeout 300 git -c user.name="revloop-$HOST" -c user.email="revloop@$HOST" pull --rebase --autostash -X theirs --quiet origin "$BRANCH" \
        && timeout 180 git push --quiet origin "HEAD:$BRANCH"; then
       log "pushed to origin/$BRANCH: $(git log -1 --format='%h %s')"
       return 0
     fi
     git rebase --abort >/dev/null 2>&1 || true
-    sleep 20
+    log "push attempt $attempt failed; retrying"
+    sleep $((30 * attempt))
   done
   branch="revloop-results-$HOST-$(date '+%Y%m%d-%H%M%S')"
   if timeout 180 git push --quiet origin "HEAD:refs/heads/$branch"; then
