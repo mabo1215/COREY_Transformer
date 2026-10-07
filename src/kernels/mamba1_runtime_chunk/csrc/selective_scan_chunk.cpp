@@ -6,7 +6,10 @@
 //   fwd(u, delta, A, B, C, D, z, delta_bias, delta_softplus)
 //       the stock forward (chunk chosen from the sequence length), built from the same sources,
 //   fwd_with_chunk_size(u, delta, A, B, C, D, z, delta_bias, delta_softplus, chunk_size)
-//       the same kernel with the chunk as a runtime argument, chunk_size in {128, ..., 2048}.
+//       the same kernel with the chunk as a runtime argument, chunk_size in {128, ..., 2048},
+//   fwd_with_chunk_threads(u, delta, A, B, C, D, z, delta_bias, delta_softplus, chunk_size, n_threads)
+//       the same kernel with the thread count fixed at n_threads (32, 64 or 128) and the chunk varied
+//       through the items per thread (fp16 inputs only; review M9a).
 // Both return {out, x} or {out, x, out_z}, where x holds the carried state at every chunk end
 // and therefore has ceil(seqlen / chunk) chunk slots.
 #include <ATen/cuda/CUDAContext.h>
@@ -37,6 +40,9 @@ void selective_scan_fwd_cuda(SSMParamsBase &params, cudaStream_t stream);
 
 template <typename input_t, typename weight_t>
 void selective_scan_fwd_cuda_chunk(SSMParamsBase &params, int chunk, cudaStream_t stream);
+
+template <typename input_t, typename weight_t>
+void selective_scan_fwd_cuda_chunk_threads(SSMParamsBase &params, int chunk, int threads, cudaStream_t stream);
 
 static void set_params(SSMParamsBase &params, int batch, int dim, int seqlen, int dstate, int n_groups,
                        int n_chunks, bool is_variable_B, bool is_variable_C, const at::Tensor &u,
@@ -97,14 +103,16 @@ static void set_params(SSMParamsBase &params, int batch, int dim, int seqlen, in
     params.out_d_stride = out.stride(1);
 }
 
-// chunk_size == 0 selects the stock length-based dispatch.
+// chunk_size == 0 selects the stock length-based dispatch; n_threads > 0 fixes the thread count.
 static std::vector<at::Tensor> fwd_impl(const at::Tensor &u, const at::Tensor &delta, const at::Tensor &A,
                                         const at::Tensor &B, const at::Tensor &C,
                                         const c10::optional<at::Tensor> &D_,
                                         const c10::optional<at::Tensor> &z_,
                                         const c10::optional<at::Tensor> &delta_bias_, bool delta_softplus,
-                                        int64_t chunk_size) {
+                                        int64_t chunk_size, int64_t n_threads = 0) {
     auto input_type = u.scalar_type();
+    TORCH_CHECK(n_threads == 0 || (chunk_size > 0 && input_type == at::ScalarType::Half),
+                "fixed-thread dispatch needs a chunk size and fp16 inputs");
     TORCH_CHECK(input_type == at::ScalarType::Float || input_type == at::ScalarType::Half ||
                 input_type == at::ScalarType::BFloat16);
     TORCH_CHECK(A.scalar_type() == at::ScalarType::Float, "selective_scan_chunk supports real float32 A only");
@@ -172,7 +180,10 @@ static std::vector<at::Tensor> fwd_impl(const at::Tensor &u, const at::Tensor &d
                delta_softplus);
     at::cuda::CUDAGuard device_guard{(char)u.get_device()};
     auto stream = at::cuda::getCurrentCUDAStream().stream();
-    DISPATCH_ITYPE_FLOAT_AND_HALF_AND_BF16(u.scalar_type(), "selective_scan_chunk_fwd", [&] {
+    if (n_threads > 0) {
+        selective_scan_fwd_cuda_chunk_threads<at::Half, float>(params, static_cast<int>(chunk_size),
+                                                               static_cast<int>(n_threads), stream);
+    } else DISPATCH_ITYPE_FLOAT_AND_HALF_AND_BF16(u.scalar_type(), "selective_scan_chunk_fwd", [&] {
         if (chunk_size > 0) {
             selective_scan_fwd_cuda_chunk<input_t, float>(params, static_cast<int>(chunk_size), stream);
         } else {
@@ -201,7 +212,19 @@ std::vector<at::Tensor> fwd_with_chunk_size(const at::Tensor &u, const at::Tenso
     return fwd_impl(u, delta, A, B, C, D_, z_, delta_bias_, delta_softplus, chunk_size);
 }
 
+std::vector<at::Tensor> fwd_with_chunk_threads(const at::Tensor &u, const at::Tensor &delta, const at::Tensor &A,
+                                               const at::Tensor &B, const at::Tensor &C,
+                                               const c10::optional<at::Tensor> &D_,
+                                               const c10::optional<at::Tensor> &z_,
+                                               const c10::optional<at::Tensor> &delta_bias_, bool delta_softplus,
+                                               int64_t chunk_size, int64_t n_threads) {
+    TORCH_CHECK(chunk_size > 0 && n_threads > 0, "chunk_size and n_threads must be positive");
+    return fwd_impl(u, delta, A, B, C, D_, z_, delta_bias_, delta_softplus, chunk_size, n_threads);
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("fwd", &fwd, "Selective scan forward (stock length-based chunk)");
     m.def("fwd_with_chunk_size", &fwd_with_chunk_size, "Selective scan forward with a runtime chunk size");
+    m.def("fwd_with_chunk_threads", &fwd_with_chunk_threads,
+          "Selective scan forward with a runtime chunk size at a fixed thread count (fp16)");
 }

@@ -15,6 +15,14 @@ The table has the E2 layout (features, oracle chunk, tied chunks, per-chunk late
 so the E2/E3 analysis applies unchanged. The entropy rule is Eq. (2) over the routed range
 [128, 2048].
 
+``--thread-families 32[,64,128]`` (review M9a) also times the chunks at a fixed thread count per block
+(module function ``fwd_with_chunk_threads``): the stock pairing raises the thread count with the chunk
+(32 threads up to chunk 512, 64 at 1024, 128 at 2048), so its chunk sweep also varies the intra-block
+parallelism. A family T holds T threads and changes only the items per thread (chunk = T x items,
+items a multiple of 4). Pairs identical to the stock pairing are not timed twice: the family reuses the
+stock-pairing column. Per family the table adds ``lat_t<T>c<C>_*`` for the new pairs and
+``oracle_chunk_t<T>``, ``oracle_mean_ms_t<T>``, ``tied_chunks_t<T>`` over the family's chunks.
+
 ``--validate-only`` compares every chunk with the stock forward on synthetic inputs whose
 lengths are not a multiple of any chunk, and exits. ``--analyze`` (CPU) writes
 ``e8_analysis_<tag>.json``: chunk spread, static and stock-dispatch regret per batch size, the E3
@@ -43,14 +51,30 @@ from src.experiments.tpds.e2_oracle_sweep import FEATURES, activation_features, 
 
 REF_CHUNKS = (128, 256, 512, 1024, 2048)
 BASELINES = ("stock", "stock_rebuilt")
+# (threads, items) of the stock pairing for each chunk
+STOCK_PAIRING = {128: (32, 4), 256: (32, 8), 512: (32, 16), 1024: (64, 16), 2048: (128, 16)}
 
 
-def columns(chunks):
+def family_variants(chunks, threads):
+    """Variant name for each chunk of the fixed-thread family: ``c<C>`` where the pair equals the stock pairing,
+    ``t<T>c<C>`` where it is new; chunks the family cannot run (items not a multiple of 4, or above 64) are left out."""
+    out = {}
+    for c in chunks:
+        if c % threads or (c // threads) % 4 or c // threads > 64:
+            continue
+        out[c] = f"c{c}" if STOCK_PAIRING.get(c) == (threads, c // threads) else f"t{threads}c{c}"
+    return out
+
+
+def columns(chunks, families=()):
     cols = ["key", "model", "host", "group_id", "prompt_ids", "regimes", "sources", "fold", "layer", "batch",
             "n_unique_prompts", "L", "L_bucket", "width", "d_state"] + FEATURES + [
         "entropy_rule_chunk", "oracle_chunk", "oracle_mean_ms", "tied_chunks", "max_out_diff_across_chunks",
         "max_out_diff_vs_stock", "stock_chunk", "feature_ms", "warmup", "repeats", "peak_vram_gb"]
-    for name in [f"c{c}" for c in chunks] + list(BASELINES):
+    for t in families:
+        cols += [f"oracle_chunk_t{t}", f"oracle_mean_ms_t{t}", f"tied_chunks_t{t}"]
+    extra = [n for t in families for n in family_variants(chunks, t).values() if n.startswith("t")]
+    for name in [f"c{c}" for c in chunks] + extra + list(BASELINES):
         cols += [f"lat_{name}_mean", f"lat_{name}_std", f"lat_{name}_ci_lo", f"lat_{name}_ci_hi"]
     return cols
 
@@ -70,7 +94,7 @@ def _modules():
     return selective_scan_cuda, selective_scan_chunk_cuda
 
 
-def make_variants(inp, chunks, mods):
+def make_variants(inp, chunks, mods, families=()):
     stock, patched = mods
     u, dt, A, D, z = inp["u"], inp["delta"], inp["A"], inp["D"], inp.get("z")
     B = inp["B"].unsqueeze(1).contiguous() if inp["B"].dim() == 3 else inp["B"]
@@ -83,6 +107,11 @@ def make_variants(inp, chunks, mods):
          "stock_rebuilt": lambda: pick(patched.fwd(u, dt, A, B, C, D, z, None, True))}
     for c in chunks:
         v[f"c{c}"] = (lambda c=c: pick(patched.fwd_with_chunk_size(u, dt, A, B, C, D, z, None, True, c)))
+    for t in families:
+        for c, name in family_variants(chunks, t).items():
+            if name.startswith("t"):
+                v[name] = (lambda c=c, t=t: pick(patched.fwd_with_chunk_threads(u, dt, A, B, C, D, z, None, True,
+                                                                                 c, t)))
     return v
 
 
@@ -99,14 +128,14 @@ def time_variants(variants, order, warmup, repeats, guard, until, log):
 
 
 @torch.no_grad()
-def validate(chunks, mods, log, lengths=(300, 1000, 3000, 5000), dim=64, bsz=2) -> dict:
+def validate(chunks, mods, log, lengths=(300, 1000, 3000, 5000), dim=64, bsz=2, families=()) -> dict:
     out = {"lengths": list(lengths), "dim": dim, "batch": bsz, "chunks": {}}
     ok = True
     for L in lengths:
         inp = K.make_mamba1_inputs(bsz, dim, 16, L, dtype=torch.float16, seed=L)
-        v = make_variants(inp, chunks, mods)
+        v = make_variants(inp, chunks, mods, families)
         ref = v["stock"]().float()
-        for name in ["stock_rebuilt"] + [f"c{c}" for c in chunks]:
+        for name in [n for n in v if n != "stock"]:
             y = v[name]().float()
             d = float((y - ref).abs().max())
             rel = d / max(float(ref.abs().max()), 1e-12)
@@ -179,6 +208,8 @@ def parse_args(argv=None):
     p.add_argument("--warmup", type=int, default=10)
     p.add_argument("--repeats", type=int, default=50)
     p.add_argument("--e4-keys", action="store_true", help="also time the twelve E4 shape keys")
+    p.add_argument("--thread-families", default="",
+                   help="comma-separated fixed thread counts (32, 64, 128) to time as well (review M9a)")
     p.add_argument("--validate-only", action="store_true")
     p.add_argument("--analyze", action="store_true", help="only write the analysis of an existing table (CPU)")
     p.add_argument("--exclusive-guard", action="store_true")
@@ -208,22 +239,24 @@ def main(argv=None):
     gpu_baseline = all_gpu_pids()
     check_disk(args.out_dir, need_gb=0.5, log=log)
     chunks = [int(c) for c in args.chunks.split(",")]
+    families = [int(t) for t in args.thread_families.split(",") if t]
     mods = _modules()
     torch.zeros(1, device="cuda")
     torch.cuda.synchronize()
     own = register_own_gpu_pids(gpu_baseline, log=log) if args.exclusive_guard else set()
     meta = env_metadata()
-    meta.update({"experiment": "E8", "chunks": chunks, "own_gpu_pids": sorted(own),
+    meta.update({"experiment": "E8", "chunks": chunks, "thread_families": families,
+                 "family_variants": {t: family_variants(chunks, t) for t in families}, "own_gpu_pids": sorted(own),
                  "args": {k: str(v) for k, v in vars(args).items()},
                  "stock_dispatch": {"<=128": 128, "<=256": 256, "<=512": 512, "<=1024": 1024, ">1024": 2048}})
     summary_path = args.out_dir / f"e8_refscan_{tag}.json"
-    val = validate(chunks, mods, log)
+    val = validate(chunks, mods, log, families=families)
     if args.validate_only or not val["passed"]:
         write_json(summary_path, {"meta": meta, "validation": val})
         raise SystemExit(0 if val["passed"] else 4)
 
     csv_path = args.out_dir / f"e8_refscan_{tag}.csv"
-    w = CsvWriter(csv_path, columns(chunks))
+    w = CsvWriter(csv_path, columns(chunks, families))
     manifest = load_manifest(args.trace_dir, "mamba1")
     if not manifest:
         raise SystemExit(f"no captured Mamba-1 traces under {args.trace_dir}; run capture_traces first")
@@ -265,7 +298,7 @@ def main(argv=None):
         feats = activation_features(act.cuda(), dlt.cuda())
         torch.cuda.synchronize()
         feat_ms = (time.perf_counter() - t0) * 1e3
-        variants = make_variants(inp, chunks, mods)
+        variants = make_variants(inp, chunks, mods, families)
         ref = variants["stock"]().float()
         diffs = {}
         for name in variants:
@@ -284,10 +317,16 @@ def main(argv=None):
                "width": inp["u"].shape[1], "d_state": inp["A"].shape[1], **{k: round(v, 6) for k, v in feats.items()},
                "entropy_rule_chunk": entropy_rule_chunk(feats["entropy_norm"], 128, 2048), "oracle_chunk": oracle,
                "oracle_mean_ms": stats[f"c{oracle}"]["mean_ms"], "tied_chunks": ";".join(map(str, tied)),
-               "max_out_diff_across_chunks": max(diffs[f"c{c}"] for c in chunks),
+               "max_out_diff_across_chunks": max(diffs[n] for n in variants if n not in BASELINES),
                "max_out_diff_vs_stock": max(diffs.values()), "stock_chunk": stock_chunk(L),
                "feature_ms": round(feat_ms, 4), "warmup": args.warmup, "repeats": args.repeats,
                "peak_vram_gb": round(peak_vram_gb(), 3)}
+        for t in families:
+            fam = family_variants(chunks, t)
+            o = min(fam, key=lambda c: stats[fam[c]]["mean_ms"])
+            row.update({f"oracle_chunk_t{t}": o, f"oracle_mean_ms_t{t}": stats[fam[o]]["mean_ms"],
+                        f"tied_chunks_t{t}": ";".join(str(c) for c in fam
+                                                      if stats[fam[c]]["ci95_lo_ms"] <= stats[fam[o]]["ci95_hi_ms"])})
         for name, s in stats.items():
             row.update({f"lat_{name}_mean": s["mean_ms"], f"lat_{name}_std": s["std_ms"],
                         f"lat_{name}_ci_lo": s["ci95_lo_ms"], f"lat_{name}_ci_hi": s["ci95_hi_ms"]})

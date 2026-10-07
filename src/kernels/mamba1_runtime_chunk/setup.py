@@ -31,7 +31,8 @@ setup(
     ext_modules=[CUDAExtension(
         name="selective_scan_chunk_cuda",
         sources=[str(HERE / "csrc" / f) for f in ("selective_scan_chunk.cpp", "selective_scan_fwd_chunk_fp16.cu",
-                                                   "selective_scan_fwd_chunk_bf16.cu", "selective_scan_fwd_chunk_fp32.cu")],
+                                                   "selective_scan_fwd_chunk_bf16.cu", "selective_scan_fwd_chunk_fp32.cu",
+                                                   "selective_scan_fwd_chunk_threads_fp16.cu")],
         include_dirs=[str(Path(MAMBA_CSRC).resolve()), str(HERE / "csrc")],
         extra_compile_args={"cxx": ["-O3", "-std=c++17"], "nvcc": nvcc_flags},
     )],

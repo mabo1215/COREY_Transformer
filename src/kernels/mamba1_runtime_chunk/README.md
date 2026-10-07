@@ -27,6 +27,17 @@ Module `selective_scan_chunk_cuda`:
   dispatch, compiled from the same sources (the same-binary baseline);
 - `fwd_with_chunk_size(..., delta_softplus, chunk_size)`: the runtime chunk; this is
   the name `src/corey_selective_scan_dispatch.py` looks for.
+- `fwd_with_chunk_threads(..., delta_softplus, chunk_size, n_threads)` (fp16 only): the
+  same kernel with the thread count per block held at `n_threads` and the chunk varied
+  through the items per thread (`kNItems = chunk / n_threads`, a multiple of 4). The stock
+  pairing above raises the thread count with the chunk, so its chunk sweep also changes the
+  intra-block parallelism; this entry point separates the two (review item M9a).
+
+| n_threads | chunks (kNItems) |
+|----------:|------------------|
+| 32        | 128 (4), 256 (8), 512 (16), 1024 (32), 2048 (64) |
+| 64        | 256 (4), 512 (8), 1024 (16), 2048 (32) |
+| 128       | 512 (4), 1024 (8), 2048 (16) |
 
 Both return `[out, x]` or `[out, x, out_z]`. Only the forward pass and real float32
 weights are built.
