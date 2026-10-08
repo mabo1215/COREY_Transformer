@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "host": "vgpu3090",
+    "hostname": "autodl-container-5ea9tapmbb-6a673b83",
+    "utc": "2026-10-08T03:42:08Z",
+    "python": "3.12.3",
+    "platform": "Linux-5.15.0-119-generic-x86_64-with-glibc2.35",
+    "argv": [
+      "/root/autodl-tmp/COREY_Transformer_tpds/src/experiments/tpds/e2_oracle_sweep.py",
+      "--model",
+      "gdn",
+      "--cuda-graph",
+      "--batches",
+      "1,4,16",
+      "--warmup",
+      "10",
+      "--repeats",
+      "50",
+      "--exclusive-guard",
+      "--guard-until",
+      "1791491081",
+      "--out-dir",
+      "src/experiments/results/tpds",
+      "--flush-l2",
+      "--trace-dir",
+      "/autodl-fs/data/corey_r4_traces_vgpu3090/tpds_traces_gdn_1p4b",
+      "--tag",
+      "vgpu3090_1p4b_r4graphcold"
+    ],
+    "torch": "2.8.0+cu128",
+    "cuda_runtime": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "gpu_mem_gb": 47.41,
+    "gpu_sm_count": 82,
+    "gpu_cc": "8.6",
+    "pkg_triton": "3.4.0",
+    "pkg_transformers": "5.6.2",
+    "pkg_mamba_ssm": "2.3.2.post1",
+    "pkg_fla-core": "0.5.2",
+    "pkg_flash-linear-attention": "0.5.2",
+    "pkg_numpy": "2.3.2",
+    "pkg_scikit-learn": "1.8.0",
+    "nvidia_smi": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+    "git_commit": "7a7151e",
+    "experiment": "E2",
+    "model": "gdn",
+    "args": {
+      "model": "gdn",
+      "exclusive_guard": true,
+      "guard_until": 1791491081.0,
+      "trace_dir": "/autodl-fs/data/corey_r4_traces_vgpu3090/tpds_traces_gdn_1p4b",
+      "batches": "1,4,16",
+      "layers": null,
+      "chunks": null,
+      "warmup": 10,
+      "repeats": 50,
+      "flush_l2": true,
+      "cuda_graph": true,
+      "pre_spin_ms": 0.0,
+      "rounds": 1,
+      "min_length": null,
+      "synth_calls": 0,
+      "synth_bucket": 2048,
+      "synth_batch": 4,
+      "synth_align": "unaligned",
+      "max_rows": null,
+      "out_dir": "src/experiments/results/tpds",
+      "tag": "vgpu3090_1p4b_r4graphcold",
+      "seed": 0
+    },
+    "layers": [
+      0,
+      4,
+      8,
+      12,
+      16,
+      20
+    ],
+    "n_prompts": 192,
+    "chunks": [
+      16,
+      32,
+      64
+    ],
+    "own_gpu_pids": [
+      483427
+    ],
+    "mamba1_default_launch": null,
+    "ssd_index_limit": null,
+    "calls_with_unavailable_chunks_this_run": 0
+  },
+  "summary": {
+    "rows": 1770,
+    "by_batch": {
+      "1": {
+        "rows": 1152,
+        "oracle_distribution": {
+          "64": 486,
+          "32": 372,
+          "16": 294
+        },
+        "static_regret": {
+          "static_16": {
+            "n": 1152,
+            "mean_regret_pct": 40.45470797887356,
+            "p95_regret_pct": 96.07836386386364,
+            "max_regret_pct": 102.16044447466177,
+            "oracle_hit_rate": 0.2552083333333333
+          },
+          "static_32": {
+            "n": 1152,
+            "mean_regret_pct": 10.721305449993206,
+            "p95_regret_pct": 29.175551022288914,
+            "max_regret_pct": 34.27132200996537,
+            "oracle_hit_rate": 0.3229166666666667
+          },
+          "static_64": {
+            "n": 1152,
+            "mean_regret_pct": 19.739957728073314,
+            "p95_regret_pct": 61.63402248107182,
+            "max_regret_pct": 83.94994155601142,
+            "oracle_hit_rate": 0.421875
+          },
+          "entropy_rule": {
+            "n": 1152,
+            "mean_regret_pct": 19.739957728073314,
+            "p95_regret_pct": 61.63402248107182,
+            "max_regret_pct": 83.94994155601142,
+            "oracle_hit_rate": 0.421875
+          },
+          "best_static": "static_32"
+        },
+        "entropy_bits_range": [
+          3.333084,
+          5.744628
+        ]
+      },
+      "4": {
+        "rows": 366,
+        "oracle_distribution": {
+          "64": 198,
+          "32": 167,
+          "16": 1
+        },
+        "static_regret": {
+          "static_16": {
+            "n": 366,
+            "mean_regret_pct": 51.03406460140535,
+            "p95_regret_pct": 82.37508077630041,
+            "max_regret_pct": 87.13283133663035,
+            "oracle_hit_rate": 0.00273224043715847
+          },
+          "static_32": {
+            "n": 366,
+            "mean_regret_pct": 11.317425953828918,
+            "p95_regret_pct": 29.486552469294857,
+            "max_regret_pct": 33.61973109558063,
+            "oracle_hit_rate": 0.4562841530054645
+          },
+          "static_64": {
+            "n": 366,
+            "mean_regret_pct": 8.802293887039108,
+            "p95_regret_pct": 36.869917777179204,
+            "max_regret_pct": 53.68073337499575,
+            "oracle_hit_rate": 0.5409836065573771
+          },
+          "entropy_rule": {
+            "n": 366,
+            "mean_regret_pct": 8.802293887039108,
+            "p95_regret_pct": 36.869917777179204,
+            "max_regret_pct": 53.68073337499575,
+            "oracle_hit_rate": 0.5409836065573771
+          },
+          "best_static": "static_64"
+        },
+        "entropy_bits_range": [
+          3.339743,
+          5.475284
+        ]
+      },
+      "16": {
+        "rows": 252,
+        "oracle_distribution": {
+          "64": 192,
+          "32": 60
+        },
+        "static_regret": {
+          "static_16": {
+            "n": 252,
+            "mean_regret_pct": 61.75946260230574,
+            "p95_regret_pct": 86.82662117677778,
+            "max_regret_pct": 88.51412425453648,
+            "oracle_hit_rate": 0.0
+          },
+          "static_32": {
+            "n": 252,
+            "mean_regret_pct": 14.766056610548725,
+            "p95_regret_pct": 40.433528294577854,
+            "max_regret_pct": 42.01903080906042,
+            "oracle_hit_rate": 0.23809523809523808
+          },
+          "static_64": {
+            "n": 252,
+            "mean_regret_pct": 5.0695269346211,
+            "p95_regret_pct": 37.72685368896798,
+            "max_regret_pct": 51.863118929995956,
+            "oracle_hit_rate": 0.7619047619047619
+          },
+          "entropy_rule": {
+            "n": 252,
+            "mean_regret_pct": 5.0695269346211,
+            "p95_regret_pct": 37.72685368896798,
+            "max_regret_pct": 51.863118929995956,
+            "oracle_hit_rate": 0.7619047619047619
+          },
+          "best_static": "static_64"
+        },
+        "entropy_bits_range": [
+          3.339743,
+          5.475284
+        ]
+      }
+    },
+    "entropy_by_regime_b1": {
+      "code_repo": {
+        "mean": 5.016620925000001,
+        "std": 0.5500533716109307,
+        "min": 4.115455,
+        "max": 5.744628,
+        "n": 120
+      },
+      "logs_uuid": {
+        "mean": 4.788663741666666,
+        "std": 0.39919343351606074,
+        "min": 3.909437,
+        "max": 5.196709,
+        "n": 120
+      },
+      "long_doc_qa": {
+        "mean": 4.681123116666667,
+        "std": 0.4595037937222279,
+        "min": 3.735948,
+        "max": 5.198303,
+        "n": 120
+      },
+      "longbench_gov_report": {
+        "mean": 4.401094874999999,
+        "std": 0.4788814578131361,
+        "min": 3.333084,
+        "max": 4.907797,
+        "n": 48
+      },
+      "longbench_multifieldqa_en": {
+        "mean": 4.3862878541666666,
+        "std": 0.4449883522278041,
+        "min": 3.364978,
+        "max": 4.927646,
+        "n": 48
+      },
+      "longbench_narrativeqa": {
+        "mean": 4.416843041666667,
+        "std": 0.4651818024558587,
+        "min": 3.341682,
+        "max": 4.957652,
+        "n": 48
+      },
+      "longbench_qasper": {
+        "mean": 4.396298791666666,
+        "std": 0.4377633709142493,
+        "min": 3.399655,
+        "max": 4.905834,
+        "n": 48
+      },
+      "mixed_zh_en": {
+        "mean": 4.818322908333332,
+        "std": 0.5803126514144337,
+        "min": 3.757138,
+        "max": 5.440891,
+        "n": 120
+      },
+      "ocr_forms": {
+        "mean": 4.900574383333333,
+        "std": 0.32204240760535413,
+        "min": 4.362608,
+        "max": 5.551991,
+        "n": 120
+      },
+      "repetition_policy": {
+        "mean": 4.65831815,
+        "std": 0.3931866813356104,
+        "min": 3.799045,
+        "max": 5.029606,
+        "n": 120
+      },
+      "short_chat": {
+        "mean": 4.821888633333333,
+        "std": 0.4402702218213441,
+        "min": 3.992342,
+        "max": 5.331438,
+        "n": 120
+      },
+      "tables_csv": {
+        "mean": 4.972259041666666,
+        "std": 0.2841646914930787,
+        "min": 4.444133,
+        "max": 5.513674,
+        "n": 120
+      }
+    },
+    "max_out_diff_across_chunks": 0.000244140625
+  }
+}
