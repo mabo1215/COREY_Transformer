@@ -529,11 +529,12 @@ REF_REGS = 168      # registers per thread reported by ptxas for most instantiat
 REF_PARAMS = ["t0", "tau_f", "tau_m", "tau_e", "tau_s", "tau_x", "W0", "W1"]
 
 
-def ref_predict(th, L, B, d, C, hw):
+def ref_predict(th, L, B, d, C, hw, threads=None):
     """Same form as Eq. (5) for the reference scan: one block per (batch, channel), kNThreads threads
-    walking ceil(L / C) chunks of kNItems elements per thread, a block scan over the threads per state."""
+    walking ceil(L / C) chunks of kNItems elements per thread, a block scan over the threads per state.
+    ``threads`` maps the chunk to kNThreads (default: the stock pairing ``REF_THREADS``)."""
     t0, tf, tm, te, ts, tx, W0, W1 = th
-    thr = np.vectorize(REF_THREADS.get)(C).astype(float)
+    thr = np.vectorize((threads or REF_THREADS).get)(C).astype(float)
     items, warps = C / thr, thr / 32
     alloc = np.ceil(REF_REGS / 8.0) * 8 * thr
     k = np.maximum(1, np.minimum.reduce([np.full(len(C), hw["max_blocks_per_sm"]), np.floor(hw["max_warps_per_sm"] / warps),
