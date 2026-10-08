@@ -1,0 +1,138 @@
+{
+  "meta": {
+    "host": "vgpu3090",
+    "hostname": "autodl-container-5ea9tapmbb-6a673b83",
+    "utc": "2026-10-08T05:13:10Z",
+    "python": "3.12.3",
+    "platform": "Linux-5.15.0-119-generic-x86_64-with-glibc2.35",
+    "argv": [
+      "/root/autodl-tmp/COREY_Transformer_tpds/src/experiments/tpds/e8_refscan.py",
+      "--thread-families",
+      "32",
+      "--batches",
+      "1,4,16",
+      "--warmup",
+      "10",
+      "--repeats",
+      "50",
+      "--exclusive-guard",
+      "--guard-until",
+      "1791491081",
+      "--trace-dir",
+      "/autodl-fs/data/corey_r4_traces_vgpu3090",
+      "--out-dir",
+      "src/experiments/results/tpds",
+      "--tag",
+      "vgpu3090_r4t32"
+    ],
+    "torch": "2.8.0+cu128",
+    "cuda_runtime": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "gpu_mem_gb": 47.41,
+    "gpu_sm_count": 82,
+    "gpu_cc": "8.6",
+    "pkg_triton": "3.4.0",
+    "pkg_transformers": "5.6.2",
+    "pkg_mamba_ssm": "2.3.2.post1",
+    "pkg_fla-core": "0.5.2",
+    "pkg_flash-linear-attention": "0.5.2",
+    "pkg_numpy": "2.3.2",
+    "pkg_scikit-learn": "1.8.0",
+    "nvidia_smi": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+    "git_commit": "1e8e85f",
+    "experiment": "E8",
+    "chunks": [
+      128,
+      256,
+      512,
+      1024,
+      2048
+    ],
+    "thread_families": [
+      32
+    ],
+    "family_variants": {
+      "32": {
+        "128": "c128",
+        "256": "c256",
+        "512": "c512",
+        "1024": "t32c1024",
+        "2048": "t32c2048"
+      }
+    },
+    "own_gpu_pids": [
+      556095
+    ],
+    "args": {
+      "trace_dir": "/autodl-fs/data/corey_r4_traces_vgpu3090",
+      "batches": "1,4,16",
+      "layers": "None",
+      "chunks": "128,256,512,1024,2048",
+      "warmup": "10",
+      "repeats": "50",
+      "e4_keys": "False",
+      "thread_families": "32",
+      "validate_only": "False",
+      "analyze": "False",
+      "exclusive_guard": "True",
+      "guard_until": "1791491081.0",
+      "max_rows": "None",
+      "out_dir": "src/experiments/results/tpds",
+      "tag": "vgpu3090_r4t32",
+      "seed": "0"
+    },
+    "stock_dispatch": {
+      "<=128": 128,
+      "<=256": 256,
+      "<=512": 512,
+      "<=1024": 1024,
+      ">1024": 2048
+    }
+  },
+  "validation": {
+    "lengths": [
+      300,
+      1000,
+      3000,
+      5000
+    ],
+    "dim": 64,
+    "batch": 2,
+    "chunks": {
+      "stock_rebuilt": {
+        "max_abs": 0.0,
+        "max_rel": 0.0
+      },
+      "c128": {
+        "max_abs": 0.00390625,
+        "max_rel": 0.00018422991893883567
+      },
+      "c256": {
+        "max_abs": 0.0009765625,
+        "max_rel": 7.664009809932556e-05
+      },
+      "c512": {
+        "max_abs": 0.0,
+        "max_rel": 0.0
+      },
+      "c1024": {
+        "max_abs": 0.0,
+        "max_rel": 0.0
+      },
+      "c2048": {
+        "max_abs": 0.0,
+        "max_rel": 0.0
+      },
+      "t32c1024": {
+        "max_abs": 0.0009765625,
+        "max_rel": 4.605747973470892e-05
+      },
+      "t32c2048": {
+        "max_abs": 0.0009765625,
+        "max_rel": 4.605747973470892e-05
+      }
+    },
+    "passed": true
+  },
+  "rows_done": 2360
+}
