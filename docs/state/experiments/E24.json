@@ -3,7 +3,7 @@
   "created_at": "2026-10-07T20:09:05Z",
   "design_ref": "docs/Design.md#E24",
   "est_hours": 1.5,
-  "eta": null,
+  "eta": "2026-10-08T08:00:00Z",
   "finished_at": "2026-10-07T22:15:09Z",
   "host": "vgpu3090",
   "id": "E24",
@@ -40,18 +40,30 @@
       "at": "2026-10-08T05:21:22Z",
       "by": "bobsteam1215",
       "text": "status reset: the pulled files are the failed first run (1 shape); the rerun (tags *_r4spinb/*_r4plainb) is queued behind E23"
+    },
+    {
+      "at": "2026-10-08T05:51:50Z",
+      "by": "bobsteam1215",
+      "text": "auto: all declared result files are present locally"
+    },
+    {
+      "at": "2026-10-08T05:55:01Z",
+      "by": "bobsteam1215",
+      "text": "18:53 NZDT: result globs narrowed to the rerun tags (*_r4spinb/*_r4plainb); the old r4* glob matched the failed first run, so reconcile kept flipping E24 to pulled. Rerun waits for the GPU lock in screen tpds-r4-e24b, starts after E23 (~19:30 NZDT)"
     }
   ],
   "progress": 0,
   "purpose": "Does the optimal chunk move with the shape on an independently written public kernel with a wide chunk range? Decides the title (review M1b, package B)",
   "results": [
-    "src/experiments/results/tpds/e24_tfla_vgpu3090_r4*.jsonl",
-    "src/experiments/results/tpds/e24_tfla_vgpu3090_r4*.json"
+    "src/experiments/results/tpds/e24_tfla_vgpu3090_r4spinb.jsonl",
+    "src/experiments/results/tpds/e24_tfla_vgpu3090_r4plainb.jsonl",
+    "src/experiments/results/tpds/e24_tfla_vgpu3090_r4spinb_analysis.json",
+    "src/experiments/results/tpds/e24_tfla_vgpu3090_r4plainb_analysis.json"
   ],
   "screen": "tpds-r4-e24b",
   "status": "queued",
   "title": "TFLA mLSTM forward (public kernel) chunk sweep 32-2048 at 370M/1.4B/2.8B widths, 3 rounds, both conventions",
-  "updated_at": "2026-10-08T05:21:48Z",
+  "updated_at": "2026-10-08T05:55:06Z",
   "updated_by": "bobsteam1215",
   "vram_gb": 30.0
 }
