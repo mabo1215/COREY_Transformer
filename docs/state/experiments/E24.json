@@ -3,7 +3,7 @@
   "created_at": "2026-10-07T20:09:05Z",
   "design_ref": "docs/Design.md#E24",
   "est_hours": 1.5,
-  "eta": "2026-10-07T23:55:00Z",
+  "eta": "2026-10-08T09:45:00Z",
   "finished_at": "2026-10-07T22:15:09Z",
   "host": "vgpu3090",
   "id": "E24",
@@ -25,6 +25,11 @@
       "at": "2026-10-07T22:15:09Z",
       "by": "vgpu3090",
       "text": "remote: FAILED on vgpu3090 exit 1; log tail: RuntimeError: Triton Error [CUDA]: an illegal memory access was encountered E24 vgpu3090_r4spin: 1 shapes, oracle counts {32: 1}, spread median 1.94x; default 128 mean regret 3.74%; best static 32 0.00% E24 vgpu3090_r4plain: 1 shapes, oracle counts {32: 1}, spread median 1.93x; default 128 mean regr"
+    },
+    {
+      "at": "2026-10-08T05:14:29Z",
+      "by": "bobsteam1215",
+      "text": "11:05 NZDT failed: CUDA illegal memory access at 1.4B, L 8192, batch 16, chunk 32 (chunk-state tensor 4.3e9 elements > 2^31; TFLA indexes in int32). Fixed (cells beyond 2^31 recorded as unavailable); rerun under tags *_r4spinb / *_r4plainb queued behind E23 (18:13 NZDT)"
     }
   ],
   "progress": 0,
@@ -33,10 +38,10 @@
     "src/experiments/results/tpds/e24_tfla_vgpu3090_r4*.jsonl",
     "src/experiments/results/tpds/e24_tfla_vgpu3090_r4*.json"
   ],
-  "screen": "tpds-r4-ab",
-  "status": "failed",
+  "screen": "tpds-r4-e24b",
+  "status": "queued",
   "title": "TFLA mLSTM forward (public kernel) chunk sweep 32-2048 at 370M/1.4B/2.8B widths, 3 rounds, both conventions",
-  "updated_at": "2026-10-07T22:15:09Z",
-  "updated_by": "vgpu3090",
+  "updated_at": "2026-10-08T05:14:29Z",
+  "updated_by": "bobsteam1215",
   "vram_gb": 30.0
 }
