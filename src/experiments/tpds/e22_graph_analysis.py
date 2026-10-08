@@ -165,11 +165,13 @@ def _matches(value, printed: str) -> bool:
 class Table:
     """One E2 table with its latency matrix (+inf where a chunk cannot run), oracle, tie sets and floor."""
 
-    def __init__(self, name: str, in_dir: Path):
+    def __init__(self, name: str, in_dir: Path, keys=None):
         (self.csv, self.family, self.checkpoint, self.timing, self.gpu, self.layers, self.default,
          self.floor_from, self.round_median, self.refit) = TABLES[name]
         self.name = name
         df = load_e2([in_dir / self.csv])
+        if keys is not None:            # only these calls (e.g. the calls of a table restricted to L >= 2048)
+            df = df[df["key"].isin(set(keys))]
         if self.round_median:
             df = round_median_view(df)
         self.df = df.reset_index(drop=True)
