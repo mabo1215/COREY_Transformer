@@ -16,7 +16,10 @@ TFLA needs the length to be a multiple of the chunk), batch 1, 4 and 16, and eve
 {32, ..., 2048} that divides the length. Inputs are synthetic (bf16 q, k, v; fp32 gate
 pre-activations): the kernel is data-oblivious, and one draw per shape is reused for every chunk and
 round. Every shape is timed in ``--rounds`` rounds; shapes are shuffled within a round and chunks
-within a shape. Timing as in the other sweeps: CUDA events, ``--pre-spin-ms`` > 0 gives device time
+within a shape. A cell whose saved chunk-state tensor (batch x heads x (L / chunk + 1) x qk dim x v dim
+elements) reaches 2^31 elements is beyond the kernel's 32-bit indexing (it faults with an illegal memory
+access) and is recorded as unavailable, like the SSD index limit in the per-call sweeps. Timing as in the
+other sweeps: CUDA events, ``--pre-spin-ms`` > 0 gives device time
 (the host queues every repeat behind a GPU spin), 0 the launch-inclusive latency. A cell that runs
 out of memory is recorded as infeasible.
 
@@ -47,6 +50,16 @@ from src.experiments.tpds.common import RESULTS_DIR, read_jsonl, t_crit, write_j
 DEFAULT_LAYOUTS = "370m:4:256:512,1.4b:8:256:512,2.8b:10:256:512"
 DEFAULT_CHUNKS = "32,64,128,256,512,1024,2048"
 LIBRARY_DEFAULT_CHUNK = 128
+INDEX_LIMIT = 2 ** 31   # the kernels compute element offsets in 32-bit integers
+
+
+def state_elems(b, nh, L, c, dqk, dv) -> int:
+    """Elements of the chunk-state tensor the forward saves: (b, nh, (L / chunk_intra + 1) * dqk, dv), chunk_intra = c."""
+    return b * nh * (L // c + 1) * dqk * dv
+
+
+def chunk_feasible(b, nh, L, c, dqk, dv) -> bool:
+    return state_elems(b, nh, L, c, dqk, dv) < INDEX_LIMIT
 
 
 def parse_layouts(spec: str) -> dict[str, tuple[int, int, int]]:
@@ -147,6 +160,8 @@ def run(args):
             nh, dqk, dv = layouts[name]
             inp = make_inputs(b, nh, dqk, dv, L, args.seed + 7 * L + 131 * b + 1009 * nh)
             cs = [c for c in chunks if L % c == 0 and c <= L]
+            beyond = [c for c in cs if not chunk_feasible(b, nh, L, c, dqk, dv)]
+            cs = [c for c in cs if c not in beyond]
             rng.shuffle(cs)
             s0 = gpu_state()
             cells, ref, max_diff, infeasible = {}, None, 0.0, []
@@ -174,6 +189,7 @@ def run(args):
             best = min(cells, key=lambda c: cells[c]["mean_ms"]) if cells else None
             w.write({"kind": "timing", "key": key, "layout": name, "heads": nh, "dqk": dqk, "dv": dv, "L": L,
                      "batch": b, "round": r, "cells": cells, "infeasible_chunks": infeasible,
+                     "index_limit_chunks": sorted(beyond),
                      "best_chunk": int(best) if best else None, "max_out_diff_across_chunks": max_diff, "gpu_state_before": s0,
                      "gpu_state_after": gpu_state(), "peak_vram_gb": peak_vram_gb()})
             new_rows += 1

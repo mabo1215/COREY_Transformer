@@ -20,7 +20,8 @@
 # Env:     TPDS_R4AB_ONLY (default "E24 E22 E23"), TPDS_TRACE_DIR (370M traces; the 2.7B and GDN traces go
 #          next to it), TPDS_R4_MODEL_ROOT (local copies of mamba2-2.7b-hf and gated-deltanet-swa-1.4B-30B),
 #          TPDS_R4_HF_SHARED (an HF hub cache holding AntonV/mamba2-370m-hf), TPDS_R4AB_WAIT (1: wait for
-#          the E21 marker), TPDS_R4_GUARD_H (24), TPDS_R4_SPIN_MS (20).
+#          the E21 marker), TPDS_R4_GUARD_H (24), TPDS_R4_SPIN_MS (20), TPDS_R4_E24_SUFFIX (appended to the
+#          E24 tags, e.g. "b" for a rerun whose first files the watcher already committed).
 # Resumable: every step skips completed rows. TPDS_SMOKE=1 runs a tiny version (smoke- markers).
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/tpds_common.sh"
@@ -28,6 +29,7 @@ L=(); [ "${TPDS_NO_GPU_LOCK:-0}" = 1 ] || L=(flock "$LOCK")
 P=""; [ "${TPDS_SMOKE:-0}" = 1 ] && P=smoke-
 ONLY=${TPDS_R4AB_ONLY:-E24 E22 E23}
 SPIN=${TPDS_R4_SPIN_MS:-20}
+E24S=${TPDS_R4_E24_SUFFIX:-}
 GUARD="--exclusive-guard --guard-until $(( $(date +%s) + ${TPDS_R4_GUARD_H:-24} * 3600 ))"
 MODEL_ROOT=${TPDS_R4_MODEL_ROOT:-/root/autodl-tmp/hf_models}
 TRACE_ROOT=$TRACE_DIR   # the 2.7B and GDN traces go next to the 370M ones (<root>/mamba1, <root>/mamba2)
@@ -75,11 +77,11 @@ if want E24; then
   # shellcheck disable=SC2086
   $RUN ${P}E24 -- bash -c "rc=0
     ${L[*]} $PY -m src.experiments.tpds.e24_tfla_chunk $E24A --pre-spin-ms $SPIN $GUARD --out-dir '$OUT_DIR' \
-        --tag ${TAG}_r4spin || rc=1
+        --tag ${TAG}_r4spin$E24S || rc=1
     ${L[*]} $PY -m src.experiments.tpds.e24_tfla_chunk $E24A --pre-spin-ms 0 $GUARD --out-dir '$OUT_DIR' \
-        --tag ${TAG}_r4plain || rc=1
-    $PY -m src.experiments.tpds.e24_tfla_chunk --analyze --out-dir '$OUT_DIR' --tag ${TAG}_r4spin || rc=1
-    $PY -m src.experiments.tpds.e24_tfla_chunk --analyze --out-dir '$OUT_DIR' --tag ${TAG}_r4plain || rc=1
+        --tag ${TAG}_r4plain$E24S || rc=1
+    $PY -m src.experiments.tpds.e24_tfla_chunk --analyze --out-dir '$OUT_DIR' --tag ${TAG}_r4spin$E24S || rc=1
+    $PY -m src.experiments.tpds.e24_tfla_chunk --analyze --out-dir '$OUT_DIR' --tag ${TAG}_r4plain$E24S || rc=1
     exit \$rc"
 fi
 
