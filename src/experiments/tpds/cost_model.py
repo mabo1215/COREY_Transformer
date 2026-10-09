@@ -426,6 +426,20 @@ def pipe_predict(th, L, B, C):
     return (F ** p + work ** p) ** (1.0 / p)
 
 
+def pipe_select(th, P: np.ndarray, chunks: list[int]) -> np.ndarray:
+    """Per-call chunk index chosen by the work-term model from its predictions ``P`` (calls x chunks; inf where a
+    chunk is unavailable). Where the model predicts a call as launch-bound, every available chunk is predicted at
+    exactly the floor F; such exact ties go to the work-bound optimum argmin_C (b C + g / C) over ``chunks``
+    (review item M3c) instead of the first, smallest chunk that a plain argmin returns."""
+    F, a, b, g, p = th
+    choice = P.argmin(1)
+    pf = np.where(np.isfinite(P), P, np.nan)
+    tied = np.nanmax(pf, 1) == np.nanmin(pf, 1)
+    j_wb = int(np.argmin([b * c + g / c for c in chunks]))
+    alt = np.where(np.isfinite(P[:, j_wb]), j_wb, choice)
+    return np.where(tied, alt, choice)
+
+
 def pipe_points(host: str, in_dir: Path, family: str) -> pd.DataFrame:
     pts = []
     if family == "mamba2":
@@ -469,7 +483,9 @@ def pipeline_model(host: str, in_dir: Path, family: str) -> dict | None:
             chunks = chunk_columns(df)
             lat = latency_matrix(df, chunks)
             P = np.stack([pipe_predict(th, df["L"].to_numpy(float), df["batch"].to_numpy(float), c) for c in chunks], 1)
-            out["e2"] = e2_eval(df, chunks, P.argmin(1), P)
+            out["e2"] = e2_eval(df, chunks, pipe_select(th, P, chunks), P)
+            # the former rule (launch-bound exact ties to the smallest chunk), kept for comparison
+            out["e2_ties_to_smallest_chunk"] = e2_eval(df, chunks, P.argmin(1), P)
     return out
 
 

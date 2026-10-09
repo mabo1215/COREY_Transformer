@@ -162,7 +162,7 @@ def model_choice(in_dir: Path, spec: dict, df: pd.DataFrame, chunks: list[int], 
         th = [pm["params"][k] for k in cm.PIPE_PARAMS]
         P = np.stack([cm.pipe_predict(th, df["L"].to_numpy(float), df["batch"].to_numpy(float), c) for c in chunks], 1)
         P = np.where(np.isfinite(lat), P, np.inf)
-        idx = P.argmin(1)
+        idx = cm.pipe_select(th, P, chunks)
         if "e2" in pm and Path(spec["csv"]).stem == f"e2_mamba2_{spec['model'][1]}":
             ref = pm["e2"]["mean_regret_pct"]
     else:
