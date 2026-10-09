@@ -3,7 +3,7 @@
   "created_at": "2026-10-07T13:32:16Z",
   "design_ref": "docs/Design.md#E20",
   "est_hours": 0.55,
-  "eta": "2026-10-09T02:35:00Z",
+  "eta": null,
   "host": "pro6000",
   "id": "E20",
   "items": [
@@ -44,18 +44,25 @@
       "at": "2026-10-08T23:40:19Z",
       "by": "bobsteam1215",
       "text": "2026-10-09: analysis script e20_cold_analysis.py (keys warm/cold, calls cold vs warm via E22 compare, warm-frozen vs cold-refit cost model) smoke-tested on stand-in data; run after cost_model --hosts pro6000_r4cold"
+    },
+    {
+      "at": "2026-10-09T02:59:27Z",
+      "by": "bobsteam1215",
+      "text": "15:45 NZDT: host watcher committed E20 (c7aad2b on the host) but all pushes failed (GitHub unreachable from the host 10:30-10:44 CST); files copied by scp, complete (544 calls x 3 rounds, L2 flushed per repeat, device time; 12 E4 keys; 864 E1 cells). Analysis (e20_cold_analysis.py): cold L2 slows the oracle by 14% median at L>=2048 (batch 1: 15.5%, batch 16: 0.4%) and the E4 keys by up to 1.72x (L=128); best static chunk unchanged at 10/12 keys, warm-best chunk costs 0.16% mean / 1.78% max cold; per-call oracle unchanged on 90%, in the warm tie set on 99%; under cold, warm oracle 0.12% and warm-tuned exact table 0.12%; shape tree 0.60% cold vs 0.44% warm; held-out headroom 0.01 us cold; cost model (device-time warm calibration) 1.42% on the cold calls vs 1.21% warm on the same calls, cold refit chooses the same chunk on 100% of calls"
     }
   ],
-  "progress": 0,
+  "progress": 100,
   "purpose": "Does the best chunk / model selection change with a cold L2 (review M3a)",
   "results": [
-    "src/experiments/results/tpds/*pro6000_r4cold*"
+    "src/experiments/results/tpds/*pro6000_r4cold*",
+    "src/experiments/results/tpds/cost_model_pro6000_r4cold.json",
+    "src/experiments/results/tpds/e20_cold_analysis_pro6000.json"
   ],
   "screen": "tpds-r4",
   "started_at": "2026-10-07T18:50:54Z",
-  "status": "running",
+  "status": "pulled",
   "title": "PRO 6000 cold-L2 re-timing of the 12 tuning keys and captured calls L>=2048",
-  "updated_at": "2026-10-09T00:59:23Z",
+  "updated_at": "2026-10-09T02:59:27Z",
   "updated_by": "bobsteam1215",
   "vram_gb": 9.6
 }
