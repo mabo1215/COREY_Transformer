@@ -307,9 +307,35 @@ def t_routed_e10(d, host):
     return rows
 
 
+def t_deployment_buckets(d, host):
+    """M6a: Triton Mamba-1 370M per (length bucket, batch): oracle scan time and regret of the default
+    chunk, the cost model and a held-out exact-shape table, in ms per forward pass (48 layers), on the
+    three GPUs (launch-inclusive; ``deployment_units.json``)."""
+    k = _load(d / "deployment_units.json")["kernels"]
+    gpus = ("mamba1_triton_370m_pro6000", "mamba1_triton_370m_vgpu3090", "mamba1_triton_370m_h800")
+    by = {g: {(r["L_bucket"], r["batch"]): r for r in k[g]["by_bucket_batch"]} for g in gpus}
+    layers = {g: k[g]["layers"] for g in gpus}
+
+    def f(x):
+        return "$<$0.01" if x < 0.005 else f"{x:.2f}"
+
+    rows = []
+    for key in sorted(by[gpus[0]]):
+        cells = []
+        for g in gpus:
+            r = by[g].get(key)
+            if r is None:
+                cells += ["--"] * 4
+                continue
+            cells += [f(r["oracle_us"] * layers[g] / 1e3), f(r["default"]["ms_per_forward_pass"]),
+                      f(r["cost_model"]["ms_per_forward_pass"]), f(r["exact_table_heldout"]["ms_per_forward_pass"])]
+        rows.append(f"{key[0]} & {key[1]} & " + " & ".join(cells) + " \\\\")
+    return rows
+
+
 TABLES = {"routed_e10": t_routed_e10, "model_params": t_model_params, "model_ablation": t_model_ablation, "model_compile": t_model_compile,
           "tost": t_tost, "reference": t_reference, "redraw": t_redraw, "validation": t_validation, "latency": t_latency, "effects": t_effects, "autotune": t_autotune,
-          "overhead": t_overhead}
+          "overhead": t_overhead, "deployment_buckets": t_deployment_buckets}
 
 
 def main(argv=None):
