@@ -103,6 +103,7 @@
 1. **P1 报告方式**：`1 A`，摘要报告三种选项判据下的范围（1.3 to 7.3%，95 分位最高 63%）。
 2. **CUDA graph 三轮补测**：`2 要补 vGPU 3090 可以用`，登记为 E25a–d。
 3. **摘要原句**：作者要求先看原句再定稿，随后回复「摘要OK 开始下一步」，已按草稿写入（250 词）。
+4. **第四种判据（只用一块其他 GPU，最高 12.7%）**：作者回复「不改」，摘要保留 1.3 to 7.3%（三种判据，95 分位最高 63%）。正文第 4 节写明只算三种判据的理由（每种都用了不需要目标 GPU 的完整证据来源），并报告单 GPU 判据的 0.9–12.7%；Table S22 的图注把这一行标为敏感性检验（论文 `2439ea2`）。
 
 已消费决策（2026-10-10，precheck 后的两个问题与页数）：
 1. **标题**：`A: A`，保持 "Shape Sets the Chunk: A Compile-Informed Cost Model and a No-Gain Bound for Data-Dependent Dispatch of Chunked Linear-Recurrence Kernels"。正文已限定 cost model 的适用范围。
