@@ -150,6 +150,15 @@
   - 删去：CUDA graph 的 launch 下限数字、TFLA、8.5× 的跨度、服务回放 2.1%、TP 切分的 p95。这些仍在正文。
   - 保留：默认值够用；CUDA graph 下默认值损失 16–22%；device time 单一 chunk 损失；成本模型的均值和 p95；切分宽度与跨 GPU 的损失；头部空间与一次同步的对比；熵不提供额外信息。
 - 编译：正文 14 页，补充 25 页；0 overfull，无未定义引用，无 `??`。`scit` 字体警告是原有的，属 N3。
+- **同一批顺带完成的复核发现（不需要你决定）**：
+  - **N7**：从 PyPI 下载 mamba_ssm 2.2.2 与 2.3.2.post1 的源码对比（只读不运行）。两版 SSD 前向的 Triton kernel 及其启动函数，tile 配置完全相同。2.3.2.post1 的前向只多两处改动：衰减指数截到 0 以下、时间步大于 20 时跳过 softplus。其余改动都在反向和确定性模式。已写进补充材料平台表的表注。
+  - **M5c/M8c**：贡献列表和结论给 2.7%、4.5% 补上 p95（26%、23%）；贡献列表改为"最多八个参数"，与摘要一致。
+  - **M3c**：Mamba-2 work-term 模型在 launch-bound 的精确并列时，默认改选 work-bound 最优 chunk 256（原为最小的 32）。
+    - 代码：新增 `cost_model.pipe_select`，`deployment_units` 同步改用它。旧规则的结果另存为 `e2_ties_to_smallest_chunk`。
+    - 重算范围：`cost_model --pipelines-only` 只改变了 Mamba-2 的 e2 结果；deployment-units 只重算 kernel 级部分，serving 部分未变。
+    - 论文改动：Table V 的 Mamba-2 模型行 1.5/5.3/75% → 1.6/5.6/71%；VII-E 改为 1.6% 和 2.4%；部署单位表三格 SSD 模型值改变（0.32→0.34、0.96→0.92、0.29→0.26 ms）；补充材料 Table S-pipeline-model 改为 1.56/2.36，正文段落改写为"默认 256，若取最小 chunk 差别 ≤1.3 点"。
+  - **M7d**：新增 `tables_iv_v_ci.py`，对正文 Table IV/V 的每个 regret 格子（均值和 p95）按 prompt 簇做 bootstrap（2000 次）。点估计与已有分析完全一致。结果放在补充材料新表 Table S-tables-ci，Table V 表注引用该表。
+  - 以上每批改完都编译检查过，正文均为 14 页。
 
 ## 2026-10-09（三续）正文第一次出现时写明 GPU 型号（作者指示：摘要不写型号，正文第一次出现要写）
 
@@ -477,7 +486,7 @@ AAAI-27 Submission #3464（COREY）已收到最终决定：Phase 1 拒稿，未�
 需要你决策：
 A: 更新（作者 2026-10-09，选 B）【进行中：我在准备新的 capsule 内容并推到 Code Ocean 的 git；推完后需要你在 Code Ocean 网页上发布新版本，并检查页面是否匿名】
 
-其他复核发现由我直接处理，不需要你决定：M3c（work-term 模型 launch-bound 默认改为 256）、M5c/M8c（2.7/4.5% 补 p95、参数个数）、M6a/M6b、M7d（回归 CI）、M10b、N7（mamba_ssm 两个版本的 SSD 源码是否不同）、N3（排版）、M1a/M4a（摘要补参考 scan 对宽度不敏感）。每批改完都会检查 14 页。
+其他复核发现由我直接处理，不需要你决定。已完成：M3c、M5c/M8c、M7d、N7。还剩：M6a/M6b、M10b、N3（排版）、M1a/M4a（参考 scan 对宽度不敏感：摘要已压到 249 词放不下，贡献列表里已有）。每批改完都会检查 14 页。
 
 等待中的事项（不需要你操作）：
 - PRO 6000 现由 HKVLM 跑 E44（约 3–5 小时）；本项目已无实验在跑。如需再借 GPU，先联系 HKVLM 会话。
