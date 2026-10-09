@@ -67,6 +67,22 @@ L >= 2048) and Gated DeltaNet 1.4B calls warm and flushed (Table S-largewidth-ca
 first with the E2/E17 settings. Metrics as E2/E3/E17 (oracle, ties, static/model regret, floor,
 headroom), graph vs eager. About 3 GPU-h; peak about 12 GB (2.7B capture).
 
+### E25 - CUDA-graph timing in three rounds (re-check P3; author 2026-10-10)
+The independent re-check of 2026-10-10 found that the CUDA-graph claims (defaults lose 16 to 22%,
+work-term model 12 to 22%, 0.57 / 1.42 ms per forward pass) rest on one round on one GPU. E25 repeats
+the four warm-L2 sweeps of E22 with `--rounds 3` (chunk order shuffled per call and round, the round
+medians and the between-round variance as in the device-time r4spin tables), same traces, harness and
+settings (capture per (call, chunk) and round, 10 warmup and 50 timed replays, batch 1/4/16). Steps:
+E25a SSD 370M, E25b Gated DeltaNet 1.4B, E25c SSD 2.7B, E25d Mamba-1 370M; lane
+`src/experiments/remote/tpds_lane_r4_3090_graph3.sh`. Metrics as E22 on the round-median view
+(`analysis.round_median_view`): floor, share above, default / static / model regret, shape tree, held-out
+exact-shape headroom, deployment units; plus the between-round CV, how often the round-median oracle
+equals the single-round E22 oracle, and the E22 regret values re-evaluated on the round medians. The
+flushed E22 runs stay single-round (sensitivity only). The per-call overhead (trace loading, features,
+guard queries) dominates the E22 wall-clock (6.7 h for seven single-round sweeps, 10 to 20% GPU-busy),
+so three rounds cost about 1.5 to 2 times one round: about 7 GPU-h. Peak about 17 GB (2.7B, L 8192,
+batch 16). The host is shared: every step holds the GPU lock and the exclusive-GPU guard.
+
 ### E23 - Reference scan at a fixed thread count (M9a; package A)
 `selective_scan_chunk_cuda.fwd_with_chunk_threads` (new fp16 instantiations: 32 threads x 32 / 64
 items for chunks 1024 / 2048; the stock pairing already uses 32 threads up to chunk 512), validated
