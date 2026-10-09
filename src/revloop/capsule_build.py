@@ -2,8 +2,8 @@
 
 The capsule gets only what the paper needs: the entry scripts listed in ENTRIES, every
 local module they import (resolved from the source, so the package is complete), the
-TPDS result files, the summaries of the earlier harnesses (LEGACY) and the small LongBench
-prompt subsets. Everything else in the capsule is replaced. The package is written for
+TPDS result files listed in RESULTS_MANIFEST (no legacy summaries, raw per-round logs or LongBench
+prompt subsets). Everything else in the capsule is replaced. The package is written for
 anonymous review: the license holder is anonymized, host names and paths in result metadata
 are neutralized (SANITIZE), the project's former name is removed from file names, code and
 text (RENAME), and a scan for identifying strings must pass before anything is committed.
@@ -49,47 +49,23 @@ DESCRIPTION = ("Code, measurements and analysis scripts for a study of chunk sel
 
 # Entry scripts of the experiments reported in the paper and its supplement.
 ENTRIES = [
-    "src/experiments/tpds/*.py",                       # kernel-level study E1-E7, analyses, tables, figures
-    "src/corey_selective_scan_dispatch.py",            # imported by name by the routed study
-    "src/experiments/run_integrated_end_to_end.py",    # routed end-to-end study (patched live kernel)
-    "src/experiments/run_scheduler_ablation_matrix.py",
-    "src/experiments/run_routed_quality_check.py",     # output agreement on LongBench
-    "src/experiments/run_active_hook_integration.py",  # inline-hook overhead
-    "src/experiments/run_active_hook_real_benchmark.py",
-    "src/experiments/run_longbench_inference.py",      # passive hook, per-prompt entropy
-    "src/experiments/bin_count_sensitivity.py",
-    "src/experiments/run_real_activation_sinkhorn.py", # Hadamard analysis (supplement)
-    "src/experiments/run_heterogeneous_corpus.py",     # prompt-regime corpora (supplement)
-    "src/experiments/run_real_workload_diversity_h800.py",
-    "src/experiments/summarize_entropy_distribution.py",
-    "src/experiments/analyze_scheduler_hook_results.py",  # inline-hook micro-benchmark summary (supplement)
+    "src/experiments/tpds/*.py",                       # kernel-level study, analyses, tables, figures
+    "src/corey_selective_scan_dispatch.py",            # loaded by name by the routed study (e10)
 ]
-# Data and results shipped with the code (small files only).
+# Code shipped with the entries besides their imports.
 EXTRA = [
-    "src/experiments/results/tpds/*.json",
-    "src/experiments/results/tpds/*.jsonl",
-    "src/experiments/results/tpds/*.csv",
-    "src/experiments/results/tpds/*.log",
-    "src/data/longbench_subset/**/*",
-    "src/data/longbench_subset_remote_min/**/*",
-    "src/data/longbench_push120/**/*",
-    "src/requirements.txt",
     "src/kernels/mamba1_runtime_chunk/**/*",          # reference CUDA scan with a runtime chunk (source)
 ]
-# Generated run outputs (src/outputs/, the capsule's own results) are never packaged, except LEGACY.
-# e17_workbound_vgpu3090.*: first E17c run, rows lost to a git autostash; superseded by *_vgpu3090full.*
+# Result files: only those listed in RESULTS_MANIFEST (one path or glob per line, relative to the
+# repository root): the files the capsule's run reads and the stored analyses the paper's numbers
+# come from. Raw per-round logs, legacy summaries and benchmark prompt data are not packaged.
+RESULTS_MANIFEST = ROOT / "src" / "revloop" / "capsule_results.txt"
 EXCLUDE = ["*_e1b.*", "*/smoke/*", "*localsmoke*", "*/__pycache__/*", "src/outputs/*",
-           "*/e17_workbound_vgpu3090.*"]
-# Summaries of the earlier harnesses behind the supplement's legacy tables (bin count, inline-hook
-# cost, earlier routed study, entropy of real checkpoints). They live in the repository's
-# git-ignored src/outputs/ and are shipped under LEGACY_DEST (the capsule ignores "outputs/").
-LEGACY = ["src/outputs/bin_count_sensitivity/*",
-          "src/outputs/active_hook_integration/*.json",
-          "src/outputs/h800_enhance_20260428_145702/integrated_repeats20/summary.json",
-          "src/outputs/revision_hook_micro_analysis/*",
-          "src/outputs/remote_hook_micro_analysis_v2/*",
-          "src/outputs/routed_quality_h800_longbench80_20260501/*",
-          "src/outputs/entropy_variance_summary/*"]
+           "*/e17_workbound_vgpu3090.*",
+           # per-round logs the run does not read (r4_rounds_analysis reads the RTX PRO 6000 ones
+           # for the single-block view; the others are recovered from the per-call tables)
+           "*_r4cold_rounds.jsonl", "*_u2048b4_rounds.jsonl"]
+LEGACY: list[str] = []
 LEGACY_DEST = "src/experiments/results/legacy/"
 # Files larger than this are not packaged (reported by the build).
 MAX_FILE_BYTES = 50 * 2**20
@@ -219,6 +195,16 @@ def scan(root: Path) -> list[str]:
     return hits
 
 
+REQUIREMENTS = """# CPU run (the capsule's run script)
+numpy
+pandas
+scipy
+matplotlib
+scikit-learn  # optional: without it the predictor trees use the built-in CART fallback
+# GPU experiments (not needed by the run): Python 3.12, torch==2.8.0, triton==3.4.0,
+# transformers==5.6.2, flash-linear-attention==0.5.2, mamba_ssm 2.2.2 / 2.3.2.post1
+"""
+
 RUN_SCRIPT = r"""#!/usr/bin/env bash
 # Reproducible run: recompute the analyses, tables and figures of the paper from the stored
 # measurements, on the CPU (no GPU is used). README.md maps every table and figure of the paper
@@ -321,41 +307,15 @@ analyses, tables and figures from the stored measurements on the CPU; it does no
 
 ## Layout
 
-- `src/experiments/tpds/` - kernels, experiments and analyses:
-  - kernels and shared code: Triton Mamba-1 selective scan and kernel wrappers (`kernels.py`),
-    timing, environment records and resumable writers (`common.py`), regret and information
-    helpers (`analysis.py`), prompt corpus (`corpus.py`);
-  - captured prefill traces (`capture_traces.py`, `capture_gdn_traces.py`) and per-call chunk
-    sweeps in one or several shuffled rounds, eager or CUDA-graph timing (`e2_oracle_sweep.py`);
-  - value invariance and placement controls (`e1_value_invariance.py`, `e1_analysis.py`,
-    `e1_from_log.py`, `e9_placement.py`, `e16_counters.py`, `e16c_l2_placement.py`);
-  - predictors of the per-call oracle and information tests (`e3_predictors.py`,
-    `e3b_information.py`), bootstrap intervals of Tables IV and V (`tables_iv_v_ci.py`);
-  - auto-tuning (`e4_autotune.py`); compile facts and the cost model (`kernel_stats.py`,
-    `cost_model.py`) and simpler or learned selectors (`cost_model_baselines.py`,
-    `cost_model_baselines_r4.py`);
-  - break-even, key churn and serving traces (`e5_breakeven.py`, `e5b_key_churn.py`,
-    `serving_key_churn.py`, `deployment_units.py`, `r4_thinkey_replay.py`);
-  - reference CUDA scan (`e7_reference_scan.py`, `e8_refscan.py`, `e23_fixed_threads_analysis.py`),
-    routed end-to-end study (`e10_routed_interleaved.py`), tensor-parallel widths
-    (`e12_tp_widths.py`, `e12_analysis.py`), production kernels at larger widths
-    (`e17_workbound.py`, `e17_analysis.py`);
-  - repeated rounds in both timing conventions (`r4_rounds_analysis.py`), cold L2
-    (`e20_cold_analysis.py`), CUDA-graph timing (`e22_graph_analysis.py`), the public TFLA mLSTM
-    kernel (`e24_tfla_chunk.py`);
-  - oracle headroom under timing noise (`headroom_noise.py`, `headroom_r4.py`), entropy band of
-    real inputs (`entropy_band.py`), tables and figures (`make_tables.py`, `make_figures.py`).
-- `src/kernels/mamba1_runtime_chunk/` - the reference Mamba-1 CUDA selective scan rebuilt with the
-  chunk as a runtime argument.
-- `src/experiments/results/tpds/` - measurements and analyses (tags below).
-- `src/experiments/results/legacy/` - summaries of the earlier harnesses behind the supplement's
-  bin-count, inline-hook, earlier routed-study and real-checkpoint entropy tables.
-- `src/experiments/run_*.py`, `src/experiments/bin_count_sensitivity.py`,
-  `src/experiments/summarize_entropy_distribution.py`,
-  `src/experiments/analyze_scheduler_hook_results.py`, `src/selective_scan_dispatch.py`,
-  `src/algorithms/` - those earlier harnesses: routed end-to-end runs, output agreement on
-  LongBench, inline-hook overhead, statistics of the entropy estimator.
-- `src/data/` - LongBench prompt subsets used by the trace capture and the end-to-end runs.
+- `src/experiments/tpds/` - kernels, GPU experiments and CPU analyses of the paper (the files are
+  listed with the paper items below), with the modules they import (`src/algorithms/`,
+  `src/experiments/run_*.py`).
+- `src/kernels/mamba1_runtime_chunk/` and `src/selective_scan_dispatch.py` - the reference
+  Mamba-1 CUDA selective scan rebuilt with the chunk as a runtime argument, for the routed
+  end-to-end study.
+- `src/experiments/results/tpds/` - the stored measurements the run reads and the stored analyses
+  the paper's numbers come from. Raw per-round logs, benchmark prompts and the summaries of the
+  earlier harnesses behind a few supplementary tables are not included.
 
 ## Result files
 
@@ -370,7 +330,7 @@ convention:
 | `_1p4b`, `_2p8b`, `_2p7b` | Mamba-1 1.4B / 2.8B and Mamba-2 2.7B checkpoints (`gdn_*_1p4b`: Gated DeltaNet 1.4B); 370M otherwise. `_1p4b` / `_2p8b` without a further suffix: first batch-1 sweep, superseded |
 | `_r3spin`, `_r3` | device time: a GPU-side spin before every timing block lets the host queue all repeats, so only GPU execution is timed |
 | `_r3plain` | the `_r3` calls, launch-inclusive |
-| `_r4spin`, `_r4plain` | three rounds with the chunk order shuffled per call and round, device time / launch-inclusive (`*_rounds.jsonl`: per-round blocks) |
+| `_r4spin`, `_r4plain` | three rounds with the chunk order shuffled per call and round, device time / launch-inclusive |
 | `_r4cold` | cold L2 (a 128 MiB buffer overwritten before every timed repeat) plus device time, three rounds |
 | `_r4graph`, `_r4graphcold` | CUDA-graph replays, warm / flushed L2 |
 | `_r4t32` | reference CUDA scan at 32 threads per block |
@@ -382,9 +342,7 @@ convention:
 | `vgpu3090full` (`e17_*`) | synthetic sweep of the production kernels at larger widths |
 
 Host names, absolute paths and local build labels recorded in the result metadata are replaced
-by neutral placeholders (`gpu-host`, `workstation`, `/data`, `/shared`, `/repo`). One record
-(index 136) of `src/data/longbench_subset/multifieldqa_en/test.jsonl` is left out of the shipped
-copy of that public LongBench subset; the scripts read only the first records of each task.
+by neutral placeholders (`gpu-host`, `workstation`, `/data`, `/shared`, `/repo`).
 
 ## Reproducible run (CPU)
 
@@ -420,8 +378,8 @@ ones.
 
 ## Paper items and the files they come from
 
-Result files are in `src/experiments/results/tpds/` (legacy summaries in
-`src/experiments/results/legacy/`); scripts are in `src/experiments/tpds/` unless a path is given.
+Result files are in `src/experiments/results/tpds/`; scripts are in `src/experiments/tpds/`
+unless a path is given.
 "Run" marks the items whose analysis `run` recomputes; "partly" means that some of the listed
 analyses are not repeated (next section).
 
@@ -651,24 +609,15 @@ PAPER_MAP = [
     ("S-tab:supp_serving", "S-sec:supp_serving", "`serving_key_churn.json`, `r4_thinkey_vgpu3090.json`",
      "`serving_key_churn.py`, `r4_thinkey_replay.py`", "no"),
     ("S-fig:entropy_vs_oracle", "S-sec:supp_entropy_protocol", "`e2_mamba{1,2}_pro6000.csv`", "`make_figures.py`", "yes"),
-    ("S-tab:bin_count_sensitivity", "S-sec:supp_bin_count",
-     "legacy `bin_count_sensitivity/bin_count_sensitivity.csv`", "`src/experiments/bin_count_sensitivity.py`", "no"),
-    ("S-tab:active_integration", "S-sec:supp_active_overhead",
-     "legacy `active_hook_integration/summary.json`, `h800_enhance_20260428_145702/integrated_repeats20/summary.json`",
-     "`src/experiments/run_active_hook_integration.py`, `src/experiments/run_integrated_end_to_end.py`", "no"),
-    ("S-tab:hook_micro", "S-sec:supp_hook_micro",
-     "legacy `revision_hook_micro_analysis/`, `remote_hook_micro_analysis_v2/` (`hook_overhead_summary.csv`)",
-     "`src/experiments/analyze_scheduler_hook_results.py`", "no"),
+    ("S-tab:bin_count_sensitivity", "S-sec:supp_bin_count", "not included (earlier harness)", "-", "no"),
+    ("S-tab:active_integration", "S-sec:supp_active_overhead", "not included (earlier harness)", "-", "no"),
+    ("S-tab:hook_micro", "S-sec:supp_hook_micro", "not included (earlier harness)", "-", "no"),
     ("S-tab:supp_routed_full", "S-sec:supp_routed", "`e10_routed_vgpu3090.json` (from `.jsonl`)",
      "`e10_routed_interleaved.py --analyze`, `make_tables.py` (routed_e10)", "yes"),
-    ("S-sec:supp_legacy", None, "legacy `routed_quality_h800_longbench80_20260501/`",
-     "`src/experiments/run_routed_quality_check.py`, `src/experiments/run_scheduler_ablation_matrix.py`", "no"),
-    ("S-tab:entropy_variance_real", "S-sec:entropy_variance_real", "legacy `entropy_variance_summary/`",
-     "`src/experiments/summarize_entropy_distribution.py`", "no"),
-    ("S-sec:supp_per_layer", None, "legacy `active_hook_integration/summary.json` (per-layer entropy)",
-     "`src/experiments/run_active_hook_integration.py`", "no"),
-    ("S-tab:h800_corpora", "S-sec:supp_corpora", "not retained (earlier H800 corpus runs)",
-     "`src/experiments/run_heterogeneous_corpus.py`, `src/experiments/run_real_workload_diversity_h800.py`", "no"),
+    ("S-sec:supp_legacy", None, "not included (earlier harness)", "-", "no"),
+    ("S-tab:entropy_variance_real", "S-sec:entropy_variance_real", "not included (earlier harness)", "-", "no"),
+    ("S-sec:supp_per_layer", None, "not included (earlier harness)", "-", "no"),
+    ("S-tab:h800_corpora", "S-sec:supp_corpora", "not retained (earlier H800 corpus runs)", "-", "no"),
 ]
 PAPER_AUX = [(ROOT / "paper" / "build" / "main.aux", ""), (ROOT / "paper" / "build" / "appendix_only.aux", "S-")]
 AUX_LABEL = re.compile(r"\\newlabel\{([^}@]+)\}\{\{(?:\\mbox\s*\{)?([^{}]*)\}?\}")
@@ -807,8 +756,12 @@ def build(args) -> int:
         print("codeocean/ is not initialised (git submodule update --init codeocean)")
         return 2
     paper_map = paper_map_markdown()  # before anything is replaced: needs the built paper
-    files = closure(expand(ENTRIES)) | expand(EXTRA)
-    files |= {f for pat in LEGACY for f in ROOT.glob(pat) if f.is_file()}  # outside EXCLUDE on purpose
+    manifest = [ln.split("#", 1)[0].strip() for ln in RESULTS_MANIFEST.read_text().splitlines()]
+    results = expand([m for m in manifest if m])
+    missing = [m for m in manifest if m and not any(ROOT.glob(m))]
+    for m in missing:
+        print(f"manifest entry without a file: {m}")
+    files = closure(expand(ENTRIES)) | expand(EXTRA) | results
     too_big = sorted(f for f in files if f.stat().st_size > MAX_FILE_BYTES)
     files -= set(too_big)
     for f in too_big:
@@ -842,6 +795,7 @@ def build(args) -> int:
     print(f"removed the former project name from {rename_text(code)} files")
     for line in filter_data_records(code):
         print("benchmark subset:", line)
+    (code / "src" / "requirements.txt").write_text(REQUIREMENTS)
     (code / "run").write_text(RUN_SCRIPT)
     (code / "run").chmod(0o755)
     (code / "README.md").write_text(README.replace("{title}", TITLE).replace("{runtime}", RUNTIME_NOTE)
