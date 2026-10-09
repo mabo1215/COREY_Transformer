@@ -1,7 +1,7 @@
 # TPDS experiments (cycles tpds-r1 to tpds-r4)
 
 Design: `docs/Design.md`, one section per cycle (tpds-r1: E1-E7; tpds-r2: offline packages T1-T4
-and E8-E11; tpds-r3: E12-E17; tpds-r4: E18-E21 and the offline re-analyses). Review items:
+and E8-E11; tpds-r3: E12-E17; tpds-r4: E18-E24 and the offline re-analyses). Review items:
 `docs/revision_suggestions.tex`. Ledger with status, host and result files per experiment ID:
 `docs/state/experiments/<ID>.json` (the cost model T1 is ledger ID `CM1`).
 
@@ -175,10 +175,13 @@ traces, proposed in tpds-r1, were captured later as E17b).
 | E17a | Mamba-2 2.7B (`AntonV/mamba2-2.7b-hf`, 8 of 64 layers), 2360 captured calls, device time | vgpu3090 (design planned pro6000) | `capture_traces --model mamba2`, `e2_oracle_sweep --model mamba2` (`tpds_lane_r3_e17.sh`; prep `tpds_r3_e17_prep.sh`) | `e2_mamba2_vgpu3090_2p7b_r3.{csv,json}`, `e3_mamba2_vgpu3090_2p7b_r3.json` (the E3 file is not in the manuscript) | `sec:res_reference` "Production kernels at larger widths", `S-sec:supp_largewidth`, `S-tab:supp_largewidth_calls` (through `e17_analysis_vgpu3090full.json` and `headroom_noise_e17.json`) |
 | E17b | Gated DeltaNet 1.4B hybrid (`Idiap/gated-deltanet-swa-1.4B-30B`, 6 of its 12 GDN layers), 1770 captured calls (1152/366/252 at batch 1/4/16), production kernel entry, device time | vgpu3090 | `capture_gdn_traces`, `e2_oracle_sweep --model gdn` (`tpds_lane_r3_e17.sh`) | `e2_gdn_vgpu3090_1p4b_r3.{csv,json}`, `e3_gdn_vgpu3090_1p4b_r3.json` (the E3 file is not in the manuscript) | as E17a; the 1770-call count in `sec:methodology` |
 | E17c | synthetic sweep: SSD at widths 2048/4096/5120, GDN at five head layouts, L 512-8192, batch 1/4/16, 3 rounds, launch-inclusive | vgpu3090 | `e17_workbound`, `e17_analysis` (`tpds_lane_r3_e17.sh`) | `e17_workbound_vgpu3090full.{jsonl,json}`, `e17_analysis_vgpu3090full.json`; `e17_workbound_vgpu3090.{jsonl,json}` is the first run, which lost rows to a git sync (superseded) | `S-tab:supp_largewidth`, `sec:res_reference` "Production kernels at larger widths" |
-| E18 | RTX PRO 6000 device-time calibration (E4, E1) and the 2360 Mamba-1 calls in three rounds, both conventions (M2a, M2b) | pro6000 | `tpds_lane_r4_pro6000.sh` | planned: `e4_pro6000_r4spin.*`, `e1_pro6000_r4spin.*`, `e2_mamba1_pro6000_r4{spin,plain}.{csv,json}`, `..._rounds.jsonl` | not run yet (smoke-tested); no paper location |
-| E19 | RTX 3090 three-round sweep of the 2360 Mamba-1 calls, both conventions (M2b) | vgpu3090 | `tpds_lane_r4_3090.sh` | planned: `e2_mamba1_vgpu3090_r4{spin,plain}.{csv,json}`, `..._rounds.jsonl` | not run yet |
-| E20 | cold-L2 re-timing: E4 keys, E1 medians, calls with L >= 2048 (544 of 2360), three rounds (M3a) | pro6000 | `tpds_lane_r4_pro6000.sh` | planned: `e4_pro6000_r4cold.*`, `e1_pro6000_r4cold.*`, `e2_mamba1_pro6000_r4cold.*` | not run yet |
-| E21 | 64 synthesized calls of the thin serving key (bucket 2048, batch 4, unaligned), three rounds, both conventions (M10b) | vgpu3090 | `tpds_lane_r4_3090.sh` | planned: `e2_mamba1_vgpu3090_r4{spin,plain}_u2048b4.*` | not run yet |
+| E18 | RTX PRO 6000 device-time calibration (E4, E1) and the 2360 Mamba-1 calls in three rounds, both conventions (M2a, M2b) | pro6000 | `tpds_lane_r4_pro6000.sh` | `e4_pro6000_r4spin.*`, `e1_pro6000_r4spin.*`, `e2_mamba1_pro6000_r4{spin,plain}.{csv,json}`, `..._rounds.jsonl`; offline `cost_model_pro6000_r4spin.json`, `r4_rounds_analysis.json` | Mamba-1 columns of `tab:oracle_regret` and `tab:predictors` (device time, round medians), `sec:res_replication` "Device time", `S-sec:supp_conventions` |
+| E19 | RTX 3090 three-round sweep of the 2360 Mamba-1 calls, both conventions (M2b) | vgpu3090 | `tpds_lane_r4_3090.sh` | `e2_mamba1_vgpu3090_r4{spin,plain}.{csv,json}`, `..._rounds.jsonl`; offline `r4_rounds_analysis.json` | `sec:res_replication` "Device time", `S-sec:supp_conventions` |
+| E20 | cold-L2 re-timing: E4 keys, E1 medians, calls with L >= 2048 (544 of 2360), three rounds (M3a) | pro6000 | `tpds_lane_r4_pro6000.sh` | `e4_pro6000_r4cold.*`, `e1_pro6000_r4cold.*`, `e2_mamba1_pro6000_r4cold.*`; offline `cost_model_pro6000_r4cold.json`, `e20_cold_analysis_pro6000.json` | `sec:methodology` timing protocol (cold L2), `S-sec:supp_conventions` "A cold L2" |
+| E21 | 64 synthesized calls of the thin serving key (bucket 2048, batch 4, unaligned), three rounds, both conventions (M10b) | vgpu3090 | `tpds_lane_r4_3090.sh` | `e2_mamba1_vgpu3090_r4{spin,plain}_u2048b4.*`; offline `r4_thinkey_vgpu3090.json` | `sec:res_breakeven` (thin key), `S-sec:supp_serving` |
+| E22 | CUDA-graph timing of the captured calls: Mamba-2 370M (warm and flushed L2), Mamba-1 370M, Mamba-2 2.7B, Gated DeltaNet 1.4B, three rounds | vgpu3090 | `tpds_lane_r4_3090_ab.sh` (`TPDS_R4AB_ONLY=E22`) | `e2_*_vgpu3090*_r4graph*.{csv,json}`, `..._rounds.jsonl`; offline `e22_graph_analysis_vgpu3090.json` (`e22_graph_analysis`) | `sec:res_reference` (graph paragraph), `sec:res_breakeven` "Deployment units", `S-tab:supp_graph` |
+| E23 | reference CUDA scan at 32 threads per block against the stock pairing, 2360 calls, device time | vgpu3090 | `tpds_lane_r4_3090_ab.sh` (`TPDS_R4AB_ONLY=E23`) | `e8_refscan_vgpu3090_r4t32.{csv,json}`; offline `e23_fixed_threads_vgpu3090_r4t32.json` (`e23_fixed_threads_analysis`) | `sec:res_reference`, `S-tab:supp_ref_threads` |
+| E24 | TFLA mLSTM forward (public kernel) chunk sweep 32-2048, 63 synthetic shapes, three rounds, both conventions | vgpu3090 | `tpds_lane_r4_3090_ab.sh` (`TPDS_R4AB_ONLY=E24`) | `e24_tfla_vgpu3090_r4{spin,plain}b.{jsonl,json}`, `..._analysis.json` (`e24_tfla_chunk --analyze`) | `sec:res_reference` "A public kernel", `S-sec:supp_tfla` |
 
 ## Offline analyses (CPU only; read the result files above)
 
@@ -190,15 +193,20 @@ traces, proposed in tpds-r1, were captured later as E17b).
 | Cross-GPU transfer onto the H800 | `cost_model` V3 | `cost_model_transfer_h800.json` | `sec:res_datacentre`, `S-sec:supp_h800` |
 | Compile facts | `kernel_stats` | `kernel_stats_sm{120,86,90}.{json,jsonl}` | `S-tab:supp_model_compile` (sm_120, sm_86); input of every cost-model fit |
 | Cost-model baselines (tpds-r3, M4a/N3) | `cost_model_baselines` | `cost_model_baselines_{pro6000,vgpu3090,h800,h800_r3spin,vgpu3090_r3spin}.json` | rows "Batch size only", "Launch and work terms only" and "Nearest calibration key" of `tab:predictors`, `sec:res_model`; Kendall rank correlation in `S-sec:supp_cost_model`; `S-sec:supp_h800`; nearest-key number in `sec:res_replication` "Device time" |
-| Cost-model baselines, tpds-r4 (M5a, M5b, M6d) | `cost_model_baselines_r4` | `cost_model_baselines_r4_<tag>.json`, `cost_model_baselines_r4_summary.json` | not in the manuscript yet (tpds-r4 results rewrite) |
+| Cost-model baselines, tpds-r4 (M5a, M5b, M6d) | `cost_model_baselines_r4` | `cost_model_baselines_r4_<tag>.json`, `cost_model_baselines_r4_summary.json` | `tab:baselines`, `fig:calibration_budget`, `S-tab:supp_baselines`, `S-tab:supp_topk` |
 | E1 analysis incl. TOST (T4) | `e1_analysis` | `e1_analysis_<tag>.json` | see E1, E1c, E13 |
-| Information tests, tpds-r4 (M7d, M2c) | `e3b_information` | `e3b_information_<model>_<tag>.json` (16 per-call tables), `e3b_information_refscan_vgpu3090.json`, `e3b_information_summary.{json,csv}` | not in the manuscript yet |
+| Information tests, tpds-r4 (M7d, M2c) | `e3b_information` | `e3b_information_<model>_<tag>.json` (per-call tables; `_rmed`: round medians), `e3b_information_refscan_vgpu3090.json`, `e3b_information_summary.{json,csv}` | `sec:res_predictors`, `S-tab:supp_information` |
 | Entropy band | `entropy_band` | `entropy_band_{pro6000,vgpu3090}.json` | `sec:res_predictors` (entropy band of real calls, width within a layer) |
 | Key churn (T3) | `e5b_key_churn` | `e5b_{pro6000,vgpu3090}.json` | `sec:res_breakeven` "Key churn" (`eq:keychurn`), `fig:keychurn`, held-out headroom and host synchronization in `tab:replication`, `S-sec:supp_breakeven` "Per-key tuning costs" |
 | Serving-trace replay (M1b) | `serving_key_churn` | `serving_key_churn.json` | `sec:res_breakeven` "Serving traces", `S-sec:supp_serving`, `S-tab:supp_serving` |
 | Oracle headroom under timing noise (M3b, M3c) | `headroom_noise` | `headroom_noise.json` (370M, reference scan, superseded E11 rows), `headroom_noise_r3.json` (E14/E15 data sets), `headroom_noise_e17.json` (E17a/b) | `S-sec:supp_headroom_noise`, `S-tab:supp_headroom_noise`, `sec:res_breakeven`; headroom row of `tab:reference`, headroom column of `S-tab:supp_conventions`, headroom row of `S-tab:supp_largewidth_calls` |
-| Headroom rows and N1 checks, tpds-r4 (M8a, M3c, N1) | `headroom_r4` | `headroom_r4.json` | not in the manuscript yet |
-| Deployment units, tpds-r4 (M6a, M6b, M10b, N1) | `deployment_units` | `deployment_units.json` | not in the manuscript yet |
+| Headroom rows and N1 checks, tpds-r4 (M8a, M3c, N1) | `headroom_r4` | `headroom_r4.json` | `sec:res_breakeven`, `sec:res_reference`, `S-tab:supp_headroom_noise` |
+| Deployment units, tpds-r4 (M6a, M6b, M10b, N1) | `deployment_units` | `deployment_units.json` | `tab:deployment`, `sec:res_breakeven` (deployment units, model vs profiling) |
+| Repeated rounds, tpds-r4 (M2b) | `r4_rounds_analysis` | `r4_rounds_analysis.json` | Mamba-1 columns of `tab:oracle_regret` and `tab:predictors`, `sec:res_replication` "Device time" |
+| Bootstrap intervals of Tables IV and V (M7d) | `tables_iv_v_ci` | `tables_iv_v_ci.json` | `tab:oracle_regret`, `tab:predictors`, `S-tab:supp_tables_ci` |
+| Reference-scan baselines (M5b) | `refscan_baselines` | `refscan_baselines_vgpu3090.json` | "Ref. scan" column of `tab:baselines` |
+| Bucket-table headroom per data set | `bucket_headroom` | `bucket_headroom.json` | `sec:res_breakeven` (0.8 to 3.8% in device time), abstract |
+| Patched-forward equivalence of the trace capture | `capture_traces` (logged at capture start) | `capture_equivalence.json` | `sec:methodology` (25-token top-token check) |
 | T2 no-gain bound | no code | - | `sec:why`, `thm:nogain`; instantiated with E4/E5b/E9 numbers in `sec:res_breakeven` |
 
 Notes on the tpds-r4 analyses: `docs/tmp/tpds_r4_analysis_notes.md` summarizes their numbers.
@@ -339,7 +347,7 @@ wsl bash src/revloop/remote.sh watch  pro6000 E1 E2 E3 E4 E5
 | tpds-r1 | `tpds_prep.sh` (CPU), `tpds_lane_a.sh`, `tpds_lane_b.sh`, `tpds_lane_e1b.sh`, `tpds_lane_e1c.sh`, `tpds_lane_e7.sh` | E1, E4 / capture, E2, E3, E5 / E1b / E1c / E7. On the RTX 3090 the tpds-r1 runs used `TPDS_ID_PREFIX=3090-` (ledger IDs `3090-E1` ...) |
 | tpds-r2 | `tpds_r2_prep.sh` (runtime-chunk build), `tpds_lane_r2.sh` (`TPDS_R2_ONLY`), `tpds_lane_r2_e11.sh`, `tpds_lane_r2_e11_after_download.sh`, `tpds_r2_cleanup_e11.sh` (deletes the E11 traces and checkpoints; run only with the author's confirmation) | E8, E9, E10, E11 |
 | tpds-r3 | `tpds_lane_r3.sh` (`TPDS_R3_ONLY` = E12, E13, E14), `tpds_r3_e13_prep.sh`, `tpds_lane_r3_e13.sh`, `tpds_r3_e14_download.sh`, `tpds_lane_r3_e15.sh`, `tpds_lane_r3_e15b.sh`, `tpds_r3_e16_prep.sh`, `tpds_lane_r3_e16.sh`, `tpds_lane_r3_e16c.sh`, `tpds_r3_e17_prep.sh`, `tpds_lane_r3_e17.sh` (`TPDS_E17_ONLY`) | E12-E17 |
-| tpds-r4 | `tpds_lane_r4_pro6000.sh`, `tpds_lane_r4_3090.sh` | E18-E21 |
+| tpds-r4 | `tpds_lane_r4_pro6000.sh`, `tpds_lane_r4_3090.sh`, `tpds_lane_r4_3090_ab.sh` | E18-E24 |
 
 Shared settings are in `tpds_common.sh`: `PY`, `TPDS_TAG` (default `$REVLOOP_HOST`, else the
 hostname), `TPDS_TRACE_DIR` (default `src/outputs/tpds_traces`), `TPDS_SMOKE=1` (tiny run, outputs

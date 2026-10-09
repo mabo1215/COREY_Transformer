@@ -159,7 +159,7 @@ from src.experiments.tpds.analysis import chunk_columns, latency_matrix, load_e2
 from src.experiments.tpds.common import RESULTS_DIR, write_json  # noqa: E402
 
 PRIMARY = ("pro6000", "vgpu3090", "h800")
-DEFAULT_TAGS = "pro6000,vgpu3090,h800,vgpu3090_r3spin,h800_r3spin"
+DEFAULT_TAGS = "pro6000,vgpu3090,h800,vgpu3090_r3spin,h800_r3spin,pro6000_r4spin"
 PUBLISHED_MEAN_PCT = {"pro6000": 0.9, "vgpu3090": 3.2, "h800": 3.5}
 SEED = 0
 
