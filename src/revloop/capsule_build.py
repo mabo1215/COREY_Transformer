@@ -392,7 +392,7 @@ not include, or take long; their outputs are stored in `src/experiments/results/
 
 | Script | Output | Why not in `run` |
 |---|---|---|
-| `cost_model_baselines_r4.py` | `cost_model_baselines_r4_*.json` | needs scikit-learn (gradient-boosted and MLP regressors) |
+| `cost_model_baselines_r4.py`, `refscan_baselines.py` | `cost_model_baselines_r4_*.json`, `refscan_baselines_vgpu3090.json` | needs scikit-learn (gradient-boosted and MLP regressors) |
 | `e3b_information.py` (`--round-median --tags mamba1_pro6000_r4spin,mamba1_vgpu3090_r4spin` for `_rmed`) | `e3b_information_*.json` | needs scikit-learn; long bootstrap and permutation tests |
 | `headroom_r4.py` | `headroom_r4.json` | about 10 min on a 16-core workstation (repeated refits of the cost model) |
 | `serving_key_churn.py`, `deployment_units.py`, `r4_thinkey_replay.py` | `serving_key_churn.json`, `deployment_units.json`, `r4_thinkey_vgpu3090.json` | replay public serving traces (Azure LLM inference traces 2023/2024, BurstGPT, Mooncake; about 2 GB, download URLs in `serving_key_churn.py`); `deployment_units.py --skip-serving` and `r4_thinkey_replay.py --skip-replay` run without them |
@@ -463,8 +463,9 @@ PAPER_MAP = [
      "`e3b_information_*.json`, `r4_rounds_analysis.json`, `entropy_band_pro6000.json`",
      "`e3b_information.py`, `r4_rounds_analysis.py`, `entropy_band.py`", "partly"),
     ("tab:baselines", "sec:res_model",
-     "`cost_model_baselines_r4_{pro6000,vgpu3090,h800}.json`, `cost_model_baselines_r4_summary.json`",
-     "`cost_model_baselines_r4.py`", "no"),
+     "`cost_model_baselines_r4_{pro6000,vgpu3090,h800}.json`, `cost_model_baselines_r4_summary.json`, "
+     "`refscan_baselines_vgpu3090.json` (reference CUDA scan column)",
+     "`cost_model_baselines_r4.py`, `refscan_baselines.py`", "no"),
     ("fig:calibration_budget", "sec:res_model",
      "`cost_model_baselines_r4_summary.json`; default chunk from `e2_mamba1_{pro6000,vgpu3090,h800}.csv`",
      "`make_figures.py`", "yes (figure)"),
