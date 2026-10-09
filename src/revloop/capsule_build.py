@@ -715,7 +715,8 @@ def paper_map_markdown() -> str:
 # Run time of `run`, stated in the README (measured with the build's smoke test).
 RUNTIME_NOTE = ("On a 16-core workstation with scikit-learn installed the run takes about 7 minutes. Without "
                 "scikit-learn (the capsule environment as configured) the predictor trees run single-threaded "
-                "in pure Python and the run takes about an hour.")
+                "in pure Python and the run takes about 70 minutes on the same workstation (longer on slower "
+                "cores); adding scikit-learn to the environment brings it back to a few minutes.")
 
 
 # Host names and absolute host paths recorded in result metadata are replaced in the copies.
