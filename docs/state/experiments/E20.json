@@ -54,7 +54,12 @@
     {
       "at": "2026-10-09T02:59:27Z",
       "by": "bobsteam1215",
-      "text": "15:45 NZDT: host watcher committed E20 (c7aad2b on the host) but all pushes failed (GitHub unreachable from the host 10:30-10:44 CST); files copied by scp, complete (544 calls x 3 rounds, L2 flushed per repeat, device time; 12 E4 keys; 864 E1 cells). Analysis (e20_cold_analysis.py): cold L2 slows the oracle by 14% median at L>=2048 (batch 1: 15.5%, batch 16: 0.4%) and the E4 keys by up to 1.72x (L=128); best static chunk unchanged at 10/12 keys, warm-best chunk costs 0.16% mean / 1.78% max cold; per-call oracle unchanged on 90%, in the warm tie set on 99%; under cold, warm oracle 0.12% and warm-tuned exact table 0.12%; shape tree 0.60% cold vs 0.44% warm; held-out headroom 0.01 us cold; cost model (device-time warm calibration) 1.42% on the cold calls vs 1.21% warm on the same calls, cold refit chooses the same chunk on 100% of calls"
+      "text": "15:45 NZDT: host watcher committed E20 (c7aad2b on the host) but all pushes failed (GitHub unreachable from the host 10:30-10:44 CST); files copied by scp, complete (544 calls x 3 rounds, L2 flushed per repeat, device time; 12 E4 keys; 864 E1 cells). Analysis (e20_cold_analysis.py): cold L2 slows the oracle by 13% median at L>=2048 (by length bucket 11-14%; batch 1: 15.5%, batch 16: 0.4%) [corrected 2026-10-09: was '14% median'] and the E4 keys by up to 1.72x (L=128); best static chunk unchanged at 10/12 keys, warm-best chunk costs 0.16% mean / 1.78% max cold; per-call oracle unchanged on 90%, in the warm tie set on 99%; under cold, warm oracle 0.12% and warm-tuned exact table 0.12%; shape tree 0.60% cold vs 0.44% warm; held-out headroom 0.01 us cold; cost model (device-time warm calibration) 1.42% on the cold calls vs 1.21% warm on the same calls, cold refit chooses the same chunk on 100% of calls"
+    },
+    {
+      "at": "2026-10-09T03:30:35Z",
+      "by": "bobsteam1215",
+      "text": "integrated 2026-10-09: timing-protocol sentence (warm-tuned exact-shape table loses 0.12% cold) and Supp paragraph 'A cold L2' + Table S-cold (12 keys warm/cold best chunk, cold/warm ratio, regret)"
     }
   ],
   "progress": 100,
@@ -66,9 +71,9 @@
   ],
   "screen": "tpds-r4",
   "started_at": "2026-10-07T18:50:54Z",
-  "status": "pulled",
+  "status": "integrated",
   "title": "PRO 6000 cold-L2 re-timing of the 12 tuning keys and captured calls L>=2048",
-  "updated_at": "2026-10-09T02:59:27Z",
+  "updated_at": "2026-10-09T03:30:35Z",
   "updated_by": "bobsteam1215",
   "vram_gb": 9.6
 }
