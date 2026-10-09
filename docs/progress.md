@@ -157,6 +157,11 @@
   - Table IV 表注写明 Mamba-2 是单块（M2b）；
   - `src/experiments/tpds/README.md` 补齐 r4 文件（N5）。
 - **M7d**：precheck 说的 "Table IV 缺 CI" 是表号对错了。评审所指的 Tables III–IV 就是正文的 oracle 表和预测器表，它们的区间已在 S-tables-ci 里。
+- **capsule 暂不同步（作者 2026-10-10 指示）**：等本轮修改全部完成后再统一同步、发布一次新版本。届时要带上的内容：
+  - 新结果文件：`capture_equivalence.json`、`bucket_headroom.json`、`cost_model_baselines_r4_pro6000_r4spin.json`，以及更新后的 `cost_model_baselines_r4_summary.json`。清单是通配，会自动包含。
+  - 新脚本 `bucket_headroom.py` 和 `make_tables.py deployment_buckets`。要确认打包脚本的 import 追踪能带上它们。
+  - capsule README 的结果→论文对照表补三项：Table S-deployment-buckets、Table S-baselines 新增的 device-time 列、`bucket_headroom.json`。
+  - 用 `capsule_build.py --push` 推送并做匿名化扫描，然后由你在 Code Ocean 网页发布。
 - **未做（受 250 词和 14 页限制）**：摘要没有加 device-side 决策成本（7.3–42 µs，M8a）和分片 p95（M8c），正文里有。
 
 ## 2026-10-09（四续）作者回答三个问题：M2b 用 device time 重算正文两表、摘要压到 250 词、capsule 更新
