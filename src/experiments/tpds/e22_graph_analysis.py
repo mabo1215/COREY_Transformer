@@ -115,6 +115,27 @@ TABLES = {
                       "vgpu3090", 48, None, None, False, False),
 }
 
+# --rounds3 (re-check P3, E25): the warm-L2 graph tables timed in three rounds replace the single-round ones
+# (read through the round-median view); the single-round tables stay as "<name>1" for comparison
+GRAPH3 = {"ssd370m_graph": "e2_mamba2_vgpu3090_r4graph3.csv", "ssd2p7b_graph": "e2_mamba2_vgpu3090_2p7b_r4graph3.csv",
+          "gdn1p4b_graph": "e2_gdn_vgpu3090_1p4b_r4graph3.csv", "m1_370m_graph": "e2_mamba1_vgpu3090_r4graph3.csv"}
+
+
+def use_three_rounds(in_dir: Path) -> list[str]:
+    """Switch the warm graph tables to the three-round sweeps that exist in ``in_dir``; returns their names."""
+    switched = []
+    for nm, csv in GRAPH3.items():
+        if not (in_dir / csv).exists():
+            continue
+        spec = list(TABLES[nm])
+        TABLES[nm + "1"] = tuple(spec[:3] + [spec[3] + ", one round"] + spec[4:])
+        spec[0], spec[3], spec[8] = csv, spec[3] + ", three rounds (round medians)", True
+        TABLES[nm] = tuple(spec)
+        COMPARISONS.append((nm, nm + "1"))
+        switched.append(nm)
+    return switched
+
+
 # (new, reference): latency ratio new / reference, oracle changes, cross regret
 COMPARISONS = [
     ("ssd370m_graph", "ssd370m_eager"), ("ssd370m_graph", "ssd370m_device"), ("ssd370m_graphcold", "ssd370m_graph"),
@@ -885,7 +906,10 @@ def print_report(res: dict) -> None:
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--in-dir", type=Path, default=RESULTS_DIR)
-    p.add_argument("--out", type=Path, default=None, help="output JSON (default: <in-dir>/e22_graph_analysis_vgpu3090.json)")
+    p.add_argument("--out", type=Path, default=None, help="output JSON (default: <in-dir>/e22_graph_analysis_vgpu3090.json; "
+                   "with --rounds3: e22_graph_analysis_vgpu3090_rounds3.json)")
+    p.add_argument("--rounds3", action="store_true",
+                   help="use the three-round warm graph sweeps (E25) where present; single-round ones become <name>1")
     args = p.parse_args(argv)
     with np.errstate(invalid="ignore", divide="ignore"):    # +inf marks chunks beyond the SSD 32-bit index limit
         run(args)
@@ -894,6 +918,9 @@ def main(argv=None):
 def run(args) -> None:
     t0 = time.time()
     in_dir = args.in_dir
+    switched = use_three_rounds(in_dir) if getattr(args, "rounds3", False) else []
+    if switched:
+        print(f"three-round graph tables: {switched}", flush=True)
     T = {nm: Table(nm, in_dir) for nm in TABLES if (in_dir / TABLES[nm][0]).exists()}
     for nm, t in T.items():
         if t.floor_from is None:
@@ -918,8 +945,10 @@ def run(args) -> None:
                                       "the subset; best_static_insample chosen on all calls"},
            "tables": S, "comparisons": comps, "claims": claims(T, S), "launch_boundary": launch_boundary(T, S, in_dir)}
     res["reproduction"] = reproduction(S, in_dir)
+    res["three_round_tables"] = switched
     res["runtime_s"] = round(time.time() - t0, 1)
-    out = args.out or (in_dir / "e22_graph_analysis_vgpu3090.json")
+    out = args.out or (in_dir / ("e22_graph_analysis_vgpu3090_rounds3.json" if switched
+                                 else "e22_graph_analysis_vgpu3090.json"))
     write_json(out, _clean(res))
     print_report(_clean(res))
     print(f"\nwrote {out} ({res['runtime_s']} s)")
