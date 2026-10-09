@@ -333,9 +333,90 @@ def t_deployment_buckets(d, host):
     return rows
 
 
+def t_tp_widths(d, host):
+    """M4a / re-check P5: regret at tensor-parallel widths per (kernel, model, t) on the RTX 3090 and the H800
+    (``e12_analysis_<gpu>.json``): share of shapes whose oracle moves beyond the ties, then the unsharded
+    table, the table at the calibration width d=2048, the cost model (Triton only) and the best static chunk."""
+    gpus = ("vgpu3090", "h800")
+    fam = {g: _load(d / f"e12_analysis_{g}.json")["families"] for g in gpus}
+
+    def f(y, k):
+        return f"{y[k]['mean_regret_pct']:.1f}" if k in y else "--"
+
+    rows = []
+    for kernel, name in (("triton", "Triton"), ("ref", "Reference")):
+        first_kernel = True
+        for model, label in (("370m", "370M"), ("1.4b", "1.4B"), ("2.8b", "2.8B")):
+            first_model = True
+            for t, y0 in fam[gpus[0]][kernel]["by_model"][model].items():
+                cells = []
+                for g in gpus:
+                    y = fam[g][kernel]["by_model"][model][t]
+                    mv = y.get("share_oracle_moves_beyond_ties")
+                    cells += ["--" if mv is None else f"{100 * mv:.0f}", f(y, "unsharded_table"),
+                              f(y, "width2048_table"), f(y, "cost_model"), f(y, "best_static")]
+                rows.append(f"{name if first_kernel else ''} & {label if first_model else ''} & {t[1:]} & {y0['d']} & "
+                            + " & ".join(cells) + " \\\\")
+                first_kernel = first_model = False
+        if kernel == "triton":
+            rows.append("\\midrule")
+    return rows
+
+
+def _static_by_batch(path, rmed):
+    """Best single chunk and its mean per-call relative regret (%) per batch size of one E2 Mamba-1 table."""
+    import numpy as np
+    from src.experiments.tpds.analysis import chunk_columns, latency_matrix, load_e2, round_median_view
+
+    df = load_e2([path])
+    if rmed:
+        df = round_median_view(df)
+    ch = chunk_columns(df)
+    lat = np.asarray(latency_matrix(df, ch))
+    orc = lat.min(1)
+    out = {}
+    for b in sorted(df["batch"].unique()):
+        m = (df["batch"] == b).to_numpy()
+        reg = [100 * float(((lat[m, j] - orc[m]) / orc[m]).mean()) for j in range(len(ch))]
+        j = int(np.argmin(reg))
+        out[int(b)] = (ch[j], reg[j], dict(zip(ch, reg)))
+    return out
+
+
+def t_static_bucket(d, host):
+    """Re-check A3: per Mamba-1 data set, the best single chunk per batch size with its regret, and the oracle
+    headroom over the held-out (length bucket, batch) table (``bucket_headroom.json``)."""
+    bh = _load(d / "bucket_headroom.json")["data_sets"]
+    sets = (("pro6000", "PRO~6000", "LI", False), ("pro6000_r4spin", "PRO~6000", "dev., 3 r.", True),
+            ("vgpu3090", "RTX~3090", "LI", False), ("vgpu3090_r4spin", "RTX~3090", "dev., 3 r.", True),
+            ("h800", "H800", "LI", False), ("h800_r3spin", "H800", "dev.", False),
+            ("vgpu3090_1p4b_r3", "RTX~3090, 1.4B", "dev.", False), ("vgpu3090_2p8b_r3", "RTX~3090, 2.8B", "dev.", False))
+    rows = []
+    for tag, gpu, conv, rmed in sets:
+        st = _static_by_batch(d / f"e2_mamba1_{tag}.csv", rmed)
+        cells = [f"{st[b][0]} ({st[b][1]:.1f})" for b in (1, 4, 16)]
+        h = bh[tag]
+        rows.append(f"{gpu} & {conv} & " + " & ".join(cells) + f" & {h['headroom_us']:.1f} ({h['headroom_pct']:.2f}) \\\\")
+    return rows
+
+
+def t_chunk_transfer(d, host):
+    """Re-check A3/P7: launch-inclusive batch-1 regret (%) of the best batch-1 chunk of one GPU on the captured
+    calls of each GPU (370M Mamba-1, one block)."""
+    gpus = (("pro6000", "PRO~6000"), ("vgpu3090", "RTX~3090"), ("h800", "H800"))
+    st = {g: _static_by_batch(d / f"e2_mamba1_{g}.csv", False)[1] for g, _ in gpus}
+    rows = []
+    for g, name in gpus:
+        c = st[g][0]
+        rows.append(f"{name} ({c}) & " + " & ".join(f"{st[h][2][c]:.1f}" for h, _ in gpus) + " \\\\")
+    return rows
+
+
 TABLES = {"routed_e10": t_routed_e10, "model_params": t_model_params, "model_ablation": t_model_ablation, "model_compile": t_model_compile,
           "tost": t_tost, "reference": t_reference, "redraw": t_redraw, "validation": t_validation, "latency": t_latency, "effects": t_effects, "autotune": t_autotune,
-          "overhead": t_overhead, "deployment_buckets": t_deployment_buckets}
+          "overhead": t_overhead, "deployment_buckets": t_deployment_buckets,
+          "tp_widths": t_tp_widths,
+          "static_bucket": t_static_bucket, "chunk_transfer": t_chunk_transfer}
 
 
 def main(argv=None):
