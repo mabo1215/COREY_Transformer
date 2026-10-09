@@ -157,3 +157,30 @@ number has a key.
    graph scope (6), M8a/M8c additions, trim to <= 250 words, keep 14 pages.
 5. Deployment table per (L, B) with graph rows (M6a), Table IV CIs (M7d), README mapping (N5).
 6. Fresh Stage 9 review after the fixes; confirm the template option (`compsoc`) against the TPDS guidelines.
+
+## 6. Follow-up (2026-10-10)
+
+Corrections to this report after checking the ledger (which the reviewing agents could not read):
+- **V1, V2, V4 are not open.** Keeping the Code Ocean link was an author decision (2026-10-08;
+  logged-out page shows no author). The capsule was rebuilt with one anonymous root commit, and a
+  scan of `codeocean/` finds no "corey", host names or local paths. The result JSON files with
+  paths stay in the repository and are not in the capsule. The Idiap checkpoint has no affiliation
+  with the authors (recorded 2026-10-07).
+- **M7d is addressed.** The review's "Tables III-IV" are the main-text oracle and predictor
+  tables, whose bootstrap intervals are in Table S-tables-ci; the "Table IV" of section 2 was a
+  numbering mix-up.
+- **The abstract had 249 words, not about 264.** That count tokenized LaTeX commands crudely; the
+  revised abstract has 246.
+
+Fixed in paper commits `3abec35`, `422ac78`, `660ed77`, `3200c13`:
+- all four number mismatches;
+- both untraceable claims (new `capture_equivalence.json`; step model 2.3x);
+- the 13 inconsistencies;
+- new problems 1-6 (device-time baselines incl. PRO 6000, `bucket_headroom.json`, scoped abstract,
+  contributions and conclusion, CUDA-graph deployment costs, second-session statement);
+- M2b caption, M3d, M5b, M5c, M6a (Table S-deployment-buckets), M9a, M12a and N5 (README).
+
+Left for the author: A1 (title) and the `compsoc` template option (`docs/progress.md`, 遗留问题).
+
+Not done because of the 250-word and 14-page limits: M8a and M8c additions to the abstract (the
+numbers are in the main text).
