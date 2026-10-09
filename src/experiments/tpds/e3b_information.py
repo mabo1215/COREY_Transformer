@@ -6,7 +6,10 @@ the tuning-key rows are dropped as in E8). For every table ("tag", e.g. ``mamba1
 ``mamba1_vgpu3090_1p4b_r3``, ``refscan_vgpu3090``) the script writes
 ``e3b_information_<tag>.json``; at the end it writes ``e3b_information_summary.json`` and
 ``e3b_information_summary.csv`` with one compact row per tag. A tag whose output already exists is
-skipped unless ``--force`` is given, so an interrupted run resumes where it stopped.
+skipped unless ``--force`` is given, so an interrupted run resumes where it stopped. With
+``--round-median`` a multi-round table (``e2_oracle_sweep --rounds`` > 1) is evaluated on its round
+medians (``analysis.round_median_view``: oracle on the medians, ties by between-round CI overlap) and
+written as ``e3b_information_<tag>_rmed.json``; the summary files are then left unchanged.
 
 Definitions
 -----------
@@ -132,7 +135,8 @@ from scipy.sparse.csgraph import connected_components  # noqa: E402
 
 from src.experiments.tpds import e3_predictors as e3  # noqa: E402
 from src.experiments.tpds.analysis import (chunk_columns, conditional_mutual_information,  # noqa: E402
-                                           cv_exact_headroom, latency_matrix, load_e2)
+                                           cv_exact_headroom, latency_matrix, load_e2,
+                                           round_median_view)
 from src.experiments.tpds.common import RESULTS_DIR, write_json  # noqa: E402
 
 SHAPE = list(e3.SHAPE)
@@ -891,11 +895,16 @@ def discover(in_dir: Path, tags: list[str] | None) -> list[tuple[str, str, str, 
     return out
 
 
-def _load(item) -> Table | None:
+def _load(item, round_median: bool = False) -> Table | None:
     tag, model, host, path = item
     df = load_e2([path])
     if df.empty:
         return None
+    if round_median:                    # multi-round table: oracle, latencies and ties on round medians
+        if "oracle_chunk_med" not in df.columns:
+            return None
+        df = round_median_view(df)
+        tag = f"{tag}_rmed"
     if "regimes" in df and (df["regimes"] == "e4_key").any():
         df = df[df["regimes"] != "e4_key"].reset_index(drop=True)
     if df["fold"].nunique() < 2:
@@ -905,15 +914,16 @@ def _load(item) -> Table | None:
 
 def _worker(payload):
     item, args = payload
-    out = args.out_dir / f"e3b_information_{item[0]}.json"
+    tag = f"{item[0]}_rmed" if args.round_median else item[0]
+    out = args.out_dir / f"e3b_information_{tag}.json"
     if out.exists() and not args.force:
-        return item[0], "skipped (exists)", out
-    t = _load(item)
+        return tag, "skipped (exists)", out
+    t = _load(item, args.round_median)
     if t is None:
-        return item[0], "skipped (no data)", None
+        return tag, "skipped (no data)", None
     res = analyze_tag(t, args)
     write_json(out, res)
-    return item[0], f"done in {res['timing_s']['total']:.0f}s", out
+    return tag, f"done in {res['timing_s']['total']:.0f}s", out
 
 
 def parse_args(argv=None):
@@ -930,6 +940,10 @@ def parse_args(argv=None):
     p.add_argument("--skip-gbt", action="store_true")
     p.add_argument("--force", action="store_true", help="recompute tags whose output already exists")
     p.add_argument("--no-summary", action="store_true")
+    p.add_argument("--round-median", action="store_true",
+                   help="multi-round tables only (e2_oracle_sweep --rounds > 1): evaluate on the round medians "
+                        "(analysis.round_median_view: oracle on the medians, ties by between-round CI overlap); "
+                        "the output tag gets the suffix _rmed")
     return p.parse_args(argv)
 
 
@@ -948,7 +962,7 @@ def main(argv=None):
         for pl in payloads:
             tag, status, _ = _worker(pl)
             print(f"  {tag}: {status}", flush=True)
-    if args.no_summary:
+    if args.no_summary or args.round_median:     # the summary covers the single-view tables only
         return
     rows, full = [], {}
     for tag, *_ in items:
