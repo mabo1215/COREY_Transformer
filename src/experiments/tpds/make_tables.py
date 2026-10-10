@@ -414,25 +414,21 @@ def t_chunk_transfer(d, host):
 
 def _rounds_cv(csv_path):
     """Median over (call, chunk) cells of the within-round CV of a multi-round sweep: RMS of the per-round SDs over
-    the mean of the round means (the convention of Table S-conventions); None for a single-round sweep."""
+    the mean of the round means (the convention of Table S-conventions), recovered from the per-call table (pooled
+    SD and round means, as ``r4_rounds_analysis.within_block_std``); None for a single-round sweep."""
     import numpy as np
-    from collections import defaultdict
+    from src.experiments.tpds.analysis import chunk_columns, load_e2
+    from src.experiments.tpds.r4_rounds_analysis import round_matrix, within_block_std
 
-    p = csv_path.with_name(csv_path.stem + "_rounds.jsonl")
-    if not p.exists():
+    df = load_e2([csv_path])
+    if "rounds" not in df.columns or int(df["rounds"].max()) < 2:
         return None
-    acc = defaultdict(list)
-    with open(p) as f:
-        for line in f:
-            r = json.loads(line)
-            if r.get("kind") != "round":
-                continue
-            for c, st in r["stats"].items():
-                if st.get("mean_ms") is not None and np.isfinite(st["mean_ms"]):
-                    acc[(r["call"], c)].append((st["mean_ms"], st["std_ms"]))
-    n = max(len(v) for v in acc.values())
-    cv = [100 * np.sqrt(np.mean([sd ** 2 for _, sd in v])) / np.mean([m for m, _ in v]) for v in acc.values() if len(v) == n]
-    return float(np.median(cv))
+    chunks = chunk_columns(df)
+    R = round_matrix(df, chunks)
+    finite = np.isfinite(R).all(0)
+    sw = within_block_std(df, chunks, np.where(np.isfinite(R), R, 0.0))
+    cv = 100 * sw / R.mean(0)
+    return float(np.median(cv[finite]))
 
 
 def t_graph(d, host, source="e22_graph_analysis_vgpu3090_rounds3.json"):
