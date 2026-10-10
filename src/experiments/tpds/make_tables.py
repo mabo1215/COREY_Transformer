@@ -412,11 +412,81 @@ def t_chunk_transfer(d, host):
     return rows
 
 
+def _rounds_cv(csv_path):
+    """Median over (call, chunk) cells of the within-round CV of a multi-round sweep: RMS of the per-round SDs over
+    the mean of the round means (the convention of Table S-conventions); None for a single-round sweep."""
+    import numpy as np
+    from collections import defaultdict
+
+    p = csv_path.with_name(csv_path.stem + "_rounds.jsonl")
+    if not p.exists():
+        return None
+    acc = defaultdict(list)
+    with open(p) as f:
+        for line in f:
+            r = json.loads(line)
+            if r.get("kind") != "round":
+                continue
+            for c, st in r["stats"].items():
+                if st.get("mean_ms") is not None and np.isfinite(st["mean_ms"]):
+                    acc[(r["call"], c)].append((st["mean_ms"], st["std_ms"]))
+    n = max(len(v) for v in acc.values())
+    cv = [100 * np.sqrt(np.mean([sd ** 2 for _, sd in v])) / np.mean([m for m, _ in v]) for v in acc.values() if len(v) == n]
+    return float(np.median(cv))
+
+
+def t_graph(d, host, source="e22_graph_analysis_vgpu3090_rounds3.json"):
+    """M3b / re-check P3: Table S-graph rows (CUDA-graph replays against eager and device-time timings of the same
+    captured calls, RTX 3090) from ``e22_graph_analysis`` (default: the three-round analysis, ``--rounds3``)."""
+    if not (d / source).exists():
+        source = "e22_graph_analysis_vgpu3090.json"
+    a = _load(d / source)
+    T = a["tables"]
+    three = set(a.get("three_round_tables", []))
+    rows_spec = (("SSD 370M", (("ssd370m_eager", "eager"), ("ssd370m_graph", "graph"), ("ssd370m_graphcold", "graph, flushed"))),
+                 ("SSD 2.7B", (("ssd2p7b_device", "device"), ("ssd2p7b_graph", "graph"), ("ssd2p7b_graphcold", "graph, flushed"))),
+                 ("GDN 1.4B", (("gdn1p4b_device", "device"), ("gdn1p4b_graph", "graph"), ("gdn1p4b_graphcold", "graph, flushed"))),
+                 ("Mamba-1 370M", (("m1_370m_eager", "eager"), ("m1_370m_device_r4", "device, 3 rounds"), ("m1_370m_graph", "graph"))))
+
+    def one(x):
+        return "--" if x is None else f"{x:.1f}"
+
+    def fine(x):
+        return "--" if x is None else (f"{x:.2f}" if x < 2 else f"{x:.1f}")
+
+    rows = []
+    for label, items in rows_spec:
+        for k, (nm, timing) in enumerate(items):
+            t = T[nm]
+            P = t["policies"]
+
+            def g(key):
+                return P[key]["all"]["mean_pct"] if key in P else None
+            graph = "graph" in nm
+            model = g("work_term_launch_default")
+            mcell = "--" if model is None else (f"{model:.1f} ({g('work_term_refit_cv'):.1f})" if graph
+                                                 and g("work_term_refit_cv") is not None else f"{model:.1f}")
+            h = t["headroom"]["all"]
+            hc = h["covered_us"]
+            if nm in three:
+                timing += ", 3 rounds"
+            rows.append(" & ".join([label if k == 0 else "", timing, str(t["n_calls"]), f"{t['floor']['floor_us']:.0f}",
+                                    f"{100 * t['floor']['share_above']:.0f}\\%",
+                                    f"{_rounds_cv(d / t['source']) or t['within_block_cv_pct']['all']['cell_median']:.1f}",
+                                    "--" if t["library_default"] is None else one(g("default")),
+                                    one(g("best_static_insample")), fine(g("e3_shape")), fine(g("e3_shape+entropy")),
+                                    one(g("e3_entropy_only")), fine(g("exact_table_heldout")), mcell,
+                                    f"{hc:.2f} ({h['covered_max_key_us']:.1f})" if hc < 10
+                                    else f"{hc:.1f} ({h['covered_max_key_us']:.1f})"]) + " \\\\")
+    return rows
+
+
 TABLES = {"routed_e10": t_routed_e10, "model_params": t_model_params, "model_ablation": t_model_ablation, "model_compile": t_model_compile,
           "tost": t_tost, "reference": t_reference, "redraw": t_redraw, "validation": t_validation, "latency": t_latency, "effects": t_effects, "autotune": t_autotune,
           "overhead": t_overhead, "deployment_buckets": t_deployment_buckets,
           "tp_widths": t_tp_widths,
-          "static_bucket": t_static_bucket, "chunk_transfer": t_chunk_transfer}
+          "static_bucket": t_static_bucket, "chunk_transfer": t_chunk_transfer,
+          "graph": t_graph}
 
 
 def main(argv=None):
