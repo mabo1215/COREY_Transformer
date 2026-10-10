@@ -1,0 +1,531 @@
+{
+  "meta": {
+    "host": "vgpu3090",
+    "hostname": "autodl-container-5ea9tapmbb-6a673b83",
+    "utc": "2026-10-09T22:11:07Z",
+    "python": "3.12.3",
+    "platform": "Linux-5.15.0-119-generic-x86_64-with-glibc2.35",
+    "argv": [
+      "/root/autodl-tmp/COREY_Transformer_tpds/src/experiments/tpds/e2_oracle_sweep.py",
+      "--model",
+      "mamba2",
+      "--cuda-graph",
+      "--rounds",
+      "3",
+      "--batches",
+      "1,4,16",
+      "--warmup",
+      "10",
+      "--repeats",
+      "50",
+      "--exclusive-guard",
+      "--guard-until",
+      "1791670264",
+      "--out-dir",
+      "src/experiments/results/tpds",
+      "--trace-dir",
+      "/autodl-fs/data/corey_r4_traces_vgpu3090",
+      "--tag",
+      "vgpu3090_r4graph3"
+    ],
+    "torch": "2.8.0+cu128",
+    "cuda_runtime": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "gpu_mem_gb": 47.42,
+    "gpu_sm_count": 82,
+    "gpu_cc": "8.6",
+    "pkg_triton": "3.4.0",
+    "pkg_transformers": "5.6.2",
+    "pkg_mamba_ssm": "2.3.2.post1",
+    "pkg_fla-core": "0.5.2",
+    "pkg_flash-linear-attention": "0.5.2",
+    "pkg_numpy": "2.3.2",
+    "pkg_scikit-learn": "1.8.0",
+    "nvidia_smi": "NVIDIA GeForce RTX 3090, 595.71.05, 49152 MiB, 2100 MHz",
+    "git_commit": "a296a30",
+    "experiment": "E2",
+    "model": "mamba2",
+    "args": {
+      "model": "mamba2",
+      "exclusive_guard": true,
+      "guard_until": 1791670264.0,
+      "trace_dir": "/autodl-fs/data/corey_r4_traces_vgpu3090",
+      "batches": "1,4,16",
+      "layers": null,
+      "chunks": null,
+      "warmup": 10,
+      "repeats": 50,
+      "flush_l2": false,
+      "cuda_graph": true,
+      "pre_spin_ms": 0.0,
+      "rounds": 3,
+      "min_length": null,
+      "synth_calls": 0,
+      "synth_bucket": 2048,
+      "synth_batch": 4,
+      "synth_align": "unaligned",
+      "max_rows": null,
+      "out_dir": "src/experiments/results/tpds",
+      "tag": "vgpu3090_r4graph3",
+      "seed": 0
+    },
+    "layers": [
+      0,
+      6,
+      12,
+      18,
+      24,
+      30,
+      36,
+      42
+    ],
+    "n_prompts": 192,
+    "chunks": [
+      32,
+      64,
+      128,
+      256,
+      512
+    ],
+    "own_gpu_pids": [],
+    "mamba1_default_launch": null,
+    "ssd_index_limit": 2147483648,
+    "calls_with_unavailable_chunks_this_run": 0
+  },
+  "summary": {
+    "rows": 2360,
+    "by_batch": {
+      "1": {
+        "rows": 1536,
+        "oracle_distribution": {
+          "128": 902,
+          "32": 291,
+          "64": 261,
+          "256": 82
+        },
+        "static_regret": {
+          "static_32": {
+            "n": 1536,
+            "mean_regret_pct": 52.351794156910344,
+            "p95_regret_pct": 109.91494564836066,
+            "max_regret_pct": 128.24760204450155,
+            "oracle_hit_rate": 0.189453125
+          },
+          "static_64": {
+            "n": 1536,
+            "mean_regret_pct": 13.12435944412161,
+            "p95_regret_pct": 30.030218736446447,
+            "max_regret_pct": 83.69351972718655,
+            "oracle_hit_rate": 0.169921875
+          },
+          "static_128": {
+            "n": 1536,
+            "mean_regret_pct": 2.3283619495955197,
+            "p95_regret_pct": 7.989269627738099,
+            "max_regret_pct": 33.555490637564375,
+            "oracle_hit_rate": 0.5872395833333334
+          },
+          "static_256": {
+            "n": 1536,
+            "mean_regret_pct": 16.531212432109033,
+            "p95_regret_pct": 40.9654373488639,
+            "max_regret_pct": 55.16090007922403,
+            "oracle_hit_rate": 0.053385416666666664
+          },
+          "static_512": {
+            "n": 1536,
+            "mean_regret_pct": 51.919716657817524,
+            "p95_regret_pct": 84.00607189116978,
+            "max_regret_pct": 97.55215147330618,
+            "oracle_hit_rate": 0.0
+          },
+          "entropy_rule": {
+            "n": 1536,
+            "mean_regret_pct": 16.493658632889446,
+            "p95_regret_pct": 40.9654373488639,
+            "max_regret_pct": 55.16090007922403,
+            "oracle_hit_rate": 0.06315104166666667
+          },
+          "best_static": "static_128"
+        },
+        "entropy_bits_range": [
+          2.296688,
+          5.290638
+        ]
+      },
+      "4": {
+        "rows": 488,
+        "oracle_distribution": {
+          "128": 256,
+          "256": 112,
+          "64": 72,
+          "32": 48
+        },
+        "static_regret": {
+          "static_32": {
+            "n": 488,
+            "mean_regret_pct": 75.93396011721852,
+            "p95_regret_pct": 120.1371989694013,
+            "max_regret_pct": 128.8664986193486,
+            "oracle_hit_rate": 0.09836065573770492
+          },
+          "static_64": {
+            "n": 488,
+            "mean_regret_pct": 21.422170630578098,
+            "p95_regret_pct": 40.799475925215425,
+            "max_regret_pct": 46.47677008508771,
+            "oracle_hit_rate": 0.14754098360655737
+          },
+          "static_128": {
+            "n": 488,
+            "mean_regret_pct": 7.737292510365624,
+            "p95_regret_pct": 33.89032334771436,
+            "max_regret_pct": 39.056833721577064,
+            "oracle_hit_rate": 0.5245901639344263
+          },
+          "static_256": {
+            "n": 488,
+            "mean_regret_pct": 22.41045818486989,
+            "p95_regret_pct": 75.50212065760893,
+            "max_regret_pct": 82.34927033705553,
+            "oracle_hit_rate": 0.22950819672131148
+          },
+          "static_512": {
+            "n": 488,
+            "mean_regret_pct": 75.79513936444705,
+            "p95_regret_pct": 164.957739842864,
+            "max_regret_pct": 176.35149569086533,
+            "oracle_hit_rate": 0.0
+          },
+          "entropy_rule": {
+            "n": 488,
+            "mean_regret_pct": 22.485324785518728,
+            "p95_regret_pct": 75.50212065760893,
+            "max_regret_pct": 82.34927033705553,
+            "oracle_hit_rate": 0.22336065573770492
+          },
+          "best_static": "static_128"
+        },
+        "entropy_bits_range": [
+          2.286182,
+          5.180271
+        ]
+      },
+      "16": {
+        "rows": 336,
+        "oracle_distribution": {
+          "256": 170,
+          "128": 86,
+          "32": 40,
+          "64": 40
+        },
+        "static_regret": {
+          "static_32": {
+            "n": 336,
+            "mean_regret_pct": 80.00086925953353,
+            "p95_regret_pct": 117.28036937912063,
+            "max_regret_pct": 124.16990696984791,
+            "oracle_hit_rate": 0.11904761904761904
+          },
+          "static_64": {
+            "n": 336,
+            "mean_regret_pct": 23.8050105294115,
+            "p95_regret_pct": 40.20330002093053,
+            "max_regret_pct": 44.35189521211696,
+            "oracle_hit_rate": 0.11904761904761904
+          },
+          "static_128": {
+            "n": 336,
+            "mean_regret_pct": 8.827452275120276,
+            "p95_regret_pct": 32.732900743283345,
+            "max_regret_pct": 36.92114567407392,
+            "oracle_hit_rate": 0.25595238095238093
+          },
+          "static_256": {
+            "n": 336,
+            "mean_regret_pct": 26.423789218749828,
+            "p95_regret_pct": 86.2086168337729,
+            "max_regret_pct": 90.8635824556117,
+            "oracle_hit_rate": 0.5059523809523809
+          },
+          "static_512": {
+            "n": 336,
+            "mean_regret_pct": 87.91964810844378,
+            "p95_regret_pct": 197.09644007782262,
+            "max_regret_pct": 208.0183352059132,
+            "oracle_hit_rate": 0.0
+          },
+          "entropy_rule": {
+            "n": 336,
+            "mean_regret_pct": 26.476406065669135,
+            "p95_regret_pct": 86.2086168337729,
+            "max_regret_pct": 90.8635824556117,
+            "oracle_hit_rate": 0.49404761904761907
+          },
+          "best_static": "static_128"
+        },
+        "entropy_bits_range": [
+          2.377056,
+          5.180271
+        ]
+      }
+    },
+    "entropy_by_regime_b1": {
+      "code_repo": {
+        "mean": 3.81326874375,
+        "std": 0.7718589945425124,
+        "min": 2.745806,
+        "max": 4.933017,
+        "n": 160
+      },
+      "logs_uuid": {
+        "mean": 4.01093600625,
+        "std": 0.8207473973102162,
+        "min": 2.525589,
+        "max": 5.14392,
+        "n": 160
+      },
+      "long_doc_qa": {
+        "mean": 4.05869889375,
+        "std": 0.843624273805826,
+        "min": 2.774123,
+        "max": 5.136041,
+        "n": 160
+      },
+      "longbench_gov_report": {
+        "mean": 3.6850369374999996,
+        "std": 0.7398307108602167,
+        "min": 2.337007,
+        "max": 4.831033,
+        "n": 64
+      },
+      "longbench_multifieldqa_en": {
+        "mean": 3.657825328125,
+        "std": 0.7877849927698202,
+        "min": 2.296688,
+        "max": 4.982775,
+        "n": 64
+      },
+      "longbench_narrativeqa": {
+        "mean": 3.6251145625,
+        "std": 0.7046416513177299,
+        "min": 2.438995,
+        "max": 4.701114,
+        "n": 64
+      },
+      "longbench_qasper": {
+        "mean": 3.688682671875,
+        "std": 0.7352415794234541,
+        "min": 2.433793,
+        "max": 4.777812,
+        "n": 64
+      },
+      "mixed_zh_en": {
+        "mean": 3.9353928062500003,
+        "std": 0.8806958427617796,
+        "min": 2.45985,
+        "max": 4.985243,
+        "n": 160
+      },
+      "ocr_forms": {
+        "mean": 3.93896655625,
+        "std": 0.7922943580873347,
+        "min": 2.607389,
+        "max": 4.923535,
+        "n": 160
+      },
+      "repetition_policy": {
+        "mean": 4.124633681250001,
+        "std": 0.9263833569014259,
+        "min": 2.682429,
+        "max": 5.290638,
+        "n": 160
+      },
+      "short_chat": {
+        "mean": 3.9844293500000005,
+        "std": 0.8725031601925807,
+        "min": 2.750783,
+        "max": 5.182781,
+        "n": 160
+      },
+      "tables_csv": {
+        "mean": 3.97033085,
+        "std": 0.803729471708222,
+        "min": 2.599453,
+        "max": 4.903646,
+        "n": 160
+      }
+    },
+    "max_out_diff_across_chunks": 0.25,
+    "round_median": {
+      "rounds": 3,
+      "oracle_agreement_pooled_vs_median": 0.9656779661016949,
+      "between_round_cv_median": 0.0013353393781415463,
+      "between_round_cv_p90": 0.022714705265632816,
+      "by_batch": {
+        "1": {
+          "rows": 1536,
+          "oracle_distribution": {
+            "128": 910,
+            "32": 294,
+            "64": 256,
+            "256": 76
+          },
+          "static_regret": {
+            "static_32": {
+              "n": 1536,
+              "mean_regret_pct": 52.35979899006365,
+              "p95_regret_pct": 109.29485968599519,
+              "max_regret_pct": 128.7519090409523,
+              "oracle_hit_rate": 0.19140625
+            },
+            "static_64": {
+              "n": 1536,
+              "mean_regret_pct": 13.034761647584045,
+              "p95_regret_pct": 31.342840198272054,
+              "max_regret_pct": 46.4930668888448,
+              "oracle_hit_rate": 0.16861979166666666
+            },
+            "static_128": {
+              "n": 1536,
+              "mean_regret_pct": 2.245815546504963,
+              "p95_regret_pct": 7.986684195927884,
+              "max_regret_pct": 16.787000913474003,
+              "oracle_hit_rate": 0.5924479166666666
+            },
+            "static_256": {
+              "n": 1536,
+              "mean_regret_pct": 16.49908335167425,
+              "p95_regret_pct": 40.969614609512405,
+              "max_regret_pct": 42.166664635209216,
+              "oracle_hit_rate": 0.049479166666666664
+            },
+            "static_512": {
+              "n": 1536,
+              "mean_regret_pct": 52.05234104530048,
+              "p95_regret_pct": 84.12302150637308,
+              "max_regret_pct": 85.96490858028578,
+              "oracle_hit_rate": 0.0
+            },
+            "entropy_rule": {
+              "n": 1536,
+              "mean_regret_pct": 16.459890267953543,
+              "p95_regret_pct": 40.969614609512405,
+              "max_regret_pct": 42.166664635209216,
+              "oracle_hit_rate": 0.059244791666666664
+            },
+            "best_static": "static_128"
+          }
+        },
+        "4": {
+          "rows": 488,
+          "oracle_distribution": {
+            "128": 260,
+            "256": 108,
+            "64": 72,
+            "32": 48
+          },
+          "static_regret": {
+            "static_32": {
+              "n": 488,
+              "mean_regret_pct": 76.10913728460703,
+              "p95_regret_pct": 123.05924908229657,
+              "max_regret_pct": 129.14769512402938,
+              "oracle_hit_rate": 0.09836065573770492
+            },
+            "static_64": {
+              "n": 488,
+              "mean_regret_pct": 21.57755424502314,
+              "p95_regret_pct": 42.63386499980225,
+              "max_regret_pct": 46.89959262751855,
+              "oracle_hit_rate": 0.14754098360655737
+            },
+            "static_128": {
+              "n": 488,
+              "mean_regret_pct": 7.854555852854599,
+              "p95_regret_pct": 34.647581299602,
+              "max_regret_pct": 47.61598440334724,
+              "oracle_hit_rate": 0.5327868852459017
+            },
+            "static_256": {
+              "n": 488,
+              "mean_regret_pct": 22.493554496231717,
+              "p95_regret_pct": 74.32765424582192,
+              "max_regret_pct": 95.17994712950593,
+              "oracle_hit_rate": 0.22131147540983606
+            },
+            "static_512": {
+              "n": 488,
+              "mean_regret_pct": 75.85968391957715,
+              "p95_regret_pct": 161.75823262336203,
+              "max_regret_pct": 196.38477483348748,
+              "oracle_hit_rate": 0.0
+            },
+            "entropy_rule": {
+              "n": 488,
+              "mean_regret_pct": 22.568316595009936,
+              "p95_regret_pct": 74.32765424582192,
+              "max_regret_pct": 95.17994712950593,
+              "oracle_hit_rate": 0.2151639344262295
+            },
+            "best_static": "static_128"
+          }
+        },
+        "16": {
+          "rows": 336,
+          "oracle_distribution": {
+            "256": 169,
+            "128": 87,
+            "32": 40,
+            "64": 40
+          },
+          "static_regret": {
+            "static_32": {
+              "n": 336,
+              "mean_regret_pct": 80.08720468641967,
+              "p95_regret_pct": 121.81632223479548,
+              "max_regret_pct": 124.3577863537722,
+              "oracle_hit_rate": 0.11904761904761904
+            },
+            "static_64": {
+              "n": 336,
+              "mean_regret_pct": 23.778096622427604,
+              "p95_regret_pct": 42.88186282919484,
+              "max_regret_pct": 44.188452991095815,
+              "oracle_hit_rate": 0.11904761904761904
+            },
+            "static_128": {
+              "n": 336,
+              "mean_regret_pct": 8.736345812329771,
+              "p95_regret_pct": 30.73954383551512,
+              "max_regret_pct": 40.863093050344325,
+              "oracle_hit_rate": 0.25892857142857145
+            },
+            "static_256": {
+              "n": 336,
+              "mean_regret_pct": 26.021067691811144,
+              "p95_regret_pct": 82.63102189216222,
+              "max_regret_pct": 99.46697577930377,
+              "oracle_hit_rate": 0.5029761904761905
+            },
+            "static_512": {
+              "n": 336,
+              "mean_regret_pct": 87.4304317317253,
+              "p95_regret_pct": 196.06516006507584,
+              "max_regret_pct": 222.19433136332992,
+              "oracle_hit_rate": 0.0
+            },
+            "entropy_rule": {
+              "n": 336,
+              "mean_regret_pct": 26.074151789007228,
+              "p95_regret_pct": 82.63102189216222,
+              "max_regret_pct": 99.46697577930377,
+              "oracle_hit_rate": 0.49107142857142855
+            },
+            "best_static": "static_128"
+          }
+        }
+      }
+    }
+  }
+}
