@@ -156,6 +156,13 @@
 5. 此前两项旧决策（双盲匿名、正文与 supplementary 两个 PDF 分开提交）继续有效。
 6. **TPDS 页数上限**（2026-09-26 作者提供）：Regular paper 标准 14 个排版页（含正文、图、参考文献与作者简介），超出部分 MOPC 每页 $200，最多 18 页；非必要内容放 Supplementary。当前正文 10 页（双盲稿无作者简介），E3 已关闭。
 
+## 2026-10-13 投稿包 `submit\` 更新为当前版本，打包脚本入库
+
+- `submit\` 原为 2026-06-06 的 AAAI/COREY 旧包（旧标题、旧图、旧代码），整体移到 `submit\old\2026-06-06_aaai-corey\`（未删除）。
+- 新包由论文提交 `521d5c0` 重新编译生成：`MainManuscript\`、`LaTeXSupplementaryFile\`、`Image\`（9 张图）、`SupplementaryMaterialForReview\Supplementary_Material.pdf`，加上 `main.pdf`、`appendix.pdf`、`cover_letter.txt`、`Title_Page.docx`，两个 LaTeX 文件夹各附一个 zip。两个 LaTeX 包都附带对方的 `.aux`，单独编译时 S-/M- 交叉引用也能解析。
+- 校验：两个 zip 解压后单独编译，正文 14 页、补充材料 26 页，0 个未定义引用，0 个错误；源文件与 PDF 的哈希和 `paper\` 一致；PDF 无 Author/Title/CreationDate；图与源文件中无身份信息。正文仍含 Code Ocean 链接（作者此前已确认 capsule 匿名）。`cover_letter.txt` 与 `Title_Page.docx` 含作者姓名，只能作为 Cover Letter / Title Page 上传。
+- 打包脚本：`src/revloop/make_submit.ps1`（`-Build` 先跑 `paper\build.bat`，`-Verify` 单独编译两个 zip，`-NoArchive` 原地替换；默认把旧包移到 `submit\old\<时间戳>\`）。
+
 ## 2026-10-10（续）独立复核（小修）后的修复：摘要、判据范围、范围与标注、H800 分片表、补充表
 
 复核报告：`docs/review_reports/tpds_r4_recheck_2026-10-10.md`。论文提交 `b0673da`。构建结果：正文 14 页，补充材料 26 页，无未定义引用；只有补充材料参考文献中原有的一处 0.7 pt overfull。
