@@ -156,6 +156,11 @@
 5. 此前两项旧决策（双盲匿名、正文与 supplementary 两个 PDF 分开提交）继续有效。
 6. **TPDS 页数上限**（2026-09-26 作者提供）：Regular paper 标准 14 个排版页（含正文、图、参考文献与作者简介），超出部分 MOPC 每页 $200，最多 18 页；非必要内容放 Supplementary。当前正文 10 页（双盲稿无作者简介），E3 已关闭。
 
+## 2026-10-15（续）ACM TACO 独立评审（Stage 9）启动
+
+- 作者 2026-10-15 在对话中指示「根据 ACM TACO 的要求审稿并修改论文，看能否达到 ACCEPT 的要求」：目标期刊已变（USAGE.md Stage 9 门控条件），按作者明确同意进入 Stage 9。
+- 5 位独立评审（EIC、R1 方法学、R2 领域、R3 实践视角、Devil's Advocate）只读论文源码、PDF 与结果文件，不读以往评审与进度记录；报告写入 `docs/review_reports/taco_r1_*.md`，随后综合为新的 `docs/revision_suggestions.tex`（周期 taco-r1）。
+
 ## 2026-10-15 改投 ACM TACO：备份、模板转换、正文压到 20 页
 
 - 背景：TPDS 首投（ID 7e2d7ace-87e5-467d-9bcc-d0a370922b1a，旧题 COREY）被 AE 以 out of scope 拒稿；作者先选 MLSys 2027，随后决定改投 ACM TACO。
