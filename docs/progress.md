@@ -227,6 +227,24 @@
 5. 此前两项旧决策（双盲匿名、正文与 supplementary 两个 PDF 分开提交）继续有效。
 6. **TPDS 页数上限**（2026-09-26 作者提供）：Regular paper 标准 14 个排版页（含正文、图、参考文献与作者简介），超出部分 MOPC 每页 $200，最多 18 页；非必要内容放 Supplementary。当前正文 10 页（双盲稿无作者简介），E3 已关闭。
 
+## 2026-10-16 10:45 交接（本地机器 bobsteam1215 重启前）
+
+**当前状态**
+- 周期 taco-r1（ACM TACO），phase=revise。75 项：done 65、dropped 7、waiting_exp 2（M6c、M8b）、in_progress 1（V2）。
+- 主仓库与 paper 子模块已全部提交并推送，工作区干净；lease 空闲，没有机器持有。
+- 论文：正文到第 20 页结束（参考文献从第 21 页开始），补充材料 29 页；没有未定义引用和溢出；补充材料编号已核对（见下一节）。
+- 远程主机：vGPU 3090 已关机（10:44 连接被拒绝，主机登记 state=off）；没有正在运行的实验，也没有本地后台任务或 /loop。
+
+**下次继续**
+1. `bash src/revloop/sync.sh pull`，然后 `python src/revloop/revstate.py status`。
+2. 作者说"vGPU GPU 已开"后：`wsl bash src/revloop/remote.sh sync vgpu3090` → `ping`（应能看到 GPU）→ `wsl bash src/revloop/remote.sh launch vgpu3090 taco-vgpu src/experiments/remote/taco_lane_vgpu3090.sh` → `wsl bash src/revloop/remote.sh watch vgpu3090 --shutdown E30a E30b E30c E31a E31b E31c` → 账本标 running。E30a–c、E31a–c 已在无卡模式下准备好（prepped），共约 3–3.5 小时，跑完后 watcher 推回结果并关机。
+3. 结果回来后：把 E30（M6c，autotuner 固定与重调）和 E31（M8b，切换 chunk 对输出的影响）写进论文，注意正文不能超过第 20 页、补充材料已经很紧；然后做 Stage 9' 复核和 Stage 11 检查。
+
+**等作者处理**
+- 开 vGPU 3090 的 GPU（E30、E31）。
+- `# 遗留问题` 第 7 条（共享网盘 inode 清理）。
+- 推送重建的 Code Ocean capsule 并在网页发布（见「需要你操作」）；4c 上的 E28 screen 停止。
+
 ## 2026-10-16（续）taco-r1：补充材料编号核对（M9c 之后）
 
 ### 已全部修改
