@@ -29,6 +29,17 @@ three rounds, device time. Metrics: default within 2% of the oracle, per-step an
 of the default, best single chunk, held-out tables keyed on packed-token bucket vs (bucket, sequences),
 share of steps whose optimum the carried state moves. ~1-1.5 GPU-h. Result: `e27_varlen_pro6000_taco.*`.
 
+## E28 - Two-GPU tensor parallelism with collectives on 4c (M7b)
+
+Purpose: the tensor-parallel claims rest on single-GPU synthetic shard shapes; reviewers ask whether the
+per-rank optimum survives co-running collectives and whether ranks agree. Two ranks (torchrun, NCCL) on an
+NVLink-connected pair of stock RTX 3090s on the shared 4c host time the Triton Mamba-1 scan at the t = 2
+shard widths (1024, 2048, 2560), L in {512, 2048, 8192}, batch {1, 4, 16}, every chunk, alone and with an
+overlapping all-reduce of the layer output (B x L x d_model fp16) issued with each scan; three rounds,
+device time, guard on both GPUs. Metrics: regret of the alone-optimal chunk under overlap, share of shapes
+whose optimum moves, scan slowdown, rank agreement, frozen cost-model regret (RTX 3090 parameters) in both
+conditions. The lane waits for a free pair, runs a smoke test, then the full run. ~1.5-2.5 GPU-h.
+
 ## M2b - compile facts of the reference CUDA scan (CPU, in prep)
 
 Build the runtime-chunk reference scan for sm_86 with `ptxas -v` and record registers, spills and shared
