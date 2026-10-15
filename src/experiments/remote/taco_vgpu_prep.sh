@@ -27,6 +27,8 @@ for spec in "mamba2:$ROOT_TR" "mamba2:$ROOT_TR/tpds_traces_m2_2p7b" "gdn:$ROOT_T
   if [ -f "$m" ]; then echo "$kind @ $dir: $(grep -c prompt_id "$m") manifest rows"; else echo "MISSING: $m"; rc=1; fi
 done
 
+bash -n src/experiments/remote/taco_lane_vgpu3090.sh && echo "lane syntax ok" || rc=1
+
 if want E29; then
   echo "== E29: reference-scan compile facts (sm_86)"
   MAMBA_SRC=${TPDS_MAMBA_SRC:-/root/autodl-tmp/mamba_src}
@@ -50,10 +52,13 @@ if want E31; then
   echo "== E31: static checks, checkpoint download and prompt plan"
   if [ -f src/experiments/tpds/e31_divergence.py ]; then
     "$PY" -m py_compile src/experiments/tpds/e31_divergence.py || rc=1
-    for m in ${TACO_E31_MODELS:-mamba2 mamba1}; do
-      "$PY" -m src.experiments.tpds.e31_divergence --model "$m" --download-only || rc=1
-      "$PY" -m src.experiments.tpds.e31_divergence --model "$m" --dry-run || rc=1
-    done
+    M2=${TACO_M2_ID:-/autodl-fs/data/cache_pro6000/huggingface/hub/models--AntonV--mamba2-370m-hf/snapshots/c75f3beb380942ce1eb13352873548fbd282ffac}
+    GDN=${TACO_GDN_ID:-/autodl-fs/data/corey_r4_models/gated-deltanet-swa-1.4B-30B}
+    for d in "$M2" "$GDN"; do [ -d "$d" ] && echo "checkpoint ok: $d" || { echo "MISSING checkpoint $d"; rc=1; }; done
+    "$PY" -m src.experiments.tpds.e31_divergence --model mamba2 --model-id "$M2" --dry-run --show 3 || rc=1
+    "$PY" -m src.experiments.tpds.e31_divergence --model mamba1 --download-only || rc=1
+    "$PY" -m src.experiments.tpds.e31_divergence --model mamba1 --dry-run --show 3 || rc=1
+    "$PY" -m src.experiments.tpds.e31_divergence --model gdn --model-id "$GDN" --dry-run --show 3 || rc=1
   else
     echo "e31_divergence.py missing"; rc=1
   fi
