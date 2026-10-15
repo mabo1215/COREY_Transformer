@@ -456,6 +456,7 @@ not include, or take long; their outputs are stored in `src/experiments/results/
 | `cost_model.py --hosts h800,<source> --no-loko` | `cost_model_transfer_h800.json` | transfer onto the H800; rewrites the source fit without its leave-one-key-out block, so the source fit is re-run afterwards |
 | `taco_report_numbers.py`, `taco_model_baselines.py` | `taco_report_numbers.json`, `taco_model_baselines.json` | revision analyses of the selector, convention, coverage, tensor-parallel, calibration and economics results; need scikit-learn and take 5 to 20 min (bootstrap, multistarts, refits) |
 | `taco_e26_analysis.py`, `taco_regime_map.py`, `taco_within2_ties.py`, `taco_n9_pow2_rule.py --pro6000`, `taco_power_cap.py`, `taco_supp_tables.py` | `taco_e26_analysis_pro6000.json`, `taco_regime_map.json` (and the regime-map figure with `--fig-dir`), `taco_within2_ties.json`, `taco_n9_pow2_rule.json`, `taco_power_cap.json`; LaTeX of the revision tables on stdout | CPU only and fast, but written for the revision and not wired into `run`; `taco_supp_tables.py` reads the two JSON files above |
+| `taco_m2b_refscan_facts.py` | `taco_m2b_refscan_facts.json` | refit of the reference-scan model with the compile facts in `refscan_compile_facts_sm86.json`, which `refscan_facts.py` reads from the built extension (cuobjdump, nvcc; not included); about 1 min |
 | `e27_varlen.py --analyze`, `packed_steps.py` | `e27_varlen_pro6000_taco.json`, `packed_steps_taco.json` | packed variable-length calls; `packed_steps.py` replays the serving traces (see above) |
 | `kernel_stats.py`, `e1_from_log.py` | `kernel_stats_sm*.json*`, `e1_pro6000_e1c.json` | compile facts need the Triton compiler and a GPU of the target architecture (others are cross-compiled with `--archs`); `e1_from_log.py` rebuilds the control-run rows from its raw run log (not included) |
 
@@ -639,10 +640,6 @@ PAPER_MAP = [
     ("S-fig:value_invariance", "S-sec:supp_kernel_experiments", "`e1_pro6000.json`", "`make_figures.py`", "yes"),
     ("S-tab:supp_tost", "S-sec:supp_kernel_experiments", "`e1_analysis_{pro6000,vgpu3090}.json`",
      "`e1_analysis.py`, `make_tables.py` (tost)", "yes"),
-    ("S-tab:supp_effects", "S-sec:supp_kernel_experiments", "`e1_analysis_{pro6000,vgpu3090}.json`",
-     "`e1_analysis.py`, `make_tables.py` (effects)", "yes"),
-    ("S-tab:supp_latency", "S-sec:supp_kernel_experiments", "`e1_{pro6000,vgpu3090}.json`",
-     "`make_tables.py` (latency)", "yes"),
     ("S-tab:supp_information", "S-sec:supp_kernel_experiments",
      "`e3b_information_<model>_<tag>.json` (17 data sets; `_rmed`: round medians)", "`e3b_information.py`", "no"),
     ("S-tab:supp_autotune", "S-sec:supp_kernel_experiments", "`e4_{pro6000,vgpu3090}.json`",
@@ -655,9 +652,6 @@ PAPER_MAP = [
      "predictors and information tests: `e3_mamba{1,2}_<tag>.json`, `e3b_information_*.json`; break-even inputs: "
      "`e4_pro6000.json`, `e5_{pro6000,vgpu3090}.json`; device-side decision: `e9_placement_vgpu3090.json`",
      "`e3_predictors.py`, `e3b_information.py`, `e5_breakeven.py`, `e9_placement.py --analyze`", "partly"),
-    ("S-tab:supp_redraw", "S-sec:supp_invariance_details",
-     "`e1_pro6000.json`, `e1_pro6000_e1c.json`, `e1_analysis_pro6000_e1c.json`",
-     "`e1_analysis.py`, `make_tables.py` (redraw); rows of the control run rebuilt by `e1_from_log.py`", "yes"),
     ("S-tab:supp_placement", "S-sec:supp_invariance_details",
      "`e9_placement_{vgpu3090,pro6000_r3}.json` (from `.jsonl`)", "`e9_placement.py --analyze`", "yes"),
     ("S-sec:supp_invariance_details", None,
@@ -698,22 +692,18 @@ PAPER_MAP = [
      "`cost_model.py`, `make_tables.py` (model_params)", "yes"),
     ("S-tab:supp_model_ablation", "S-sec:supp_cost_model", "`cost_model_{pro6000,vgpu3090}.json`",
      "`cost_model.py --ablation`, `make_tables.py` (model_ablation)", "yes"),
-    ("S-tab:supp_clean_selection", "S-sec:supp_cost_model",
-     "`cost_model_baselines_r4_summary.json` (`clean_selection_calibration`, `clean_selection_cross_gpu`)",
-     "`cost_model_baselines_r4.py`", "no"),
     ("S-tab:supp_baselines", "S-sec:supp_cost_model",
      "`cost_model_baselines_r4_{pro6000,vgpu3090,h800}.json` (launch-inclusive), "
      "`cost_model_baselines_r4_{pro6000_r4spin,vgpu3090_r3spin,h800_r3spin}.json` (device time), "
      "`cost_model_baselines_r4_summary.json`",
      "`cost_model_baselines_r4.py`", "no"),
-    ("S-tab:supp_topk", "S-sec:supp_cost_model",
-     "`cost_model_baselines_r4_summary.json` (`topk_cost_model`, `shard_widths_pooled_topk`)",
-     "`cost_model_baselines_r4.py`", "no"),
     ("S-tab:supp_pipeline_model", "S-sec:supp_cost_model", "`cost_model_{pro6000,vgpu3090}.json` (`V4_pipelines`)",
      "`cost_model.py`", "yes"),
     ("S-tab:supp_ref_threads", "S-sec:supp_cost_model",
-     "`e23_fixed_threads_vgpu3090_r4t32.json` (from `e8_refscan_vgpu3090_r4t32.csv`)",
-     "`e23_fixed_threads_analysis.py`", "yes"),
+     "`e23_fixed_threads_vgpu3090_r4t32.json` (from `e8_refscan_vgpu3090_r4t32.csv`); compile-facts row: "
+     "`taco_m2b_refscan_facts.json` from `refscan_compile_facts_sm86.json`",
+     "`e23_fixed_threads_analysis.py`; `taco_m2b_refscan_facts.py`; facts read from the extension binary by "
+     "`refscan_facts.py` (cuobjdump, nvcc)", "partly"),
     ("S-sec:supp_cost_model", None,
      "fit robustness (multi-start, least-squares and full-protocol fits, R^2): `taco_model_baselines.json` (`M3c`); "
      "rank correlation and unaligned calls: `cost_model_{pro6000,vgpu3090}.json`; three-parameter restriction, "
