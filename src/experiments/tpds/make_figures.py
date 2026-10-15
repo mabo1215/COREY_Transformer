@@ -463,6 +463,43 @@ def fig_calibration_budget(summary, default_regrets, out_dir):
     _save(fig, out_dir, "fig_calibration_budget.pdf")
 
 
+def fig_calibration_budget_device(report, out_dir):
+    """Device-time variant of ``fig_calibration_budget`` (primary convention of the TACO revision).
+
+    Mean (left) and 95th-percentile (right) per-call regret of the Triton Mamba-1 scan on the captured
+    370M calls versus the calibration budget, one line per GPU, from ``taco_report_numbers.json``
+    (``M3d_best_static_baseline.calibration_budget_figure``, ``<host>_device`` entries). Levels: the
+    default chunk (256); the best chunk per batch size chosen on held-out prompts (one profile of the
+    workload); the cost model (calibration only); its two and three best-ranked chunks profiled per
+    exact shape; all six chunks profiled.
+    """
+    fig_data = report.get("M3d_best_static_baseline", {}).get("calibration_budget_figure", {})
+    tags = [t for t in BUDGET_TAGS if f"{t}_device" in fig_data]
+    if not tags:
+        return
+    levels = ["default", "per batch", "model", "top-2", "top-3", "all 6"]
+    keys = ["default_chunk_256", "best_static_per_batch_held_out", "cost_model", "cost_model_top2", "cost_model_top3",
+            "all_chunks_profiled"]
+    fig, axes = plt.subplots(1, 2, figsize=(COL_W, 1.75), sharex=True)
+    x = np.arange(len(levels))
+    for i, tag in enumerate(tags):
+        rec = fig_data[f"{tag}_device"]
+        for ax, stat in zip(axes, ("mean_regret_pct", "p95_regret_pct")):
+            vals = [max(rec[k][stat], 0.01) for k in keys]
+            ax.plot(x, vals, color=OKABE[i], marker=MARKERS[i], ls=STYLES[i], label=BUDGET_LABEL.get(tag, tag))
+    for ax, title in zip(axes, ("mean regret (%)", "95th-percentile regret (%)")):
+        _plain_log_y(ax)
+        ax.set_xticks(x)
+        ax.set_xticklabels(levels, rotation=35, ha="right")
+        ax.set_title(title, loc="left")
+        ax.grid(True, which="major", axis="y")
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=len(tags), frameon=False, bbox_to_anchor=(0.5, 1.0),
+               handlelength=2.2, columnspacing=1.0)
+    fig.tight_layout(w_pad=0.8)
+    _save(fig, out_dir, "fig_calibration_budget.pdf")
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--in-dir", type=Path, default=RESULTS_DIR)
@@ -499,8 +536,11 @@ def main(argv=None):
     e5bs = {h: j for h in cross if (j := _load_json(args.in_dir / f"e5b_{h}.json"))}
     if e5bs:
         jobs.append(lambda: fig_key_churn(e5bs, args.out_dir))
+    report = _load_json(args.in_dir / "taco_report_numbers.json")
     budget = _load_json(args.in_dir / "cost_model_baselines_r4_summary.json")
-    if budget:
+    if report:
+        jobs.append(lambda: fig_calibration_budget_device(report, args.out_dir))
+    elif budget:
         jobs.append(lambda: fig_calibration_budget(budget, default_chunk_regrets(args.in_dir), args.out_dir))
     if not jobs:
         print("no results found; nothing to plot")
