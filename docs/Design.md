@@ -29,6 +29,36 @@ three rounds, device time. Metrics: default within 2% of the oracle, per-step an
 of the default, best single chunk, held-out tables keyed on packed-token bucket vs (bucket, sequences),
 share of steps whose optimum the carried state moves. ~1-1.5 GPU-h. Result: `e27_varlen_pro6000_taco.*`.
 
+## E29 - Compile facts of the runtime-chunk reference scan for sm_86 (M2b)
+
+Purpose: the reference-scan instance of the cost model assumes a fixed register count per (threads, items)
+instantiation; read the real per-instantiation facts and refit the stock-pairing and 32-thread families.
+Setup: build the runtime-chunk reference scan for sm_86 with `ptxas -v` (nvcc only, no GPU; prep script
+`taco_r1_prep.sh`, `TACO_REF_FACTS=1`) -> `refscan_compile_facts_sm86.json`; refit offline. Host: vGPU 3090
+(the GPU on which the reference scan was timed). If the no-GPU container's memory limit kills nvcc (as on the
+RTX PRO 6000), run the same step in the GPU session (~10-20 min).
+
+## E30 - SSD and Gated DeltaNet autotuner state: pinned vs re-tuned per shape (M6c)
+
+Purpose: the Triton autotuners of the Mamba-2 SSD and FLA Gated DeltaNet kernels key on chunk and head
+dimensions only, so the study's timings use inner tiles tuned on the first call per chunk. Test whether
+re-tuning the inner tiles per shape changes the chunk decision.
+Setup: stratified subset of the captured calls (370M and 2.7B SSD, 1.4B GDN; about 40 calls per model over
+length buckets and batch 1/4/16); every chunk timed twice per call: (a) pinned, autotuner caches as after the
+first call per chunk (the study's state), (b) re-tuned, autotuner caches cleared before the call so the
+inner configuration is chosen for this shape. Device time and CUDA-graph replay (the regime where the chunk
+matters), three rounds. Metrics: oracle agreement (a) vs (b), regret of the pinned oracle under (b), default
+regret under both, share of calls whose inner configuration changes. Host: vGPU 3090; ~2 GPU-h; peak < 10 GB.
+
+## E31 - Output divergence of per-shape chunk switching (M8b)
+
+Purpose: switching the chunk per shape changes the summation order of the scan; quantify the effect on the
+model output. Setup: Mamba-1 370M with the runtime-chunk reference scan routed per layer call (the routed-study
+machinery) and Mamba-2 370M with the SSD chunk set per call; 200 prompts (the captured prompt set), 32 greedy
+tokens; compare a fixed chunk (stock dispatch / 256) against a per-shape table and against every alternative
+chunk: first divergent generated token, per-step KL divergence of the next-token distributions, maximum logit
+difference, fp16. Host: vGPU 3090; ~1-1.5 GPU-h; peak < 6 GB.
+
 ## E28 - Two-GPU tensor parallelism with collectives on 4c (M7b)
 
 Purpose: the tensor-parallel claims rest on single-GPU synthetic shard shapes; reviewers ask whether the
