@@ -201,6 +201,12 @@
 5. 此前两项旧决策（双盲匿名、正文与 supplementary 两个 PDF 分开提交）继续有效。
 6. **TPDS 页数上限**（2026-09-26 作者提供）：Regular paper 标准 14 个排版页（含正文、图、参考文献与作者简介），超出部分 MOPC 每页 $200，最多 18 页；非必要内容放 Supplementary。当前正文 10 页（双盲稿无作者简介），E3 已关闭。
 
+## 2026-10-15（晚）taco-r1：E26a–d、E27 跑完并写入论文（PRO 6000）
+
+- E26d（Triton Mamba-1 370M 的 CUDA graph 回放）22:58 NZDT 跑完，watcher 推送结果后 PRO 6000 已自动关机；E26a–c、E27 此前已拉回。
+- 论文：Table graph 增加 RTX PRO 6000 行（默认 chunk 逐调用损失 10–24%，按时间加权 1.0–5.9%；shape tree/表在 0.7% 内；eager 标定的 work-term 模型 9–22%，按 graph 重拟合只对 RTX 3090 的 SSD 有效）；新增 packed 变长调用段落与补充材料一节（170 步 Azure 2023 trace；GDN 默认 98–99% 在 2% 内；SSD 默认每步 7.5–10.7%；按 packed token 分桶的表把 2.7B 降到 2.8/4.5%，加上序列数无帮助；370M 短步上没有表明显优于默认）。摘要、方法、Limitations、Conclusion 同步更新；recipe 框前移，非参考文献正文仍在 20 页内，0 未定义引用、0 溢出。
+- N9 长度上限规则扩展到 PRO 6000 graph（SSD 降到 6.2/6.2%，GDN 19.8% 基本无改善）。账本：M6a、M6b 完成；E26a–d、E27 已回填论文。
+
 ## 2026-10-15（云端续）taco-r1：分析 A 全量、补充材料压缩、相关工作、Results 按 device time 重写
 
 - 本地机器关机后由 claude.ai/code 云端会话接手（`docs/handoff_taco_r1.md`），lease 已转到云端。作者 2026-10-15 的三项决策已消费（叙事 A、第三人称引用预印本、GPU 只用 PRO 6000 与 4c）：M1a/M1b/M2c 推进，M2a、M4g、M6d 不处理并收窄结论。
