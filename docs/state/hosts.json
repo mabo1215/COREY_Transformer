@@ -16,7 +16,7 @@
       "label": "4c 4x RTX 3090 24GB (stock, NVLink pairs 0-1/2-3; 2 usable)",
       "login_ref": "C:\\source\\.env",
       "no_gpu_mode": null,
-      "note": "2026-10-16: reachable from bobsteam1215 (alias 4c, key auth); all four GPUs idle at 06:10 NZDT; E30 on GPU 0, E31 on GPU 1; code by git-archive tarball (taco_push_4c.sh), results by rsync",
+      "note": "2026-10-16: reachable from bobsteam1215 (alias 4c, key auth). AUTHOR: never power off 4c (lab host, shared). E30 on GPU 0, E31 on GPU 1; code by git-archive tarball (taco_push_4c.sh), results by rsync (remote.sh fetch); no watcher --shutdown",
       "notes": "Referenced in USAGE.md for queued experiments; GPU type and connection details still to be confirmed with the author.",
       "provider": "lab",
       "python": "/home1/mabo1215/COREY_Transformer_taco/.venv/bin/python",
@@ -25,7 +25,7 @@
       "shutdown_cmd": null,
       "ssh_alias": "4c",
       "state": "gpu_on",
-      "updated_at": "2026-10-15T22:19:15Z",
+      "updated_at": "2026-10-15T22:20:01Z",
       "updated_by": "bobsteam1215",
       "vram_gb": 24
     },
@@ -75,7 +75,7 @@
       "label": "vGPU 3090 48GB",
       "login_ref": "C:\\work\\9\\saveway.txt",
       "no_gpu_mode": true,
-      "note": "2026-10-10: reachable; shared with HKVLM; E25 lane running; E19 per-round raw files copied to git (checked against the CSV round columns)",
+      "note": "2026-10-16: no-GPU mode only to copy the E30 subset (4.69 GB) to 4c; author: power off after the copy",
       "notes": "Login: block 'vGPU 3090' in C:\\source\\.env; WSL ssh alias vgpu3090 (key-based). Shared with other projects: only touch /root/autodl-tmp/COREY_Transformer_tpds. 2026-09-30: E11 traces/checkpoints deleted (author-approved, ~118 GB). The host's GitHub token is INVALID since 2026-09-30 (git pull fails): re-authenticate before the next run, otherwise the watcher cannot push results. Powered on by someone else on 2026-09-30; not ours to shut down. 2026-10-01 (author-approved cleanup): deleted tpds_traces (370M), tpds_traces_1p4b/2p8b, hf_models/mamba-1.4b/2.8b, smoke traces, e12_host_copy (~147 GB); re-capture traces before the next run. 2026-10-01: 96 identical files on /root/autodl-tmp (ollama/gguf, venvs, BodhiNet/HKVLM weights, ...) and 16 on /autodl-fs/data replaced by hard links after full md5 + cmp (~51 GB local, ~12 GB shared FS); editing such a file in place changes every linked path. 2026-10-01 (author-approved): deleted ppedcrf_fs_moved (content-identical to /autodl-fs/data/datasets/tnnls_e1_flickr30k_20260811), transfer_prefetch, isaacsim_env311, ov; deleted /autodl-fs/data/datasets/Objects365 (381 GB, not in autodl-pub). 2026-10-01: deleted refl4_data, safe_llava_images, vlmia_extracted, BodhiNet_cs2_scaleup_h800, BodhiNet_p2p3_20260803, coco, coco_images (identical or subset copies kept on pro6000; 791 -> 767 GB). 2026-10-01 (author-approved): nuscenes_trainval_pilot_20260826 trimmed to the 200 sample_data files the pilot used plus metadata/manifests/results (source: /root/autodl-pub/nuScenes); deleted nuScenes_mini_20260825, cache_system_disk, hf_cache, pip-cache, pip_cache, /root/.cache/uv; deleted /autodl-fs/data/cache_pro6000 and /autodl-fs/data/hf-cache. Data disk 767 -> 324 GB, system disk 27 -> 14 GB, shared FS 158 -> 111 GB.",
       "provider": "autodl",
       "python": "/root/autodl-tmp/COREY_Transformer_tpds/.venv/bin/python",
@@ -84,7 +84,7 @@
       "shutdown_cmd": "shutdown -h now",
       "ssh_alias": "vgpu3090",
       "state": "off",
-      "updated_at": "2026-10-10T07:29:35Z",
+      "updated_at": "2026-10-15T22:20:01Z",
       "updated_by": "bobsteam1215",
       "vram_gb": 48
     }
