@@ -712,4 +712,5 @@ AAAI-27 Submission #3464（COREY）已收到最终决定：Phase 1 拒稿，未�
 
 
 需要你操作：
+- 【E28 停止】你已决定 E28（4c 双卡张量并行）不进投稿版。本机无法连到 4c（实验室内网 10.126.126.3，连接超时）。请在实验室网络（或 VPN）下登录 4c 执行：`screen -S taco-4c -X quit`（该 lane 只在等空闲 GPU，没有需要删除的数据）。账本已把 E28 标为 cancelled，M7b 标为不处理；论文已写明未运行多 GPU 实验。
 - 在 Code Ocean 网页上发布 capsule 新版本（`0f4554b` 已推送）。发布前可以先点一次 Reproducible Run 确认能跑通。
