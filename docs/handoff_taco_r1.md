@@ -250,3 +250,25 @@ time 3.8/18.0, 20.8/30.9, 13.7/50.2 (LI maxima 116.3, 103.8, 74.8).
 Unavailable (in JSON): graphs on PRO 6000/H800 (E26 will add PRO 6000), H800 three-round device time, Mamba-2
 device time on PRO 6000/H800, within-2% for log-length interpolation, wall-clock tuning at shard widths,
 reference-scan model on H800, second H800 LI session, per-data-set N2 noise floor.
+## 6. Cloud session of 2026-10-15 (continuation) - status
+
+- Lease taken over by the cloud session (`revstate.py lease`); author decisions of §1 consumed in the ledger
+  (M1a/M1b/M2c done; M2a, M4g, M6d dropped with claims scoped).
+- A: full run done -> `taco_report_numbers.json` (checks 1537/1537 stored, 136/136 manuscript).
+- B: done -> `taco_model_baselines.json` (638/638 checks). Results that changed the text: a priori form selection
+  gives 4.2 / 6.2 / 3.0% device time (PRO 6000 / RTX 3090 / H800); the RTX 3090 device-time fit is a local optimum
+  (best of 50 starts: 1.75%); MLP baselines vary strongly with the seed; "most of the gain from the chunk" holds within
+  the default table and on the PRO 6000 only; calibration (493-843 s cold) is far dearer than profiling every key of
+  the captured workload (3.9-7.4 s).
+- C: supplement 48 -> 35 pp (0 undefined refs, 0 overfull); further cuts to ~30 / ~20 pp would drop evidence tables
+  (author decision). Notation table `tab:supp_notation` added later; state size renamed N_s, grid programs G.
+- D: related-work positioning done; Roller entry added (OSDI 2022, verified); ref.bib comment that revealed authorship
+  neutralized.
+- Results/Limitations rewritten on device time (see progress.md entry of this session); CUDA-graph table in the main
+  text; N9 analysis `taco_n9_pow2_rule.json` (length-capped default recovers most of the SSD graph-mode loss).
+- Build: main 0 undefined refs, 0 overfull, all non-reference text within 20 pages (References heading at the top of
+  page 21); supplement 35 pp.
+- Open: E26a-d, E27, E28 (local GPU work; when results arrive, add the PRO 6000 rows to `tab:graph`, a packed-call
+  paragraph and a TP-with-collectives sentence, and update Limitations); M9c (supplement length), M9d (regime-map
+  figure, not added for the page limit); optional GPU items needing the author (M2b, M2d, M3e, M5d, M6c, M6e, M8b);
+  Stage 9' re-check with fresh reviewers and the Stage 11 gate.
