@@ -34,9 +34,12 @@ log "== mamba-ssm 2.3.2.post1"
 
 log "== runtime-chunk reference scan"
 if ! "$PY" -c "import torch, selective_scan_chunk_cuda" 2>/dev/null; then
+  # The sdist cannot be fetched with pip download (its metadata step needs torch); fetch the file itself, or
+  # copy it into $TMPDIR/mamba_src beforehand from a machine with PyPI access.
   SRC=$TMPDIR/mamba_src
-  rm -rf "$SRC" && mkdir -p "$SRC"
-  "$PY" -m pip download --no-deps --no-binary :all: "mamba-ssm==2.3.2.post1" -d "$SRC" || rc=1
+  mkdir -p "$SRC"
+  [ -f "$SRC/mamba_ssm-2.3.2.post1.tar.gz" ] || curl -sL -o "$SRC/mamba_ssm-2.3.2.post1.tar.gz" \
+    "https://files.pythonhosted.org/packages/af/48/aa7bec0efc7453fa0512276c0069c854bf684219050294266534bfef34bb/mamba_ssm-2.3.2.post1.tar.gz" || rc=1
   tar xzf "$SRC"/mamba_ssm-2.3.2.post1.tar.gz -C "$SRC" || rc=1
   CSRC=$(ls -d "$SRC"/mamba_ssm-2.3.2.post1/csrc/selective_scan)
   ( cd src/kernels/mamba1_runtime_chunk && MAMBA_CSRC="$CSRC" "$PY" -m pip install --no-build-isolation --no-deps -v . ) \
