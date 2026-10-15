@@ -2,15 +2,15 @@
 
 Figures (IEEE single-column width 3.5 in, fonts >= 8 pt, Okabe-Ito palette
 plus marker/line-style redundancy for colorblind safety):
-  tpds_latency_vs_chunk.pdf   latency vs chunk per family and L, 95% CI bands (E1, Gaussian input)
-  tpds_value_invariance.pdf   latency across input distributions at each chunk (E1, median over rounds)
-  tpds_entropy_by_regime.pdf  activation entropy per workload regime (E2, batch 1)
-  tpds_entropy_vs_oracle.pdf  entropy vs per-call oracle chunk (E2)
-  tpds_regret_cdf.pdf         held-out regret CDF per policy (E3)
-  tpds_breakeven.pdf          cumulative cost vs number of calls (E5)
-  tpds_cost_model.pdf         measured vs cost-model latency per chunk, both GPUs (T1; full width)
-  tpds_key_churn.pdf          key-churn break-even N* vs decision overhead, both GPUs (T3)
-  tpds_calibration_budget.pdf mean and p95 regret vs calibration budget (default chunk, cost model,
+  fig_latency_vs_chunk.pdf   latency vs chunk per family and L, 95% CI bands (E1, Gaussian input)
+  fig_value_invariance.pdf   latency across input distributions at each chunk (E1, median over rounds)
+  fig_entropy_by_regime.pdf  activation entropy per workload regime (E2, batch 1)
+  fig_entropy_vs_oracle.pdf  entropy vs per-call oracle chunk (E2)
+  fig_regret_cdf.pdf         held-out regret CDF per policy (E3)
+  fig_breakeven.pdf          cumulative cost vs number of calls (E5)
+  fig_cost_model.pdf         measured vs cost-model latency per chunk, both GPUs (T1; full width)
+  fig_key_churn.pdf          key-churn break-even N* vs decision overhead, both GPUs (T3)
+  fig_calibration_budget.pdf mean and p95 regret vs calibration budget (default chunk, cost model,
                               model top-2 / top-3, all chunks profiled), three GPUs (T1 round 4)
 
 Example:
@@ -121,7 +121,7 @@ def fig_latency_vs_chunk(e1, out_dir):
     fig.legend([handles[l] for l in order], order, loc="lower center", ncol=len(order), frameon=False,
                bbox_to_anchor=(0.5, 1.0), handlelength=1.8, columnspacing=0.8)
     fig.tight_layout(h_pad=0.4)
-    _save(fig, out_dir, "tpds_latency_vs_chunk.pdf")
+    _save(fig, out_dir, "fig_latency_vs_chunk.pdf")
 
 
 def fig_value_invariance(e1, out_dir):
@@ -159,7 +159,7 @@ def fig_value_invariance(e1, out_dir):
     fig.legend(h, l, loc="lower center", ncol=4, frameon=False, bbox_to_anchor=(0.5, 1.0), handletextpad=0.3,
                columnspacing=0.8)
     fig.tight_layout(h_pad=0.4)
-    _save(fig, out_dir, "tpds_value_invariance.pdf")
+    _save(fig, out_dir, "fig_value_invariance.pdf")
 
 
 # --------------------------------------------------------------------------- E2
@@ -190,7 +190,7 @@ def fig_entropy_by_regime(dfs, out_dir):
     ax.grid(True, axis="x")
     ax.legend(frameon=False, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2)
     fig.tight_layout()
-    _save(fig, out_dir, "tpds_entropy_by_regime.pdf")
+    _save(fig, out_dir, "fig_entropy_by_regime.pdf")
 
 
 def rule_switch_points(bits_max=8.0, step=1e-3):
@@ -238,7 +238,7 @@ def fig_entropy_vs_oracle(dfs, out_dir):
     h, l = axes[0, 0].get_legend_handles_labels()
     fig.legend(h, l, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, 1.0))
     fig.tight_layout(h_pad=0.4)
-    _save(fig, out_dir, "tpds_entropy_vs_oracle.pdf")
+    _save(fig, out_dir, "fig_entropy_vs_oracle.pdf")
 
 
 # --------------------------------------------------------------------------- E3
@@ -266,7 +266,7 @@ def fig_regret_cdf(e3s, out_dir):
     h, l = axes[0, 0].get_legend_handles_labels()
     fig.legend(h, l, loc="lower center", ncol=2, frameon=False, bbox_to_anchor=(0.5, 1.0))
     fig.tight_layout(h_pad=0.4)
-    _save(fig, out_dir, "tpds_regret_cdf.pdf")
+    _save(fig, out_dir, "fig_regret_cdf.pdf")
 
 
 # --------------------------------------------------------------------------- E5
@@ -298,7 +298,7 @@ def fig_breakeven(e5, out_dir):
     h, l = axes[0, 0].get_legend_handles_labels()
     fig.legend(h, l, loc="lower center", ncol=2, frameon=False, bbox_to_anchor=(0.5, 1.0))
     fig.tight_layout(h_pad=0.4)
-    _save(fig, out_dir, "tpds_breakeven.pdf")
+    _save(fig, out_dir, "fig_breakeven.pdf")
 
 
 # --------------------------------------------------------------------------- T1 / T3 (both GPUs)
@@ -343,7 +343,7 @@ def fig_cost_model(curves, out_dir, lengths=(512, 2048, 8192, 2382)):
                loc="lower center", ncol=6, frameon=False, bbox_to_anchor=(0.5, 1.0), handlelength=1.8,
                columnspacing=1.0)
     fig.tight_layout(h_pad=0.5, w_pad=0.6)
-    _save(fig, out_dir, "tpds_cost_model.pdf")
+    _save(fig, out_dir, "fig_cost_model.pdf")
 
 
 def fig_key_churn(e5bs, out_dir):
@@ -390,7 +390,7 @@ def fig_key_churn(e5bs, out_dir):
     h, l = ax.get_legend_handles_labels()
     fig.legend(h, l, loc="lower center", ncol=2, frameon=False, bbox_to_anchor=(0.5, 1.0))
     fig.tight_layout()
-    _save(fig, out_dir, "tpds_key_churn.pdf")
+    _save(fig, out_dir, "fig_key_churn.pdf")
 
 
 BUDGET_TAGS = ("pro6000", "vgpu3090", "h800")
@@ -460,7 +460,7 @@ def fig_calibration_budget(summary, default_regrets, out_dir):
     fig.legend(h, l, loc="lower center", ncol=len(tags), frameon=False, bbox_to_anchor=(0.5, 1.0),
                handlelength=2.2, columnspacing=1.0)
     fig.tight_layout(w_pad=0.8)
-    _save(fig, out_dir, "tpds_calibration_budget.pdf")
+    _save(fig, out_dir, "fig_calibration_budget.pdf")
 
 
 def main(argv=None):
