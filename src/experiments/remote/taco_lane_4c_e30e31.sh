@@ -32,7 +32,7 @@ skip_ids() {  # mark dependent runs as failed so that a patrol closes them
 }
 if [ "${1:-}" = "step" ]; then
   GUARD="--exclusive-guard --guard-until $(( $(date +%s) + ${TACO_GUARD_H:-24} * 3600 ))"
-  S30="--n-calls 2 --max-rows 2 --rounds 1 --warmup 2 --repeats 5 --out-dir $SMOKE_DIR"
+  S30="--max-rows 2 --rounds 1 --warmup 2 --repeats 5 --out-dir $SMOKE_DIR"  # same 40-call subset as the run (only its files were copied)
   case "$2" in
     e30_smoke)
       flock "$LOCK" $E30 --model mamba2 --trace-dir "$T" --label "SSD 370M" $S30 --tag ${H}_e30smoke_ssd370m &&
@@ -77,7 +77,7 @@ case "$LANE" in
         sleep 60; waited=$((waited + 60))
       done
       if $RUN "$id-smoke" -- flock "$LOCK" $E30 --model "$kind" --trace-dir "$td" --label "$m" \
-           --n-calls 2 --max-rows 2 --rounds 1 --warmup 2 --repeats 5 --out-dir "$SMOKE_DIR" --tag ${H}_e30smoke_$m; then
+           --max-rows 2 --rounds 1 --warmup 2 --repeats 5 --out-dir "$SMOKE_DIR" --tag ${H}_e30smoke_$m; then
         $RUN "$id" -- bash "$SELF" step "$(echo "$id" | tr 'A-Z' 'a-z')"
       else
         skip_ids "smoke of $m failed" "$id"
