@@ -1,0 +1,257 @@
+{
+  "experiment": "taco-r1-model-baselines",
+  "definitions": "TACO revision (cycle taco-r1): offline re-analysis of the Mamba-1 cost model and its selector\nbaselines (review items M3a, M3b, M3c, M4c, M5a, M5b, M5c). CPU only; reads existing result files and\nwrites ``taco_model_baselines.json``; nothing is timed.\n\nConventions: two result tags per GPU (RTX PRO 6000 = pro6000, RTX 3090 = vgpu3090, H800 PCIe = h800):\n  device_time (primary)        pro6000_r4spin, vgpu3090_r3spin, h800_r3spin\n  launch_inclusive (secondary) pro6000, vgpu3090, h800\nCaptured-call latencies are the ``lat_c<C>_mean`` columns read by every published table; per-call\nrelative regret = lat(chosen chunk) / min over the six chunks - 1.\n\nThe cost-model predictor and fit are re-implemented on numpy arrays (``predict_np``, ``fit_fast``)\nfor speed; both are checked to reproduce ``cost_model.predict`` and the stored parameters exactly.\n\nSTATUS (session interrupted): implemented are the reproduction checks and item M3b (bandwidth floor\nbinding on calibration and captured calls). Items M5a, M4c, M3c, M3a, M5b, M5c are recorded under\n\"unavailable\" with reason \"not finished\"; the planned definitions are kept in ``PLANNED`` below so a\nlater session can resume them.\n",
+  "tags": {
+    "device_time": {
+      "pro6000": "pro6000_r4spin",
+      "vgpu3090": "vgpu3090_r3spin",
+      "h800": "h800_r3spin"
+    },
+    "launch_inclusive": {
+      "pro6000": "pro6000",
+      "vgpu3090": "vgpu3090",
+      "h800": "h800"
+    }
+  },
+  "per_tag": {
+    "pro6000_r4spin": {
+      "tag": "pro6000_r4spin",
+      "n_calibration_points": 2298,
+      "n_calls": 2360,
+      "check_predict_np_equals_cost_model_predict": true,
+      "check_refit_from_X0_max_rel_param_diff": 0.0,
+      "cost_model_top1": {
+        "n": 2360,
+        "mean_regret_pct": 0.38274827054102833,
+        "p95_regret_pct": 3.6456354698592985,
+        "max_regret_pct": 18.07714119676924,
+        "share_within_2pct": 0.9334745762711865
+      },
+      "M3b_floor": {
+        "calibration_points_floor_binds": 0,
+        "calibration_max_ratio_floor_over_T": 0.19902385433753386,
+        "captured_call_candidates_floor_binds": 0,
+        "captured_call_candidates": 14160,
+        "captured_calls_max_ratio_floor_over_T": 0.19902385433753386,
+        "captured_calls_choice_changed_by_floor": 0,
+        "fixed_zero_terms_in_stored_params": {
+          "tau_f": 0.0,
+          "tau_d": 0.0,
+          "tau_l": 0.0,
+          "tau_x": 0.0
+        }
+      }
+    },
+    "vgpu3090_r3spin": {
+      "tag": "vgpu3090_r3spin",
+      "n_calibration_points": 2298,
+      "n_calls": 2360,
+      "check_predict_np_equals_cost_model_predict": true,
+      "check_refit_from_X0_max_rel_param_diff": 0.0,
+      "cost_model_top1": {
+        "n": 2360,
+        "mean_regret_pct": 3.55421228459702,
+        "p95_regret_pct": 20.91621190050831,
+        "max_regret_pct": 27.191205321903666,
+        "share_within_2pct": 0.6817796610169492
+      },
+      "M3b_floor": {
+        "calibration_points_floor_binds": 0,
+        "calibration_max_ratio_floor_over_T": 0.18784059927826716,
+        "captured_call_candidates_floor_binds": 0,
+        "captured_call_candidates": 14160,
+        "captured_calls_max_ratio_floor_over_T": 0.17775598065808276,
+        "captured_calls_choice_changed_by_floor": 0,
+        "fixed_zero_terms_in_stored_params": {
+          "tau_f": 0.0,
+          "tau_d": 0.0,
+          "tau_l": 0.0,
+          "tau_x": 0.0
+        }
+      }
+    },
+    "h800_r3spin": {
+      "tag": "h800_r3spin",
+      "n_calibration_points": 2298,
+      "n_calls": 2360,
+      "check_predict_np_equals_cost_model_predict": true,
+      "check_refit_from_X0_max_rel_param_diff": 0.0,
+      "cost_model_top1": {
+        "n": 2360,
+        "mean_regret_pct": 3.0076917599546262,
+        "p95_regret_pct": 13.728917347628558,
+        "max_regret_pct": 50.168935161158345,
+        "share_within_2pct": 0.7652542372881356
+      },
+      "M3b_floor": {
+        "calibration_points_floor_binds": 0,
+        "calibration_max_ratio_floor_over_T": 0.09962951595788527,
+        "captured_call_candidates_floor_binds": 0,
+        "captured_call_candidates": 14160,
+        "captured_calls_max_ratio_floor_over_T": 0.09647098781426337,
+        "captured_calls_choice_changed_by_floor": 0,
+        "fixed_zero_terms_in_stored_params": {
+          "tau_f": 0.0,
+          "tau_d": 0.0,
+          "tau_l": 0.0,
+          "tau_x": 0.0
+        }
+      }
+    },
+    "pro6000": {
+      "tag": "pro6000",
+      "n_calibration_points": 2298,
+      "n_calls": 2360,
+      "check_predict_np_equals_cost_model_predict": true,
+      "check_refit_from_X0_max_rel_param_diff": 0.0,
+      "cost_model_top1": {
+        "n": 2360,
+        "mean_regret_pct": 0.8775491810731135,
+        "p95_regret_pct": 4.008266772042127,
+        "max_regret_pct": 116.29705861010305,
+        "share_within_2pct": 0.9038135593220339
+      },
+      "M3b_floor": {
+        "calibration_points_floor_binds": 0,
+        "calibration_max_ratio_floor_over_T": 0.20618634866521474,
+        "captured_call_candidates_floor_binds": 0,
+        "captured_call_candidates": 14160,
+        "captured_calls_max_ratio_floor_over_T": 0.20618634866521474,
+        "captured_calls_choice_changed_by_floor": 0,
+        "fixed_zero_terms_in_stored_params": {
+          "tau_f": 0.0,
+          "tau_d": 0.0,
+          "tau_l": 0.0,
+          "tau_x": 0.0
+        }
+      }
+    },
+    "vgpu3090": {
+      "tag": "vgpu3090",
+      "n_calibration_points": 2298,
+      "n_calls": 2360,
+      "check_predict_np_equals_cost_model_predict": true,
+      "check_refit_from_X0_max_rel_param_diff": 0.0,
+      "cost_model_top1": {
+        "n": 2360,
+        "mean_regret_pct": 3.2485612532925985,
+        "p95_regret_pct": 15.387489774941137,
+        "max_regret_pct": 103.79377566164108,
+        "share_within_2pct": 0.6292372881355932
+      },
+      "M3b_floor": {
+        "calibration_points_floor_binds": 0,
+        "calibration_max_ratio_floor_over_T": 0.19587077280190118,
+        "captured_call_candidates_floor_binds": 0,
+        "captured_call_candidates": 14160,
+        "captured_calls_max_ratio_floor_over_T": 0.18674606818044262,
+        "captured_calls_choice_changed_by_floor": 0,
+        "fixed_zero_terms_in_stored_params": {
+          "tau_f": 0.0,
+          "tau_d": 0.0,
+          "tau_l": 0.0,
+          "tau_x": 0.0
+        }
+      }
+    },
+    "h800": {
+      "tag": "h800",
+      "n_calibration_points": 2298,
+      "n_calls": 2360,
+      "check_predict_np_equals_cost_model_predict": true,
+      "check_refit_from_X0_max_rel_param_diff": 0.0,
+      "cost_model_top1": {
+        "n": 2360,
+        "mean_regret_pct": 3.543321765818401,
+        "p95_regret_pct": 14.085543676986767,
+        "max_regret_pct": 74.75170966657096,
+        "share_within_2pct": 0.7533898305084745
+      },
+      "M3b_floor": {
+        "calibration_points_floor_binds": 0,
+        "calibration_max_ratio_floor_over_T": 0.1032680208648094,
+        "captured_call_candidates_floor_binds": 0,
+        "captured_call_candidates": 14160,
+        "captured_calls_max_ratio_floor_over_T": 0.09994986058475985,
+        "captured_calls_choice_changed_by_floor": 0,
+        "fixed_zero_terms_in_stored_params": {
+          "tau_f": 0.0,
+          "tau_d": 0.0,
+          "tau_l": 0.0,
+          "tau_x": 0.0
+        }
+      }
+    }
+  },
+  "checks": {
+    "published_regret_device_time_pro6000": {
+      "published": 0.38,
+      "recomputed": 0.38274827054102833,
+      "pass": true
+    },
+    "predict_np_exact_pro6000_r4spin": true,
+    "refit_reproduces_stored_pro6000_r4spin": 0.0,
+    "published_regret_device_time_vgpu3090": {
+      "published": 3.55,
+      "recomputed": 3.55421228459702,
+      "pass": true
+    },
+    "predict_np_exact_vgpu3090_r3spin": true,
+    "refit_reproduces_stored_vgpu3090_r3spin": 0.0,
+    "published_regret_device_time_h800": {
+      "published": 3.01,
+      "recomputed": 3.0076917599546262,
+      "pass": true
+    },
+    "predict_np_exact_h800_r3spin": true,
+    "refit_reproduces_stored_h800_r3spin": 0.0,
+    "published_regret_launch_inclusive_pro6000": {
+      "published": 0.9,
+      "recomputed": 0.8775491810731135,
+      "pass": true
+    },
+    "predict_np_exact_pro6000": true,
+    "refit_reproduces_stored_pro6000": 0.0,
+    "published_regret_launch_inclusive_vgpu3090": {
+      "published": 3.2,
+      "recomputed": 3.2485612532925985,
+      "pass": true
+    },
+    "predict_np_exact_vgpu3090": true,
+    "refit_reproduces_stored_vgpu3090": 0.0,
+    "published_regret_launch_inclusive_h800": {
+      "published": 3.5,
+      "recomputed": 3.543321765818401,
+      "pass": true
+    },
+    "predict_np_exact_h800": true,
+    "refit_reproduces_stored_h800": 0.0
+  },
+  "unavailable": {
+    "M5a": {
+      "reason": "not finished (session interrupted)",
+      "plan": "top-1/2/3 regret (rank chunks, profile best k per exact shape, keep the fastest by shape-mean latency; mean, p95, max, share within 2%) for cost model, work_only (3 parameters), work_term_model, nearest key, log-linear interpolation, length/shape tree, GBR/MLP basic and structural (MLP over seeds 0-4), random-k (exact expectation over subsets, Monte Carlo for p95/max), compile-facts rule (non-spilling default-table chunks, minimize waves x ceil(L/C), ties to the larger chunk); rankers via cost_model_baselines_r4.fit_selectors."
+    },
+    "M4c": {
+      "reason": "not finished (session interrupted)",
+      "plan": "a priori form selection over the 12 ablation forms (+ work_only): leave-one-GPU-out on the other GPUs' captured calls, on the other GPUs' calibration LOSO, and target-calibration LOSO; tie rule: fewest parameters among forms within 0.1 points of the best; exact-tie check of drop tau_e / drop tau_p."
+    },
+    "M3c": {
+      "reason": "not finished (session interrupted)",
+      "plan": "refits: full-protocol only (72 static + 18 E1), inverse-variance weighting, excluding first-key search timings; OLS vs soft-l1; 50 random multi-starts; cluster bootstrap over the 12 keys (200 replicates); R^2 of the minimized objective (1 - cost / cost of a constant model)."
+    },
+    "M3a": {
+      "reason": "not finished (session interrupted)",
+      "plan": "decomposition of the default-table chunk effect from the E4 184-configuration search (spread at the default table, at fixed (BLOCK_D, num_warps, num_stages), best overall; two-path Shapley split of static regret into chunk-at-fixed-launch and launch parts); registers/spills per default entry."
+    },
+    "M5b": {
+      "reason": "not finished (session interrupted)",
+      "plan": "learning curve (k = 1..12 keys, 20 repetitions, fit from X0), 72-static-only fit, cost table vs profile-every-key (e5b scaling, per-variant compile cost), serving-trace key counts, cold-start regret."
+    },
+    "M5c": {
+      "reason": "not finished (session interrupted)",
+      "plan": "fit TFLA's runtime expression (d_qk 256, d_hv 512) to the E24 TFLA chunk sweep (vgpu3090_r4spinb / r4plainb), in-sample and leave-one-shape-out regret; TFLA-on-Mamba-1 only as a sanity check."
+    }
+  },
+  "runtime_s": 7.8
+}
