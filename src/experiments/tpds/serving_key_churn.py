@@ -83,8 +83,12 @@ import numpy as np
 import pandas as pd
 
 from src.experiments.tpds.common import REPO_ROOT, RESULTS_DIR, read_jsonl, utc_now, write_json
-from src.experiments.tpds.e2_oracle_sweep import length_bucket
 from src.experiments.tpds.e5b_key_churn import KEY_MODES, LAYERS_PER_REQUEST, _n_star, _overhead
+
+
+def length_bucket(L: int) -> int:
+    """Power-of-two length bucket (as in e2_oracle_sweep; defined here so the replay needs no GPU stack)."""
+    return 1 << max(0, int(math.floor(math.log2(max(L, 1)))))
 
 DATA_DIR = REPO_ROOT / "src" / "data" / "serving_traces"
 
