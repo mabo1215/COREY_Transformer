@@ -165,3 +165,67 @@ d=2048, L in {512, 2048, 8192}"; M5b learning curve/cost table/cold start (H800 
 M5c TFLA expression on TFLA timings (RTX 3090 only, e24_tfla_vgpu3090_r4spinb/_r4plainb, 63 shapes; TFLA's
 expression is proportional to (L/C)*g(C), so it can only pick one static chunk; library default = best static
 = chunk 128 at 1.36% device time).
+### C. Supplement cleanup - PARTIAL (small edits only; 48 pages; builds clean; no label removed)
+Done: all "Proposition~\Mref{thm:nogain}" -> "Lemma~\Mref{thm:nogain}", part-(b) references rephrased as the
+assumptions stated after the lemma; M10b mostly: F-test df 7 and 14 (Mamba-1/Mamba-2) and 6 and 12 (GDN, 7
+inputs per e1_analysis n_inputs; 144+144+126 = 414 cells); the "no GDN calls captured" sentence replaced (GDN
+work-term model fitted on the nine value-invariance medians, the 1770 captured 1.4B calls used for evaluation
+only); "main paper summarizes ... Table S.." fixed; TOST text says bounds are against the pooled mean
+(pairwise up to twice). Still open in M10b: the caption of tab:supp_tost and the duplicated TOST paragraph in
+S1.2 lack the pooled-mean note.
+Not started: tasks 1 (legacy), 3 (platform facts), 4 (pseudo-code), 5 (page reduction), 6 (history phrasing,
+serving definitions, spin window). Facts gathered (from result metadata and code):
+- RTX PRO 6000: "NVIDIA RTX PRO 6000 Blackwell Server Edition", driver 595.71.05, 97887 MiB, max SM clock 2430
+  MHz, 188 SMs, cc 12.0, kernel 5.15.0-78. RTX 3090: "NVIDIA GeForce RTX 3090", driver 580.82.09 (graph
+  three-round runs: 595.71.05), 49152 MiB, max SM 2100 MHz, 82 SMs, cc 8.6, kernel 5.15.0-119. H800 PCIe:
+  driver 595.71.05, 81559 MiB, max SM 1755 MHz, 114 SMs, cc 9.0, kernel 5.15.0-124. Common: PyTorch
+  2.8.0+cu128 (CUDA 12.8), Triton 3.4.0, Python 3.12.3, Transformers 5.6.2, FLA 0.5.2. mamba_ssm: PRO 6000 local
+  build of 2.2.2 (do not print its local version suffix); RTX 3090 and H800 2.3.2.post1. Not recorded: host
+  CPU, governor, load, power limit (do not state).
+- Telemetry (state-logging experiments): PRO 6000 SM 2332-2422 MHz, mem 12481 MHz, max 431 W, max 66 C,
+  software power cap 0% of samples; RTX 3090 SM 1695-1950, mem 9501, 344 W, 67 C, power cap 0.2-92% (mostly the
+  TFLA sweep); H800 SM 1515-1755, mem 1593, 355 W, 65 C, power cap 8%. No thermal/hardware slowdown; reason codes
+  0, 4, 36.
+- Unguarded data sets: main value-invariance run (all GPUs); single-round captured 370M sweeps
+  (launch-inclusive on all GPUs; device time on RTX 3090 and H800); calibration sweeps except PRO 6000
+  device-time; captured 1.4B/2.8B calls. Guarded: three-round device-time re-timings, reference-scan sweeps, TP
+  widths, production kernels, graphs, TFLA, placement and L2 runs.
+- Pseudo-code (no algorithm package in the wrapper: use a figure with tabbing): grid (ceil(d/D_b), B); state
+  h[D_b,N] fp32 zero; tile loop t0 = 0, C, 2C, ...: load u, Delta tiles [D_b,C], Delta = softplus(Delta+bias)
+  (unchanged above 20); loop over n (plain range, not unrolled by the front end): a = exp(Delta*A[:,n]),
+  b = Delta*u*B[n,t] (masked a=1, b=0), associative scan (a_l,b_l)o(a_r,b_r) = (a_l a_r, a_r b_l + b_r),
+  S += P*h[:,n], y += S*C[n,t], h[:,n] = S[:,C-1]; then y += D*u, y *= silu(z), store. Default launch table
+  chunk -> (D_b, n_w), 1 stage: 32->(8,2), 64->(8,2), 128->(8,2), 256->(4,2), 512->(4,2), 1024->(4,4); chosen
+  once by a short offline search on an RTX 3070 at d=2048, L in {512,2048,8192}.
+- Runtime-chunk reference scan: kernel body unchanged; chunk C in {128..2048} dispatches to the stock (threads,
+  items) pairs (32,4),(32,8),(32,16),(64,16),(128,16); host sets ceil(L/C) chunks and sizes the saved state;
+  second entry point fixes threads at 32/64/128 and varies items (multiple of 4); built forward-only from the
+  2.3.2.post1 sources; stock dispatch rebuilt from the same sources reproduces the installed output exactly;
+  validation fp16, L in {300,1000,3000,5000}, max abs diff 3.9e-3, rel 1.8e-4 (criterion rel < 1e-2);
+  captured calls max abs diff 0.0156.
+- Serving replay: step 2 ms + 10 us per prefill token, at most 256 running requests; decode 20 us per generated
+  token after the first (ideal batching, a lower bound); 88 primary settings = 10 windows request-level + 30
+  fixed slices (T in {512,2048,8192}) + 48 colocated budget steps at load 0.5 (T in {512,2048,8192}, padded and
+  packed, 8 windows); sensitivity (loads 0.2/0.85, prefill-only) separate. tab:supp_serving shows share of
+  total GPU time while main.tex uses share of prefill (recompute share-of-prefill per row from
+  deployment_units.json); decode share of total 1.2-26.6%; "2.3 times": step model 42.96 ms vs measured 100.4
+  ms for 4096 tokens.
+- Warm-ups (common.cuda_time): warm-ups, device sync, then the 20 ms spin: warm-ups fall outside the spin
+  window; the L2 overwrite is enqueued before each start event.
+Plan (target <= ~30 pages): (1) fig:value_invariance is too tall ("Float too large"), which pushes all 7
+figures after the bibliography: set ~0.6\textwidth; (2) remove legacy: sec:supp_cost (+ tab:active_integration,
+tab:hook_micro), sec:supp_legacy, sec:supp_isolated_cost, sec:supp_real_entropy (+ tab:entropy_variance_real,
+tab:h800_corpora), legacy rows of tab:supp_platforms; (3) drop fig:supp_entropy_regime, fig:supp_regret_cdf,
+fig:supp_breakeven, tab:supp_l2, tab:supp_cold, sec:supp_bin_count; merge RTX 3090 latency/effects/autotune
+tables into the PRO 6000 ones, tab:supp_placement_pro6000 into tab:supp_placement, tab:supp_chunk_transfer into
+tab:replication, sec:supp_h800 into sec:supp_replication; remove duplicated redraw/TOST/placement text between
+S1.2 and S1.3; keep the reduction-kernel sentence (7.3/42 us) in sec:supp_kernel_experiments (main cites it);
+(4) history phrasing: "superseded batch-1 sweep" (~l.494, ~2441), "earlier batch-1 sweep ... under host load"
+(~2401, 2492-2505), "the single round that preceded them" (~2357); (5) never remove a label main.tex references
+via \Sref (grep main.tex again; keep S-eq:chunk_rule). Before deleting any table, check that main.tex does not
+cite its numbers.
+### A. Offline analyses A - IN PROGRESS at shutdown
+The agent was still writing src/experiments/tpds/taco_report_numbers.py when the machine shut down; the
+partial script is committed as is (it may not run yet, and taco_report_numbers.json may be missing or
+partial). Resume: read the script, finish the 8 items listed under section 4.A, run it, and check the JSON
+against the published numbers before using any of them in the paper.
