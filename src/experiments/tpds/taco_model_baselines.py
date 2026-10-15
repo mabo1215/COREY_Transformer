@@ -60,6 +60,7 @@ for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
     os.environ.setdefault(_v, "1")
 
 import argparse  # noqa: E402
+import ast  # noqa: E402
 import json  # noqa: E402
 import math  # noqa: E402
 import re  # noqa: E402
@@ -288,6 +289,8 @@ def random_k(ctx, ks, draws: int, rng) -> dict:
         for idx, R in per_shape:
             mc[:, idx] = R[rng.integers(len(subsets), size=draws)]
         p95, mx = np.percentile(mc, 95, axis=1), mc.max(1)
+        dm = mc.mean(1)
+        se = float(dm.std(ddof=1) / math.sqrt(draws))
         out[f"top{k}"] = {"n": int(n), "n_subsets_per_shape": len(subsets),
                           "mean_regret_pct": float(100 * exp_reg.mean()),
                           "share_within_2pct": float(exp_w2.mean()),
@@ -296,12 +299,28 @@ def random_k(ctx, ks, draws: int, rng) -> dict:
                           "max_regret_pct": float(100 * mx.mean()),
                           "max_regret_pct_mc_interval": [float(100 * np.percentile(mx, 2.5)), float(100 * np.percentile(mx, 97.5))],
                           "mc_draws": int(draws), "mc_mean_regret_pct": float(100 * mc.mean()),
+                          "mc_mean_regret_se_pct": 100 * se,
+                          "mc_mean_within_4se_of_exact": bool(abs(dm.mean() - exp_reg.mean()) <= 4 * se + 1e-12),
                           "note": "mean and within-2% share exact over all subsets; p95/max are means over Monte Carlo draws"}
     return out
 
 
+def topk_picks_stable(ctx, P: np.ndarray, k: int) -> np.ndarray:
+    """``cost_model_baselines_r4.topk_picks`` with a stable sort (exact score ties -> smaller chunk first,
+    the convention of argmin); used only to measure the tie sensitivity of the stored rule."""
+    rank = np.argsort(P, 1, kind="stable")
+    pick = np.empty(len(ctx.df), dtype=int)
+    for idx in shape_groups(ctx.df).values():
+        cand = rank[idx[0], :k]
+        pick[idx] = cand[np.argmin(ctx.lat[idx][:, cand].mean(0))]
+    return pick
+
+
 def topk_rows(ctx, P: np.ndarray, ks=(1, 2, 3)) -> dict:
-    return {f"top{k}": reg_stats(call_regret(ctx.lat, r4.topk_picks(ctx.df, ctx.chunks, P, k))) for k in ks}
+    """top-1 = the ranker's argmin per call (the selection rule of every table); top-k (k > 1) =
+    ``cost_model_baselines_r4.topk_picks`` (as the stored round-4 top-k rows)."""
+    return {f"top{k}": reg_stats(call_regret(ctx.lat, P.argmin(1) if k == 1 else r4.topk_picks(ctx.df, ctx.chunks, P, k)))
+            for k in ks}
 
 
 def m5a_tag(ctx, stored: dict, opts) -> tuple[dict, dict, dict]:
@@ -330,10 +349,18 @@ def m5a_tag(ctx, stored: dict, opts) -> tuple[dict, dict, dict]:
                              "n_columns": len(cols)}
     mats = {n: s.scores(ctx.calls) for n, s in sels.items()}
     mats["compile_facts_rule"] = compile_facts_matrix(ctx)
-    rankers, n_top1_mismatch = {}, {}
+    rankers, ties = {}, {}
     for n, P in mats.items():
         rankers[n] = topk_rows(ctx, P)
-        n_top1_mismatch[n] = int((r4.topk_picks(ctx.df, ctx.chunks, P, 1) != P.argmin(1)).sum())
+        t = {"n_calls_exact_score_tie_at_minimum": int((np.sum(P == P.min(1, keepdims=True), 1) > 1).sum())}
+        for k in (1, 2, 3):
+            a, b = r4.topk_picks(ctx.df, ctx.chunks, P, k), topk_picks_stable(ctx, P, k)
+            t[f"top{k}_n_calls_default_vs_stable_sort_differ"] = int((a != b).sum())
+            if t[f"top{k}_n_calls_default_vs_stable_sort_differ"]:
+                t[f"top{k}_mean_regret_pct_stable_sort"] = float(100 * call_regret(ctx.lat, b).mean())
+                t[f"top{k}_mean_regret_pct_default_sort"] = float(100 * call_regret(ctx.lat, a).mean())
+        if t["n_calls_exact_score_tie_at_minimum"] or any(v for k, v in t.items() if k.endswith("differ")):
+            ties[n] = t
     groups = shape_groups(ctx.df)
     pick = np.empty(len(ctx.df), dtype=int)
     for idx in groups.values():
@@ -361,9 +388,7 @@ def m5a_tag(ctx, stored: dict, opts) -> tuple[dict, dict, dict]:
                 checks[f"{k}_vs_r4_{n}"] = chk(v["mean_regret_pct"], rankers[n][k]["mean_regret_pct"])
     checks["all_chunks_profiled_vs_r4"] = chk(stored["topk"]["cost_model"]["all_chunks_profiled"]["mean_regret_pct"],
                                               exact_table["mean_regret_pct"])
-    checks["top1_equals_argmin_all_rankers"] = bool(sum(n_top1_mismatch.values()) == 0)
-    checks["random_k_mc_mean_close_to_exact"] = bool(all(abs(v["mc_mean_regret_pct"] - v["mean_regret_pct"]) < 0.05 * max(1.0, v["mean_regret_pct"])
-                                                         for v in rk.values()))
+    checks["random_k_mc_mean_within_4se_of_exact"] = bool(all(v["mc_mean_within_4se_of_exact"] for v in rk.values()))
     # the roofline floor alone cannot rank chunks: bytes / bandwidth does not depend on the chunk
     Tm = ctx.calls.matrix(ctx.calls.fc["t_mem_ms"].to_numpy(float))
     Tm = np.where(np.isfinite(Tm), Tm, np.nan)
@@ -386,6 +411,9 @@ def m5a_tag(ctx, stored: dict, opts) -> tuple[dict, dict, dict]:
     out = {"table_columns": ["mean_regret_pct", "p95_regret_pct", "max_regret_pct", "share_within_2pct"],
            "table": table, "rankers": rankers, "random_k": rk, "exact_shape_table_all_chunks_profiled": exact_table,
            "mlp_over_seeds": seed_summary, "learned": learned,
+           "score_ties": {"note": "rankers with exact score ties: top-1 takes the argmin (smaller chunk); top-k uses the "
+                                  "stored rule (numpy default argsort); the stable-sort variant is given where it differs",
+                          "rankers": ties},
            "tfla_fit_info": {n: v for n, v in sel_info.items() if n.startswith("tfla_runtime") and "intensity" not in n},
            "compile_facts_rule_definition": "candidates: the six default-table chunks; a chunk whose compiled kernel "
                                             "(target arch, alignment of L) reports spill bytes ranks after every "
@@ -633,11 +661,14 @@ def shapley_split(S: dict, a: tuple, b: tuple) -> dict | None:
     ab, ba = (b[0],) + a[1:], (a[0],) + b[1:]
     if any(k not in S for k in (a, b, ab, ba)):
         return None
-    fa, fb, fx, fy = S[a], S[b], S[ab], S[ba]
+    fa, fb, fx, fy = S[a], S[b], S[ab], S[ba]       # fx = (C_b, launch_a), fy = (C_a, launch_b)
     chunk = 0.5 * ((fx - fa) + (fb - fy))
     launch = 0.5 * ((fy - fa) + (fb - fx))
     return {"from": list(a), "to": list(b), "regret_pct": 100 * (fa / fb - 1),
             "chunk_part_pct": -100 * chunk / fb, "launch_part_pct": -100 * launch / fb,
+            "chunk_gain_at_from_launch_pct": 100 * (fa - fx) / fb, "chunk_gain_at_to_launch_pct": 100 * (fy - fb) / fb,
+            "launch_gain_at_from_chunk_pct": 100 * (fa - fy) / fb, "launch_gain_at_to_chunk_pct": 100 * (fx - fb) / fb,
+            "interaction_pct": 100 * ((fy - fb) - (fa - fx)) / fb,
             "gain_ms": fa - fb, "chunk_gain_ms": -chunk, "launch_gain_ms": -launch}
 
 
@@ -693,15 +724,19 @@ def m3a_tag(tag: str, in_dir: Path) -> dict:
         ok = [x for x in lst if "missing_corner" not in x]
         g = np.array([x["gain_ms"] for x in ok])
         cg = np.array([x["chunk_gain_ms"] for x in ok])
-        return {"n_keys": len(ok), "n_keys_missing_corner": len(lst) - len(ok),
-                "mean_regret_pct": float(np.mean([x["regret_pct"] for x in ok])),
-                "mean_chunk_part_pct": float(np.mean([x["chunk_part_pct"] for x in ok])),
-                "mean_launch_part_pct": float(np.mean([x["launch_part_pct"] for x in ok])),
-                "max_launch_part_pct": float(np.max([x["launch_part_pct"] for x in ok])),
-                "max_chunk_part_pct": float(np.max([x["chunk_part_pct"] for x in ok])),
-                "chunk_share_of_summed_gain": float(cg.sum() / g.sum()) if g.sum() > 0 else None,
-                "n_keys_launch_part_above_chunk_part": int(sum(x["launch_part_pct"] > x["chunk_part_pct"] for x in ok)),
-                "per_key": [{k: (round(v, 4) if isinstance(v, float) else v) for k, v in x.items()} for x in lst]}
+        res = {"n_keys": len(ok), "n_keys_missing_corner": len(lst) - len(ok)}
+        for f in ("regret_pct", "chunk_part_pct", "launch_part_pct", "chunk_gain_at_from_launch_pct",
+                  "chunk_gain_at_to_launch_pct", "interaction_pct"):
+            v = np.array([x[f] for x in ok])
+            res[f"mean_{f}"], res[f"median_{f}"] = float(v.mean()), float(np.median(v))
+        res["max_launch_part_pct"] = float(np.max([x["launch_part_pct"] for x in ok]))
+        res["max_chunk_part_pct"] = float(np.max([x["chunk_part_pct"] for x in ok]))
+        res["median_abs_interaction_pct"] = float(np.median(np.abs([x["interaction_pct"] for x in ok])))
+        res["chunk_share_of_summed_gain"] = float(cg.sum() / g.sum()) if g.sum() > 0 else None
+        res["n_keys_launch_part_above_chunk_part"] = int(sum(x["launch_part_pct"] > x["chunk_part_pct"] for x in ok))
+        res["n_keys_from_equals_to"] = int(sum(x["from"] == x["to"] for x in ok))
+        res["per_key"] = [{k: (round(v, 4) if isinstance(v, float) else v) for k, v in x.items()} for x in lst]
+        return res
     tvs = np.array([k["best_static_over_tuned_full_protocol_pct"] for k in per_key])
     summ = {
         "default_table_spread_search_pct_median": float(np.median([k["default_table_spread_search_pct"] for k in per_key])),
@@ -768,7 +803,7 @@ def m3a_registers(in_dir: Path) -> dict:
                     "n_series_regs_strictly_increasing_in_chunk": int(sum(v["strictly_increasing"] for v in series.values()))}
     ktxt = (Path(cm.__file__).parent / "kernels.py").read_text()
     m = re.search(r"DEFAULT_MAMBA1_LAUNCH\s*=\s*(\{[^}]*\})", ktxt)
-    table = {int(k): tuple(v) for k, v in eval(m.group(1), {}).items()} if m else None   # literal dict in source
+    table = {int(k): tuple(v) for k, v in ast.literal_eval(m.group(1)).items()} if m else None
     flat = " ".join(line.strip().lstrip("#").strip() for line in ktxt.splitlines())
     out["launch_table_provenance"] = {
         "kernels_py_comment": "Per-chunk default launch configuration (BLOCK_D, num_warps), chosen once by a "
@@ -918,7 +953,8 @@ def analyze_tag(tag: str, in_dir: Path, opts) -> tuple[dict, dict]:
                                                                            lc12["model_mean_regret_pct"]["mean"], 1e-6),
                             "learning_curve_k12_nearest_key_vs_r4": chk(stored["baselines"]["nearest_calibrated_key"]["mean_regret_pct"],
                                                                         lc12["nearest_key_mean_regret_pct"]["mean"]),
-                            "learning_curve_k12_theta_max_rel_diff": lc12["full_set_theta_max_rel_diff_vs_stored"]}
+                            "learning_curve_k12_theta_max_rel_diff": {"value": lc12["full_set_theta_max_rel_diff_vs_stored"],
+                                                                      "pass": lc12["full_set_theta_max_rel_diff_vs_stored"] < 1e-6}}
     print(f"  {tag}: M5b done ({out['M5b']['seconds']} s)", flush=True)
     out["M3a"] = m3a_tag(tag, in_dir)
     out["seconds"] = round(time.time() - t_start, 1)
@@ -1038,18 +1074,15 @@ def workload_costs(tag: str, in_dir: Path, ch: dict) -> dict:
                                         "cold_s": T["full_calibration_cold_s"] + P2 + nv2 * c_v,
                                         "per_key_top2_profiling_s": P2,
                                         "excess_over_profiled_table_us_per_call": exc["cost_model_top2"]}
-        for s in strat.values():
-            s["model_cheaper_than_profile_every_key_warm"] = None
         for n in ("cost_model_only", "cost_model_static72_only", "cost_model_top2"):
             if n in strat:
                 s = strat[n]
                 s["one_off_cheaper_than_profile_every_key_warm"] = bool(s["warm_s"] < sumP)
                 s["one_off_cheaper_than_profile_every_key_cold"] = bool(s["cold_s"] < strat["profile_every_key"]["cold_s"])
-                s.pop("model_cheaper_than_profile_every_key_warm")
         out["modes"][mode] = {
             "n_keys": len(groups), "n_alignment_specializations": n_spec, "sum_P_profile_s": sumP, "mean_P_profile_s": meanP,
             "n_calls": int(len(df)), "table_excess_over_oracle_us_per_call": float((lat[ar, tab] - orc).mean() * 1000),
-            "strategies": {k: {kk: vv for kk, vv in v.items() if vv is not None} for k, v in strat.items()},
+            "strategies": strat,
             "payback_keys": {"full_calibration_warm": T["full_calibration_warm_s"] / meanP,
                              "full_calibration_cold": (T["full_calibration_cold_s"] + nv["cost_model"] * c_v
                                                        - len(CHUNKS) * n_spec * c_v) / meanP,
@@ -1148,8 +1181,14 @@ def m5b_cross(per_tag: dict, choices: dict, in_dir: Path) -> dict:
     lc = {t: {k: [round(v["model_mean_regret_pct"]["mean"], 3), round(v["model_mean_regret_pct"]["min"], 3),
                   round(v["model_mean_regret_pct"]["max"], 3), round(v["nearest_key_mean_regret_pct"]["mean"], 3)]
               for k, v in per_tag[t]["M5b"]["learning_curve"].items()} for t in per_tag}
+    s72 = {t: {k: per_tag[t]["M5b"]["static72_only_fit"]["captured_calls"][k] for k in
+               ("mean_regret_pct", "p95_regret_pct", "max_regret_pct", "share_within_2pct")}
+           | {"top2_mean_regret_pct": per_tag[t]["M5b"]["static72_only_fit"]["top2"]["mean_regret_pct"]} for t in per_tag}
+    pols = {t: {n: {k: v[k] for k in ("mean_regret_pct", "p95_regret_pct", "max_regret_pct", "share_within_2pct",
+                                      "mean_excess_us_per_call")} | ({"chunk": v["chunk"]} if "chunk" in v else {})
+                for n, v in per_tag[t]["M5b"]["cold_start"]["policies"].items()} for t in per_tag}
     return {"learning_curve_summary_columns": ["model_mean_over_subsets", "model_min", "model_max", "nearest_key_mean"],
-            "learning_curve_summary_mean_regret_pct": lc,
+            "learning_curve_summary_mean_regret_pct": lc, "static72_only_fit": s72, "cold_start_policies": pols,
             "captured_workload_costs": out, "serving_traces": serving, "cold_start_benefit": cold,
             "cost_conventions": "one-off costs are wall-clock seconds of the launch-inclusive E4 runs: full calibration "
                                 "cold = E4 tuning wall (search incl. compile of 184 configurations, 12 keys), warm = "
@@ -1232,6 +1271,7 @@ def fit_tfla_g(B, H, L, C, t, mode: str, m: dict) -> tuple[TFLAg, dict]:
             "calibration_fit": cm.fit_quality(sel.predict(B, H, L, C), t)}
     if nfloor:
         info["t0_ms"] = float(best.x[2])
+        info["t0_bounds_ms"] = [0.0, hi[2]]
     return sel, info
 
 
@@ -1397,6 +1437,20 @@ def main(argv=None):
               f"{f['captured_call_candidates_floor_binds']}/{f['captured_call_candidates']}, choice changes "
               f"{f['captured_calls_choice_changed_by_floor']}")
     # ---- cross-tag parts
+    res["M3b"] = {
+        "floor_binding": {t: res["per_tag"][t]["M3b_floor"] for t in tags},
+        "implementation_vs_eq3": [
+            "T = max(Eq. (3), bytes / peak bandwidth) with bytes = 2 B d L * 4 (fp16 u, delta, z, out) + 2 * 2 B 16 L "
+            "(fp16 B and C); the floor never binds (floor_binding)",
+            "omega = (spill store bytes + spill load bytes) / 4 per thread (compiler static spill size, not traffic)",
+            "mu = max(0, 1 - L1 / (spill store bytes x 32 x m x n_w)) with the nominal L1 size (no shared-memory carve-out)",
+            "occupancy k = min(regs_per_SM // (ceil(regs/8)*8*32*n_w), max_warps // n_w, max_blocks); shared memory ignored",
+            "unaligned lengths (L mod 16 != 0) use the compile facts of the unaligned specialization (aligned as fallback)",
+            "e = e_D * e_C with e_D = max(1, BLOCK_D / cov_D * spt_D), e_C = max(spt_C, C / cov_C * spt_C) from the TTGIR layout",
+            "the general-form terms tau_f, tau_d (L2 miss share), tau_l (load issue) and tau_x (cross-warp) are fixed at 0",
+            "fit: soft-l1 on log latency, f_scale 0.1, bounds cost_model.LO/HI, restarts with the time constants of X0 "
+            "scaled by 1, 0.3, 3, max_nfev 5000"],
+        "source": "cost_model.features / predict / fit (read, not re-derived)"}
     res["M5a"] = {"protocol": "top-k: per exact shape (L, batch) profile the k best-ranked chunks, serve the fastest by "
                               "shape-mean latency; learned hyperparameters from the stored round-4 CV",
                   "summary_table_columns": ["mean_regret_pct", "p95_regret_pct", "max_regret_pct", "share_within_2pct"],
@@ -1418,11 +1472,8 @@ def main(argv=None):
     res["M3a"] = {"registers": m3a_registers(opts.in_dir),
                   "per_tag_summary": {t: {"gpu_best_static_chunk": res["per_tag"][t]["M3a"]["gpu_best_static_chunk"],
                                           **res["per_tag"][t]["M3a"]["summary"],
-                                          "shapley_mean": {p: {k: v[k] for k in ("mean_regret_pct", "mean_chunk_part_pct",
-                                                                                "mean_launch_part_pct", "max_launch_part_pct",
-                                                                                "chunk_share_of_summed_gain",
-                                                                                "n_keys_launch_part_above_chunk_part", "n_keys")}
-                                                           for p, v in res["per_tag"][t]["M3a"]["shapley"].items()}}
+                                          "shapley": {p: {k: v[k] for k in v if k != "per_key"}
+                                                      for p, v in res["per_tag"][t]["M3a"]["shapley"].items()}}
                                       for t in tags}}
     reg = res["M3a"]["registers"]
     res["checks"]["M3a_sm120_aligned_regs_64_126_202_202_255_255"] = reg["pro6000"]["aligned_regs_by_chunk"] == [64, 126, 202, 202, 255, 255]
@@ -1473,9 +1524,9 @@ def main(argv=None):
             "reason": "TFLA's kernel (E24) was timed only on the RTX 3090 (vgpu3090_r4spinb device time, vgpu3090_r4plainb "
                       "launch-inclusive; r4spin/r4plain are one-shape smoke runs)"},
         "M5a_M4c_mlp_per_seed_hyperparameter_cv": {
-            "reason": "not run to stay within the runtime budget (12-fold CV x 3 penalties x 2 feature sets x 5 seeds "
-                      "~ 18 min per tag); hyperparameters come from the stored seed-0 CV of round 4, and only the final "
-                      "model is retrained per seed"},
+            "reason": "not run to stay within the runtime budget (4 extra seeds x 2 feature sets x 37 MLP fits of ~3 s "
+                      "= ~15 min per tag, ~1.5 h for six tags on 2 workers); hyperparameters come from the stored seed-0 "
+                      "CV of round 4, and only the final model is retrained per seed"},
     }
     res["checks_flat"] = collect_checks(res)
     failed = [k for k, v in res["checks_flat"].items() if v is False]
