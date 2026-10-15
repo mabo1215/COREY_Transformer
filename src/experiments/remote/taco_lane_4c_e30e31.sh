@@ -10,7 +10,7 @@
 # One lane per screen:
 #   TACO_LANE=E30 CUDA_VISIBLE_DEVICES=0 bash src/experiments/remote/taco_lane_4c_e30e31.sh
 #   TACO_LANE=E31 CUDA_VISIBLE_DEVICES=1 bash src/experiments/remote/taco_lane_4c_e30e31.sh
-# Markers: src/logs/revloop/{E30-smoke,E30a,E30b,E30c,E31-smoke,E31a,E31b,E31c}.{START,OK,FAIL}
+# Markers: src/logs/revloop/{E30a-smoke,E30a,E30b-smoke,E30b,E30c-smoke,E30c,E31-smoke,E31a,E31b,E31c}.{START,OK,FAIL}
 # Results come back by rsync:  bash src/revloop/remote.sh fetch 4c E30a E30b E30c E31a E31b E31c
 # Env: TACO_TRACE_ROOT, TACO_HF_HOME (/data/hf_home), TACO_GUARD_H (24), TACO_SKIP_GDN31.
 set -uo pipefail
@@ -65,13 +65,24 @@ nvidia-smi -L || { lanelog "no GPU visible"; exit 1; }
 case "$LANE" in
   E30)
     if [ "${CUDA_VISIBLE_DEVICES:-}" != 0 ]; then lanelog "E30 must run on physical GPU 0 (the guard watches GPU 0)"; exit 2; fi
-    if $RUN E30-smoke -- bash "$SELF" step e30_smoke; then
-      $RUN E30a -- bash "$SELF" step e30a
-      $RUN E30b -- bash "$SELF" step e30b
-      $RUN E30c -- bash "$SELF" step e30c
-    else
-      skip_ids "E30 smoke failed" E30a E30b E30c
-    fi ;;
+    # Per model: wait until its inputs have arrived (flag READY_<model> next to the trace root, written by the
+    # copy), then a two-row smoke test of that model, then the full run; so E30a starts while the copy continues.
+    READY_DIR=${TACO_READY_DIR:-/data/mabo1215_taco/e30_inputs}
+    for spec in "E30a ssd370m mamba2 $T" "E30b ssd2p7b mamba2 $T/tpds_traces_m2_2p7b" \
+                "E30c gdn1p4b gdn $T/tpds_traces_gdn_1p4b"; do
+      set -- $spec; id=$1; m=$2; kind=$3; td=$4
+      waited=0
+      until [ -f "$READY_DIR/READY_$m" ]; do
+        [ "$waited" -ge $(( ${TACO_WAIT_INPUTS_H:-12} * 3600 )) ] && { skip_ids "inputs of $m did not arrive" "$id"; continue 2; }
+        sleep 60; waited=$((waited + 60))
+      done
+      if $RUN "$id-smoke" -- flock "$LOCK" $E30 --model "$kind" --trace-dir "$td" --label "$m" \
+           --n-calls 2 --max-rows 2 --rounds 1 --warmup 2 --repeats 5 --out-dir "$SMOKE_DIR" --tag ${H}_e30smoke_$m; then
+        $RUN "$id" -- bash "$SELF" step "$(echo "$id" | tr 'A-Z' 'a-z')"
+      else
+        skip_ids "smoke of $m failed" "$id"
+      fi
+    done ;;
   E31)
     if $RUN E31-smoke -- bash "$SELF" step e31_smoke; then
       $RUN E31a -- bash "$SELF" step e31a &
