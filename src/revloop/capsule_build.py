@@ -2,11 +2,17 @@
 
 The capsule gets only what the paper needs: the entry scripts listed in ENTRIES, every
 local module they import (resolved from the source, so the package is complete), the
-TPDS result files listed in RESULTS_MANIFEST (no legacy summaries, raw per-round logs or LongBench
+result files listed in RESULTS_MANIFEST (no legacy summaries, raw per-round logs or LongBench
 prompt subsets). Everything else in the capsule is replaced. The package is written for
-anonymous review: the license holder is anonymized, host names and paths in result metadata
-are neutralized (SANITIZE), the project's former name is removed from file names, code and
-text (RENAME), and a scan for identifying strings must pass before anything is committed.
+anonymous review: the license holder is anonymized; host names, absolute paths, user names and
+version-control hashes in result metadata are removed or neutralized (SANITIZE, scrub_metadata);
+the project's former name (RENAME), the name of an earlier submission venue (VENUE) and the host
+labels of the machines the measurements were taken on (HOST_LABELS) are removed from directory
+and file names, code and text, consistently, so the shipped code still finds its files; and a
+scan for identifying strings must pass before anything is committed. Measurement values are never
+changed: every rewritten JSON, JSONL and CSV file is checked to keep all its numbers. Analyses that
+derive bootstrap seeds from a result tag get the checksum of the original tag (tag_crc.py), so they
+reproduce the stored files under the renamed tags.
 The README maps every table and figure of the paper to its result files and scripts
 (PAPER_MAP); the numbers are read from the built paper (paper/build/*.aux), so build the
 paper first. The capsule metadata (title, authors) and environment must be edited in the
@@ -17,6 +23,8 @@ Usage (repository root):
     python src/revloop/capsule_build.py            # rebuild codeocean/ in place, scan, no commit
     python src/revloop/capsule_build.py --commit   # also commit inside codeocean/ (anonymous identity)
     python src/revloop/capsule_build.py --push     # commit and push to the capsule's git remote
+    python src/revloop/capsule_build.py --out-dir DIR   # build a copy of the capsule into DIR instead
+                                                        # (codeocean/ is only read; no commit, no push)
 
 The Code Ocean environment (``environment/``) is left as it is; the capsule's run script
 recomputes analyses, tables and figures on the CPU from the stored measurements and needs
@@ -27,12 +35,16 @@ from __future__ import annotations
 
 import argparse
 import ast
+import csv
 import fnmatch
+import io
+import json
 import re
 import shutil
 import subprocess
 import sys
 import time
+import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -95,6 +107,38 @@ RENAME = [(re.compile(p, f), r) for p, r, f in [
     (r"corey", "entropy", 0),                                            # identifiers, option values
 ]]
 FORMER_NAME = re.compile(r"corey", re.I)
+# The name of an earlier submission venue must not appear in the package either: it was the name of
+# the experiment package (src/experiments/<venue>/), of the results and trace directories, of
+# environment variables and identifiers, and of review-cycle labels in docstrings and result notes.
+# It is replaced by a neutral name, consistently in paths and text (applied after RENAME).
+VENUE_NEUTRAL = "study"
+VENUE = [(re.compile(p, f), r) for p, r, f in [
+    (r"\bthe TPDS revision\b", f"the {VENUE_NEUTRAL}", 0),
+    (r"\bIEEE single-column\b", "single-column", 0),            # figure format of that venue
+    (r"TPDS_", VENUE_NEUTRAL.upper() + "_", 0),                    # environment variables
+    (r"\btpds-(r\d+)\b", r"\1", re.I),                            # review-cycle labels ("tpds-r4" -> "r4")
+    (r"tpds", VENUE_NEUTRAL, re.I),                               # package, paths, identifiers, prose
+]]
+# Host labels of the machines the measurements were taken on (result tags, file names, option values,
+# dictionary keys, CSV columns) -> neutral GPU names. Applied to paths and to the text of every shipped
+# file, so code that builds file names from tags finds the renamed files. A label is matched only as a
+# whole tag component (not inside a longer alphanumeric word), and the mapping is not re-applied to its
+# own output.
+HOST_LABELS = {"vgpu3090": "rtx3090", "pro6000": "rtxpro6000", "h800": "h800pcie"}
+# upper-case spellings in identifiers (e.g. PRO6000_TABLES); "H800" is the GPU's product name and is kept
+UPPER_CASE_LABELS = ("vgpu3090", "pro6000")
+
+
+def _label_rule(old: str, new: str) -> tuple[re.Pattern, str]:
+    # start of a tag component: no alphanumeric before it, or a \n, \t, \r escape (text in JSON strings)
+    pat = rf"(?:(?<![A-Za-z0-9])|(?<=\\[ntr])){re.escape(old)}(?![0-9])"
+    if new.startswith(old):  # h800 -> h800pcie: do not rename h800pcie again
+        pat += rf"(?!{re.escape(new[len(old):])})"
+    return re.compile(pat), new
+
+
+HOSTS = [_label_rule(old, new) for old, new in HOST_LABELS.items()]
+HOSTS += [_label_rule(old.upper(), HOST_LABELS[old].upper()) for old in UPPER_CASE_LABELS]
 # Text formats the RENAME rules are applied to (everything else is copied unchanged).
 TEXT_SUFFIXES = {".py", ".md", ".txt", ".json", ".jsonl", ".csv", ".log", ".tsv", ".sh", ".toml", ".cfg",
                  ".yml", ".yaml", ".cu", ".cuh", ".cpp", ".h", ".c", ".in", ""}
@@ -104,7 +148,9 @@ TEXT_SUFFIXES = {".py", ".md", ".txt", ".json", ".jsonl", ".csv", ".log", ".tsv"
 IDENTIFYING = [r"mabo", r"bo\s+ma\b", r"weiqi", r"jinsong", r"aut\.ac\.nz", r"\brcn\d{3,}", r"auckland",
                r"bobsteam", r"c:[\\/]+source", r"/mnt/c/", r"autodl", r"seetacloud", r"westb",
                r"ssh\s+-p", r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", r"hkvlm", r"github\.com/mabo",
-               r"corey", r"/root/"]
+               r"corey", r"/root/", r"/home/", r"tpds", r"git_commit", r"nza1",
+               # host labels; "_NVGPU" (Nsight Compute's ERR_NVGPUCTRPERM error code) is not one
+               r"(?<!_n)vgpu", r"(?<!rtx)pro6000"]
 IP_ALLOW = {"0.0.0.0", "127.0.0.1"}
 # Public benchmark text under src/data/ is checked for personal identifiers only, not for
 # place names or numeric patterns that occur in ordinary prose.
@@ -347,7 +393,11 @@ convention:
 | `vgpu3090full` (`e17_*`) | synthetic sweep of the production kernels at larger widths |
 
 Host names, absolute paths and local build labels recorded in the result metadata are replaced
-by neutral placeholders (`gpu-host`, `workstation`, `/data`, `/shared`, `/repo`).
+by neutral placeholders (`gpu-host`, `workstation`, `/data`, `/shared`, `/repo`, `~`), and
+version-control hashes are removed. The tags name the GPU; the measurements were recorded under
+other host labels, and several analyses derive their bootstrap seeds from the CRC-32 of a key that
+contains the tag. `src/experiments/tpds/tag_crc.py` returns the checksum such a key had under the
+original label, so a recomputed analysis draws the same random streams as the stored one.
 
 ## Reproducible run (CPU)
 
@@ -688,14 +738,33 @@ RUNTIME_NOTE = ("On a 16-core workstation with scikit-learn installed the run ta
                 "cores); adding scikit-learn to the environment brings it back to a few minutes.")
 
 
-# Host names and absolute host paths recorded in result metadata are replaced in the copies.
+# Host names and absolute host paths recorded in result metadata are replaced in the copies (applied to
+# every shipped text file before RENAME, VENUE and HOSTS).
 SANITIZE = [(re.compile(r"autodl-container-[A-Za-z0-9-]+"), "gpu-host"),
             (re.compile(r"/root/autodl-tmp"), "/data"),
             (re.compile(r"/autodl-fs/data"), "/shared"),
-            # analyses run on the authors' workstation record its host name, checkout path and kernel
+            # analyses run on the authors' workstation and laptop record their host names, checkout path
+            # and kernel
             (re.compile(r"bobsteam\d*", re.I), "workstation"),
-            (re.compile(r"/mnt/c/source/[A-Za-z_]+", re.I), "/repo"),
+            (re.compile(r"\bNZA1[A-Z0-9]*\b", re.I), "workstation"),
+            (re.compile(r"/mnt/[a-z]/source/[A-Za-z_]+", re.I), "/repo"),
+            # any other path in a home directory
+            (re.compile(r"(?<![\w.~-])/root(?=/)"), "~"),
+            (re.compile(r"(?<![\w.~-])/home/[^/\s\"',]+(?=/)"), "~"),
             (re.compile(r"Linux-\d+\.\d+\.\d+(?:\.\d+)?[A-Za-z0-9_.+-]*"), "Linux")]
+# Metadata fields of JSON / JSONL result files: the version-control hash is removed; host and user
+# names not neutralized by SANITIZE are replaced by a placeholder. Measurement fields are not touched.
+_GIT_FIELD = r'"git_commit"\s*:\s*(?:"[^"\\]*"|null)'
+GIT_FIELD = [re.compile(r",\s*" + _GIT_FIELD),                       # not the first key of its object
+             re.compile(_GIT_FIELD + r"\s*,\s*"),                    # the first key
+             re.compile(r"(?<=\{)\s*" + _GIT_FIELD + r"\s*(?=\})")]  # the only key
+NAME_FIELDS = {"hostname": ({"gpu-host", "workstation"}, "host"),
+               "user": (set(), "anonymous"), "username": (set(), "anonymous"), "user_name": (set(), "anonymous"),
+               "login": (set(), "anonymous")}
+NAME_FIELD = re.compile(r'("(%s)"\s*:\s*")([^"\\]*)(")' % "|".join(NAME_FIELDS))
+# Shipped Python code: the metadata key of the version-control hash gets a neutral name.
+CODE_RENAME = [(re.compile(r"\bgit_commit\b"), "source_revision")]
+MEASUREMENT_SUFFIXES = {".json", ".jsonl", ".csv"}
 
 
 def write_text(path: Path, text: str, tries: int = 5) -> None:
@@ -711,43 +780,179 @@ def write_text(path: Path, text: str, tries: int = 5) -> None:
             time.sleep(0.5 * (i + 1))
 
 
-def sanitize_results(code: Path) -> int:
-    n = 0
-    roots = [code / "src" / "experiments" / "results", code / "src" / "outputs"]
-    for f in (p for r in roots if r.exists() for p in r.rglob("*")):
-        if f.is_file() and f.suffix in {".json", ".jsonl", ".csv", ".log", ".txt", ".md", ".tsv"}:
-            text = f.read_text(encoding="utf-8", errors="ignore")
-            new = text
-            for rx, rep in SANITIZE:
-                new = rx.sub(rep, new)
-            if new != text:
-                write_text(f, new)
-                n += 1
-    return n
-
-
 def renamed(text: str) -> str:
-    for rx, rep in RENAME:
+    """Former project name, earlier venue name and host labels -> neutral names (paths and text)."""
+    for rx, rep in RENAME + VENUE + HOSTS:
         text = rx.sub(rep, text)
     return text
 
 
-def rename_text(code: Path) -> int:
-    """Apply RENAME to every shipped text file outside src/data/ (benchmark text is not rewritten)."""
-    n = 0
+def scrub_metadata(text: str) -> str:
+    """Remove version-control hashes and neutralize host / user names in a JSON or JSONL text."""
+    for rx in GIT_FIELD:
+        text = rx.sub("", text)
+
+    def name(m: re.Match) -> str:
+        keep, placeholder = NAME_FIELDS[m.group(2)]
+        return m.group(0) if m.group(3) in keep else f"{m.group(1)}{placeholder}{m.group(4)}"
+
+    return NAME_FIELD.sub(name, text)
+
+
+# Seed compatibility. Several analyses seed their bootstrap and permutation streams with the CRC-32 of
+# a key that contains the result tag (e.g. crc32(f"mamba1_{tag}")); the stored analyses were produced
+# under the original host labels. The shipped code calls tag_crc32 instead of zlib.crc32: it returns the
+# checksum the key had under the original labels, computed from the length and CRC-32 of each original
+# label (CRC-32 is affine in the message), so the package carries no original label.
+TAG_CRC_MODULE = '''"""CRC-32 of seed keys under the original result tags.
+
+Several analyses derive bootstrap and permutation seeds from the CRC-32 of a key that contains a
+result tag, for example ``mamba1_<tag>``. The tags of this package name the GPU ({names}); the
+stored analyses were produced under the host labels the measurements were first recorded with.
+``tag_crc32`` returns the checksum a key had under those labels, so a recomputed analysis draws the
+same random streams and reproduces the stored file. Each renamed tag component is described by the
+length and the CRC-32 of its original spelling: CRC-32 is affine in the message, so the checksum of
+the original key follows from these two numbers. Keys without a renamed component get
+``zlib.crc32`` unchanged.
+"""
+import re
+import zlib
+
+# renamed tag component -> (length, CRC-32) of its original spelling
+ORIGINAL = {table}
+_COMPONENT = re.compile(rb"(?<![A-Za-z0-9])({alternation})(?![0-9])")
+
+
+def tag_crc32(data, value=0):
+    """``zlib.crc32(data, value)`` with every renamed tag component in its original spelling."""
+    data = bytes(data)
+    crc, pos = value, 0
+    for m in _COMPONENT.finditer(data):
+        crc = zlib.crc32(data[pos:m.start()], crc)
+        n, original_crc = ORIGINAL[m.group(1).decode()]
+        zeros = bytes(n)
+        crc = zlib.crc32(zeros, crc) ^ zlib.crc32(zeros) ^ original_crc
+        pos = m.end()
+    return zlib.crc32(data[pos:], crc)
+'''
+TAG_CRC_NAME = "tag_crc"
+CRC_CALL = "zlib.crc32("
+IMPORT_ZLIB = re.compile(r"^import zlib\b[^\n]*$", re.M)
+
+
+def package_dir() -> str:
+    """Shipped path of the experiment package (src/experiments/<venue> renamed)."""
+    return renamed("src/experiments/tpds")
+
+
+def tag_crc_module() -> str:
+    table = "{" + ", ".join(f'"{new}": ({len(old)}, 0x{zlib.crc32(old.encode()):08x})'
+                            for old, new in HOST_LABELS.items()) + "}"
+    alternation = "|".join(re.escape(new) for new in sorted(HOST_LABELS.values(), key=len, reverse=True))
+    names = ", ".join(f"``{new}``" for new in HOST_LABELS.values())
+    return TAG_CRC_MODULE.format(table=table, alternation=alternation, names=names)
+
+
+def code_compat(text: str, path: Path) -> str:
+    """Neutral key name for the version-control hash; seed checksums through tag_crc32."""
+    for rx, rep in CODE_RENAME:
+        text = rx.sub(rep, text)
+    if CRC_CALL in text:
+        if not IMPORT_ZLIB.search(text):
+            raise SystemExit(f"{path}: calls {CRC_CALL} without a top-level 'import zlib'")
+        mod = package_dir().replace("/", ".") + "." + TAG_CRC_NAME
+        text = text.replace(CRC_CALL, "tag_crc32(")
+        text = IMPORT_ZLIB.sub(lambda m: f"{m.group(0)}\nfrom {mod} import tag_crc32  # noqa: E402", text, count=1)
+    return text
+
+
+def rewrite_text(text: str, suffix: str, path: Path) -> str:
+    for rx, rep in SANITIZE:
+        text = rx.sub(rep, text)
+    text = renamed(text)
+    if suffix in {".json", ".jsonl"}:
+        text = scrub_metadata(text)
+    if suffix == ".py":
+        text = code_compat(text, path)
+    return text
+
+
+def _no_duplicates(pairs):
+    keys = [k for k, _ in pairs]
+    if len(keys) != len(set(keys)):
+        raise ValueError(f"duplicate keys: {sorted({k for k in keys if keys.count(k) > 1})}")
+    return dict(pairs)
+
+
+def _skeleton(obj):
+    """Container shape and every number, boolean and null of a parsed JSON document, in document order
+    (strings are only marked; the version-control hash is skipped)."""
+    if isinstance(obj, dict):
+        return "d", tuple(_skeleton(v) for k, v in obj.items() if k != "git_commit")
+    if isinstance(obj, list):
+        return "l", tuple(_skeleton(v) for v in obj)
+    return "s" if isinstance(obj, str) else repr(obj)
+
+
+def _csv_skeleton(text: str) -> list[tuple]:
+    def cell(c: str) -> str:
+        try:
+            float(c)
+            return c
+        except ValueError:
+            return "s"
+    return [tuple(cell(c) for c in row) for row in csv.reader(io.StringIO(text))]
+
+
+def check_measurements(old: str, new: str, suffix: str, path: str) -> None:
+    """The rewritten result file must be valid and keep every number (and the shape) of the original."""
+    if suffix == ".csv":
+        if _csv_skeleton(old) != _csv_skeleton(new):
+            raise SystemExit(f"{path}: rewriting changed a number or the shape of the table")
+        return
+    docs = [(old, new)] if suffix == ".json" else list(zip(old.splitlines(), new.splitlines()))
+    if suffix == ".jsonl" and len(old.splitlines()) != len(new.splitlines()):
+        raise SystemExit(f"{path}: rewriting changed the number of lines")
+    for i, (a, b) in enumerate(docs, 1):
+        if not a.strip():
+            if b.strip():
+                raise SystemExit(f"{path}:{i}: rewriting filled an empty line")
+            continue
+        try:
+            before = json.loads(a)
+        except ValueError:
+            print(f"WARNING: {path}:{i} is not valid JSON in the repository; numbers not checked")
+            continue
+        try:
+            after = json.loads(b, object_pairs_hook=_no_duplicates)
+        except ValueError as exc:
+            raise SystemExit(f"{path}:{i}: rewritten text is not valid JSON ({exc})")
+        if _skeleton(before) != _skeleton(after):
+            raise SystemExit(f"{path}:{i}: rewriting changed a number or the structure")
+
+
+def rewrite_tree(code: Path) -> tuple[int, int]:
+    """Apply SANITIZE, RENAME, VENUE, HOSTS (and the metadata and code rules) to every shipped text file
+    outside src/data/ (benchmark text is not rewritten). Returns (files rewritten, result files checked)."""
+    n = n_checked = 0
     data = code / "src" / "data"
-    for f in code.rglob("*"):
-        if not f.is_file() or f.suffix.lower() not in TEXT_SUFFIXES or data in f.parents:
+    for f in sorted(code.rglob("*")):
+        suffix = f.suffix.lower()
+        if not f.is_file() or suffix not in TEXT_SUFFIXES or data in f.parents:
             continue
         try:
             text = f.read_text(encoding="utf-8")
         except UnicodeDecodeError:
+            print(f"WARNING: {f.relative_to(code)} is not UTF-8 text; not rewritten (see the scan)")
             continue
-        new = renamed(text)
+        new = rewrite_text(text, suffix, f.relative_to(code))
         if new != text:
+            if suffix in MEASUREMENT_SUFFIXES:
+                check_measurements(text, new, suffix, str(f.relative_to(code)))
+                n_checked += 1
             write_text(f, new)
             n += 1
-    return n
+    return n, n_checked
 
 
 def filter_data_records(code: Path) -> list[str]:
@@ -771,8 +976,32 @@ def filter_data_records(code: Path) -> list[str]:
 LICENSE_HOLDER = re.compile(r"^(Copyright \(c\) \d{4}) .*$", re.M)
 
 
+OUT_MARKER = ".capsule_build"
+
+
+def prepare_out_dir(out: Path) -> bool:
+    """A separate build directory is emptied only if a previous build of this script made it."""
+    if out.exists() and any(out.iterdir()):
+        if not (out / OUT_MARKER).is_file():
+            print(f"{out} exists, is not empty and was not made by this script: choose another --out-dir")
+            return False
+        for item in out.iterdir():
+            shutil.rmtree(item) if item.is_dir() else item.unlink()
+    out.mkdir(parents=True, exist_ok=True)
+    (out / OUT_MARKER).write_text("Capsule test build (not a Code Ocean capsule checkout).\n")
+    return True
+
+
 def build(args) -> int:
-    if not (CAPSULE / ".git").exists():
+    capsule = Path(args.out_dir).resolve() if args.out_dir else CAPSULE
+    separate = capsule != CAPSULE.resolve()
+    if separate and (args.commit or args.push):
+        print("--commit and --push work on codeocean/ only, not with --out-dir")
+        return 2
+    if separate and (capsule == ROOT or ROOT in capsule.parents):
+        print(f"--out-dir {capsule} is inside the repository: use a directory outside it")
+        return 2
+    if not (CAPSULE / ".git").exists() and not separate:
         print("codeocean/ is not initialised (git submodule update --init codeocean)")
         return 2
     paper_map = paper_map_markdown()  # before anything is replaced: needs the built paper
@@ -787,53 +1016,76 @@ def build(args) -> int:
     for f in too_big:
         print(f"skipped (larger than {MAX_FILE_BYTES >> 20} MB): {f.relative_to(ROOT)} "
               f"({f.stat().st_size / 2**20:.1f} MB)")
-    code = CAPSULE / "code"
-    # clean replacement: keep the capsule's git data, environment and license
-    for item in CAPSULE.iterdir():
-        if item.name in {".git", "environment", "metadata", "code", ".gitignore"}:
-            continue
-        shutil.rmtree(item) if item.is_dir() else item.unlink()
-    for item in code.iterdir() if code.exists() else []:
-        if item.name == "LICENSE":
-            continue
-        shutil.rmtree(item) if item.is_dir() else item.unlink()
-    code.mkdir(exist_ok=True)
+    dest = {f: renamed(f.relative_to(ROOT).as_posix().replace("src/outputs/", LEGACY_DEST, 1)) for f in files}
+    clash = sorted({d for d in dest.values() if list(dest.values()).count(d) > 1})
+    if clash:
+        print("renaming maps several files to one name:", ", ".join(clash))
+        return 2
+    code = capsule / "code"
+    if separate:
+        if not prepare_out_dir(capsule):
+            return 2
+        # a copy of the capsule: the folders owned by the Code Ocean UI and the license as they are in
+        # codeocean/ (read only)
+        for name in sorted(UI_OWNED):
+            if (CAPSULE / name).is_dir():
+                shutil.copytree(CAPSULE / name, capsule / name)
+        code.mkdir()
+        if (CAPSULE / "code" / "LICENSE").is_file():
+            shutil.copy2(CAPSULE / "code" / "LICENSE", code / "LICENSE")
+    else:
+        # clean replacement: keep the capsule's git data, environment and license
+        for item in CAPSULE.iterdir():
+            if item.name in {".git", "environment", "metadata", "code", ".gitignore"}:
+                continue
+            shutil.rmtree(item) if item.is_dir() else item.unlink()
+        for item in code.iterdir() if code.exists() else []:
+            if item.name == "LICENSE":
+                continue
+            shutil.rmtree(item) if item.is_dir() else item.unlink()
+        code.mkdir(exist_ok=True)
+    n_renamed = 0
     for f in sorted(files):
-        rel = f.relative_to(ROOT).as_posix()
-        out = renamed(rel.replace("src/outputs/", LEGACY_DEST, 1))
-        dst = code / out
+        rel, out = f.relative_to(ROOT).as_posix(), dest[f]
         if renamed(rel) != rel:
-            print(f"renamed: {rel} -> {out}")
+            n_renamed += 1
+            if args.verbose:
+                print(f"renamed: {rel} -> {out}")
+        dst = code / out
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(f, dst)
+    print(f"renamed {n_renamed} files (former project name, earlier venue name, host labels"
+          f"{'' if args.verbose else '; --verbose lists them'})")
     for pkg in {p.parent for p in files if p.suffix == ".py"}:  # every package directory importable
         d = code / renamed(pkg.relative_to(ROOT).as_posix())
         while d != code:
             (d / "__init__.py").touch(exist_ok=True)
             d = d.parent
-    print(f"sanitized host names and paths in {sanitize_results(code)} result files")
-    print(f"removed the former project name from {rename_text(code)} files")
+    n_text, n_checked = rewrite_tree(code)
+    print(f"rewrote {n_text} text files (host names, paths, version-control hashes, former names, host "
+          f"labels); every number of the {n_checked} rewritten result files checked unchanged")
     for line in filter_data_records(code):
         print("benchmark subset:", line)
+    (code / package_dir() / f"{TAG_CRC_NAME}.py").write_text(tag_crc_module())
     (code / "src" / "requirements.txt").write_text(REQUIREMENTS)
-    (code / "run").write_text(RUN_SCRIPT)
+    (code / "run").write_text(renamed(RUN_SCRIPT))
     (code / "run").chmod(0o755)
-    (code / "README.md").write_text(README.replace("{title}", TITLE).replace("{runtime}", RUNTIME_NOTE)
-                                     .replace("{paper_map}", paper_map))
+    (code / "README.md").write_text(renamed(README.replace("{title}", TITLE).replace("{runtime}", RUNTIME_NOTE)
+                                            .replace("{paper_map}", paper_map)))
     lic = code / "LICENSE"
     if lic.exists():
         lic.write_text(LICENSE_HOLDER.sub(r"\1 Anonymous Authors", lic.read_text()))
     # metadata/metadata.yml is owned by the Code Ocean metadata UI: Code Ocean rejects the
     # capsule ("Error Parsing Files") if the file is edited through git, so it is left as is.
     n_py = sum(1 for f in files if f.suffix == ".py")
-    print(f"copied {len(files)} files ({n_py} Python modules) into codeocean/code")
+    print(f"copied {len(files)} files ({n_py} Python modules) into {code}")
 
     bad = [f for f in code.rglob("*.py") if not _py38_ok(f)]
     if bad:
         print("Python 3.8 syntax problems (the capsule environment runs Python 3.8):")
         for f in bad:
-            print("  ", f.relative_to(CAPSULE))
-    hits = scan(CAPSULE)
+            print("  ", f.relative_to(capsule))
+    hits = scan(capsule)
     ui_hits = [h for h in hits if Path(h.split(":", 1)[0]).parts[0] in UI_OWNED]
     hits = [h for h in hits if h not in ui_hits]
     if ui_hits:
@@ -855,7 +1107,7 @@ def build(args) -> int:
         print("capsule unchanged")
     else:
         subprocess.run(git + ["-c", "user.name=Anonymous Authors", "-c", "user.email=anonymous@example.com",
-                              "commit", "-q", "-m", "Update code and measurements for the TPDS submission"],
+                              "commit", "-q", "-m", "Update code and measurements"],
                        check=True)
     if args.push:
         subprocess.run(git + ["-c", "credential.helper=", "-c",
@@ -877,6 +1129,10 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--commit", action="store_true")
     p.add_argument("--push", action="store_true")
+    p.add_argument("--out-dir", default=None,
+                   help="build a copy of the capsule into this directory instead of codeocean/ (outside the "
+                        "repository; codeocean/ is only read; no commit or push)")
+    p.add_argument("--verbose", action="store_true", help="list every renamed file")
     sys.exit(build(p.parse_args(argv)))
 
 
