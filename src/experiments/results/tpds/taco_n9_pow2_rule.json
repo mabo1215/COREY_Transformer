@@ -1,6 +1,6 @@
 {
   "experiment": "taco-r1 N9 length-capped default rule",
-  "created_utc": "2026-10-15T03:46:46Z",
+  "created_utc": "2026-10-15T10:03:20Z",
   "rule": "C = max(min chunk, min(C_default, nextpow2(L)))",
   "tables": {
     "ssd370m_graph": {
@@ -408,6 +408,210 @@
           "within_2pct_share": 0.7386996904024767,
           "lw_share_of_oracle_pct": 4.603882804369341,
           "ms_per_forward_pass": 0.43510433043599495
+        }
+      }
+    },
+    "ssd370m_graph_pro6000": {
+      "timing": "CUDA graph, warm L2, three rounds (round medians), RTX PRO 6000",
+      "checkpoint": "Mamba-2 370M",
+      "layers": 48,
+      "default_chunk": 256,
+      "floor_ms": 0.0330656001530587,
+      "share_rule_differs_from_default": 0.3559322033898305,
+      "all": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 10.112199314408155,
+          "p95_regret_pct": 41.102587148181854,
+          "max_regret_pct": 93.14519124561433,
+          "within_2pct_share": 0.5563559322033899,
+          "lw_share_of_oracle_pct": 1.7456094521961927,
+          "ms_per_forward_pass": 0.12348361053810288
+        },
+        "capped_rule": {
+          "n": 2360,
+          "mean_regret_pct": 6.186719707149662,
+          "p95_regret_pct": 32.829193227991574,
+          "max_regret_pct": 44.92196331109246,
+          "within_2pct_share": 0.6682203389830509,
+          "lw_share_of_oracle_pct": 0.8071510339187669,
+          "ms_per_forward_pass": 0.05709749325225924
+        }
+      },
+      "above_floor": {
+        "default": {
+          "n": 1264,
+          "mean_regret_pct": 3.1344929873877367,
+          "p95_regret_pct": 34.45634884178934,
+          "max_regret_pct": 61.74413470534175,
+          "within_2pct_share": 0.9074367088607594,
+          "lw_share_of_oracle_pct": 0.5779730802428059,
+          "ms_per_forward_pass": 0.07181330148932304
+        },
+        "capped_rule": {
+          "n": 1264,
+          "mean_regret_pct": 0.23896383846848204,
+          "p95_regret_pct": 1.0168054962243918,
+          "max_regret_pct": 7.825908709535656,
+          "within_2pct_share": 0.9707278481012658,
+          "lw_share_of_oracle_pct": 0.0519098800770428,
+          "ms_per_forward_pass": 0.006449815736541267
+        }
+      },
+      "below_floor": {
+        "default": {
+          "n": 1096,
+          "mean_regret_pct": 18.15948106381856,
+          "p95_regret_pct": 42.202271719146886,
+          "max_regret_pct": 93.14519124561433,
+          "within_2pct_share": 0.15145985401459855,
+          "lw_share_of_oracle_pct": 20.281956449084035,
+          "ms_per_forward_pass": 0.1830741859374256
+        },
+        "capped_rule": {
+          "n": 1096,
+          "mean_regret_pct": 13.046175380519195,
+          "p95_regret_pct": 33.871373906548044,
+          "max_regret_pct": 44.92196331109246,
+          "within_2pct_share": 0.3193430656934307,
+          "lw_share_of_oracle_pct": 12.796681704773045,
+          "ms_per_forward_pass": 0.11550868337987555
+        }
+      }
+    },
+    "ssd2p7b_graph_pro6000": {
+      "timing": "CUDA graph, warm L2, three rounds (round medians), RTX PRO 6000",
+      "checkpoint": "Mamba-2 2.7B",
+      "layers": 64,
+      "default_chunk": 256,
+      "floor_ms": 0.0336870398372411,
+      "share_rule_differs_from_default": 0.3559322033898305,
+      "all": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 19.211328178375137,
+          "p95_regret_pct": 69.05225060231153,
+          "max_regret_pct": 129.9616011752585,
+          "within_2pct_share": 0.2440677966101695,
+          "lw_share_of_oracle_pct": 5.852516859665144,
+          "ms_per_forward_pass": 1.2905658380490237
+        },
+        "capped_rule": {
+          "n": 2360,
+          "mean_regret_pct": 6.2371779796507605,
+          "p95_regret_pct": 18.858658009288447,
+          "max_regret_pct": 33.46212883495059,
+          "within_2pct_share": 0.5245762711864407,
+          "lw_share_of_oracle_pct": 4.302423934267921,
+          "ms_per_forward_pass": 0.9487476044090117
+        }
+      },
+      "above_floor": {
+        "default": {
+          "n": 1520,
+          "mean_regret_pct": 14.774017760753285,
+          "p95_regret_pct": 108.62077679206767,
+          "max_regret_pct": 129.9616011752585,
+          "within_2pct_share": 0.37894736842105264,
+          "lw_share_of_oracle_pct": 5.372773602667337,
+          "ms_per_forward_pass": 1.8019431433740416
+        },
+        "capped_rule": {
+          "n": 1520,
+          "mean_regret_pct": 5.926218160831696,
+          "p95_regret_pct": 16.94853253894743,
+          "max_regret_pct": 17.640761955635732,
+          "within_2pct_share": 0.48947368421052634,
+          "lw_share_of_oracle_pct": 4.234438788103644,
+          "ms_per_forward_pass": 1.420163681654554
+        }
+      },
+      "below_floor": {
+        "default": {
+          "n": 840,
+          "mean_regret_pct": 27.240747029309915,
+          "p95_regret_pct": 68.91301128100523,
+          "max_regret_pct": 80.02396478763471,
+          "within_2pct_share": 0.0,
+          "lw_share_of_oracle_pct": 28.858075671409697,
+          "ms_per_forward_pass": 0.3652164284132776
+        },
+        "capped_rule": {
+          "n": 840,
+          "mean_regret_pct": 6.79986717560907,
+          "p95_regret_pct": 19.270107741395748,
+          "max_regret_pct": 33.46212883495059,
+          "within_2pct_share": 0.5880952380952381,
+          "lw_share_of_oracle_pct": 7.56257664218704,
+          "ms_per_forward_pass": 0.09570898844088822
+        }
+      }
+    },
+    "gdn1p4b_graph_pro6000": {
+      "timing": "CUDA graph, warm L2, three rounds (round medians), RTX PRO 6000",
+      "checkpoint": "Gated DeltaNet 1.4B hybrid",
+      "layers": 12,
+      "default_chunk": 64,
+      "floor_ms": 0.0570662404596805,
+      "share_rule_differs_from_default": 0.10508474576271186,
+      "all": {
+        "default": {
+          "n": 1770,
+          "mean_regret_pct": 23.913858743048415,
+          "p95_regret_pct": 50.860662372454314,
+          "max_regret_pct": 69.30457601616034,
+          "within_2pct_share": 0.19717514124293786,
+          "lw_share_of_oracle_pct": 3.188670342254195,
+          "ms_per_forward_pass": 0.18984550902247435
+        },
+        "capped_rule": {
+          "n": 1770,
+          "mean_regret_pct": 19.782845521521633,
+          "p95_regret_pct": 50.702790281257585,
+          "max_regret_pct": 51.39392838672603,
+          "within_2pct_share": 0.2344632768361582,
+          "lw_share_of_oracle_pct": 2.9402623799412533,
+          "ms_per_forward_pass": 0.17505591618635902
+        }
+      },
+      "above_floor": {
+        "default": {
+          "n": 1074,
+          "mean_regret_pct": 11.431515848524192,
+          "p95_regret_pct": 36.99341380066534,
+          "max_regret_pct": 40.10795187655882,
+          "within_2pct_share": 0.3249534450651769,
+          "lw_share_of_oracle_pct": 2.1053884221172057,
+          "ms_per_forward_pass": 0.2010285320894679
+        },
+        "capped_rule": {
+          "n": 1074,
+          "mean_regret_pct": 11.431515848524192,
+          "p95_regret_pct": 36.99341380066534,
+          "max_regret_pct": 40.10795187655882,
+          "within_2pct_share": 0.3249534450651769,
+          "lw_share_of_oracle_pct": 2.1053884221172057,
+          "ms_per_forward_pass": 0.2010285320894679
+        }
+      },
+      "below_floor": {
+        "default": {
+          "n": 696,
+          "mean_regret_pct": 43.17540510615044,
+          "p95_regret_pct": 51.30979670977042,
+          "max_regret_pct": 69.30457601616034,
+          "within_2pct_share": 0.0,
+          "lw_share_of_oracle_pct": 42.403979487845504,
+          "ms_per_forward_pass": 0.17258894756564808
+        },
+        "capped_rule": {
+          "n": 696,
+          "mean_regret_pct": 32.669811137612506,
+          "p95_regret_pct": 50.99639217304943,
+          "max_regret_pct": 51.39392838672603,
+          "within_2pct_share": 0.09482758620689655,
+          "lw_share_of_oracle_pct": 33.16308780061584,
+          "ms_per_forward_pass": 0.13497748302552723
         }
       }
     }

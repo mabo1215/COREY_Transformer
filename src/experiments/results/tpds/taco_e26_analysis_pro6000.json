@@ -1,6 +1,6 @@
 {
   "experiment": "E26-analysis",
-  "created_utc": "2026-10-15T08:14:22Z",
+  "created_utc": "2026-10-15T10:01:23Z",
   "tag": "pro6000",
   "n_boot": 2000,
   "tables": {
@@ -4121,6 +4121,1159 @@
           }
         }
       }
+    },
+    "m1_370m_graph_pro6000": {
+      "table": "m1_370m_graph_pro6000",
+      "source": "e2_mamba1_pro6000_taco_graph3.csv",
+      "kernel_family": "mamba1",
+      "checkpoint": "Mamba-1 370M (Triton scan)",
+      "timing": "CUDA graph, warm L2, three rounds (round medians), RTX PRO 6000",
+      "gpu": "RTX PRO 6000",
+      "scan_layers": 48,
+      "default_chunk": 256,
+      "default_note": "no library default: best static chunk in sample",
+      "floor_us": 38.873599767684894,
+      "floor_definition": "2 x median oracle latency of the batch-1 calls with L <= 256",
+      "n_calls": 2360,
+      "n_above_floor": 1304,
+      "share_above_floor": 0.5525423728813559,
+      "subsets": {
+        "all": {
+          "n": 2360,
+          "n_prompt_clusters": 42,
+          "policies": {
+            "default": {
+              "n": 2360,
+              "mean_regret_pct": 46.009699550486275,
+              "p95_regret_pct": 308.1319136073524,
+              "max_regret_pct": 392.7733555142237,
+              "within_2pct_share": 0.11567796610169491,
+              "within_5pct_share": 0.18347457627118643,
+              "oracle_hit_share": 0.10762711864406779,
+              "ci_tie_share": 0.1483050847457627,
+              "lw_share_of_oracle_pct": 32.25209205182664,
+              "lw_share_of_policy_pct": 24.38682938882189,
+              "us_per_call": 87.42170280473053,
+              "oracle_us_per_call": 271.05746400652265,
+              "ms_per_forward_pass": 4.1962417346270655,
+              "oracle_scan_ms_per_forward_pass": 13.010758272313087,
+              "chosen": {
+                "256": 2360
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  32.859623287101286,
+                  63.011768806028435
+                ],
+                "p95_regret_pct": [
+                  145.98899756551083,
+                  363.08125170363905
+                ],
+                "within_2pct_share": [
+                  0.056525644415829294,
+                  0.18593500479080163
+                ],
+                "lw_share_of_oracle_pct": [
+                  25.119470488374887,
+                  38.88847685273465
+                ],
+                "us_per_call": [
+                  48.813223134832825,
+                  139.43320253912825
+                ]
+              },
+              "by_batch": {
+                "1": {
+                  "n": 1536,
+                  "mean_regret_pct": 16.248745688371326,
+                  "p95_regret_pct": 51.04466520863122,
+                  "max_regret_pct": 62.21506458956292,
+                  "within_2pct_share": 0.16471354166666666,
+                  "within_5pct_share": 0.2688802083333333,
+                  "oracle_hit_share": 0.15234375,
+                  "ci_tie_share": 0.21354166666666666,
+                  "lw_share_of_oracle_pct": 15.133718936752457,
+                  "lw_share_of_policy_pct": 13.144471555779425,
+                  "us_per_call": 15.607550674443097,
+                  "oracle_us_per_call": 103.13096694653112,
+                  "ms_per_forward_pass": 0.7491624323732686,
+                  "oracle_scan_ms_per_forward_pass": 4.950286413433494,
+                  "chosen": {
+                    "256": 1536
+                  }
+                },
+                "4": {
+                  "n": 488,
+                  "mean_regret_pct": 84.50535940323569,
+                  "p95_regret_pct": 309.9759992263992,
+                  "max_regret_pct": 322.9964523228313,
+                  "within_2pct_share": 0.02459016393442623,
+                  "within_5pct_share": 0.02459016393442623,
+                  "oracle_hit_share": 0.02459016393442623,
+                  "ci_tie_share": 0.02459016393442623,
+                  "lw_share_of_oracle_pct": 34.643567688155,
+                  "lw_share_of_policy_pct": 25.729834913757042,
+                  "us_per_call": 89.20587842799264,
+                  "oracle_us_per_call": 257.49622334218503,
+                  "ms_per_forward_pass": 4.281882164543647,
+                  "oracle_scan_ms_per_forward_pass": 12.359818720424881,
+                  "chosen": {
+                    "256": 488
+                  }
+                },
+                "16": {
+                  "n": 336,
+                  "mean_regret_pct": 126.14941122925664,
+                  "p95_regret_pct": 391.4555552696105,
+                  "max_regret_pct": 392.7733555142237,
+                  "within_2pct_share": 0.023809523809523808,
+                  "within_5pct_share": 0.023809523809523808,
+                  "oracle_hit_share": 0.023809523809523808,
+                  "ci_tie_share": 0.02976190476190476,
+                  "lw_share_of_oracle_pct": 39.032201573158744,
+                  "lw_share_of_policy_pct": 28.074216714909753,
+                  "us_per_call": 413.1236669951163,
+                  "oracle_us_per_call": 1058.4175381980217,
+                  "ms_per_forward_pass": 19.829936015765583,
+                  "oracle_scan_ms_per_forward_pass": 50.80404183350504,
+                  "chosen": {
+                    "256": 336
+                  }
+                }
+              }
+            },
+            "best_static_in_sample": {
+              "n": 2360,
+              "mean_regret_pct": 46.009699550486275,
+              "p95_regret_pct": 308.1319136073524,
+              "max_regret_pct": 392.7733555142237,
+              "within_2pct_share": 0.11567796610169491,
+              "within_5pct_share": 0.18347457627118643,
+              "oracle_hit_share": 0.10762711864406779,
+              "ci_tie_share": 0.1483050847457627,
+              "lw_share_of_oracle_pct": 32.25209205182664,
+              "lw_share_of_policy_pct": 24.38682938882189,
+              "us_per_call": 87.42170280473053,
+              "oracle_us_per_call": 271.05746400652265,
+              "ms_per_forward_pass": 4.1962417346270655,
+              "oracle_scan_ms_per_forward_pass": 13.010758272313087,
+              "chosen": {
+                "256": 2360
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  32.859623287101286,
+                  63.011768806028435
+                ],
+                "p95_regret_pct": [
+                  145.98899756551083,
+                  363.08125170363905
+                ],
+                "within_2pct_share": [
+                  0.056525644415829294,
+                  0.18593500479080163
+                ],
+                "lw_share_of_oracle_pct": [
+                  25.119470488374887,
+                  38.88847685273465
+                ],
+                "us_per_call": [
+                  48.813223134832825,
+                  139.43320253912825
+                ]
+              },
+              "by_batch": {
+                "1": {
+                  "n": 1536,
+                  "mean_regret_pct": 16.248745688371326,
+                  "p95_regret_pct": 51.04466520863122,
+                  "max_regret_pct": 62.21506458956292,
+                  "within_2pct_share": 0.16471354166666666,
+                  "within_5pct_share": 0.2688802083333333,
+                  "oracle_hit_share": 0.15234375,
+                  "ci_tie_share": 0.21354166666666666,
+                  "lw_share_of_oracle_pct": 15.133718936752457,
+                  "lw_share_of_policy_pct": 13.144471555779425,
+                  "us_per_call": 15.607550674443097,
+                  "oracle_us_per_call": 103.13096694653112,
+                  "ms_per_forward_pass": 0.7491624323732686,
+                  "oracle_scan_ms_per_forward_pass": 4.950286413433494,
+                  "chosen": {
+                    "256": 1536
+                  }
+                },
+                "4": {
+                  "n": 488,
+                  "mean_regret_pct": 84.50535940323569,
+                  "p95_regret_pct": 309.9759992263992,
+                  "max_regret_pct": 322.9964523228313,
+                  "within_2pct_share": 0.02459016393442623,
+                  "within_5pct_share": 0.02459016393442623,
+                  "oracle_hit_share": 0.02459016393442623,
+                  "ci_tie_share": 0.02459016393442623,
+                  "lw_share_of_oracle_pct": 34.643567688155,
+                  "lw_share_of_policy_pct": 25.729834913757042,
+                  "us_per_call": 89.20587842799264,
+                  "oracle_us_per_call": 257.49622334218503,
+                  "ms_per_forward_pass": 4.281882164543647,
+                  "oracle_scan_ms_per_forward_pass": 12.359818720424881,
+                  "chosen": {
+                    "256": 488
+                  }
+                },
+                "16": {
+                  "n": 336,
+                  "mean_regret_pct": 126.14941122925664,
+                  "p95_regret_pct": 391.4555552696105,
+                  "max_regret_pct": 392.7733555142237,
+                  "within_2pct_share": 0.023809523809523808,
+                  "within_5pct_share": 0.023809523809523808,
+                  "oracle_hit_share": 0.023809523809523808,
+                  "ci_tie_share": 0.02976190476190476,
+                  "lw_share_of_oracle_pct": 39.032201573158744,
+                  "lw_share_of_policy_pct": 28.074216714909753,
+                  "us_per_call": 413.1236669951163,
+                  "oracle_us_per_call": 1058.4175381980217,
+                  "ms_per_forward_pass": 19.829936015765583,
+                  "oracle_scan_ms_per_forward_pass": 50.80404183350504,
+                  "chosen": {
+                    "256": 336
+                  }
+                }
+              }
+            },
+            "fixed_chunk_256": {
+              "n": 2360,
+              "mean_regret_pct": 46.009699550486275,
+              "p95_regret_pct": 308.1319136073524,
+              "max_regret_pct": 392.7733555142237,
+              "within_2pct_share": 0.11567796610169491,
+              "within_5pct_share": 0.18347457627118643,
+              "oracle_hit_share": 0.10762711864406779,
+              "ci_tie_share": 0.1483050847457627,
+              "lw_share_of_oracle_pct": 32.25209205182664,
+              "lw_share_of_policy_pct": 24.38682938882189,
+              "us_per_call": 87.42170280473053,
+              "oracle_us_per_call": 271.05746400652265,
+              "ms_per_forward_pass": 4.1962417346270655,
+              "oracle_scan_ms_per_forward_pass": 13.010758272313087,
+              "chosen": {
+                "256": 2360
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  32.859623287101286,
+                  63.011768806028435
+                ],
+                "p95_regret_pct": [
+                  145.98899756551083,
+                  363.08125170363905
+                ],
+                "within_2pct_share": [
+                  0.056525644415829294,
+                  0.18593500479080163
+                ],
+                "lw_share_of_oracle_pct": [
+                  25.119470488374887,
+                  38.88847685273465
+                ],
+                "us_per_call": [
+                  48.813223134832825,
+                  139.43320253912825
+                ]
+              },
+              "by_batch": {
+                "1": {
+                  "n": 1536,
+                  "mean_regret_pct": 16.248745688371326,
+                  "p95_regret_pct": 51.04466520863122,
+                  "max_regret_pct": 62.21506458956292,
+                  "within_2pct_share": 0.16471354166666666,
+                  "within_5pct_share": 0.2688802083333333,
+                  "oracle_hit_share": 0.15234375,
+                  "ci_tie_share": 0.21354166666666666,
+                  "lw_share_of_oracle_pct": 15.133718936752457,
+                  "lw_share_of_policy_pct": 13.144471555779425,
+                  "us_per_call": 15.607550674443097,
+                  "oracle_us_per_call": 103.13096694653112,
+                  "ms_per_forward_pass": 0.7491624323732686,
+                  "oracle_scan_ms_per_forward_pass": 4.950286413433494,
+                  "chosen": {
+                    "256": 1536
+                  }
+                },
+                "4": {
+                  "n": 488,
+                  "mean_regret_pct": 84.50535940323569,
+                  "p95_regret_pct": 309.9759992263992,
+                  "max_regret_pct": 322.9964523228313,
+                  "within_2pct_share": 0.02459016393442623,
+                  "within_5pct_share": 0.02459016393442623,
+                  "oracle_hit_share": 0.02459016393442623,
+                  "ci_tie_share": 0.02459016393442623,
+                  "lw_share_of_oracle_pct": 34.643567688155,
+                  "lw_share_of_policy_pct": 25.729834913757042,
+                  "us_per_call": 89.20587842799264,
+                  "oracle_us_per_call": 257.49622334218503,
+                  "ms_per_forward_pass": 4.281882164543647,
+                  "oracle_scan_ms_per_forward_pass": 12.359818720424881,
+                  "chosen": {
+                    "256": 488
+                  }
+                },
+                "16": {
+                  "n": 336,
+                  "mean_regret_pct": 126.14941122925664,
+                  "p95_regret_pct": 391.4555552696105,
+                  "max_regret_pct": 392.7733555142237,
+                  "within_2pct_share": 0.023809523809523808,
+                  "within_5pct_share": 0.023809523809523808,
+                  "oracle_hit_share": 0.023809523809523808,
+                  "ci_tie_share": 0.02976190476190476,
+                  "lw_share_of_oracle_pct": 39.032201573158744,
+                  "lw_share_of_policy_pct": 28.074216714909753,
+                  "us_per_call": 413.1236669951163,
+                  "oracle_us_per_call": 1058.4175381980217,
+                  "ms_per_forward_pass": 19.829936015765583,
+                  "oracle_scan_ms_per_forward_pass": 50.80404183350504,
+                  "chosen": {
+                    "256": 336
+                  }
+                }
+              }
+            },
+            "shape_tree_held_out": {
+              "n": 2360,
+              "mean_regret_pct": 0.47188224759329694,
+              "p95_regret_pct": 3.3077453569274016,
+              "max_regret_pct": 21.163710435119178,
+              "within_2pct_share": 0.8915254237288136,
+              "within_5pct_share": 0.9830508474576272,
+              "oracle_hit_share": 0.8271186440677966,
+              "ci_tie_share": 0.885593220338983,
+              "lw_share_of_oracle_pct": 0.9096171208261371,
+              "lw_share_of_policy_pct": 0.9014176713573188,
+              "us_per_call": 2.465585099880474,
+              "oracle_us_per_call": 271.05746400652265,
+              "ms_per_forward_pass": 0.11834808479426275,
+              "oracle_scan_ms_per_forward_pass": 13.010758272313087,
+              "chosen": {
+                "32": 248,
+                "64": 520,
+                "256": 344,
+                "512": 1152,
+                "1024": 96
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  0.23711272912093667,
+                  0.7405254227758615
+                ],
+                "p95_regret_pct": [
+                  2.038188022982733,
+                  3.7733312240171735
+                ],
+                "within_2pct_share": [
+                  0.8196892531101472,
+                  0.9493437702066935
+                ],
+                "lw_share_of_oracle_pct": [
+                  0.17846115368029256,
+                  2.294015071094623
+                ],
+                "us_per_call": [
+                  0.4562475575022518,
+                  6.332866202249709
+                ]
+              },
+              "by_batch": {
+                "1": {
+                  "n": 1536,
+                  "mean_regret_pct": 0.5061737831965143,
+                  "p95_regret_pct": 3.4453690645589505,
+                  "max_regret_pct": 21.163710435119178,
+                  "within_2pct_share": 0.859375,
+                  "within_5pct_share": 0.9876302083333334,
+                  "oracle_hit_share": 0.85546875,
+                  "ci_tie_share": 0.8782552083333334,
+                  "lw_share_of_oracle_pct": 0.4678236641927993,
+                  "lw_share_of_policy_pct": 0.46564526544983165,
+                  "us_per_call": 0.48247106848672666,
+                  "oracle_us_per_call": 103.13096694653112,
+                  "ms_per_forward_pass": 0.02315861128736288,
+                  "oracle_scan_ms_per_forward_pass": 4.950286413433494,
+                  "chosen": {
+                    "32": 160,
+                    "64": 224,
+                    "256": 344,
+                    "512": 808
+                  }
+                },
+                "4": {
+                  "n": 488,
+                  "mean_regret_pct": 0.34049663877325725,
+                  "p95_regret_pct": 2.3202542372743746,
+                  "max_regret_pct": 15.609201655811212,
+                  "within_2pct_share": 0.9426229508196722,
+                  "within_5pct_share": 0.9774590163934426,
+                  "oracle_hit_share": 0.8114754098360656,
+                  "ci_tie_share": 0.9241803278688525,
+                  "lw_share_of_oracle_pct": 1.1362550305036656,
+                  "lw_share_of_policy_pct": 1.1234893265139787,
+                  "us_per_call": 2.9258137910825313,
+                  "oracle_us_per_call": 257.49622334218503,
+                  "ms_per_forward_pass": 0.1404390619719615,
+                  "oracle_scan_ms_per_forward_pass": 12.359818720424881,
+                  "chosen": {
+                    "32": 48,
+                    "64": 176,
+                    "512": 216,
+                    "1024": 48
+                  }
+                },
+                "16": {
+                  "n": 336,
+                  "mean_regret_pct": 0.5059428976457895,
+                  "p95_regret_pct": 1.4999113414769116,
+                  "max_regret_pct": 12.568735504650718,
+                  "within_2pct_share": 0.9642857142857143,
+                  "within_5pct_share": 0.9702380952380952,
+                  "oracle_hit_share": 0.7202380952380952,
+                  "ci_tie_share": 0.8630952380952381,
+                  "lw_share_of_oracle_pct": 1.0263267062871848,
+                  "lw_share_of_policy_pct": 1.0159002507049615,
+                  "us_per_call": 10.862821858553662,
+                  "oracle_us_per_call": 1058.4175381980217,
+                  "ms_per_forward_pass": 0.5214154492105758,
+                  "oracle_scan_ms_per_forward_pass": 50.80404183350504,
+                  "chosen": {
+                    "32": 40,
+                    "64": 120,
+                    "512": 128,
+                    "1024": 48
+                  }
+                }
+              }
+            },
+            "exact_table_held_out": {
+              "n": 2360,
+              "mean_regret_pct": 0.1304402644352681,
+              "p95_regret_pct": 0.008919402601779983,
+              "max_regret_pct": 19.83806959583103,
+              "within_2pct_share": 0.9783898305084746,
+              "within_5pct_share": 0.988135593220339,
+              "oracle_hit_share": 0.948728813559322,
+              "ci_tie_share": 0.9766949152542372,
+              "lw_share_of_oracle_pct": 0.11776726789503683,
+              "lw_share_of_policy_pct": 0.11762873974198335,
+              "us_per_call": 0.3192169697860545,
+              "oracle_us_per_call": 271.05746400652265,
+              "ms_per_forward_pass": 0.015322414549730616,
+              "oracle_scan_ms_per_forward_pass": 13.010758272313087,
+              "chosen": {
+                "32": 248,
+                "64": 520,
+                "128": 168,
+                "256": 204,
+                "512": 941,
+                "1024": 279
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  0.047197387711999904,
+                  0.23549031306055235
+                ],
+                "p95_regret_pct": [
+                  0.0,
+                  0.2025072632168368
+                ],
+                "within_2pct_share": [
+                  0.9592764323366747,
+                  0.9937744271711307
+                ],
+                "lw_share_of_oracle_pct": [
+                  0.03947815296280865,
+                  0.24076363259394448
+                ],
+                "us_per_call": [
+                  0.11242320703698452,
+                  0.5729312697185771
+                ]
+              },
+              "by_batch": {
+                "1": {
+                  "n": 1536,
+                  "mean_regret_pct": 0.17357405392272798,
+                  "p95_regret_pct": 0.0,
+                  "max_regret_pct": 19.83806959583103,
+                  "within_2pct_share": 0.9694010416666666,
+                  "within_5pct_share": 0.9830729166666666,
+                  "oracle_hit_share": 0.9674479166666666,
+                  "ci_tie_share": 0.96875,
+                  "lw_share_of_oracle_pct": 0.36708285533698554,
+                  "lw_share_of_policy_pct": 0.3657402854540233,
+                  "us_per_call": 0.37857609820396926,
+                  "oracle_us_per_call": 103.13096694653112,
+                  "ms_per_forward_pass": 0.018171652713790523,
+                  "oracle_scan_ms_per_forward_pass": 4.950286413433494,
+                  "chosen": {
+                    "32": 160,
+                    "64": 224,
+                    "128": 168,
+                    "256": 184,
+                    "512": 800
+                  }
+                },
+                "4": {
+                  "n": 488,
+                  "mean_regret_pct": 0.01619580041216009,
+                  "p95_regret_pct": 0.07464337862934316,
+                  "max_regret_pct": 1.0041998770593086,
+                  "within_2pct_share": 1.0,
+                  "within_5pct_share": 1.0,
+                  "oracle_hit_share": 0.9364754098360656,
+                  "ci_tie_share": 0.9918032786885246,
+                  "lw_share_of_oracle_pct": 0.011819715597130086,
+                  "lw_share_of_policy_pct": 0.011818318705470739,
+                  "us_per_call": 0.030435321272397165,
+                  "oracle_us_per_call": 257.49622334218503,
+                  "ms_per_forward_pass": 0.001460895421075064,
+                  "oracle_scan_ms_per_forward_pass": 12.359818720424881,
+                  "chosen": {
+                    "32": 48,
+                    "64": 176,
+                    "256": 12,
+                    "512": 93,
+                    "1024": 159
+                  }
+                },
+                "16": {
+                  "n": 336,
+                  "mean_regret_pct": 0.09918371024044163,
+                  "p95_regret_pct": 0.10037360583163846,
+                  "max_regret_pct": 12.568735504650718,
+                  "within_2pct_share": 0.9880952380952381,
+                  "within_5pct_share": 0.9940476190476191,
+                  "oracle_hit_share": 0.8809523809523809,
+                  "ci_tie_share": 0.9910714285714286,
+                  "lw_share_of_oracle_pct": 0.04414910968456416,
+                  "lw_share_of_policy_pct": 0.044129626847204007,
+                  "us_per_call": 0.46728191985970835,
+                  "oracle_us_per_call": 1058.4175381980217,
+                  "ms_per_forward_pass": 0.022429532153266003,
+                  "oracle_scan_ms_per_forward_pass": 50.80404183350504,
+                  "chosen": {
+                    "32": 40,
+                    "64": 120,
+                    "256": 8,
+                    "512": 48,
+                    "1024": 120
+                  }
+                }
+              }
+            }
+          },
+          "paired_default_minus": {
+            "default - best_static_in_sample": {
+              "diff_mean_regret_pp": 0.0,
+              "ci95_pp": [
+                0.0,
+                0.0
+              ],
+              "diff_us_per_call": 0.0,
+              "ci95_us": [
+                0.0,
+                0.0
+              ],
+              "ci_excludes_zero": false
+            },
+            "default - fixed_chunk_256": {
+              "diff_mean_regret_pp": 0.0,
+              "ci95_pp": [
+                0.0,
+                0.0
+              ],
+              "diff_us_per_call": 0.0,
+              "ci95_us": [
+                0.0,
+                0.0
+              ],
+              "ci_excludes_zero": false
+            },
+            "default - shape_tree_held_out": {
+              "diff_mean_regret_pp": 45.53781730289298,
+              "ci95_pp": [
+                32.33148029320588,
+                62.60404709384126
+              ],
+              "diff_us_per_call": 84.95611770485006,
+              "ci95_us": [
+                46.35263491358704,
+                137.37164134824937
+              ],
+              "ci_excludes_zero": true
+            },
+            "default - exact_table_held_out": {
+              "diff_mean_regret_pp": 45.87925928605102,
+              "ci95_pp": [
+                32.68362918585333,
+                62.935661188039326
+              ],
+              "diff_us_per_call": 87.10248583494449,
+              "ci95_us": [
+                48.561391544729744,
+                139.1955686157273
+              ],
+              "ci_excludes_zero": true
+            }
+          }
+        },
+        "above_floor": {
+          "n": 1304,
+          "n_prompt_clusters": 42,
+          "policies": {
+            "default": {
+              "n": 1304,
+              "mean_regret_pct": 43.81992658763389,
+              "p95_regret_pct": 363.1296864336204,
+              "max_regret_pct": 392.7733555142237,
+              "within_2pct_share": 0.07668711656441718,
+              "within_5pct_share": 0.07668711656441718,
+              "oracle_hit_share": 0.06441717791411043,
+              "ci_tie_share": 0.08052147239263803,
+              "lw_share_of_oracle_pct": 31.617837307362112,
+              "lw_share_of_policy_pct": 24.022456191500996,
+              "us_per_call": 149.50908785560196,
+              "oracle_us_per_call": 472.8631069930556,
+              "ms_per_forward_pass": 7.176436217068894,
+              "oracle_scan_ms_per_forward_pass": 22.69742913566667,
+              "chosen": {
+                "256": 1304
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  30.18617447979332,
+                  63.97555884452022
+                ],
+                "p95_regret_pct": [
+                  54.75205778574272,
+                  390.6664613156626
+                ],
+                "within_2pct_share": [
+                  0.0327773982999393,
+                  0.12725621617727106
+                ],
+                "lw_share_of_oracle_pct": [
+                  24.11156037868196,
+                  37.9959461552259
+                ],
+                "us_per_call": [
+                  85.0085581726871,
+                  237.77365604341014
+                ]
+              }
+            },
+            "best_static_in_sample": {
+              "n": 1304,
+              "mean_regret_pct": 43.81992658763389,
+              "p95_regret_pct": 363.1296864336204,
+              "max_regret_pct": 392.7733555142237,
+              "within_2pct_share": 0.07668711656441718,
+              "within_5pct_share": 0.07668711656441718,
+              "oracle_hit_share": 0.06441717791411043,
+              "ci_tie_share": 0.08052147239263803,
+              "lw_share_of_oracle_pct": 31.617837307362112,
+              "lw_share_of_policy_pct": 24.022456191500996,
+              "us_per_call": 149.50908785560196,
+              "oracle_us_per_call": 472.8631069930556,
+              "ms_per_forward_pass": 7.176436217068894,
+              "oracle_scan_ms_per_forward_pass": 22.69742913566667,
+              "chosen": {
+                "256": 1304
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  30.18617447979332,
+                  63.97555884452022
+                ],
+                "p95_regret_pct": [
+                  54.75205778574272,
+                  390.6664613156626
+                ],
+                "within_2pct_share": [
+                  0.0327773982999393,
+                  0.12725621617727106
+                ],
+                "lw_share_of_oracle_pct": [
+                  24.11156037868196,
+                  37.9959461552259
+                ],
+                "us_per_call": [
+                  85.0085581726871,
+                  237.77365604341014
+                ]
+              }
+            },
+            "fixed_chunk_256": {
+              "n": 1304,
+              "mean_regret_pct": 43.81992658763389,
+              "p95_regret_pct": 363.1296864336204,
+              "max_regret_pct": 392.7733555142237,
+              "within_2pct_share": 0.07668711656441718,
+              "within_5pct_share": 0.07668711656441718,
+              "oracle_hit_share": 0.06441717791411043,
+              "ci_tie_share": 0.08052147239263803,
+              "lw_share_of_oracle_pct": 31.617837307362112,
+              "lw_share_of_policy_pct": 24.022456191500996,
+              "us_per_call": 149.50908785560196,
+              "oracle_us_per_call": 472.8631069930556,
+              "ms_per_forward_pass": 7.176436217068894,
+              "oracle_scan_ms_per_forward_pass": 22.69742913566667,
+              "chosen": {
+                "256": 1304
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  30.18617447979332,
+                  63.97555884452022
+                ],
+                "p95_regret_pct": [
+                  54.75205778574272,
+                  390.6664613156626
+                ],
+                "within_2pct_share": [
+                  0.0327773982999393,
+                  0.12725621617727106
+                ],
+                "lw_share_of_oracle_pct": [
+                  24.11156037868196,
+                  37.9959461552259
+                ],
+                "us_per_call": [
+                  85.0085581726871,
+                  237.77365604341014
+                ]
+              }
+            },
+            "shape_tree_held_out": {
+              "n": 1304,
+              "mean_regret_pct": 0.4427583338818298,
+              "p95_regret_pct": 3.7177676876098693,
+              "max_regret_pct": 15.609201655811212,
+              "within_2pct_share": 0.928680981595092,
+              "within_5pct_share": 0.9716257668711656,
+              "oracle_hit_share": 0.8144171779141104,
+              "ci_tie_share": 0.8934049079754601,
+              "lw_share_of_oracle_pct": 0.926816703051077,
+              "lw_share_of_policy_pct": 0.9183056925078454,
+              "us_per_call": 4.382574258177925,
+              "oracle_us_per_call": 472.8631069930556,
+              "ms_per_forward_pass": 0.21036356439254042,
+              "oracle_scan_ms_per_forward_pass": 22.69742913566667,
+              "chosen": {
+                "32": 40,
+                "64": 176,
+                "256": 8,
+                "512": 984,
+                "1024": 96
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  0.1834028757280496,
+                  0.7558009560498401
+                ],
+                "p95_regret_pct": [
+                  0.9648740342474538,
+                  6.425929775770989
+                ],
+                "within_2pct_share": [
+                  0.8798219086021506,
+                  0.9725858569234145
+                ],
+                "lw_share_of_oracle_pct": [
+                  0.17297896518483583,
+                  2.3147893062708325
+                ],
+                "us_per_call": [
+                  0.8417771056297134,
+                  10.992939796039636
+                ]
+              }
+            },
+            "exact_table_held_out": {
+              "n": 1304,
+              "mean_regret_pct": 0.20822909747256652,
+              "p95_regret_pct": 0.2123725441592743,
+              "max_regret_pct": 12.568735504650718,
+              "within_2pct_share": 0.9624233128834356,
+              "within_5pct_share": 0.9800613496932515,
+              "oracle_hit_share": 0.9087423312883436,
+              "ci_tie_share": 0.9578220858895705,
+              "lw_share_of_oracle_pct": 0.12099861890350053,
+              "lw_share_of_policy_pct": 0.12085238918167883,
+              "us_per_call": 0.5721578287657794,
+              "oracle_us_per_call": 472.8631069930556,
+              "ms_per_forward_pass": 0.027463575780757407,
+              "oracle_scan_ms_per_forward_pass": 22.69742913566667,
+              "chosen": {
+                "32": 40,
+                "64": 176,
+                "256": 36,
+                "512": 773,
+                "1024": 279
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  0.054611161837421214,
+                  0.3695160393412566
+                ],
+                "p95_regret_pct": [
+                  0.015015672498264188,
+                  3.8269403615269093
+                ],
+                "within_2pct_share": [
+                  0.9325576781100037,
+                  0.9911363125561882
+                ],
+                "lw_share_of_oracle_pct": [
+                  0.034866084036872566,
+                  0.2578200357126443
+                ],
+                "us_per_call": [
+                  0.1972212112320226,
+                  0.9570143702553052
+                ]
+              }
+            }
+          },
+          "paired_default_minus": {
+            "default - best_static_in_sample": {
+              "diff_mean_regret_pp": 0.0,
+              "ci95_pp": [
+                0.0,
+                0.0
+              ],
+              "diff_us_per_call": 0.0,
+              "ci95_us": [
+                0.0,
+                0.0
+              ],
+              "ci_excludes_zero": false
+            },
+            "default - fixed_chunk_256": {
+              "diff_mean_regret_pp": 0.0,
+              "ci95_pp": [
+                0.0,
+                0.0
+              ],
+              "diff_us_per_call": 0.0,
+              "ci95_us": [
+                0.0,
+                0.0
+              ],
+              "ci_excludes_zero": false
+            },
+            "default - shape_tree_held_out": {
+              "diff_mean_regret_pp": 43.37716825375205,
+              "ci95_pp": [
+                29.801677886372975,
+                63.481944639714
+              ],
+              "diff_us_per_call": 145.12651359742404,
+              "ci95_us": [
+                79.70469458337334,
+                233.9524487600041
+              ],
+              "ci_excludes_zero": true
+            },
+            "default - exact_table_held_out": {
+              "diff_mean_regret_pp": 43.61169749016131,
+              "ci95_pp": [
+                29.992784053147453,
+                63.7441666421834
+              ],
+              "diff_us_per_call": 148.9369300268362,
+              "ci95_us": [
+                84.29540950683051,
+                237.29157036675966
+              ],
+              "ci_excludes_zero": true
+            }
+          }
+        },
+        "below_floor": {
+          "n": 1056,
+          "n_prompt_clusters": 25,
+          "policies": {
+            "default": {
+              "n": 1056,
+              "mean_regret_pct": 48.71373737582673,
+              "p95_regret_pct": 229.3903784318547,
+              "max_regret_pct": 322.9964523228313,
+              "within_2pct_share": 0.16382575757575757,
+              "within_5pct_share": 0.3153409090909091,
+              "oracle_hit_share": 0.16098484848484848,
+              "ci_tie_share": 0.23200757575757575,
+              "lw_share_of_oracle_pct": 49.195508539445704,
+              "lw_share_of_policy_pct": 32.97385358382886,
+              "us_per_call": 10.753189446457494,
+              "oracle_us_per_call": 21.858071530728104,
+              "ms_per_forward_pass": 0.5161530934299597,
+              "oracle_scan_ms_per_forward_pass": 1.049187433474949,
+              "chosen": {
+                "256": 1056
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  32.99410131367604,
+                  63.923771100397204
+                ],
+                "p95_regret_pct": [
+                  224.01554414013933,
+                  309.66135353394674
+                ],
+                "within_2pct_share": [
+                  0.041666666666666664,
+                  0.32268448121645793
+                ],
+                "lw_share_of_oracle_pct": [
+                  32.861145862492535,
+                  66.08717212183062
+                ],
+                "us_per_call": [
+                  7.362240832229146,
+                  14.411680641203336
+                ]
+              }
+            },
+            "best_static_in_sample": {
+              "n": 1056,
+              "mean_regret_pct": 48.71373737582673,
+              "p95_regret_pct": 229.3903784318547,
+              "max_regret_pct": 322.9964523228313,
+              "within_2pct_share": 0.16382575757575757,
+              "within_5pct_share": 0.3153409090909091,
+              "oracle_hit_share": 0.16098484848484848,
+              "ci_tie_share": 0.23200757575757575,
+              "lw_share_of_oracle_pct": 49.195508539445704,
+              "lw_share_of_policy_pct": 32.97385358382886,
+              "us_per_call": 10.753189446457494,
+              "oracle_us_per_call": 21.858071530728104,
+              "ms_per_forward_pass": 0.5161530934299597,
+              "oracle_scan_ms_per_forward_pass": 1.049187433474949,
+              "chosen": {
+                "256": 1056
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  32.99410131367604,
+                  63.923771100397204
+                ],
+                "p95_regret_pct": [
+                  224.01554414013933,
+                  309.66135353394674
+                ],
+                "within_2pct_share": [
+                  0.041666666666666664,
+                  0.32268448121645793
+                ],
+                "lw_share_of_oracle_pct": [
+                  32.861145862492535,
+                  66.08717212183062
+                ],
+                "us_per_call": [
+                  7.362240832229146,
+                  14.411680641203336
+                ]
+              }
+            },
+            "fixed_chunk_256": {
+              "n": 1056,
+              "mean_regret_pct": 48.71373737582673,
+              "p95_regret_pct": 229.3903784318547,
+              "max_regret_pct": 322.9964523228313,
+              "within_2pct_share": 0.16382575757575757,
+              "within_5pct_share": 0.3153409090909091,
+              "oracle_hit_share": 0.16098484848484848,
+              "ci_tie_share": 0.23200757575757575,
+              "lw_share_of_oracle_pct": 49.195508539445704,
+              "lw_share_of_policy_pct": 32.97385358382886,
+              "us_per_call": 10.753189446457494,
+              "oracle_us_per_call": 21.858071530728104,
+              "ms_per_forward_pass": 0.5161530934299597,
+              "oracle_scan_ms_per_forward_pass": 1.049187433474949,
+              "chosen": {
+                "256": 1056
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  32.99410131367604,
+                  63.923771100397204
+                ],
+                "p95_regret_pct": [
+                  224.01554414013933,
+                  309.66135353394674
+                ],
+                "within_2pct_share": [
+                  0.041666666666666664,
+                  0.32268448121645793
+                ],
+                "lw_share_of_oracle_pct": [
+                  32.861145862492535,
+                  66.08717212183062
+                ],
+                "us_per_call": [
+                  7.362240832229146,
+                  14.411680641203336
+                ]
+              }
+            },
+            "shape_tree_held_out": {
+              "n": 1056,
+              "mean_regret_pct": 0.5078458683127601,
+              "p95_regret_pct": 3.2463973253462064,
+              "max_regret_pct": 21.163710435119178,
+              "within_2pct_share": 0.8456439393939394,
+              "within_5pct_share": 0.9971590909090909,
+              "oracle_hit_share": 0.8428030303030303,
+              "ci_tie_share": 0.8759469696969697,
+              "lw_share_of_oracle_pct": 0.450149237308386,
+              "lw_share_of_policy_pct": 0.4481319746423983,
+              "us_per_call": 0.09839394228589401,
+              "oracle_us_per_call": 21.858071530728104,
+              "ms_per_forward_pass": 0.0047229092297229125,
+              "oracle_scan_ms_per_forward_pass": 1.049187433474949,
+              "chosen": {
+                "32": 208,
+                "64": 344,
+                "256": 336,
+                "512": 168
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  0.14038533393596467,
+                  0.968137598858274
+                ],
+                "p95_regret_pct": [
+                  0.0,
+                  3.463203683034477
+                ],
+                "within_2pct_share": [
+                  0.710128737160675,
+                  0.9583333333333334
+                ],
+                "lw_share_of_oracle_pct": [
+                  0.12421150178985024,
+                  0.8506214131656558
+                ],
+                "us_per_call": [
+                  0.027186039873968643,
+                  0.18746910817441362
+                ]
+              }
+            },
+            "exact_table_held_out": {
+              "n": 1056,
+              "mean_regret_pct": 0.034382841821028326,
+              "p95_regret_pct": 0.0,
+              "max_regret_pct": 19.83806959583103,
+              "within_2pct_share": 0.9981060606060606,
+              "within_5pct_share": 0.9981060606060606,
+              "oracle_hit_share": 0.9981060606060606,
+              "ci_tie_share": 1.0,
+              "lw_share_of_oracle_pct": 0.03144528696872646,
+              "lw_share_of_policy_pct": 0.03143540201635264,
+              "us_per_call": 0.006873333318666952,
+              "oracle_us_per_call": 21.858071530728104,
+              "ms_per_forward_pass": 0.0003299199992960137,
+              "oracle_scan_ms_per_forward_pass": 1.049187433474949,
+              "chosen": {
+                "32": 208,
+                "64": 344,
+                "128": 168,
+                "256": 168,
+                "512": 168
+              },
+              "ci95": {
+                "mean_regret_pct": [
+                  0.0,
+                  0.08929053652555266
+                ],
+                "p95_regret_pct": [
+                  0.0,
+                  0.0
+                ],
+                "within_2pct_share": [
+                  0.9950396825396826,
+                  1.0
+                ],
+                "lw_share_of_oracle_pct": [
+                  0.0,
+                  0.0828762308970738
+                ],
+                "us_per_call": [
+                  0.0,
+                  0.01784466661047178
+                ]
+              }
+            }
+          },
+          "paired_default_minus": {
+            "default - best_static_in_sample": {
+              "diff_mean_regret_pp": 0.0,
+              "ci95_pp": [
+                0.0,
+                0.0
+              ],
+              "diff_us_per_call": 0.0,
+              "ci95_us": [
+                0.0,
+                0.0
+              ],
+              "ci_excludes_zero": false
+            },
+            "default - fixed_chunk_256": {
+              "diff_mean_regret_pp": 0.0,
+              "ci95_pp": [
+                0.0,
+                0.0
+              ],
+              "diff_us_per_call": 0.0,
+              "ci95_us": [
+                0.0,
+                0.0
+              ],
+              "ci_excludes_zero": false
+            },
+            "default - shape_tree_held_out": {
+              "diff_mean_regret_pp": 48.20589150751396,
+              "ci95_pp": [
+                32.37911197379228,
+                63.430969027698474
+              ],
+              "diff_us_per_call": 10.6547955041716,
+              "ci95_us": [
+                7.261131038470314,
+                14.30645116376101
+              ],
+              "ci_excludes_zero": true
+            },
+            "default - exact_table_held_out": {
+              "diff_mean_regret_pp": 48.6793545340057,
+              "ci95_pp": [
+                32.93503273021226,
+                63.90324830404238
+              ],
+              "diff_us_per_call": 10.746316113138827,
+              "ci95_us": [
+                7.351725625243653,
+                14.407500116379376
+              ],
+              "ci_excludes_zero": true
+            }
+          }
+        }
+      }
     }
   },
   "headline": {
@@ -4303,6 +5456,48 @@
         "ms_per_forward_pass": 1.3466228603533767,
         "oracle_scan_ms_per_forward_pass": 22.051467240418415
       }
+    },
+    "m1_370m_graph_pro6000": {
+      "floor_us": 38.873599767684894,
+      "share_above_floor": 0.5525423728813559,
+      "n_calls": 2360,
+      "default_chunk": 256,
+      "default": {
+        "mean_regret_pct": 46.009699550486275,
+        "p95_regret_pct": 308.1319136073524,
+        "max_regret_pct": 392.7733555142237,
+        "within_2pct_share": 0.11567796610169491,
+        "lw_share_of_oracle_pct": 32.25209205182664,
+        "ms_per_forward_pass": 4.1962417346270655,
+        "oracle_scan_ms_per_forward_pass": 13.010758272313087
+      },
+      "best_static_in_sample": {
+        "mean_regret_pct": 46.009699550486275,
+        "p95_regret_pct": 308.1319136073524,
+        "max_regret_pct": 392.7733555142237,
+        "within_2pct_share": 0.11567796610169491,
+        "lw_share_of_oracle_pct": 32.25209205182664,
+        "ms_per_forward_pass": 4.1962417346270655,
+        "oracle_scan_ms_per_forward_pass": 13.010758272313087
+      },
+      "shape_tree_held_out": {
+        "mean_regret_pct": 0.47188224759329694,
+        "p95_regret_pct": 3.3077453569274016,
+        "max_regret_pct": 21.163710435119178,
+        "within_2pct_share": 0.8915254237288136,
+        "lw_share_of_oracle_pct": 0.9096171208261371,
+        "ms_per_forward_pass": 0.11834808479426275,
+        "oracle_scan_ms_per_forward_pass": 13.010758272313087
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.1304402644352681,
+        "p95_regret_pct": 0.008919402601779983,
+        "max_regret_pct": 19.83806959583103,
+        "within_2pct_share": 0.9783898305084746,
+        "lw_share_of_oracle_pct": 0.11776726789503683,
+        "ms_per_forward_pass": 0.015322414549730616,
+        "oracle_scan_ms_per_forward_pass": 13.010758272313087
+      }
     }
   },
   "rtx3090_headline": {
@@ -4478,6 +5673,46 @@
         "lw_share_of_oracle_pct": 2.0950936493075942,
         "ms_per_forward_pass": 1.369269180581731,
         "oracle_scan_ms_per_forward_pass": 65.35598926731794
+      }
+    },
+    "m1_370m_graph_pro6000": {
+      "floor_us": 43.6838397756217,
+      "share_above_floor": 0.6644067796610169,
+      "default": {
+        "mean_regret_pct": 31.796060850325986,
+        "p95_regret_pct": 89.3976736327172,
+        "max_regret_pct": 181.34739297095973,
+        "within_2pct_share": 0.1788135593220339,
+        "lw_share_of_oracle_pct": 17.935268012919227,
+        "ms_per_forward_pass": 5.314686436510945,
+        "oracle_scan_ms_per_forward_pass": 29.6326011559049
+      },
+      "best_static_in_sample": {
+        "mean_regret_pct": 31.796060850325986,
+        "p95_regret_pct": 89.3976736327172,
+        "max_regret_pct": 181.34739297095973,
+        "within_2pct_share": 0.1788135593220339,
+        "lw_share_of_oracle_pct": 17.935268012919227,
+        "ms_per_forward_pass": 5.314686436510945,
+        "oracle_scan_ms_per_forward_pass": 29.6326011559049
+      },
+      "shape_tree_held_out": {
+        "mean_regret_pct": 0.6165620303002267,
+        "p95_regret_pct": 3.587994648215094,
+        "max_regret_pct": 45.75937893479767,
+        "within_2pct_share": 0.9042372881355932,
+        "lw_share_of_oracle_pct": 1.229472242761475,
+        "ms_per_forward_pass": 0.3643246060200668,
+        "oracle_scan_ms_per_forward_pass": 29.6326011559049
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.35328810920556075,
+        "p95_regret_pct": 0.7449240447549252,
+        "max_regret_pct": 47.03169612833315,
+        "within_2pct_share": 0.9542372881355933,
+        "lw_share_of_oracle_pct": 2.2956285340681024,
+        "ms_per_forward_pass": 0.6802544475215471,
+        "oracle_scan_ms_per_forward_pass": 29.6326011559049
       }
     }
   },

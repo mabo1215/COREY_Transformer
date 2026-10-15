@@ -5,7 +5,8 @@ needs no tuning is to cap the default at the next power of two of the length (an
 chunk from below). This script scores that rule on the CUDA-graph replays of the production kernels (RTX 3090,
 three rounds, round medians; ``e22_graph_analysis`` tables ``ssd370m_graph``, ``ssd2p7b_graph``,
 ``gdn1p4b_graph``) and, for reference, on the device-time tables of the same calls, next to the library default
-and the held-out exact-shape table of ``taco_report_numbers.json``.
+and the held-out exact-shape table of ``taco_report_numbers.json``. With ``--pro6000`` the RTX PRO 6000 graph replays
+of E26 (``taco_e26_analysis`` tables ``*_graph_pro6000``) are scored as well.
 
 CPU only; reads stored result files. Output: ``taco_n9_pow2_rule.json`` in the results directory.
 """
@@ -20,6 +21,7 @@ from src.experiments.tpds import e22_graph_analysis as E22
 from src.experiments.tpds.common import RESULTS_DIR, utc_now, write_json
 
 TABLES = ("ssd370m_graph", "ssd2p7b_graph", "gdn1p4b_graph", "ssd370m_device", "ssd2p7b_device", "gdn1p4b_device")
+PRO6000_TABLES = ("ssd370m_graph_pro6000", "ssd2p7b_graph_pro6000", "gdn1p4b_graph_pro6000")
 
 
 def capped_rule(t: "E22.Table") -> np.ndarray:
@@ -46,11 +48,17 @@ def stats(t: "E22.Table", pick: np.ndarray, mask: np.ndarray) -> dict:
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--in-dir", type=Path, default=RESULTS_DIR)
+    p.add_argument("--pro6000", action="store_true", help="also score the RTX PRO 6000 graph replays (E26)")
     args = p.parse_args(argv)
     E22.use_three_rounds(args.in_dir)
+    tables = list(TABLES)
+    if args.pro6000:
+        from src.experiments.tpds import taco_e26_analysis as E26
+        registered = E26.register(args.in_dir, "pro6000", "pro6000")
+        tables += [t for t in PRO6000_TABLES if t in registered]
     out = {"experiment": "taco-r1 N9 length-capped default rule", "created_utc": utc_now(),
            "rule": "C = max(min chunk, min(C_default, nextpow2(L)))", "tables": {}}
-    for name in TABLES:
+    for name in tables:
         t = E22.Table(name, args.in_dir)
         t.set_floor()
         rule = capped_rule(t)
