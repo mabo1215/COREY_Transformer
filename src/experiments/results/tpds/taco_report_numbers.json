@@ -1,6 +1,6 @@
 {
   "experiment": "taco_report_numbers (cycle taco-r1: M4a, M4b, M4d, M4e, M3d, M7a, M10b, N2, N3, N8)",
-  "created_utc": "2026-10-15T02:52:28Z",
+  "created_utc": "2026-10-15T14:35:26Z",
   "definitions": "Report numbers for the ACM TACO revision, cycle taco-r1 (review items M4a, M4b, M4d, M4e, M3d, M7a, M10b,\nN2, N3, N8).\n\nCPU only and deterministic. Reads stored result files and times nothing. The only refits are those of the\ncalibration-only chunk selectors of ``cost_model_baselines_r4`` (their per-call choices are not stored): they\nare fitted exactly as there (``Ctx`` + ``fit_selectors``) and checked against the stored summary. Output:\n``taco_report_numbers.json`` in the results directory and a readable summary on stdout.\n\nConventions\n-----------\nregret            per-call relative regret T(c) / T(c*) - 1, c* the per-call oracle of the view. For the\n                  three-round sweeps the view is ``analysis.round_median_view`` (latencies and oracle on the\n                  medians of the round means, CI ties by between-round CI overlap). Reported: mean, p95 and max\n                  (percent), the shares of calls within 2% and 5% of the oracle latency, the CI-tie share.\nlatency-weighted  lw_share_of_oracle_pct = 100 sum(excess latency) / sum(oracle latency) (the definition of\n                  the review); lw_share_of_policy_pct = 100 sum(excess) / sum(latency of the policy) (the\n                  definition of the manuscript). Both weight long calls more than the per-call mean.\nabsolute          us_per_call = mean excess latency per scan call; ms_per_forward_pass = us_per_call x scan\n                  layers / 1000 (48 for Mamba-1 370M and 1.4B and for Mamba-2 370M, 64 for Mamba-1 2.8B and\n                  Mamba-2 2.7B, 12 Gated DeltaNet layers in the 1.4B hybrid, as ``deployment_units``);\n                  oracle_scan_ms_per_forward_pass = mean oracle latency x layers, the scan time of one forward\n                  pass at the per-call oracle (the denominator of the share of the forward-pass scan time).\nintervals         95% percentile intervals over ``--n-boot`` prompt-cluster bootstrap replicates\n                  (``e3b_information.prompt_clusters`` and ``cluster_bootstrap``); per batch the clusters are\n                  resampled among the calls of that batch (as ``tables_iv_v_ci``). Ratios (latency-weighted\n                  shares, means over a subset of calls) are ratios of replicate means with common weights; paired\n                  differences use the same replicates. Tensor-parallel shapes and per-shape means are resampled\n                  by shape. Seeds: SeedSequence([SEED, crc32(label)]) per data set and subset.\n\nItems\n-----\nM4b (1)   latency-weighted share and absolute regret next to the per-call headlines: (a) CUDA-graph replay\n          of the production kernels on the RTX 3090 (three rounds, round-median oracle; library default,\n          shape tree, held-out exact-shape tables, work-term model; all calls and above / below the graph\n          launch floor); (b) the best single Triton Mamba-1 chunk per batch in device time on the three GPUs;\n          (c) the cost model per GPU.\nM4a (2)   selector tables of the 2360 captured 370M Mamba-1 calls per GPU in device time (primary) and\n          launch-inclusive (secondary, flagged ``launch_inclusive``), and of the Mamba-2 370M calls.\nM4d (3)   calibration-shape coverage: distinct shapes, calls on a calibration key, cost-model regret on and\n          off the calibration keys, per-shape (unweighted) means with shape-level bootstrap intervals.\nM4e (4)   cluster-bootstrap intervals of every selector row (all calls and per batch) and paired intervals of\n          the cost model minus every other selector (inside the M4a records; compact table under ``M4e``).\nM3d (5)   best static chunk per GPU and per (GPU, batch) as the untuned baseline, in deployment units and as\n          data of the calibration-budget figure, next to the fixed chunk 256.\nM7a (6)   tensor-parallel shard widths: pooled against pooled, per-shard maxima, retuning at the shard width\n          (cross-round held-out regret) and its profiling cost.\nM10b (7)  value invariance: inputs per kernel family, F-test degrees of freedom, pairwise equivalence bounds\n          against the pooled-mean bounds.\nN2/N3/N8 (8) normalized conditional mutual information, launch-floor coverage of SSD 2.7B and Gated DeltaNet,\n          maximum next to the 95th-percentile regret of the cost model.\n\nEvery value that a stored analysis also reports is compared with it, and a set of values printed in the\nmanuscript is reproduced at its printed precision (``checks``). Quantities the files cannot give are listed\nunder ``unavailable`` with the reason.\n\nUsage:  PYTHONPATH=. python3 -m src.experiments.tpds.taco_report_numbers [--jobs 6] [--n-boot 2000]\n        [--cache-dir DIR] [--no-learned]\n",
   "settings": {
     "seed": 20261015,
@@ -85196,7 +85196,7 @@
                 "ci95": {
                   "mean_regret_pct": [
                     0.6119082871979524,
-                    3.171216655831138
+                    3.1712166558311385
                   ],
                   "p95_regret_pct": [
                     7.087352644287386,
@@ -85208,10 +85208,10 @@
                   ],
                   "lw_share_of_oracle_pct": [
                     0.5248580756438056,
-                    2.914839591616018
+                    2.9148395916160172
                   ],
                   "us_per_call": [
-                    0.14264712783722014,
+                    0.14264712783722017,
                     0.782833209522402
                   ]
                 }
@@ -87936,8 +87936,8 @@
                 },
                 "ci95": {
                   "mean_regret_pct": [
-                    23.79464484560899,
-                    40.59952720225152
+                    23.794644845608993,
+                    40.59952720225153
                   ],
                   "p95_regret_pct": [
                     61.16051318128608,
@@ -87948,12 +87948,12 @@
                     0.09764593045843044
                   ],
                   "lw_share_of_oracle_pct": [
-                    22.21024737305789,
+                    22.210247373057886,
                     37.217382093384714
                   ],
                   "us_per_call": [
-                    12.092879061061815,
-                    19.410377342095458
+                    12.09287906106182,
+                    19.41037734209546
                   ]
                 }
               }
@@ -88014,12 +88014,12 @@
               "default - work_term_model_refit_on_graph_timings_cv": {
                 "diff_mean_regret_pp": 9.461765154730372,
                 "ci95_pp": [
-                  1.6422782345523264,
+                  1.6422782345523261,
                   17.60726927374769
                 ],
                 "diff_us_per_call": 3.398346937601531,
                 "ci95_us": [
-                  0.5863259435916472,
+                  0.5863259435916471,
                   6.335794374156986
                 ],
                 "ci_excludes_zero": true
@@ -117199,19 +117199,19 @@
           "pooled_shards": {
             "cost_model": {
               "n": 126,
-              "mean_regret_pct": 4.002714821241423,
-              "p95_regret_pct": 22.411234013772074,
-              "max_regret_pct": 53.560837504451264,
-              "tied_share": 0.9047619047619048,
-              "lw_share_of_oracle_pct": 1.1761943329578999,
-              "us_per_call": 9.72539961791386,
+              "mean_regret_pct": 1.783570860944482,
+              "p95_regret_pct": 10.622650360902352,
+              "max_regret_pct": 52.67751557620581,
+              "tied_share": 0.9761904761904762,
+              "lw_share_of_oracle_pct": 0.6350395950218343,
+              "us_per_call": 5.250844747104031,
               "mean_regret_pct_ci95_shape_bootstrap": [
-                2.4220530603533743,
-                5.824094666669369
+                0.9821832038021331,
+                2.841817543142404
               ],
               "lw_share_of_oracle_pct_ci95_shape_bootstrap": [
-                0.7826428938368388,
-                1.7794399573631905
+                0.467178260625653,
+                0.8696945222660072
               ]
             },
             "calibration_width_table": {
@@ -117279,31 +117279,31 @@
           },
           "paired_shape_bootstrap": {
             "cost_model - calibration_width_table": {
-              "diff_mean_regret_pp": -0.11328493699619521,
+              "diff_mean_regret_pp": -2.332428897293136,
               "ci95_pp": [
-                -1.7043956282997874,
-                1.2113057549206199
+                -4.43579308737529,
+                -0.3188026281197737
               ]
             },
             "cost_model - best_static": {
-              "diff_mean_regret_pp": -19.100765570610275,
+              "diff_mean_regret_pp": -21.319909530907218,
               "ci95_pp": [
-                -24.451973776616164,
-                -14.52055629822906
+                -26.629989842303868,
+                -16.66204374803777
               ]
             },
             "cost_model - unsharded_table": {
-              "diff_mean_regret_pp": 1.7824524457958562,
+              "diff_mean_regret_pp": -0.4366915145010853,
               "ci95_pp": [
-                0.65213288403441,
-                3.2342224393337444
+                -1.8977137076284878,
+                0.9410686092161957
               ]
             },
             "cost_model - retuned_at_shard_width_cross_round": {
-              "diff_mean_regret_pp": -2.127250397942657,
+              "diff_mean_regret_pp": -4.346394358239599,
               "ci95_pp": [
-                -5.0562414767990145,
-                0.7604686379294379
+                -7.062715363300575,
+                -1.855344120135566
               ]
             }
           },
@@ -117312,11 +117312,11 @@
               "d": 1024,
               "cost_model": {
                 "n": 21,
-                "mean_regret_pct": 4.321514343653588,
-                "p95_regret_pct": 11.893183150807008,
-                "max_regret_pct": 22.531294198903474,
-                "tied_share": 0.7142857142857143,
-                "lw_share_of_oracle_pct": 2.347918537365539
+                "mean_regret_pct": 1.2894820129984235,
+                "p95_regret_pct": 6.038481146471852,
+                "max_regret_pct": 11.893183150807008,
+                "tied_share": 0.9523809523809523,
+                "lw_share_of_oracle_pct": 0.7382810972897232
               },
               "calibration_width_table": {
                 "n": 21,
@@ -117357,11 +117357,11 @@
               "d": 512,
               "cost_model": {
                 "n": 21,
-                "mean_regret_pct": 7.525450427779321,
-                "p95_regret_pct": 37.92652070958105,
-                "max_regret_pct": 53.560837504451264,
-                "tied_share": 0.9047619047619048,
-                "lw_share_of_oracle_pct": 3.60367545112497
+                "mean_regret_pct": 1.872952326878307,
+                "p95_regret_pct": 6.4223984162322445,
+                "max_regret_pct": 12.897305827171191,
+                "tied_share": 1.0,
+                "lw_share_of_oracle_pct": 1.4907913410115432
               },
               "calibration_width_table": {
                 "n": 21,
@@ -117402,11 +117402,11 @@
               "d": 2048,
               "cost_model": {
                 "n": 21,
-                "mean_regret_pct": 1.994501845904508,
+                "mean_regret_pct": 1.7375814038803838,
                 "p95_regret_pct": 8.006069668422366,
                 "max_regret_pct": 11.494843925062348,
                 "tied_share": 0.9523809523809523,
-                "lw_share_of_oracle_pct": 0.8651349137364641
+                "lw_share_of_oracle_pct": 0.7575724679295531
               },
               "calibration_width_table": {
                 "n": 21,
@@ -117447,11 +117447,11 @@
               "d": 1024,
               "cost_model": {
                 "n": 21,
-                "mean_regret_pct": 4.321514343653588,
-                "p95_regret_pct": 11.893183150807008,
-                "max_regret_pct": 22.531294198903474,
-                "tied_share": 0.7142857142857143,
-                "lw_share_of_oracle_pct": 2.347918537365539
+                "mean_regret_pct": 1.2894820129984235,
+                "p95_regret_pct": 6.038481146471852,
+                "max_regret_pct": 11.893183150807008,
+                "tied_share": 0.9523809523809523,
+                "lw_share_of_oracle_pct": 0.7382810972897232
               },
               "calibration_width_table": {
                 "n": 21,
@@ -117492,11 +117492,11 @@
               "d": 512,
               "cost_model": {
                 "n": 21,
-                "mean_regret_pct": 7.525450427779321,
-                "p95_regret_pct": 37.92652070958105,
-                "max_regret_pct": 53.560837504451264,
-                "tied_share": 0.9047619047619048,
-                "lw_share_of_oracle_pct": 3.60367545112497
+                "mean_regret_pct": 1.872952326878307,
+                "p95_regret_pct": 6.4223984162322445,
+                "max_regret_pct": 12.897305827171191,
+                "tied_share": 1.0,
+                "lw_share_of_oracle_pct": 1.4907913410115432
               },
               "calibration_width_table": {
                 "n": 21,
@@ -117582,11 +117582,11 @@
               "d": 1280,
               "cost_model": {
                 "n": 21,
-                "mean_regret_pct": 2.014470473223596,
+                "mean_regret_pct": 3.4125579859961466,
                 "p95_regret_pct": 12.843872407429679,
-                "max_regret_pct": 17.583410151680635,
+                "max_regret_pct": 52.67751557620581,
                 "tied_share": 0.9523809523809523,
-                "lw_share_of_oracle_pct": 0.5923817964584768
+                "lw_share_of_oracle_pct": 0.5625649037005455
               },
               "calibration_width_table": {
                 "n": 21,
@@ -117627,11 +117627,11 @@
               "d": 640,
               "cost_model": {
                 "n": 21,
-                "mean_regret_pct": 7.750777035920006,
-                "p95_regret_pct": 34.25510628416286,
-                "max_regret_pct": 49.97784655767843,
-                "tied_share": 0.9047619047619048,
-                "lw_share_of_oracle_pct": 2.5348792769380446
+                "mean_regret_pct": 1.9792766349461095,
+                "p95_regret_pct": 12.996632855842162,
+                "max_regret_pct": 14.225352220341403,
+                "tied_share": 1.0,
+                "lw_share_of_oracle_pct": 0.5940894327187266
               },
               "calibration_width_table": {
                 "n": 21,
@@ -117671,11 +117671,11 @@
           },
           "per_shard_maxima": {
             "cost_model": {
-              "max_shard_mean_regret_pct": 7.750777035920006,
-              "at": "2.8b_t8",
+              "max_shard_mean_regret_pct": 3.4125579859961466,
+              "at": "2.8b_t4",
               "min_shard_mean_regret_pct": 0.4095748009675228,
               "min_at": "2.8b_t2",
-              "max_single_shape_regret_pct": 53.560837504451264
+              "max_single_shape_regret_pct": 52.67751557620581
             },
             "calibration_width_table": {
               "max_shard_mean_regret_pct": 11.222249905807468,
@@ -133828,8 +133828,8 @@
     {
       "kind": "stored",
       "check": "M7a.vgpu3090.ref.370m_t2.cost_model.mean",
-      "computed": 4.321514343653588,
-      "reference": 4.321514343653588,
+      "computed": 1.2894820129984235,
+      "reference": 1.2894820129984235,
       "source": "e12_analysis_vgpu3090.json families.ref.by_model",
       "match": true
     },
@@ -133852,8 +133852,8 @@
     {
       "kind": "stored",
       "check": "M7a.vgpu3090.ref.370m_t4.cost_model.mean",
-      "computed": 7.525450427779321,
-      "reference": 7.525450427779321,
+      "computed": 1.872952326878307,
+      "reference": 1.872952326878307,
       "source": "e12_analysis_vgpu3090.json families.ref.by_model",
       "match": true
     },
@@ -133876,8 +133876,8 @@
     {
       "kind": "stored",
       "check": "M7a.vgpu3090.ref.1.4b_t2.cost_model.mean",
-      "computed": 1.994501845904508,
-      "reference": 1.994501845904508,
+      "computed": 1.7375814038803838,
+      "reference": 1.7375814038803838,
       "source": "e12_analysis_vgpu3090.json families.ref.by_model",
       "match": true
     },
@@ -133900,8 +133900,8 @@
     {
       "kind": "stored",
       "check": "M7a.vgpu3090.ref.1.4b_t4.cost_model.mean",
-      "computed": 4.321514343653588,
-      "reference": 4.321514343653588,
+      "computed": 1.2894820129984235,
+      "reference": 1.2894820129984235,
       "source": "e12_analysis_vgpu3090.json families.ref.by_model",
       "match": true
     },
@@ -133924,8 +133924,8 @@
     {
       "kind": "stored",
       "check": "M7a.vgpu3090.ref.1.4b_t8.cost_model.mean",
-      "computed": 7.525450427779321,
-      "reference": 7.525450427779321,
+      "computed": 1.872952326878307,
+      "reference": 1.872952326878307,
       "source": "e12_analysis_vgpu3090.json families.ref.by_model",
       "match": true
     },
@@ -133972,8 +133972,8 @@
     {
       "kind": "stored",
       "check": "M7a.vgpu3090.ref.2.8b_t4.cost_model.mean",
-      "computed": 2.014470473223596,
-      "reference": 2.014470473223596,
+      "computed": 3.4125579859961466,
+      "reference": 3.4125579859961466,
       "source": "e12_analysis_vgpu3090.json families.ref.by_model",
       "match": true
     },
@@ -133996,8 +133996,8 @@
     {
       "kind": "stored",
       "check": "M7a.vgpu3090.ref.2.8b_t8.cost_model.mean",
-      "computed": 7.750777035920006,
-      "reference": 7.750777035920006,
+      "computed": 1.9792766349461095,
+      "reference": 1.9792766349461095,
       "source": "e12_analysis_vgpu3090.json families.ref.by_model",
       "match": true
     },
@@ -134020,24 +134020,24 @@
     {
       "kind": "stored",
       "check": "M7a.vgpu3090.ref.pooled.cost_model.mean_regret_pct",
-      "computed": 4.002714821241423,
-      "reference": 4.002714821241423,
+      "computed": 1.783570860944482,
+      "reference": 1.783570860944482,
       "source": "e12_analysis_vgpu3090.json families.ref.pooled_shards.cost_model",
       "match": true
     },
     {
       "kind": "stored",
       "check": "M7a.vgpu3090.ref.pooled.cost_model.p95_regret_pct",
-      "computed": 22.411234013772074,
-      "reference": 22.411234013772074,
+      "computed": 10.622650360902352,
+      "reference": 10.622650360902352,
       "source": "e12_analysis_vgpu3090.json families.ref.pooled_shards.cost_model",
       "match": true
     },
     {
       "kind": "stored",
       "check": "M7a.vgpu3090.ref.pooled.cost_model.max_regret_pct",
-      "computed": 53.560837504451264,
-      "reference": 53.560837504451264,
+      "computed": 52.67751557620581,
+      "reference": 52.67751557620581,
       "source": "e12_analysis_vgpu3090.json families.ref.pooled_shards.cost_model",
       "match": true
     },
@@ -138614,5 +138614,5 @@
       "mismatches": []
     }
   },
-  "runtime_s": 626.3
+  "runtime_s": 333.0
 }

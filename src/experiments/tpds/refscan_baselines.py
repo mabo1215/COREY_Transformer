@@ -91,6 +91,7 @@ def analyze(in_dir: Path, host: str) -> dict:
     hw = cm.HARDWARE[host]
     stored = json.loads((in_dir / f"cost_model_refscan_{host}.json").read_text())
     th = np.array([stored["params"][k] for k in cm.REF_PARAMS])
+    facts = cm.ref_facts(in_dir, stored)
     lat_calls = latency_matrix(calls, chunks)
 
     # calibration keys (one row per E4 shape) and the long calibration table (shape x chunk)
@@ -110,7 +111,7 @@ def analyze(in_dir: Path, host: str) -> dict:
     Bc = np.tile(calls["batch"].to_numpy(float), len(chunks))
     dc = np.tile(calls["width"].to_numpy(float), len(chunks))
     Cc = np.repeat(np.array(chunks, float), n)
-    P = cm.ref_predict(th, Lc, Bc, dc, Cc, hw).reshape(len(chunks), n).T
+    P = cm.ref_predict(th, Lc, Bc, dc, Cc, hw, facts=facts).reshape(len(chunks), n).T
     sel = {"cost_model": P}
     sel["nearest_key"] = np.stack([keys[cmb.nearest_key(int(L), int(B), int(d), keys)]["mean_ms"]
                                    for L, B, d in zip(calls["L"], calls["batch"], calls["width"])])

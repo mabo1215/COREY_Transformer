@@ -151,9 +151,10 @@ def model_choice(in_dir: Path, spec: dict, df: pd.DataFrame, chunks: list[int], 
     elif kind == "refscan":
         res = json.loads((in_dir / "cost_model_refscan_vgpu3090.json").read_text())
         th = [res["params"][k] for k in cm.REF_PARAMS]
-        hw = cm.HARDWARE[spec["model"][1]]
+        hw, facts = cm.HARDWARE[spec["model"][1]], cm.ref_facts(in_dir, res)
         P = np.stack([cm.ref_predict(th, df["L"].to_numpy(float), df["batch"].to_numpy(float),
-                                     df["width"].to_numpy(float), np.full(len(df), float(c)), hw) for c in chunks], 1)
+                                     df["width"].to_numpy(float), np.full(len(df), float(c)), hw, facts=facts)
+                      for c in chunks], 1)
         idx = P.argmin(1)
         ref = res["e8_calls"]["mean_regret_pct"]
     elif kind == "pipeline":

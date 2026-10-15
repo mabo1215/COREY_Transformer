@@ -111,12 +111,14 @@ def triton_model_choice(tab: pd.DataFrame, chunks: list[int], host: str, in_dir:
 def ref_model_choice(tab: pd.DataFrame, chunks: list[int], host: str, in_dir: Path) -> dict:
     import json
     hw = CM.hardware(host, in_dir)
-    p = json.loads((in_dir / f"cost_model_refscan_{host}.json").read_text())["params"]
+    res = json.loads((in_dir / f"cost_model_refscan_{host}.json").read_text())
+    p, facts = res["params"], CM.ref_facts(in_dir, res)
     th = np.array([p[k] for k in ("t0", "tau_f", "tau_m", "tau_e", "tau_s", "tau_x", "W0", "W1")], float)
     C = np.array(chunks)
     out = {}
     for r in tab.itertuples():
-        pred = CM.ref_predict(th, np.full(len(C), r.L), np.full(len(C), r.batch), np.full(len(C), r.d), C, hw)
+        pred = CM.ref_predict(th, np.full(len(C), r.L), np.full(len(C), r.batch), np.full(len(C), r.d), C, hw,
+                              facts=facts)
         out[(r.d, r.L, r.batch)] = int(C[int(np.argmin(pred))])
     return out
 

@@ -542,20 +542,59 @@ def analyze(host: str, in_dir: Path, other: str | None = None, do_loko: bool = T
 
 # --------------------------------------------------------------------------- reference CUDA scan (E8)
 REF_THREADS = {128: 32, 256: 32, 512: 32, 1024: 64, 2048: 128}   # stock (kNThreads, kNItems = C / threads)
-REF_REGS = 168      # registers per thread reported by ptxas for most instantiations of the runtime-chunk build (sm_86)
+REF_REGS = 168      # one register count for every instantiation (the constant-register variant)
 REF_PARAMS = ["t0", "tau_f", "tau_m", "tau_e", "tau_s", "tau_x", "W0", "W1"]
+REF_FACTS_FILE = "refscan_compile_facts_sm86.json"   # per-instantiation compile facts of the timed binary
+SMEM_PER_SM = {86: 100 * 1024}       # maximum shared memory per SM (sm_86)
+SMEM_RESERVED_PER_BLOCK = 1024       # reserved by the CUDA runtime per resident block (sm_80 and later)
 
 
-def ref_predict(th, L, B, d, C, hw, threads=None):
+class RefFacts:
+    """Compile facts of the runtime-chunk reference scan (``refscan_facts.py``): registers per thread and
+    dynamic shared memory per block of the instantiation a call runs, looked up per (threads, chunk, even
+    length) for fp16 inputs, fp32 weights, variable B and C and a gate, as the kernel dispatches the calls."""
+
+    def __init__(self, path: Path, arch: int = 86):
+        self.path, self.smem_per_sm, self.table = Path(path), SMEM_PER_SM[arch], {}
+        for f in json.loads(self.path.read_text())["instantiations"]:
+            if (f["input_t"].endswith("Half") and f["weight_t"] == "float" and f["variable_b"] and f["variable_c"]
+                    and f["has_z"] and f["rows"] == 1):
+                self.table[(f["threads"], f["chunk"], bool(f["even_len"]))] = f
+
+    def lookup(self, thr, C, L):
+        even = (np.asarray(L) % np.asarray(C)) == 0
+        rows = [self.table[(int(t), int(c), bool(e))] for t, c, e in zip(thr, C, even)]
+        return (np.array([r["registers"] for r in rows], float), np.array([r["dynamic_smem"] for r in rows], float))
+
+    def rows(self, threads: dict) -> list[dict]:
+        return [{"chunk": c, "threads": threads[c], "items": c // threads[c], "even_len": e,
+                 "registers": f["registers"], "stack": f["stack"], "dynamic_smem": f["dynamic_smem"]}
+                for c in sorted(threads) for e in (False, True) if (f := self.table.get((threads[c], c, e)))]
+
+
+def ref_facts(in_dir: Path, res: dict | None = None) -> RefFacts | None:
+    """The compile facts a stored reference-scan fit used (None for the constant-register variant)."""
+    name = REF_FACTS_FILE if res is None else res.get("compile_facts")
+    return RefFacts(Path(in_dir) / name) if name and (Path(in_dir) / name).exists() else None
+
+
+def ref_predict(th, L, B, d, C, hw, threads=None, facts: RefFacts | None = None):
     """Same form as Eq. (5) for the reference scan: one block per (batch, channel), kNThreads threads
     walking ceil(L / C) chunks of kNItems elements per thread, a block scan over the threads per state.
-    ``threads`` maps the chunk to kNThreads (default: the stock pairing ``REF_THREADS``)."""
+    ``threads`` maps the chunk to kNThreads (default: the stock pairing ``REF_THREADS``). Occupancy uses the
+    registers and shared memory of each call's instantiation from ``facts``; without facts, ``REF_REGS``
+    registers for every instantiation and no shared-memory limit (the constant-register variant)."""
     t0, tf, tm, te, ts, tx, W0, W1 = th
     thr = np.vectorize((threads or REF_THREADS).get)(C).astype(float)
     items, warps = C / thr, thr / 32
-    alloc = np.ceil(REF_REGS / 8.0) * 8 * thr
-    k = np.maximum(1, np.minimum.reduce([np.full(len(C), hw["max_blocks_per_sm"]), np.floor(hw["max_warps_per_sm"] / warps),
-                                         np.floor(hw["regs_per_sm"] / alloc)]))
+    limits = [np.full(len(C), hw["max_blocks_per_sm"]), np.floor(hw["max_warps_per_sm"] / warps)]
+    if facts is None:
+        limits.append(np.floor(hw["regs_per_sm"] / (np.ceil(REF_REGS / 8.0) * 8 * thr)))
+    else:
+        regs, smem = facts.lookup(thr, C, L)
+        limits += [np.floor(hw["regs_per_sm"] / (np.ceil(regs / 8.0) * 8 * thr)),
+                   np.floor(facts.smem_per_sm / (smem + SMEM_RESERVED_PER_BLOCK))]
+    k = np.maximum(1, np.minimum.reduce(limits))
     P = B * d
     waves, m = np.ceil(P / (hw["n_sm"] * k)), np.minimum(k, np.ceil(P / hw["n_sm"]))
     W = m * warps
@@ -564,8 +603,13 @@ def ref_predict(th, L, B, d, C, hw, threads=None):
     return t0 + waves * np.ceil(L / C) * (A * np.minimum(1.0, W1 / W) + I * np.maximum(1.0, W / W0))
 
 
-def reference_scan_model(in_dir: Path, host: str = "vgpu3090") -> dict:
-    """Fit on the twelve E4 shape keys of the E8 sweep (5 chunks each), evaluate on the 2360 captured calls."""
+def reference_scan_model(in_dir: Path, host: str = "vgpu3090", constant: bool = False) -> dict:
+    """Fit on the twelve E4 shape keys of the E8 sweep (5 chunks each), evaluate on the 2360 captured calls.
+    With the compile facts of the timed binary (``REF_FACTS_FILE``) unless ``constant``; the result of the
+    constant-register variant is stored alongside under ``constant_registers``."""
+    facts = None if constant else ref_facts(in_dir)
+    if not constant and facts is None:
+        raise SystemExit(f"{REF_FACTS_FILE} missing in {in_dir}; run refscan_facts.py or pass constant=True")
     hw = HARDWARE[host]
     df = pd.read_csv(in_dir / f"e8_refscan_{host}.csv")
     chunks = sorted(REF_THREADS)
@@ -582,18 +626,27 @@ def reference_scan_model(in_dir: Path, host: str = "vgpu3090") -> dict:
     best = None
     for x0 in ([0.01, 1e-3, 1e-4, 1e-5, 1e-5, 1e-4, 8, 16], [0.02, 1e-4, 1e-5, 1e-6, 1e-6, 1e-5, 4, 8],
                [0.005, 1e-3, 1e-3, 1e-4, 1e-4, 1e-3, 16, 32]):
-        sol = least_squares(lambda th: np.log(ref_predict(th, L, B, d, C, hw)) - y, x0, bounds=(lo, hi),
+        sol = least_squares(lambda th: np.log(ref_predict(th, L, B, d, C, hw, facts=facts)) - y, x0, bounds=(lo, hi),
                             loss="soft_l1", f_scale=0.1, x_scale="jac", max_nfev=20000)
         if best is None or sol.cost < best.cost:
             best = sol
     th = best.x
-    fit_q = fit_quality(ref_predict(th, L, B, d, C, hw), np.exp(y))
+    fit_q = fit_quality(ref_predict(th, L, B, d, C, hw, facts=facts), np.exp(y))
     Lc, Bc, dc, Cc = long(calls)
-    P = ref_predict(th, Lc, Bc, dc, Cc, hw).reshape(len(chunks), len(calls)).T
+    P = ref_predict(th, Lc, Bc, dc, Cc, hw, facts=facts).reshape(len(chunks), len(calls)).T
     ev = e2_eval(calls, chunks, P.argmin(1), P)
-    return {"experiment": "T1-reference-scan", "host": host, "params": dict(zip(REF_PARAMS, map(float, th))),
-            "fixed": {"regs_per_thread": REF_REGS, "threads_per_chunk": {str(k): v for k, v in REF_THREADS.items()}},
-            "n_fit_points": int(len(y)), "fit": fit_q, "e8_calls": ev, "topk": topk_refinement(calls, chunks, P)}
+    fixed = {"threads_per_chunk": {str(k): v for k, v in REF_THREADS.items()}}
+    if facts is None:
+        fixed["regs_per_thread"] = REF_REGS
+    else:
+        fixed.update(smem_per_sm_bytes=facts.smem_per_sm, smem_reserved_per_block_bytes=SMEM_RESERVED_PER_BLOCK,
+                     instantiations=facts.rows(REF_THREADS))
+    res = {"experiment": "T1-reference-scan", "host": host, "compile_facts": None if facts is None else facts.path.name,
+           "params": dict(zip(REF_PARAMS, map(float, th))), "fixed": fixed,
+           "n_fit_points": int(len(y)), "fit": fit_q, "e8_calls": ev, "topk": topk_refinement(calls, chunks, P)}
+    if not constant:
+        res["constant_registers"] = reference_scan_model(in_dir, host, constant=True)
+    return res
 
 
 def evaluate_transfer(host: str, in_dir: Path, csv_path: Path, ref_csv: Path | None = None) -> dict:
