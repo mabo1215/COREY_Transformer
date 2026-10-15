@@ -1,0 +1,5379 @@
+{
+  "experiment": "taco-r1 power-cap audit (S9P5)",
+  "created_utc": "2026-10-15T11:27:36Z",
+  "n_perm": 200,
+  "nvml_clock_event_reason_bits": {
+    "gpu_idle": "0x1",
+    "applications_clocks_setting": "0x2",
+    "sw_power_cap": "0x4",
+    "hw_slowdown": "0x8",
+    "sync_boost": "0x10",
+    "sw_thermal_slowdown": "0x20",
+    "hw_thermal_slowdown": "0x40",
+    "hw_power_brake_slowdown": "0x80",
+    "display_clock_setting": "0x100",
+    "board_limit": "0x200",
+    "reliability": "0x400"
+  },
+  "bit_verification": "values of the nvmlClocksEventReason* / nvmlClocksThrottleReason* macros in NVIDIA's nvml.h (NVML API version 13) and of the constants of nvidia-ml-py 13.610.43; nvidia-smi clocks_event_reasons.active reports the same mask in hex",
+  "sample_definition": "one sample = one reading of the GPU state (before or after a timing block, cell or run); shares are over all samples of a file",
+  "any_thermal_mask": "0x60",
+  "hw_slowdown_mask": "0xc8",
+  "files": [
+    {
+      "file": "e10_routed_vgpu3090.jsonl",
+      "experiment": "E10",
+      "label": "routed end-to-end study (E10)",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "host_tag": "vgpu3090",
+      "run_tag": "vgpu3090",
+      "run_start_utc": "2026-09-29T01:58:35Z",
+      "driver": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+      "timing": null,
+      "state_granularity": "per run (one reading per generate call)",
+      "state_source": {
+        "nvidia-smi": 2475
+      },
+      "n_rows_with_state": 2475,
+      "rows_with_state_by_kind": {
+        "warmup": 225,
+        "run": 2250
+      },
+      "n_samples": 2475,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 2469,
+        "0x24": 6
+      },
+      "n_samples_sw_power_cap": 6,
+      "share_sw_power_cap": 0.0024242424242424242,
+      "share_any_thermal": 0.0024242424242424242,
+      "share_sw_thermal": 0.0024242424242424242,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 0.0024242424242424242,
+      "share_rows_cap_in_all_readings": 0.0024242424242424242,
+      "sm_mhz": {
+        "n": 2475,
+        "median": 1695.0,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "sm_mhz_capped": {
+        "n": 6,
+        "median": 1950.0,
+        "min": 1950.0,
+        "max": 1950.0
+      },
+      "sm_mhz_uncapped": {
+        "n": 2469,
+        "median": 1695.0,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "mem_mhz_values": [
+        9501.0
+      ],
+      "power_w": {
+        "n": 2475,
+        "median": 111.38,
+        "min": 108.88,
+        "max": 140.92
+      },
+      "power_w_capped": {
+        "n": 6,
+        "median": 138.185,
+        "min": 137.12,
+        "max": 139.11
+      },
+      "power_w_uncapped": {
+        "n": 2469,
+        "median": 111.37,
+        "min": 108.88,
+        "max": 140.92
+      },
+      "temp_c": {
+        "n": 2475,
+        "median": 41.0,
+        "min": 39.0,
+        "max": 46.0
+      }
+    },
+    {
+      "file": "e12_tp_widths_h800.jsonl",
+      "experiment": "E12",
+      "label": "tensor-parallel widths (E12)",
+      "gpu": "NVIDIA H800 PCIe",
+      "host_tag": "h800",
+      "run_tag": "h800",
+      "run_start_utc": "2026-09-30T22:29:02Z",
+      "driver": "NVIDIA H800 PCIe, 595.71.05, 81559 MiB, 1755 MHz",
+      "timing": null,
+      "state_granularity": "per block (shape x round, all chunks)",
+      "state_source": {
+        "nvml": 2016
+      },
+      "n_rows_with_state": 1008,
+      "rows_with_state_by_kind": {
+        "timing": 1008
+      },
+      "n_samples": 2016,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 1851,
+        "0x4": 165
+      },
+      "n_samples_sw_power_cap": 165,
+      "share_sw_power_cap": 0.0818452380952381,
+      "share_any_thermal": 0.0,
+      "share_sw_thermal": 0.0,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 0.15575396825396826,
+      "share_rows_cap_in_all_readings": 0.007936507936507936,
+      "sm_mhz": {
+        "n": 2016,
+        "median": 1755.0,
+        "min": 1515.0,
+        "max": 1755.0
+      },
+      "sm_mhz_capped": {
+        "n": 165,
+        "median": 1710.0,
+        "min": 1515.0,
+        "max": 1755.0
+      },
+      "sm_mhz_uncapped": {
+        "n": 1851,
+        "median": 1755.0,
+        "min": 1695.0,
+        "max": 1755.0
+      },
+      "mem_mhz_values": [
+        1593.0
+      ],
+      "power_w": {
+        "n": 2016,
+        "median": 144.193,
+        "min": 85.054,
+        "max": 354.762
+      },
+      "power_w_capped": {
+        "n": 165,
+        "median": 274.616,
+        "min": 200.794,
+        "max": 354.762
+      },
+      "power_w_uncapped": {
+        "n": 1851,
+        "median": 138.255,
+        "min": 85.054,
+        "max": 333.0
+      },
+      "temp_c": {
+        "n": 2016,
+        "median": 56.0,
+        "min": 50.0,
+        "max": 65.0
+      }
+    },
+    {
+      "file": "e12_tp_widths_vgpu3090.jsonl",
+      "experiment": "E12",
+      "label": "tensor-parallel widths (E12)",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "host_tag": "vgpu3090",
+      "run_tag": "vgpu3090",
+      "run_start_utc": "2026-09-30T06:51:03Z",
+      "driver": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+      "timing": null,
+      "state_granularity": "per block (shape x round, all chunks)",
+      "state_source": {
+        "nvidia-smi": 2016
+      },
+      "n_rows_with_state": 1008,
+      "rows_with_state_by_kind": {
+        "timing": 1008
+      },
+      "n_samples": 2016,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 1126,
+        "0x4": 885,
+        "0x24": 5
+      },
+      "n_samples_sw_power_cap": 890,
+      "share_sw_power_cap": 0.44146825396825395,
+      "share_any_thermal": 0.00248015873015873,
+      "share_sw_thermal": 0.00248015873015873,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 0.6517857142857143,
+      "share_rows_cap_in_all_readings": 0.23115079365079366,
+      "sm_mhz": {
+        "n": 2016,
+        "median": 1905.0,
+        "min": 1695.0,
+        "max": 1920.0
+      },
+      "sm_mhz_capped": {
+        "n": 890,
+        "median": 1905.0,
+        "min": 1695.0,
+        "max": 1920.0
+      },
+      "sm_mhz_uncapped": {
+        "n": 1126,
+        "median": 1905.0,
+        "min": 1695.0,
+        "max": 1920.0
+      },
+      "mem_mhz_values": [
+        9501.0
+      ],
+      "power_w": {
+        "n": 2016,
+        "median": 213.54,
+        "min": 108.08,
+        "max": 338.52
+      },
+      "power_w_capped": {
+        "n": 890,
+        "median": 262.57,
+        "min": 146.25,
+        "max": 338.52
+      },
+      "power_w_uncapped": {
+        "n": 1126,
+        "median": 158.655,
+        "min": 108.08,
+        "max": 335.11
+      },
+      "temp_c": {
+        "n": 2016,
+        "median": 57.0,
+        "min": 46.0,
+        "max": 67.0
+      }
+    },
+    {
+      "file": "e16c_l2_placement_pro6000.jsonl",
+      "experiment": "E16c",
+      "label": "warm versus flushed L2 (E16c)",
+      "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+      "host_tag": "pro6000",
+      "run_tag": "pro6000",
+      "run_start_utc": "2026-09-30T21:21:50Z",
+      "driver": "NVIDIA RTX PRO 6000 Blackwell Server Edition, 595.71.05, 97887 MiB, 2430 MHz",
+      "timing": null,
+      "state_granularity": "per cell",
+      "state_source": {
+        "nvml": 4032
+      },
+      "n_rows_with_state": 2016,
+      "rows_with_state_by_kind": {
+        "timing": 2016
+      },
+      "n_samples": 4032,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 4032
+      },
+      "n_samples_sw_power_cap": 0,
+      "share_sw_power_cap": 0.0,
+      "share_any_thermal": 0.0,
+      "share_sw_thermal": 0.0,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 0.0,
+      "share_rows_cap_in_all_readings": 0.0,
+      "sm_mhz": {
+        "n": 4032,
+        "median": 2347.0,
+        "min": 2332.0,
+        "max": 2362.0
+      },
+      "sm_mhz_capped": null,
+      "sm_mhz_uncapped": {
+        "n": 4032,
+        "median": 2347.0,
+        "min": 2332.0,
+        "max": 2362.0
+      },
+      "mem_mhz_values": [
+        12481.0
+      ],
+      "power_w": {
+        "n": 4032,
+        "median": 127.398,
+        "min": 96.659,
+        "max": 233.522
+      },
+      "power_w_capped": null,
+      "power_w_uncapped": {
+        "n": 4032,
+        "median": 127.398,
+        "min": 96.659,
+        "max": 233.522
+      },
+      "temp_c": {
+        "n": 4032,
+        "median": 39.0,
+        "min": 36.0,
+        "max": 44.0
+      }
+    },
+    {
+      "file": "e17_workbound_vgpu3090.jsonl",
+      "experiment": "E17c",
+      "label": "production kernels at larger widths, synthetic (E17c)",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "host_tag": "vgpu3090",
+      "run_tag": "vgpu3090",
+      "run_start_utc": "2026-10-03T00:12:16Z",
+      "driver": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+      "timing": null,
+      "state_granularity": "per block (shape x round, all chunks)",
+      "state_source": {
+        "nvidia-smi": 126
+      },
+      "n_rows_with_state": 63,
+      "rows_with_state_by_kind": {
+        "timing": 63
+      },
+      "n_samples": 126,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 48,
+        "0x4": 77,
+        "0x24": 1
+      },
+      "n_samples_sw_power_cap": 78,
+      "share_sw_power_cap": 0.6190476190476191,
+      "share_any_thermal": 0.007936507936507936,
+      "share_sw_thermal": 0.007936507936507936,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 0.8095238095238095,
+      "share_rows_cap_in_all_readings": 0.42857142857142855,
+      "sm_mhz": {
+        "n": 126,
+        "median": 1935.0,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "sm_mhz_capped": {
+        "n": 78,
+        "median": 1935.0,
+        "min": 1830.0,
+        "max": 1950.0
+      },
+      "sm_mhz_uncapped": {
+        "n": 48,
+        "median": 1950.0,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "mem_mhz_values": [
+        9501.0
+      ],
+      "power_w": {
+        "n": 126,
+        "median": 259.39,
+        "min": 111.51,
+        "max": 339.72
+      },
+      "power_w_capped": {
+        "n": 78,
+        "median": 282.05,
+        "min": 152.29,
+        "max": 339.72
+      },
+      "power_w_uncapped": {
+        "n": 48,
+        "median": 205.40499999999997,
+        "min": 111.51,
+        "max": 322.85
+      },
+      "temp_c": {
+        "n": 126,
+        "median": 54.0,
+        "min": 33.0,
+        "max": 62.0
+      },
+      "superseded": "63 timing rows stored (the run summary lists 360); the stored E17 analysis uses the complete vgpu3090full file"
+    },
+    {
+      "file": "e17_workbound_vgpu3090full.jsonl",
+      "experiment": "E17c",
+      "label": "production kernels at larger widths, synthetic (E17c)",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "host_tag": "vgpu3090",
+      "run_tag": "vgpu3090full",
+      "run_start_utc": "2026-10-03T01:40:13Z",
+      "driver": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+      "timing": null,
+      "state_granularity": "per block (shape x round, all chunks)",
+      "state_source": {
+        "nvidia-smi": 720
+      },
+      "n_rows_with_state": 360,
+      "rows_with_state_by_kind": {
+        "timing": 360
+      },
+      "n_samples": 720,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 228,
+        "0x4": 476,
+        "0x24": 16
+      },
+      "n_samples_sw_power_cap": 492,
+      "share_sw_power_cap": 0.6833333333333333,
+      "share_any_thermal": 0.022222222222222223,
+      "share_sw_thermal": 0.022222222222222223,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 0.8777777777777778,
+      "share_rows_cap_in_all_readings": 0.4888888888888889,
+      "sm_mhz": {
+        "n": 720,
+        "median": 1935.0,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "sm_mhz_capped": {
+        "n": 492,
+        "median": 1935.0,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "sm_mhz_uncapped": {
+        "n": 228,
+        "median": 1935.0,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "mem_mhz_values": [
+        9501.0
+      ],
+      "power_w": {
+        "n": 720,
+        "median": 271.78,
+        "min": 114.69,
+        "max": 344.0
+      },
+      "power_w_capped": {
+        "n": 492,
+        "median": 291.9,
+        "min": 154.81,
+        "max": 344.0
+      },
+      "power_w_uncapped": {
+        "n": 228,
+        "median": 196.775,
+        "min": 114.69,
+        "max": 335.95
+      },
+      "temp_c": {
+        "n": 720,
+        "median": 57.0,
+        "min": 47.0,
+        "max": 62.0
+      }
+    },
+    {
+      "file": "e1_pro6000_e1b.jsonl",
+      "experiment": "E1",
+      "label": "value-invariance redraw and fixed-placement controls (E1b)",
+      "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+      "host_tag": "pro6000",
+      "run_tag": "pro6000_e1b",
+      "run_start_utc": "2026-09-26T03:38:12Z",
+      "driver": "NVIDIA RTX PRO 6000 Blackwell Server Edition, 595.71.05, 97887 MiB, 2430 MHz",
+      "timing": null,
+      "state_granularity": "per cell",
+      "state_source": {
+        "nvml": 26400
+      },
+      "n_rows_with_state": 13200,
+      "rows_with_state_by_kind": {
+        "timing": 13200
+      },
+      "n_samples": 26400,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 26400
+      },
+      "n_samples_sw_power_cap": 0,
+      "share_sw_power_cap": 0.0,
+      "share_any_thermal": 0.0,
+      "share_sw_thermal": 0.0,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 0.0,
+      "share_rows_cap_in_all_readings": 0.0,
+      "sm_mhz": {
+        "n": 26400,
+        "median": 2407.0,
+        "min": 2377.0,
+        "max": 2422.0
+      },
+      "sm_mhz_capped": null,
+      "sm_mhz_uncapped": {
+        "n": 26400,
+        "median": 2407.0,
+        "min": 2377.0,
+        "max": 2422.0
+      },
+      "mem_mhz_values": [
+        12481.0
+      ],
+      "power_w": {
+        "n": 26400,
+        "median": 311.10699999999997,
+        "min": 152.527,
+        "max": 430.748
+      },
+      "power_w_capped": null,
+      "power_w_uncapped": {
+        "n": 26400,
+        "median": 311.10699999999997,
+        "min": 152.527,
+        "max": 430.748
+      },
+      "temp_c": {
+        "n": 26400,
+        "median": 55.0,
+        "min": 44.0,
+        "max": 66.0
+      }
+    },
+    {
+      "file": "e24_tfla_vgpu3090_r4plain.jsonl",
+      "experiment": "E24",
+      "label": "TFLA mLSTM chunk sweep (E24)",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "host_tag": "vgpu3090",
+      "run_tag": "vgpu3090_r4plain",
+      "run_start_utc": "2026-10-07T22:07:21Z",
+      "driver": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+      "timing": "launch-inclusive",
+      "state_granularity": "per block (shape x round, all chunks)",
+      "state_source": {
+        "nvidia-smi": 2
+      },
+      "n_rows_with_state": 1,
+      "rows_with_state_by_kind": {
+        "timing": 1
+      },
+      "n_samples": 2,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 1,
+        "0x4": 1
+      },
+      "n_samples_sw_power_cap": 1,
+      "share_sw_power_cap": 0.5,
+      "share_any_thermal": 0.0,
+      "share_sw_thermal": 0.0,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 1.0,
+      "share_rows_cap_in_all_readings": 0.0,
+      "sm_mhz": {
+        "n": 2,
+        "median": 1822.5,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "sm_mhz_capped": {
+        "n": 1,
+        "median": 1950.0,
+        "min": 1950.0,
+        "max": 1950.0
+      },
+      "sm_mhz_uncapped": {
+        "n": 1,
+        "median": 1695.0,
+        "min": 1695.0,
+        "max": 1695.0
+      },
+      "mem_mhz_values": [
+        9501.0
+      ],
+      "power_w": {
+        "n": 2,
+        "median": 200.74,
+        "min": 108.1,
+        "max": 293.38
+      },
+      "power_w_capped": {
+        "n": 1,
+        "median": 293.38,
+        "min": 293.38,
+        "max": 293.38
+      },
+      "power_w_uncapped": {
+        "n": 1,
+        "median": 108.1,
+        "min": 108.1,
+        "max": 108.1
+      },
+      "temp_c": {
+        "n": 2,
+        "median": 50.5,
+        "min": 47.0,
+        "max": 54.0
+      },
+      "superseded": "one timing row only; the launch-inclusive TFLA sweep is the r4plainb file"
+    },
+    {
+      "file": "e24_tfla_vgpu3090_r4plainb.jsonl",
+      "experiment": "E24",
+      "label": "TFLA mLSTM chunk sweep (E24)",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "host_tag": "vgpu3090",
+      "run_tag": "vgpu3090_r4plainb",
+      "run_start_utc": "2026-10-08T07:11:54Z",
+      "driver": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+      "timing": "launch-inclusive",
+      "state_granularity": "per block (shape x round, all chunks)",
+      "state_source": {
+        "nvidia-smi": 378
+      },
+      "n_rows_with_state": 189,
+      "rows_with_state_by_kind": {
+        "timing": 189
+      },
+      "n_samples": 378,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 29,
+        "0x4": 349
+      },
+      "n_samples_sw_power_cap": 349,
+      "share_sw_power_cap": 0.9232804232804233,
+      "share_any_thermal": 0.0,
+      "share_sw_thermal": 0.0,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 0.9894179894179894,
+      "share_rows_cap_in_all_readings": 0.8571428571428571,
+      "sm_mhz": {
+        "n": 378,
+        "median": 1935.0,
+        "min": 1695.0,
+        "max": 1935.0
+      },
+      "sm_mhz_capped": {
+        "n": 349,
+        "median": 1935.0,
+        "min": 1845.0,
+        "max": 1935.0
+      },
+      "sm_mhz_uncapped": {
+        "n": 29,
+        "median": 1935.0,
+        "min": 1695.0,
+        "max": 1935.0
+      },
+      "mem_mhz_values": [
+        9501.0
+      ],
+      "power_w": {
+        "n": 378,
+        "median": 288.725,
+        "min": 109.75,
+        "max": 328.31
+      },
+      "power_w_capped": {
+        "n": 349,
+        "median": 290.58,
+        "min": 184.5,
+        "max": 328.31
+      },
+      "power_w_uncapped": {
+        "n": 29,
+        "median": 184.83,
+        "min": 109.75,
+        "max": 303.08
+      },
+      "temp_c": {
+        "n": 378,
+        "median": 60.0,
+        "min": 54.0,
+        "max": 64.0
+      }
+    },
+    {
+      "file": "e24_tfla_vgpu3090_r4spin.jsonl",
+      "experiment": "E24",
+      "label": "TFLA mLSTM chunk sweep (E24)",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "host_tag": "vgpu3090",
+      "run_tag": "vgpu3090_r4spin",
+      "run_start_utc": "2026-10-07T22:05:46Z",
+      "driver": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+      "timing": "device time (GPU-side pre-spin)",
+      "state_granularity": "per block (shape x round, all chunks)",
+      "state_source": {
+        "nvidia-smi": 2
+      },
+      "n_rows_with_state": 1,
+      "rows_with_state_by_kind": {
+        "timing": 1
+      },
+      "n_samples": 2,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 1,
+        "0x4": 1
+      },
+      "n_samples_sw_power_cap": 1,
+      "share_sw_power_cap": 0.5,
+      "share_any_thermal": 0.0,
+      "share_sw_thermal": 0.0,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 1.0,
+      "share_rows_cap_in_all_readings": 0.0,
+      "sm_mhz": {
+        "n": 2,
+        "median": 1815.0,
+        "min": 1695.0,
+        "max": 1935.0
+      },
+      "sm_mhz_capped": {
+        "n": 1,
+        "median": 1935.0,
+        "min": 1935.0,
+        "max": 1935.0
+      },
+      "sm_mhz_uncapped": {
+        "n": 1,
+        "median": 1695.0,
+        "min": 1695.0,
+        "max": 1695.0
+      },
+      "mem_mhz_values": [
+        9501.0
+      ],
+      "power_w": {
+        "n": 2,
+        "median": 196.725,
+        "min": 104.58,
+        "max": 288.87
+      },
+      "power_w_capped": {
+        "n": 1,
+        "median": 288.87,
+        "min": 288.87,
+        "max": 288.87
+      },
+      "power_w_uncapped": {
+        "n": 1,
+        "median": 104.58,
+        "min": 104.58,
+        "max": 104.58
+      },
+      "temp_c": {
+        "n": 2,
+        "median": 45.5,
+        "min": 40.0,
+        "max": 51.0
+      },
+      "superseded": "one timing row only; the device-time TFLA sweep is the r4spinb file"
+    },
+    {
+      "file": "e24_tfla_vgpu3090_r4spinb.jsonl",
+      "experiment": "E24",
+      "label": "TFLA mLSTM chunk sweep (E24)",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "host_tag": "vgpu3090",
+      "run_tag": "vgpu3090_r4spinb",
+      "run_start_utc": "2026-10-08T06:19:11Z",
+      "driver": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+      "timing": "device time (GPU-side pre-spin)",
+      "state_granularity": "per block (shape x round, all chunks)",
+      "state_source": {
+        "nvidia-smi": 378
+      },
+      "n_rows_with_state": 189,
+      "rows_with_state_by_kind": {
+        "timing": 189
+      },
+      "n_samples": 378,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 53,
+        "0x4": 324,
+        "0x24": 1
+      },
+      "n_samples_sw_power_cap": 325,
+      "share_sw_power_cap": 0.8597883597883598,
+      "share_any_thermal": 0.0026455026455026454,
+      "share_sw_thermal": 0.0026455026455026454,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 0.9470899470899471,
+      "share_rows_cap_in_all_readings": 0.7724867724867724,
+      "sm_mhz": {
+        "n": 378,
+        "median": 1935.0,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "sm_mhz_capped": {
+        "n": 325,
+        "median": 1935.0,
+        "min": 1770.0,
+        "max": 1950.0
+      },
+      "sm_mhz_uncapped": {
+        "n": 53,
+        "median": 1935.0,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "mem_mhz_values": [
+        9501.0
+      ],
+      "power_w": {
+        "n": 378,
+        "median": 282.36,
+        "min": 106.64,
+        "max": 324.48
+      },
+      "power_w_capped": {
+        "n": 325,
+        "median": 287.26,
+        "min": 127.32,
+        "max": 324.48
+      },
+      "power_w_uncapped": {
+        "n": 53,
+        "median": 158.06,
+        "min": 106.64,
+        "max": 293.81
+      },
+      "temp_c": {
+        "n": 378,
+        "median": 59.0,
+        "min": 42.0,
+        "max": 64.0
+      }
+    },
+    {
+      "file": "e9_placement_pro6000_r3.jsonl",
+      "experiment": "E9",
+      "label": "placement control (E9)",
+      "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+      "host_tag": "pro6000",
+      "run_tag": "pro6000_r3",
+      "run_start_utc": "2026-09-30T20:53:57Z",
+      "driver": "NVIDIA RTX PRO 6000 Blackwell Server Edition, 595.71.05, 97887 MiB, 2430 MHz",
+      "timing": null,
+      "state_granularity": "per cell",
+      "state_source": {
+        "nvml": 12000
+      },
+      "n_rows_with_state": 6000,
+      "rows_with_state_by_kind": {
+        "timing": 6000
+      },
+      "n_samples": 12000,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 12000
+      },
+      "n_samples_sw_power_cap": 0,
+      "share_sw_power_cap": 0.0,
+      "share_any_thermal": 0.0,
+      "share_sw_thermal": 0.0,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 0.0,
+      "share_rows_cap_in_all_readings": 0.0,
+      "sm_mhz": {
+        "n": 12000,
+        "median": 2347.0,
+        "min": 2332.0,
+        "max": 2385.0
+      },
+      "sm_mhz_capped": null,
+      "sm_mhz_uncapped": {
+        "n": 12000,
+        "median": 2347.0,
+        "min": 2332.0,
+        "max": 2385.0
+      },
+      "mem_mhz_values": [
+        12481.0
+      ],
+      "power_w": {
+        "n": 12000,
+        "median": 130.2755,
+        "min": 96.137,
+        "max": 248.751
+      },
+      "power_w_capped": null,
+      "power_w_uncapped": {
+        "n": 12000,
+        "median": 130.2755,
+        "min": 96.137,
+        "max": 248.751
+      },
+      "temp_c": {
+        "n": 12000,
+        "median": 39.0,
+        "min": 35.0,
+        "max": 46.0
+      }
+    },
+    {
+      "file": "e9_placement_vgpu3090.jsonl",
+      "experiment": "E9",
+      "label": "placement control (E9)",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "host_tag": "vgpu3090",
+      "run_tag": "vgpu3090",
+      "run_start_utc": "2026-09-29T01:10:09Z",
+      "driver": "NVIDIA GeForce RTX 3090, 580.82.09, 49152 MiB, 2100 MHz",
+      "timing": null,
+      "state_granularity": "per cell",
+      "state_source": {
+        "nvidia-smi": 18000
+      },
+      "n_rows_with_state": 9000,
+      "rows_with_state_by_kind": {
+        "timing": 9000
+      },
+      "n_samples": 18000,
+      "n_samples_unparsed_reasons": 0,
+      "reason_code_counts": {
+        "0x0": 11213,
+        "0x4": 6777,
+        "0x24": 10
+      },
+      "n_samples_sw_power_cap": 6787,
+      "share_sw_power_cap": 0.37705555555555553,
+      "share_any_thermal": 0.0005555555555555556,
+      "share_sw_thermal": 0.0005555555555555556,
+      "share_hw_thermal": 0.0,
+      "share_any_hw_slowdown": 0.0,
+      "share_gpu_idle": 0.0,
+      "share_rows_cap_in_any_reading": 0.3887777777777778,
+      "share_rows_cap_in_all_readings": 0.36533333333333334,
+      "sm_mhz": {
+        "n": 18000,
+        "median": 1905.0,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "sm_mhz_capped": {
+        "n": 6787,
+        "median": 1935.0,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "sm_mhz_uncapped": {
+        "n": 11213,
+        "median": 1695.0,
+        "min": 1695.0,
+        "max": 1950.0
+      },
+      "mem_mhz_values": [
+        9501.0
+      ],
+      "power_w": {
+        "n": 18000,
+        "median": 182.45,
+        "min": 121.82,
+        "max": 290.23
+      },
+      "power_w_capped": {
+        "n": 6787,
+        "median": 244.16,
+        "min": 128.12,
+        "max": 290.23
+      },
+      "power_w_uncapped": {
+        "n": 11213,
+        "median": 133.51,
+        "min": 121.82,
+        "max": 271.92
+      },
+      "temp_c": {
+        "n": 18000,
+        "median": 53.0,
+        "min": 42.0,
+        "max": 62.0
+      }
+    }
+  ],
+  "skipped_files": [
+    {
+      "file": "e1_pro6000_e1b.json",
+      "reason": "summary of the rows of e1_pro6000_e1b.jsonl"
+    }
+  ],
+  "by_gpu": {
+    "NVIDIA GeForce RTX 3090": {
+      "files": [
+        "e10_routed_vgpu3090.jsonl",
+        "e12_tp_widths_vgpu3090.jsonl",
+        "e17_workbound_vgpu3090full.jsonl",
+        "e24_tfla_vgpu3090_r4plainb.jsonl",
+        "e24_tfla_vgpu3090_r4spinb.jsonl",
+        "e9_placement_vgpu3090.jsonl"
+      ],
+      "sw_power_cap_share_per_file": {
+        "e10_routed_vgpu3090.jsonl": 0.0024242424242424242,
+        "e12_tp_widths_vgpu3090.jsonl": 0.44146825396825395,
+        "e17_workbound_vgpu3090full.jsonl": 0.6833333333333333,
+        "e24_tfla_vgpu3090_r4plainb.jsonl": 0.9232804232804233,
+        "e24_tfla_vgpu3090_r4spinb.jsonl": 0.8597883597883598,
+        "e9_placement_vgpu3090.jsonl": 0.37705555555555553
+      },
+      "sw_power_cap_share_range": [
+        0.0024242424242424242,
+        0.9232804232804233
+      ],
+      "sw_power_cap_share_pooled": 0.3692160053406768,
+      "n_samples": 23967,
+      "any_thermal_share_max_per_file": 0.022222222222222223,
+      "any_hw_slowdown_share_max_per_file": 0.0,
+      "reason_codes_seen": [
+        "0x0",
+        "0x4",
+        "0x24"
+      ],
+      "sm_mhz_range": [
+        1695.0,
+        1950.0
+      ],
+      "mem_mhz_values": [
+        9501.0
+      ],
+      "power_w_max": 344.0,
+      "temp_c_max": 67.0,
+      "excluded_superseded_files": [
+        "e17_workbound_vgpu3090.jsonl",
+        "e24_tfla_vgpu3090_r4plain.jsonl",
+        "e24_tfla_vgpu3090_r4spin.jsonl"
+      ]
+    },
+    "NVIDIA H800 PCIe": {
+      "files": [
+        "e12_tp_widths_h800.jsonl"
+      ],
+      "sw_power_cap_share_per_file": {
+        "e12_tp_widths_h800.jsonl": 0.0818452380952381
+      },
+      "sw_power_cap_share_range": [
+        0.0818452380952381,
+        0.0818452380952381
+      ],
+      "sw_power_cap_share_pooled": 0.0818452380952381,
+      "n_samples": 2016,
+      "any_thermal_share_max_per_file": 0.0,
+      "any_hw_slowdown_share_max_per_file": 0.0,
+      "reason_codes_seen": [
+        "0x0",
+        "0x4"
+      ],
+      "sm_mhz_range": [
+        1515.0,
+        1755.0
+      ],
+      "mem_mhz_values": [
+        1593.0
+      ],
+      "power_w_max": 354.762,
+      "temp_c_max": 65.0,
+      "excluded_superseded_files": []
+    },
+    "NVIDIA RTX PRO 6000 Blackwell Server Edition": {
+      "files": [
+        "e16c_l2_placement_pro6000.jsonl",
+        "e1_pro6000_e1b.jsonl",
+        "e9_placement_pro6000_r3.jsonl"
+      ],
+      "sw_power_cap_share_per_file": {
+        "e16c_l2_placement_pro6000.jsonl": 0.0,
+        "e1_pro6000_e1b.jsonl": 0.0,
+        "e9_placement_pro6000_r3.jsonl": 0.0
+      },
+      "sw_power_cap_share_range": [
+        0.0,
+        0.0
+      ],
+      "sw_power_cap_share_pooled": 0.0,
+      "n_samples": 42432,
+      "any_thermal_share_max_per_file": 0.0,
+      "any_hw_slowdown_share_max_per_file": 0.0,
+      "reason_codes_seen": [
+        "0x0"
+      ],
+      "sm_mhz_range": [
+        2332.0,
+        2422.0
+      ],
+      "mem_mhz_values": [
+        12481.0
+      ],
+      "power_w_max": 430.748,
+      "temp_c_max": 66.0,
+      "excluded_superseded_files": []
+    }
+  },
+  "stability": {
+    "variants": {
+      "drop_any_capped": "a block or cell is removed when either of its two readings shows the cap",
+      "drop_capped_throughout": "a block or cell is removed only when both of its readings show the cap"
+    },
+    "E24_tfla_device_time": {
+      "file": "e24_tfla_vgpu3090_r4spinb.jsonl",
+      "conventions": "round median of the per-round mean per chunk; oracle and tie set (95% CI over rounds overlaps) as in the TFLA analysis",
+      "all_data": {
+        "n_shapes": 63,
+        "oracle_counts": {
+          "32": 30,
+          "128": 33
+        },
+        "batch1_oracle_counts": {
+          "128": 21
+        },
+        "batched_oracle_counts": {
+          "32": 30,
+          "128": 12
+        },
+        "library_default_128": {
+          "n": 63,
+          "mean_pct": 1.3567956486112946,
+          "p95_pct": 4.233016393094524,
+          "max_pct": 6.072410558305763,
+          "tied_share": 0.5873015873015873
+        },
+        "best_static": {
+          "chunk": 128,
+          "n": 63,
+          "mean_pct": 1.3567956486112946,
+          "p95_pct": 4.233016393094524,
+          "max_pct": 6.072410558305763,
+          "tied_share": 0.5873015873015873
+        },
+        "table_by_batch_in_sample": {
+          "n": 63,
+          "mean_pct": 0.9204304834299493,
+          "p95_pct": 4.233016393094524,
+          "max_pct": 6.072410558305763,
+          "tied_share": 0.7777777777777778
+        }
+      },
+      "variants": {
+        "drop_any_capped": {
+          "rule": "a block or cell is removed when either of its two readings shows the cap",
+          "rows_total": 189,
+          "rows_kept": 10,
+          "shapes_total": 63,
+          "shapes_kept": 10,
+          "shapes_with_all_rounds_kept": 0,
+          "detail": {
+            "retained_data_same_shapes": {
+              "n_shapes": 10,
+              "oracle_counts": {
+                "32": 2,
+                "128": 8
+              },
+              "batch1_oracle_counts": {
+                "128": 6
+              },
+              "batched_oracle_counts": {
+                "32": 2,
+                "128": 2
+              },
+              "library_default_128": {
+                "n": 10,
+                "mean_pct": 0.6963224850725069,
+                "p95_pct": 3.7880301643324454,
+                "max_pct": 3.7880301643324454,
+                "tied_share": 0.8
+              },
+              "best_static": {
+                "chunk": 128,
+                "n": 10,
+                "mean_pct": 0.6963224850725069,
+                "p95_pct": 3.7880301643324454,
+                "max_pct": 3.7880301643324454,
+                "tied_share": 0.8
+              },
+              "table_by_batch_in_sample": {
+                "n": 10,
+                "mean_pct": 0.0,
+                "p95_pct": 0.0,
+                "max_pct": 0.0,
+                "tied_share": 1.0
+              }
+            },
+            "all_data_same_shapes": {
+              "n_shapes": 10,
+              "oracle_counts": {
+                "32": 3,
+                "128": 7
+              },
+              "batch1_oracle_counts": {
+                "128": 6
+              },
+              "batched_oracle_counts": {
+                "32": 3,
+                "128": 1
+              },
+              "library_default_128": {
+                "n": 10,
+                "mean_pct": 0.6840344091721917,
+                "p95_pct": 3.669987161482635,
+                "max_pct": 3.669987161482635,
+                "tied_share": 0.8
+              },
+              "best_static": {
+                "chunk": 128,
+                "n": 10,
+                "mean_pct": 0.6840344091721917,
+                "p95_pct": 3.669987161482635,
+                "max_pct": 3.669987161482635,
+                "tied_share": 0.8
+              },
+              "table_by_batch_in_sample": {
+                "n": 10,
+                "mean_pct": 0.008572681057288367,
+                "p95_pct": 0.08572681057288367,
+                "max_pct": 0.08572681057288367,
+                "tied_share": 1.0
+              }
+            },
+            "changed_oracles": [
+              {
+                "layout": "370m",
+                "L": 512,
+                "batch": 4,
+                "all_data": 32,
+                "retained": 128,
+                "retained_in_all_data_ties": true
+              }
+            ]
+          },
+          "statistics": {
+            "oracle_agreement_exact": {
+              "cap_rule": 0.9,
+              "random_mean": 0.9330000000000002,
+              "random_p025": 0.9,
+              "random_p975": 1.0,
+              "share_random_le": 0.67,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "oracle_in_all_data_tie_set": {
+              "cap_rule": 1.0,
+              "random_mean": 1.0,
+              "random_p025": 1.0,
+              "random_p975": 1.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "all_data_regret_of_retained_oracle_mean_pct": {
+              "cap_rule": 0.008572681057288367,
+              "random_mean": 0.005743696308383206,
+              "random_p025": 0.0,
+              "random_p975": 0.008572681057288367,
+              "share_random_le": 1.0,
+              "share_random_ge": 0.67,
+              "n_draws": 200
+            },
+            "delta_pp_library_default_128_mean": {
+              "cap_rule": 0.01228807590031522,
+              "random_mean": 0.014354467260100413,
+              "random_p025": -0.013206399024430215,
+              "random_p975": 0.051878067486972324,
+              "share_random_le": 0.6,
+              "share_random_ge": 0.48,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean": {
+              "cap_rule": 0.01228807590031522,
+              "random_mean": 0.014354467260100413,
+              "random_p025": -0.013206399024430215,
+              "random_p975": 0.051878067486972324,
+              "share_random_le": 0.6,
+              "share_random_ge": 0.48,
+              "n_draws": 200
+            },
+            "delta_pp_table_by_batch_mean": {
+              "cap_rule": -0.008572681057288367,
+              "random_mean": 0.00014513965968130372,
+              "random_p025": -0.008572681057288367,
+              "random_p975": 0.030983676658464798,
+              "share_random_le": 0.67,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            }
+          }
+        },
+        "drop_capped_throughout": {
+          "rule": "a block or cell is removed only when both of its readings show the cap",
+          "rows_total": 189,
+          "rows_kept": 43,
+          "shapes_total": 63,
+          "shapes_kept": 34,
+          "shapes_with_all_rounds_kept": 2,
+          "detail": {
+            "retained_data_same_shapes": {
+              "n_shapes": 34,
+              "oracle_counts": {
+                "32": 10,
+                "128": 24
+              },
+              "batch1_oracle_counts": {
+                "128": 17
+              },
+              "batched_oracle_counts": {
+                "32": 10,
+                "128": 7
+              },
+              "library_default_128": {
+                "n": 34,
+                "mean_pct": 0.8257105205962547,
+                "p95_pct": 3.7880301643324454,
+                "max_pct": 5.068461618211972,
+                "tied_share": 0.7058823529411765
+              },
+              "best_static": {
+                "chunk": 128,
+                "n": 34,
+                "mean_pct": 0.8257105205962547,
+                "p95_pct": 3.7880301643324454,
+                "max_pct": 5.068461618211972,
+                "tied_share": 0.7058823529411765
+              },
+              "table_by_batch_in_sample": {
+                "n": 34,
+                "mean_pct": 0.5373597681804754,
+                "p95_pct": 3.5062102362581005,
+                "max_pct": 3.7880301643324454,
+                "tied_share": 0.8235294117647058
+              }
+            },
+            "all_data_same_shapes": {
+              "n_shapes": 34,
+              "oracle_counts": {
+                "32": 11,
+                "128": 23
+              },
+              "batch1_oracle_counts": {
+                "128": 17
+              },
+              "batched_oracle_counts": {
+                "32": 11,
+                "128": 6
+              },
+              "library_default_128": {
+                "n": 34,
+                "mean_pct": 0.816451004396526,
+                "p95_pct": 3.669987161482635,
+                "max_pct": 3.932271585882363,
+                "tied_share": 0.7352941176470589
+              },
+              "best_static": {
+                "chunk": 128,
+                "n": 34,
+                "mean_pct": 0.816451004396526,
+                "p95_pct": 3.669987161482635,
+                "max_pct": 3.932271585882363,
+                "tied_share": 0.7352941176470589
+              },
+              "table_by_batch_in_sample": {
+                "n": 34,
+                "mean_pct": 0.4320906235624644,
+                "p95_pct": 3.3900348982391915,
+                "max_pct": 3.669987161482635,
+                "tied_share": 0.8529411764705882
+              }
+            },
+            "changed_oracles": [
+              {
+                "layout": "370m",
+                "L": 512,
+                "batch": 4,
+                "all_data": 32,
+                "retained": 128,
+                "retained_in_all_data_ties": true
+              }
+            ]
+          },
+          "statistics": {
+            "oracle_agreement_exact": {
+              "cap_rule": 0.9705882352941176,
+              "random_mean": 0.9822058823529413,
+              "random_p025": 0.9705882352941176,
+              "random_p975": 1.0,
+              "share_random_le": 0.605,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "oracle_in_all_data_tie_set": {
+              "cap_rule": 1.0,
+              "random_mean": 1.0,
+              "random_p025": 1.0,
+              "random_p975": 1.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "all_data_regret_of_retained_oracle_mean_pct": {
+              "cap_rule": 0.002521376781555402,
+              "random_mean": 0.0015254329528410183,
+              "random_p025": 0.0,
+              "random_p975": 0.002521376781555402,
+              "share_random_le": 1.0,
+              "share_random_ge": 0.605,
+              "n_draws": 200
+            },
+            "delta_pp_library_default_128_mean": {
+              "cap_rule": 0.009259516199728757,
+              "random_mean": -0.004609926405420374,
+              "random_p025": -0.08132112563003696,
+              "random_p975": 0.06439554371415837,
+              "share_random_le": 0.555,
+              "share_random_ge": 0.445,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean": {
+              "cap_rule": 0.009259516199728757,
+              "random_mean": -0.004609926405420374,
+              "random_p025": -0.08132112563003696,
+              "random_p975": 0.06439554371415837,
+              "share_random_le": 0.555,
+              "share_random_ge": 0.445,
+              "n_draws": 200
+            },
+            "delta_pp_table_by_batch_mean": {
+              "cap_rule": 0.10526914461801096,
+              "random_mean": 0.03465055476843033,
+              "random_p025": -0.008745626409596252,
+              "random_p975": 0.09886937867763432,
+              "share_random_le": 1.0,
+              "share_random_ge": 0.0,
+              "n_draws": 200
+            }
+          }
+        }
+      },
+      "round_pairs": {
+        "cap_in_any_reading": {
+          "same_status": {
+            "pairs": 169,
+            "argmin_agreement": 0.9822485207100592,
+            "abs_latency_diff_pct_median": 0.10272351841489336
+          },
+          "mixed_status": {
+            "pairs": 20,
+            "argmin_agreement": 0.95,
+            "abs_latency_diff_pct_median": 2.128063619381937,
+            "capped_vs_uncapped_latency_diff_pct": {
+              "median": -2.083656747629803,
+              "p05": -3.9540358011017123,
+              "p95": 0.2041734454342581,
+              "share_capped_slower": 0.3
+            }
+          }
+        },
+        "cap_in_both_readings": {
+          "same_status": {
+            "pairs": 125,
+            "argmin_agreement": 0.984,
+            "abs_latency_diff_pct_median": 0.09500235601123119
+          },
+          "mixed_status": {
+            "pairs": 64,
+            "argmin_agreement": 0.96875,
+            "abs_latency_diff_pct_median": 0.2323447308755,
+            "capped_vs_uncapped_latency_diff_pct": {
+              "median": -0.08029978354144873,
+              "p05": -3.6199321154688935,
+              "p95": 0.2527352088238487,
+              "share_capped_slower": 0.453125
+            }
+          }
+        }
+      },
+      "cap_share_of_blocks": {
+        "batch": {
+          "1": {
+            "rows": 63,
+            "cap_in_any_reading": 0.9047619047619048,
+            "cap_in_both_readings": 0.6190476190476191
+          },
+          "4": {
+            "rows": 63,
+            "cap_in_any_reading": 0.9682539682539683,
+            "cap_in_both_readings": 0.8412698412698413
+          },
+          "16": {
+            "rows": 63,
+            "cap_in_any_reading": 0.9682539682539683,
+            "cap_in_both_readings": 0.8571428571428571
+          }
+        },
+        "layout": {
+          "1.4b": {
+            "rows": 63,
+            "cap_in_any_reading": 0.9841269841269841,
+            "cap_in_both_readings": 0.7777777777777778
+          },
+          "2.8b": {
+            "rows": 63,
+            "cap_in_any_reading": 0.9047619047619048,
+            "cap_in_both_readings": 0.7777777777777778
+          },
+          "370m": {
+            "rows": 63,
+            "cap_in_any_reading": 0.9523809523809523,
+            "cap_in_both_readings": 0.7619047619047619
+          }
+        },
+        "L": {
+          "512": {
+            "rows": 27,
+            "cap_in_any_reading": 0.9259259259259259,
+            "cap_in_both_readings": 0.5925925925925926
+          },
+          "1024": {
+            "rows": 27,
+            "cap_in_any_reading": 0.8888888888888888,
+            "cap_in_both_readings": 0.7037037037037037
+          },
+          "2048": {
+            "rows": 27,
+            "cap_in_any_reading": 0.9629629629629629,
+            "cap_in_both_readings": 0.8148148148148148
+          },
+          "3072": {
+            "rows": 27,
+            "cap_in_any_reading": 0.8888888888888888,
+            "cap_in_both_readings": 0.8148148148148148
+          },
+          "4096": {
+            "rows": 27,
+            "cap_in_any_reading": 1.0,
+            "cap_in_both_readings": 0.9259259259259259
+          },
+          "6144": {
+            "rows": 27,
+            "cap_in_any_reading": 1.0,
+            "cap_in_both_readings": 0.8148148148148148
+          },
+          "8192": {
+            "rows": 27,
+            "cap_in_any_reading": 0.9629629629629629,
+            "cap_in_both_readings": 0.7407407407407407
+          }
+        }
+      },
+      "not_recomputed": "leave-one-shape-out cost model: refitting on a subset of shapes is not comparable with the 63-shape fit"
+    },
+    "E24_tfla_launch_inclusive": {
+      "file": "e24_tfla_vgpu3090_r4plainb.jsonl",
+      "conventions": "round median of the per-round mean per chunk; oracle and tie set (95% CI over rounds overlaps) as in the TFLA analysis",
+      "all_data": {
+        "n_shapes": 63,
+        "oracle_counts": {
+          "32": 28,
+          "64": 1,
+          "128": 31,
+          "512": 3
+        },
+        "batch1_oracle_counts": {
+          "64": 1,
+          "128": 17,
+          "512": 3
+        },
+        "batched_oracle_counts": {
+          "32": 28,
+          "128": 14
+        },
+        "library_default_128": {
+          "n": 63,
+          "mean_pct": 1.5005045993841084,
+          "p95_pct": 4.968795430013007,
+          "max_pct": 7.717998480458488,
+          "tied_share": 0.5873015873015873
+        },
+        "best_static": {
+          "chunk": 128,
+          "n": 63,
+          "mean_pct": 1.5005045993841084,
+          "p95_pct": 4.968795430013007,
+          "max_pct": 7.717998480458488,
+          "tied_share": 0.5873015873015873
+        },
+        "table_by_batch_in_sample": {
+          "n": 63,
+          "mean_pct": 1.2792033632810687,
+          "p95_pct": 5.147533613064326,
+          "max_pct": 7.717998480458488,
+          "tied_share": 0.7142857142857143
+        }
+      },
+      "variants": {
+        "drop_any_capped": {
+          "rule": "a block or cell is removed when either of its two readings shows the cap",
+          "rows_total": 189,
+          "rows_kept": 2,
+          "shapes_total": 63,
+          "shapes_kept": 2,
+          "shapes_with_all_rounds_kept": 0,
+          "detail": {
+            "retained_data_same_shapes": {
+              "n_shapes": 2,
+              "oracle_counts": {
+                "64": 1,
+                "128": 1
+              },
+              "batch1_oracle_counts": {
+                "64": 1
+              },
+              "batched_oracle_counts": {
+                "128": 1
+              },
+              "library_default_128": {
+                "n": 2,
+                "mean_pct": 7.1969513353165375,
+                "p95_pct": 14.393902670633075,
+                "max_pct": 14.393902670633075,
+                "tied_share": 0.5
+              },
+              "best_static": {
+                "chunk": 64,
+                "n": 2,
+                "mean_pct": 6.458442378312846,
+                "p95_pct": 12.916884756625691,
+                "max_pct": 12.916884756625691,
+                "tied_share": 0.5
+              },
+              "table_by_batch_in_sample": {
+                "n": 2,
+                "mean_pct": 0.0,
+                "p95_pct": 0.0,
+                "max_pct": 0.0,
+                "tied_share": 1.0
+              }
+            },
+            "all_data_same_shapes": {
+              "n_shapes": 2,
+              "oracle_counts": {
+                "128": 1,
+                "512": 1
+              },
+              "batch1_oracle_counts": {
+                "512": 1
+              },
+              "batched_oracle_counts": {
+                "128": 1
+              },
+              "library_default_128": {
+                "n": 2,
+                "mean_pct": 3.858999240229244,
+                "p95_pct": 7.717998480458488,
+                "max_pct": 7.717998480458488,
+                "tied_share": 1.0
+              },
+              "best_static": {
+                "chunk": 128,
+                "n": 2,
+                "mean_pct": 3.858999240229244,
+                "p95_pct": 7.717998480458488,
+                "max_pct": 7.717998480458488,
+                "tied_share": 1.0
+              },
+              "table_by_batch_in_sample": {
+                "n": 2,
+                "mean_pct": 0.0,
+                "p95_pct": 0.0,
+                "max_pct": 0.0,
+                "tied_share": 1.0
+              }
+            },
+            "changed_oracles": [
+              {
+                "layout": "370m",
+                "L": 512,
+                "batch": 1,
+                "all_data": 512,
+                "retained": 64,
+                "retained_in_all_data_ties": true
+              }
+            ]
+          },
+          "statistics": {
+            "oracle_agreement_exact": {
+              "cap_rule": 0.5,
+              "random_mean": 0.53,
+              "random_p025": 0.0,
+              "random_p975": 1.0,
+              "share_random_le": 0.745,
+              "share_random_ge": 0.805,
+              "n_draws": 200
+            },
+            "oracle_in_all_data_tie_set": {
+              "cap_rule": 1.0,
+              "random_mean": 1.0,
+              "random_p025": 1.0,
+              "random_p975": 1.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "all_data_regret_of_retained_oracle_mean_pct": {
+              "cap_rule": 1.9294998828319865,
+              "random_mean": 2.13764034444306,
+              "random_p025": 0.0,
+              "random_p975": 6.674025130431083,
+              "share_random_le": 0.705,
+              "share_random_ge": 0.52,
+              "n_draws": 200
+            },
+            "delta_pp_library_default_128_mean": {
+              "cap_rule": 3.3379520950872936,
+              "random_mean": 4.029644824774168,
+              "random_p025": 0.7465170622131594,
+              "random_p975": 10.371537838504054,
+              "share_random_le": 0.705,
+              "share_random_ge": 0.52,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean": {
+              "cap_rule": 2.599443138083602,
+              "random_mean": 0.6271750737989313,
+              "random_p025": -3.858999240229244,
+              "random_p975": 2.599443138083602,
+              "share_random_le": 1.0,
+              "share_random_ge": 0.13,
+              "n_draws": 200
+            },
+            "delta_pp_table_by_batch_mean": {
+              "cap_rule": 0.0,
+              "random_mean": 0.0,
+              "random_p025": 0.0,
+              "random_p975": 0.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            }
+          }
+        },
+        "drop_capped_throughout": {
+          "rule": "a block or cell is removed only when both of its readings show the cap",
+          "rows_total": 189,
+          "rows_kept": 27,
+          "shapes_total": 63,
+          "shapes_kept": 18,
+          "shapes_with_all_rounds_kept": 4,
+          "detail": {
+            "retained_data_same_shapes": {
+              "n_shapes": 18,
+              "oracle_counts": {
+                "32": 3,
+                "64": 1,
+                "128": 11,
+                "512": 3
+              },
+              "batch1_oracle_counts": {
+                "64": 1,
+                "128": 6,
+                "512": 3
+              },
+              "batched_oracle_counts": {
+                "32": 3,
+                "128": 5
+              },
+              "library_default_128": {
+                "n": 18,
+                "mean_pct": 1.5377242266778564,
+                "p95_pct": 7.717998480458488,
+                "max_pct": 7.717998480458488,
+                "tied_share": 0.8333333333333334
+              },
+              "best_static": {
+                "chunk": 128,
+                "n": 18,
+                "mean_pct": 1.5377242266778564,
+                "p95_pct": 7.717998480458488,
+                "max_pct": 7.717998480458488,
+                "tied_share": 0.8333333333333334
+              },
+              "table_by_batch_in_sample": {
+                "n": 18,
+                "mean_pct": 1.5377242266778564,
+                "p95_pct": 7.717998480458488,
+                "max_pct": 7.717998480458488,
+                "tied_share": 0.8333333333333334
+              }
+            },
+            "all_data_same_shapes": {
+              "n_shapes": 18,
+              "oracle_counts": {
+                "32": 3,
+                "64": 1,
+                "128": 11,
+                "512": 3
+              },
+              "batch1_oracle_counts": {
+                "64": 1,
+                "128": 6,
+                "512": 3
+              },
+              "batched_oracle_counts": {
+                "32": 3,
+                "128": 5
+              },
+              "library_default_128": {
+                "n": 18,
+                "mean_pct": 1.5279575739716895,
+                "p95_pct": 7.717998480458488,
+                "max_pct": 7.717998480458488,
+                "tied_share": 0.8333333333333334
+              },
+              "best_static": {
+                "chunk": 128,
+                "n": 18,
+                "mean_pct": 1.5279575739716895,
+                "p95_pct": 7.717998480458488,
+                "max_pct": 7.717998480458488,
+                "tied_share": 0.8333333333333334
+              },
+              "table_by_batch_in_sample": {
+                "n": 18,
+                "mean_pct": 1.5279575739716895,
+                "p95_pct": 7.717998480458488,
+                "max_pct": 7.717998480458488,
+                "tied_share": 0.8333333333333334
+              }
+            },
+            "changed_oracles": []
+          },
+          "statistics": {
+            "oracle_agreement_exact": {
+              "cap_rule": 1.0,
+              "random_mean": 0.9633333333333334,
+              "random_p025": 0.8888888888888888,
+              "random_p975": 1.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 0.485,
+              "n_draws": 200
+            },
+            "oracle_in_all_data_tie_set": {
+              "cap_rule": 1.0,
+              "random_mean": 1.0,
+              "random_p025": 1.0,
+              "random_p975": 1.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "all_data_regret_of_retained_oracle_mean_pct": {
+              "cap_rule": 0.0,
+              "random_mean": 0.19223496863255246,
+              "random_p025": 0.0,
+              "random_p975": 0.5677861849795105,
+              "share_random_le": 0.485,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "delta_pp_library_default_128_mean": {
+              "cap_rule": 0.009766652706166834,
+              "random_mean": 0.2833230588320217,
+              "random_p025": -0.021543288025282336,
+              "random_p975": 0.8533817464180644,
+              "share_random_le": 0.485,
+              "share_random_ge": 0.535,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean": {
+              "cap_rule": 0.009766652706166834,
+              "random_mean": 0.2833230588320217,
+              "random_p025": -0.021543288025282336,
+              "random_p975": 0.8533817464180644,
+              "share_random_le": 0.485,
+              "share_random_ge": 0.535,
+              "n_draws": 200
+            },
+            "delta_pp_table_by_batch_mean": {
+              "cap_rule": 0.009766652706166834,
+              "random_mean": 0.2742617267661023,
+              "random_p025": -0.021543288025282336,
+              "random_p975": 0.7917444219185361,
+              "share_random_le": 0.485,
+              "share_random_ge": 0.535,
+              "n_draws": 200
+            }
+          }
+        }
+      },
+      "round_pairs": {
+        "cap_in_any_reading": {
+          "same_status": {
+            "pairs": 185,
+            "argmin_agreement": 0.9243243243243243,
+            "abs_latency_diff_pct_median": 0.04894004917450623
+          },
+          "mixed_status": {
+            "pairs": 4,
+            "argmin_agreement": 0.25,
+            "abs_latency_diff_pct_median": 1.736293491806118,
+            "capped_vs_uncapped_latency_diff_pct": {
+              "median": -0.0786182099555055,
+              "p05": -2.2361037740596217,
+              "p95": 4.084858065858411,
+              "share_capped_slower": 0.5
+            }
+          }
+        },
+        "cap_in_both_readings": {
+          "same_status": {
+            "pairs": 161,
+            "argmin_agreement": 0.906832298136646,
+            "abs_latency_diff_pct_median": 0.04894004917450623
+          },
+          "mixed_status": {
+            "pairs": 28,
+            "argmin_agreement": 0.9285714285714286,
+            "abs_latency_diff_pct_median": 0.06077809514491994,
+            "capped_vs_uncapped_latency_diff_pct": {
+              "median": 0.01318332157267399,
+              "p05": -1.30392813752433,
+              "p95": 4.170418845827699,
+              "share_capped_slower": 0.6071428571428571
+            }
+          }
+        }
+      },
+      "cap_share_of_blocks": {
+        "batch": {
+          "1": {
+            "rows": 63,
+            "cap_in_any_reading": 0.9841269841269841,
+            "cap_in_both_readings": 0.6984126984126984
+          },
+          "4": {
+            "rows": 63,
+            "cap_in_any_reading": 0.9841269841269841,
+            "cap_in_both_readings": 0.9523809523809523
+          },
+          "16": {
+            "rows": 63,
+            "cap_in_any_reading": 1.0,
+            "cap_in_both_readings": 0.9206349206349206
+          }
+        },
+        "layout": {
+          "1.4b": {
+            "rows": 63,
+            "cap_in_any_reading": 1.0,
+            "cap_in_both_readings": 0.8888888888888888
+          },
+          "2.8b": {
+            "rows": 63,
+            "cap_in_any_reading": 1.0,
+            "cap_in_both_readings": 0.8412698412698413
+          },
+          "370m": {
+            "rows": 63,
+            "cap_in_any_reading": 0.9682539682539683,
+            "cap_in_both_readings": 0.8412698412698413
+          }
+        },
+        "L": {
+          "512": {
+            "rows": 27,
+            "cap_in_any_reading": 0.9259259259259259,
+            "cap_in_both_readings": 0.6296296296296297
+          },
+          "1024": {
+            "rows": 27,
+            "cap_in_any_reading": 1.0,
+            "cap_in_both_readings": 0.7407407407407407
+          },
+          "2048": {
+            "rows": 27,
+            "cap_in_any_reading": 1.0,
+            "cap_in_both_readings": 0.9259259259259259
+          },
+          "3072": {
+            "rows": 27,
+            "cap_in_any_reading": 1.0,
+            "cap_in_both_readings": 0.8888888888888888
+          },
+          "4096": {
+            "rows": 27,
+            "cap_in_any_reading": 1.0,
+            "cap_in_both_readings": 1.0
+          },
+          "6144": {
+            "rows": 27,
+            "cap_in_any_reading": 1.0,
+            "cap_in_both_readings": 0.9259259259259259
+          },
+          "8192": {
+            "rows": 27,
+            "cap_in_any_reading": 1.0,
+            "cap_in_both_readings": 0.8888888888888888
+          }
+        }
+      },
+      "not_recomputed": "leave-one-shape-out cost model: refitting on a subset of shapes is not comparable with the 63-shape fit"
+    },
+    "E12_tp_widths_rtx3090": {
+      "file": "e12_tp_widths_vgpu3090.jsonl",
+      "conventions": "round mean per chunk; oracle and tie set as in the E12 analysis; selectors pooled over the shard shapes (tensor-parallel degree > 1); frozen cost-model choices (they do not depend on these timings)",
+      "families": {
+        "ref": {
+          "n_shapes": 168,
+          "n_shard_shapes": 126,
+          "shape_table_matches_e12_analysis": true,
+          "cost_model_note": null,
+          "all_data": {
+            "best_static_chunk": 256,
+            "round_argmin_agreement": 0.625,
+            "pooled_shards": {
+              "unsharded_table": {
+                "n": 126,
+                "mean_pct": 2.2202623754455675,
+                "p95_pct": 12.606200093274012,
+                "max_pct": 49.97784655767843,
+                "tied_share": 0.9285714285714286
+              },
+              "calibration_width_table": {
+                "n": 126,
+                "mean_pct": 4.115999758237619,
+                "p95_pct": 32.64666201767797,
+                "max_pct": 53.560837504451264,
+                "tied_share": 0.9285714285714286
+              },
+              "cost_model": {
+                "n": 126,
+                "mean_pct": 4.002714821241423,
+                "p95_pct": 22.411234013772074,
+                "max_pct": 53.560837504451264,
+                "tied_share": 0.9047619047619048
+              },
+              "best_static": {
+                "n": 126,
+                "mean_pct": 23.103480391851697,
+                "p95_pct": 78.61013048639572,
+                "max_pct": 152.40584844870395,
+                "tied_share": 0.4365079365079365
+              },
+              "retuned_at_shard_width_cross_round": {
+                "n": 126,
+                "mean_pct": 6.129965219184081,
+                "p95_pct": 36.640698008883426,
+                "max_pct": 73.91195870337262
+              }
+            }
+          },
+          "variants": {
+            "drop_any_capped": {
+              "rule": "a block or cell is removed when either of its two readings shows the cap",
+              "rows_total": 504,
+              "rows_kept": 154,
+              "shapes_total": 168,
+              "shapes_kept": 93,
+              "shapes_with_all_rounds_kept": 16,
+              "detail": {
+                "best_static_chunk_retained": 256,
+                "pooled_shards": {
+                  "unsharded_table": {
+                    "all_data_same_shapes": {
+                      "n": 51,
+                      "mean_pct": 3.4080005745851305,
+                      "p95_pct": 17.523843157110022,
+                      "max_pct": 49.97784655767843,
+                      "tied_share": 0.9803921568627451
+                    },
+                    "retained_data": {
+                      "n": 51,
+                      "mean_pct": 11.080451465697223,
+                      "p95_pct": 53.05761212634344,
+                      "max_pct": 105.09583542472471,
+                      "tied_share": 0.803921568627451
+                    }
+                  },
+                  "calibration_width_table": {
+                    "all_data_same_shapes": {
+                      "n": 49,
+                      "mean_pct": 5.941164952744479,
+                      "p95_pct": 37.24129983111376,
+                      "max_pct": 48.45557652148636,
+                      "tied_share": 0.9795918367346939
+                    },
+                    "retained_data": {
+                      "n": 49,
+                      "mean_pct": 9.37224679813632,
+                      "p95_pct": 49.38337730712868,
+                      "max_pct": 86.09360539387363,
+                      "tied_share": 0.8571428571428571
+                    }
+                  },
+                  "cost_model": {
+                    "all_data_same_shapes": {
+                      "n": 71,
+                      "mean_pct": 4.805014402010864,
+                      "p95_pct": 25.83707426973877,
+                      "max_pct": 49.97784655767843,
+                      "tied_share": 0.9436619718309859
+                    },
+                    "retained_data": {
+                      "n": 71,
+                      "mean_pct": 8.398612575984592,
+                      "p95_pct": 47.61868449640971,
+                      "max_pct": 105.09583542472471,
+                      "tied_share": 0.7887323943661971
+                    }
+                  },
+                  "best_static": {
+                    "all_data_same_shapes": {
+                      "n": 71,
+                      "mean_pct": 23.52822701644876,
+                      "p95_pct": 85.53899954940356,
+                      "max_pct": 152.40584844870395,
+                      "tied_share": 0.6619718309859155
+                    },
+                    "retained_data": {
+                      "n": 71,
+                      "mean_pct": 27.316122612994764,
+                      "p95_pct": 93.23797896090254,
+                      "max_pct": 152.61770461957323,
+                      "tied_share": 0.5070422535211268
+                    }
+                  },
+                  "retuned_at_shard_width_cross_round": {
+                    "shapes": "shard shapes with at least two retained rounds",
+                    "all_data_same_shapes": {
+                      "n": 38,
+                      "mean_pct": 10.657327920024148,
+                      "p95_pct": 39.06792601148161,
+                      "max_pct": 53.16164653262809
+                    },
+                    "retained_data": {
+                      "n": 38,
+                      "mean_pct": 9.600644774826218,
+                      "p95_pct": 43.5764977254791,
+                      "max_pct": 71.75437603636361
+                    }
+                  }
+                },
+                "round_argmin_agreement_retained": 0.5555555555555556
+              },
+              "statistics": {
+                "oracle_agreement_exact": {
+                  "cap_rule": 0.8494623655913979,
+                  "random_mean": 0.8520967741935483,
+                  "random_p025": 0.8064516129032258,
+                  "random_p975": 0.9032258064516129,
+                  "share_random_le": 0.525,
+                  "share_random_ge": 0.615,
+                  "n_draws": 200
+                },
+                "oracle_in_all_data_tie_set": {
+                  "cap_rule": 1.0,
+                  "random_mean": 1.0,
+                  "random_p025": 1.0,
+                  "random_p975": 1.0,
+                  "share_random_le": 1.0,
+                  "share_random_ge": 1.0,
+                  "n_draws": 200
+                },
+                "all_data_regret_of_retained_oracle_mean_pct": {
+                  "cap_rule": 0.787976476402801,
+                  "random_mean": 0.9752507683352397,
+                  "random_p025": 0.4601311500779831,
+                  "random_p975": 1.5176971483247101,
+                  "share_random_le": 0.265,
+                  "share_random_ge": 0.735,
+                  "n_draws": 200
+                },
+                "delta_pp_unsharded_table_mean": {
+                  "cap_rule": 7.672450891112092,
+                  "random_mean": 3.8458033069207316,
+                  "random_p025": 1.028095046190294,
+                  "random_p975": 6.944662118587823,
+                  "share_random_le": 0.98,
+                  "share_random_ge": 0.02,
+                  "n_draws": 200
+                },
+                "delta_pp_calibration_width_table_mean": {
+                  "cap_rule": 3.431081845391841,
+                  "random_mean": 2.7347822025555812,
+                  "random_p025": -0.9194950588551369,
+                  "random_p975": 6.4296987591784065,
+                  "share_random_le": 0.64,
+                  "share_random_ge": 0.36,
+                  "n_draws": 200
+                },
+                "delta_pp_cost_model_mean": {
+                  "cap_rule": 3.593598173973728,
+                  "random_mean": 1.9441869855856584,
+                  "random_p025": 0.1190574701616869,
+                  "random_p975": 4.250938814556967,
+                  "share_random_le": 0.935,
+                  "share_random_ge": 0.065,
+                  "n_draws": 200
+                },
+                "delta_pp_best_static_mean": {
+                  "cap_rule": 3.7878955965460044,
+                  "random_mean": 2.373918656203746,
+                  "random_p025": -0.19573015296244697,
+                  "random_p975": 5.1107429608878165,
+                  "share_random_le": 0.845,
+                  "share_random_ge": 0.155,
+                  "n_draws": 200
+                },
+                "delta_pp_retuned_at_shard_width_cross_round_mean": {
+                  "cap_rule": -1.0566831451979297,
+                  "random_mean": -0.49871138801933695,
+                  "random_p025": -4.033285671186239,
+                  "random_p975": 1.7108831400648445,
+                  "share_random_le": 0.335,
+                  "share_random_ge": 0.665,
+                  "n_draws": 200
+                }
+              }
+            },
+            "drop_capped_throughout": {
+              "rule": "a block or cell is removed only when both of its readings show the cap",
+              "rows_total": 504,
+              "rows_kept": 382,
+              "shapes_total": 168,
+              "shapes_kept": 163,
+              "shapes_with_all_rounds_kept": 81,
+              "detail": {
+                "best_static_chunk_retained": 256,
+                "pooled_shards": {
+                  "unsharded_table": {
+                    "all_data_same_shapes": {
+                      "n": 121,
+                      "mean_pct": 2.265817015058515,
+                      "p95_pct": 12.843872407429679,
+                      "max_pct": 49.97784655767843,
+                      "tied_share": 0.9338842975206612
+                    },
+                    "retained_data": {
+                      "n": 121,
+                      "mean_pct": 3.481384331782434,
+                      "p95_pct": 22.05105345837788,
+                      "max_pct": 52.67751557620581,
+                      "tied_share": 0.9256198347107438
+                    }
+                  },
+                  "calibration_width_table": {
+                    "all_data_same_shapes": {
+                      "n": 123,
+                      "mean_pct": 4.216373311243343,
+                      "p95_pct": 33.611728577568854,
+                      "max_pct": 53.560837504451264,
+                      "tied_share": 0.926829268292683
+                    },
+                    "retained_data": {
+                      "n": 123,
+                      "mean_pct": 4.277748483498495,
+                      "p95_pct": 33.611728577568854,
+                      "max_pct": 53.560837504451264,
+                      "tied_share": 0.926829268292683
+                    }
+                  },
+                  "cost_model": {
+                    "all_data_same_shapes": {
+                      "n": 123,
+                      "mean_pct": 4.057867425879009,
+                      "p95_pct": 22.48327012485091,
+                      "max_pct": 53.560837504451264,
+                      "tied_share": 0.9105691056910569
+                    },
+                    "retained_data": {
+                      "n": 123,
+                      "mean_pct": 4.060343759487011,
+                      "p95_pct": 22.48327012485091,
+                      "max_pct": 53.560837504451264,
+                      "tied_share": 0.8943089430894309
+                    }
+                  },
+                  "best_static": {
+                    "all_data_same_shapes": {
+                      "n": 123,
+                      "mean_pct": 23.33203818004633,
+                      "p95_pct": 79.01418086748532,
+                      "max_pct": 152.40584844870395,
+                      "tied_share": 0.43902439024390244
+                    },
+                    "retained_data": {
+                      "n": 123,
+                      "mean_pct": 23.37060825159652,
+                      "p95_pct": 78.4637053712609,
+                      "max_pct": 152.40584844870395,
+                      "tied_share": 0.5040650406504065
+                    }
+                  },
+                  "retuned_at_shard_width_cross_round": {
+                    "shapes": "shard shapes with at least two retained rounds",
+                    "all_data_same_shapes": {
+                      "n": 104,
+                      "mean_pct": 7.386866758741837,
+                      "p95_pct": 37.3516998009901,
+                      "max_pct": 73.91195870337262
+                    },
+                    "retained_data": {
+                      "n": 104,
+                      "mean_pct": 7.400191273221022,
+                      "p95_pct": 37.3516998009901,
+                      "max_pct": 73.91195870337262
+                    }
+                  }
+                },
+                "round_argmin_agreement_retained": 0.6014492753623188
+              },
+              "statistics": {
+                "oracle_agreement_exact": {
+                  "cap_rule": 0.9570552147239264,
+                  "random_mean": 0.9678220858895705,
+                  "random_p025": 0.9447852760736196,
+                  "random_p975": 0.9877300613496932,
+                  "share_random_le": 0.22,
+                  "share_random_ge": 0.89,
+                  "n_draws": 200
+                },
+                "oracle_in_all_data_tie_set": {
+                  "cap_rule": 1.0,
+                  "random_mean": 1.0,
+                  "random_p025": 1.0,
+                  "random_p975": 1.0,
+                  "share_random_le": 1.0,
+                  "share_random_ge": 1.0,
+                  "n_draws": 200
+                },
+                "all_data_regret_of_retained_oracle_mean_pct": {
+                  "cap_rule": 0.08899988831470505,
+                  "random_mean": 0.041634368405828244,
+                  "random_p025": 0.005086173712979708,
+                  "random_p975": 0.09481498426006038,
+                  "share_random_le": 0.92,
+                  "share_random_ge": 0.08,
+                  "n_draws": 200
+                },
+                "delta_pp_unsharded_table_mean": {
+                  "cap_rule": 1.2155673167239187,
+                  "random_mean": 0.4430287207124083,
+                  "random_p025": -0.0007043522120352571,
+                  "random_p975": 1.1215062798667963,
+                  "share_random_le": 0.995,
+                  "share_random_ge": 0.005,
+                  "n_draws": 200
+                },
+                "delta_pp_calibration_width_table_mean": {
+                  "cap_rule": 0.06137517225515232,
+                  "random_mean": 0.04524812410787298,
+                  "random_p025": -0.04481735328263479,
+                  "random_p975": 0.1613402331899076,
+                  "share_random_le": 0.635,
+                  "share_random_ge": 0.365,
+                  "n_draws": 200
+                },
+                "delta_pp_cost_model_mean": {
+                  "cap_rule": 0.0024763336080013687,
+                  "random_mean": 0.027155724351250195,
+                  "random_p025": -0.036475272916465705,
+                  "random_p975": 0.11425834347413208,
+                  "share_random_le": 0.315,
+                  "share_random_ge": 0.685,
+                  "n_draws": 200
+                },
+                "delta_pp_best_static_mean": {
+                  "cap_rule": 0.038570071550189766,
+                  "random_mean": 0.06268908574991086,
+                  "random_p025": -0.38637417862144036,
+                  "random_p975": 0.5138014784472943,
+                  "share_random_le": 0.45,
+                  "share_random_ge": 0.55,
+                  "n_draws": 200
+                },
+                "delta_pp_retuned_at_shard_width_cross_round_mean": {
+                  "cap_rule": 0.013324514479185368,
+                  "random_mean": 0.15786166222147638,
+                  "random_p025": -0.06942078610675154,
+                  "random_p975": 0.32259006463219597,
+                  "share_random_le": 0.27,
+                  "share_random_ge": 0.73,
+                  "n_draws": 200
+                }
+              }
+            }
+          },
+          "round_pairs": {
+            "cap_in_any_reading": {
+              "same_status": {
+                "pairs": 350,
+                "argmin_agreement": 0.7571428571428571,
+                "abs_latency_diff_pct_median": 0.7169443881658633
+              },
+              "mixed_status": {
+                "pairs": 154,
+                "argmin_agreement": 0.6818181818181818,
+                "abs_latency_diff_pct_median": 1.9701744045969138,
+                "capped_vs_uncapped_latency_diff_pct": {
+                  "median": -0.327000635097241,
+                  "p05": -17.10875245988664,
+                  "p95": 6.1646204810170415,
+                  "share_capped_slower": 0.4025974025974026
+                }
+              }
+            },
+            "cap_in_both_readings": {
+              "same_status": {
+                "pairs": 340,
+                "argmin_agreement": 0.6764705882352942,
+                "abs_latency_diff_pct_median": 1.5669804240315277
+              },
+              "mixed_status": {
+                "pairs": 164,
+                "argmin_agreement": 0.8536585365853658,
+                "abs_latency_diff_pct_median": 0.45846326824848793,
+                "capped_vs_uncapped_latency_diff_pct": {
+                  "median": -0.033740906366469536,
+                  "p05": -8.452193632055048,
+                  "p95": 1.2369850647636491,
+                  "share_capped_slower": 0.47560975609756095
+                }
+              }
+            }
+          },
+          "cap_share_of_blocks": {
+            "batch": {
+              "1": {
+                "rows": 168,
+                "cap_in_any_reading": 0.5,
+                "cap_in_both_readings": 0.09523809523809523
+              },
+              "4": {
+                "rows": 168,
+                "cap_in_any_reading": 0.6845238095238095,
+                "cap_in_both_readings": 0.26785714285714285
+              },
+              "16": {
+                "rows": 168,
+                "cap_in_any_reading": 0.8988095238095238,
+                "cap_in_both_readings": 0.3630952380952381
+              }
+            },
+            "d": {
+              "512": {
+                "rows": 63,
+                "cap_in_any_reading": 0.6349206349206349,
+                "cap_in_both_readings": 0.12698412698412698
+              },
+              "640": {
+                "rows": 63,
+                "cap_in_any_reading": 0.5873015873015873,
+                "cap_in_both_readings": 0.1746031746031746
+              },
+              "1024": {
+                "rows": 63,
+                "cap_in_any_reading": 0.6825396825396826,
+                "cap_in_both_readings": 0.14285714285714285
+              },
+              "1280": {
+                "rows": 63,
+                "cap_in_any_reading": 0.6031746031746031,
+                "cap_in_both_readings": 0.20634920634920634
+              },
+              "2048": {
+                "rows": 63,
+                "cap_in_any_reading": 0.7619047619047619,
+                "cap_in_both_readings": 0.3492063492063492
+              },
+              "2560": {
+                "rows": 63,
+                "cap_in_any_reading": 0.7619047619047619,
+                "cap_in_both_readings": 0.3492063492063492
+              },
+              "4096": {
+                "rows": 63,
+                "cap_in_any_reading": 0.746031746031746,
+                "cap_in_both_readings": 0.30158730158730157
+              },
+              "5120": {
+                "rows": 63,
+                "cap_in_any_reading": 0.7777777777777778,
+                "cap_in_both_readings": 0.2857142857142857
+              }
+            },
+            "L": {
+              "128": {
+                "rows": 72,
+                "cap_in_any_reading": 0.5138888888888888,
+                "cap_in_both_readings": 0.20833333333333334
+              },
+              "256": {
+                "rows": 72,
+                "cap_in_any_reading": 0.5277777777777778,
+                "cap_in_both_readings": 0.2222222222222222
+              },
+              "512": {
+                "rows": 72,
+                "cap_in_any_reading": 0.75,
+                "cap_in_both_readings": 0.18055555555555555
+              },
+              "1024": {
+                "rows": 72,
+                "cap_in_any_reading": 0.5416666666666666,
+                "cap_in_both_readings": 0.125
+              },
+              "2048": {
+                "rows": 72,
+                "cap_in_any_reading": 0.75,
+                "cap_in_both_readings": 0.2222222222222222
+              },
+              "4096": {
+                "rows": 72,
+                "cap_in_any_reading": 0.8888888888888888,
+                "cap_in_both_readings": 0.3611111111111111
+              },
+              "8192": {
+                "rows": 72,
+                "cap_in_any_reading": 0.8888888888888888,
+                "cap_in_both_readings": 0.375
+              }
+            }
+          }
+        },
+        "triton": {
+          "n_shapes": 168,
+          "n_shard_shapes": 126,
+          "shape_table_matches_e12_analysis": true,
+          "cost_model_note": null,
+          "all_data": {
+            "best_static_chunk": 256,
+            "round_argmin_agreement": 0.5178571428571429,
+            "pooled_shards": {
+              "unsharded_table": {
+                "n": 126,
+                "mean_pct": 36.81928435065232,
+                "p95_pct": 184.88716589124567,
+                "max_pct": 449.02079410651686,
+                "tied_share": 0.6666666666666666
+              },
+              "calibration_width_table": {
+                "n": 126,
+                "mean_pct": 16.462339698876825,
+                "p95_pct": 74.13362781644574,
+                "max_pct": 148.6875212333525,
+                "tied_share": 0.7777777777777778
+              },
+              "cost_model": {
+                "n": 126,
+                "mean_pct": 6.514821559183645,
+                "p95_pct": 30.515601404414376,
+                "max_pct": 54.678128658358126,
+                "tied_share": 0.8888888888888888
+              },
+              "best_static": {
+                "n": 126,
+                "mean_pct": 21.937408425377818,
+                "p95_pct": 43.69485741435367,
+                "max_pct": 152.55922877354865,
+                "tied_share": 0.5634920634920635
+              },
+              "retuned_at_shard_width_cross_round": {
+                "n": 126,
+                "mean_pct": 14.865962183890419,
+                "p95_pct": 60.68661170945647,
+                "max_pct": 113.96643019134353
+              }
+            }
+          },
+          "variants": {
+            "drop_any_capped": {
+              "rule": "a block or cell is removed when either of its two readings shows the cap",
+              "rows_total": 504,
+              "rows_kept": 197,
+              "shapes_total": 168,
+              "shapes_kept": 119,
+              "shapes_with_all_rounds_kept": 17,
+              "detail": {
+                "best_static_chunk_retained": 256,
+                "pooled_shards": {
+                  "unsharded_table": {
+                    "all_data_same_shapes": {
+                      "n": 71,
+                      "mean_pct": 30.658039134371577,
+                      "p95_pct": 105.8895316342377,
+                      "max_pct": 258.0351267204844,
+                      "tied_share": 0.7746478873239436
+                    },
+                    "retained_data": {
+                      "n": 71,
+                      "mean_pct": 34.570337247153184,
+                      "p95_pct": 105.44643682635098,
+                      "max_pct": 287.4143148219877,
+                      "tied_share": 0.647887323943662
+                    }
+                  },
+                  "calibration_width_table": {
+                    "all_data_same_shapes": {
+                      "n": 72,
+                      "mean_pct": 20.073147715887195,
+                      "p95_pct": 79.89118235920978,
+                      "max_pct": 143.27647704220618,
+                      "tied_share": 0.8472222222222222
+                    },
+                    "retained_data": {
+                      "n": 72,
+                      "mean_pct": 26.19824765959833,
+                      "p95_pct": 96.8015200313863,
+                      "max_pct": 164.1665784265403,
+                      "tied_share": 0.7083333333333334
+                    }
+                  },
+                  "cost_model": {
+                    "all_data_same_shapes": {
+                      "n": 90,
+                      "mean_pct": 7.84893163785113,
+                      "p95_pct": 36.16519333806637,
+                      "max_pct": 54.678128658358126,
+                      "tied_share": 0.9333333333333333
+                    },
+                    "retained_data": {
+                      "n": 90,
+                      "mean_pct": 13.226743024564586,
+                      "p95_pct": 45.563535202572666,
+                      "max_pct": 134.0270494659186,
+                      "tied_share": 0.7555555555555555
+                    }
+                  },
+                  "best_static": {
+                    "all_data_same_shapes": {
+                      "n": 90,
+                      "mean_pct": 21.22412387813927,
+                      "p95_pct": 44.56381285048692,
+                      "max_pct": 152.55922877354865,
+                      "tied_share": 0.7222222222222222
+                    },
+                    "retained_data": {
+                      "n": 90,
+                      "mean_pct": 25.926304948199366,
+                      "p95_pct": 64.34874164916505,
+                      "max_pct": 180.29959791036663,
+                      "tied_share": 0.5222222222222223
+                    }
+                  },
+                  "retuned_at_shard_width_cross_round": {
+                    "shapes": "shard shapes with at least two retained rounds",
+                    "all_data_same_shapes": {
+                      "n": 48,
+                      "mean_pct": 20.98827132434777,
+                      "p95_pct": 60.15665003939705,
+                      "max_pct": 70.25015950804986
+                    },
+                    "retained_data": {
+                      "n": 48,
+                      "mean_pct": 19.4634708203598,
+                      "p95_pct": 64.31435712444433,
+                      "max_pct": 70.25015950804986
+                    }
+                  }
+                },
+                "round_argmin_agreement_retained": 0.3770491803278688
+              },
+              "statistics": {
+                "oracle_agreement_exact": {
+                  "cap_rule": 0.7983193277310925,
+                  "random_mean": 0.7928991596638656,
+                  "random_p025": 0.7392857142857143,
+                  "random_p975": 0.8489495798319328,
+                  "share_random_le": 0.635,
+                  "share_random_ge": 0.46,
+                  "n_draws": 200
+                },
+                "oracle_in_all_data_tie_set": {
+                  "cap_rule": 1.0,
+                  "random_mean": 1.0,
+                  "random_p025": 1.0,
+                  "random_p975": 1.0,
+                  "share_random_le": 1.0,
+                  "share_random_ge": 1.0,
+                  "n_draws": 200
+                },
+                "all_data_regret_of_retained_oracle_mean_pct": {
+                  "cap_rule": 1.1659249746018816,
+                  "random_mean": 1.3615025067642221,
+                  "random_p025": 0.8593470773804059,
+                  "random_p975": 1.9590070329938414,
+                  "share_random_le": 0.275,
+                  "share_random_ge": 0.725,
+                  "n_draws": 200
+                },
+                "delta_pp_unsharded_table_mean": {
+                  "cap_rule": 3.912298112781606,
+                  "random_mean": 2.6721270018455665,
+                  "random_p025": -0.6682035575165652,
+                  "random_p975": 7.079560568611867,
+                  "share_random_le": 0.745,
+                  "share_random_ge": 0.255,
+                  "n_draws": 200
+                },
+                "delta_pp_calibration_width_table_mean": {
+                  "cap_rule": 6.125099943711135,
+                  "random_mean": 6.804085462963439,
+                  "random_p025": 1.5409589599575775,
+                  "random_p975": 13.039996795028651,
+                  "share_random_le": 0.48,
+                  "share_random_ge": 0.52,
+                  "n_draws": 200
+                },
+                "delta_pp_cost_model_mean": {
+                  "cap_rule": 5.377811386713456,
+                  "random_mean": 4.690881768667575,
+                  "random_p025": 1.274849752026006,
+                  "random_p975": 7.720192371973707,
+                  "share_random_le": 0.67,
+                  "share_random_ge": 0.33,
+                  "n_draws": 200
+                },
+                "delta_pp_best_static_mean": {
+                  "cap_rule": 4.702181070060096,
+                  "random_mean": 5.285038446737095,
+                  "random_p025": 2.1980227862195747,
+                  "random_p975": 9.366246112513759,
+                  "share_random_le": 0.445,
+                  "share_random_ge": 0.555,
+                  "n_draws": 200
+                },
+                "delta_pp_retuned_at_shard_width_cross_round_mean": {
+                  "cap_rule": -1.5248005039879722,
+                  "random_mean": 0.24968290567697482,
+                  "random_p025": -3.1590378886544026,
+                  "random_p975": 3.1677111523633177,
+                  "share_random_le": 0.135,
+                  "share_random_ge": 0.865,
+                  "n_draws": 200
+                }
+              }
+            },
+            "drop_capped_throughout": {
+              "rule": "a block or cell is removed only when both of its readings show the cap",
+              "rows_total": 504,
+              "rows_kept": 393,
+              "shapes_total": 168,
+              "shapes_kept": 165,
+              "shapes_with_all_rounds_kept": 90,
+              "detail": {
+                "best_static_chunk_retained": 256,
+                "pooled_shards": {
+                  "unsharded_table": {
+                    "all_data_same_shapes": {
+                      "n": 123,
+                      "mean_pct": 37.424245947638724,
+                      "p95_pct": 185.07111276647427,
+                      "max_pct": 449.02079410651686,
+                      "tied_share": 0.6747967479674797
+                    },
+                    "retained_data": {
+                      "n": 123,
+                      "mean_pct": 37.501382372567654,
+                      "p95_pct": 185.07111276647427,
+                      "max_pct": 449.02079410651686,
+                      "tied_share": 0.6910569105691057
+                    }
+                  },
+                  "calibration_width_table": {
+                    "all_data_same_shapes": {
+                      "n": 124,
+                      "mean_pct": 16.710523312618392,
+                      "p95_pct": 74.3102448918135,
+                      "max_pct": 148.6875212333525,
+                      "tied_share": 0.782258064516129
+                    },
+                    "retained_data": {
+                      "n": 124,
+                      "mean_pct": 16.513163527693177,
+                      "p95_pct": 74.3102448918135,
+                      "max_pct": 148.6875212333525,
+                      "tied_share": 0.7741935483870968
+                    }
+                  },
+                  "cost_model": {
+                    "all_data_same_shapes": {
+                      "n": 124,
+                      "mean_pct": 6.60256133196242,
+                      "p95_pct": 30.62389087350305,
+                      "max_pct": 54.678128658358126,
+                      "tied_share": 0.8951612903225806
+                    },
+                    "retained_data": {
+                      "n": 124,
+                      "mean_pct": 6.942088822678508,
+                      "p95_pct": 30.62389087350305,
+                      "max_pct": 54.678128658358126,
+                      "tied_share": 0.8870967741935484
+                    }
+                  },
+                  "best_static": {
+                    "all_data_same_shapes": {
+                      "n": 124,
+                      "mean_pct": 21.918749501803664,
+                      "p95_pct": 43.83186850179609,
+                      "max_pct": 152.55922877354865,
+                      "tied_share": 0.5725806451612904
+                    },
+                    "retained_data": {
+                      "n": 124,
+                      "mean_pct": 22.26769818108922,
+                      "p95_pct": 44.85095524186538,
+                      "max_pct": 152.55922877354865,
+                      "tied_share": 0.5806451612903226
+                    }
+                  },
+                  "retuned_at_shard_width_cross_round": {
+                    "shapes": "shard shapes with at least two retained rounds",
+                    "all_data_same_shapes": {
+                      "n": 105,
+                      "mean_pct": 17.45968440952334,
+                      "p95_pct": 64.85206304306436,
+                      "max_pct": 113.96643019134353
+                    },
+                    "retained_data": {
+                      "n": 105,
+                      "mean_pct": 17.418813500904704,
+                      "p95_pct": 64.85206304306436,
+                      "max_pct": 113.96643019134353
+                    }
+                  }
+                },
+                "round_argmin_agreement_retained": 0.4782608695652174
+              },
+              "statistics": {
+                "oracle_agreement_exact": {
+                  "cap_rule": 0.9575757575757575,
+                  "random_mean": 0.9574242424242422,
+                  "random_p025": 0.9393939393939394,
+                  "random_p975": 0.9818181818181818,
+                  "share_random_le": 0.61,
+                  "share_random_ge": 0.605,
+                  "n_draws": 200
+                },
+                "oracle_in_all_data_tie_set": {
+                  "cap_rule": 1.0,
+                  "random_mean": 1.0,
+                  "random_p025": 1.0,
+                  "random_p975": 1.0,
+                  "share_random_le": 1.0,
+                  "share_random_ge": 1.0,
+                  "n_draws": 200
+                },
+                "all_data_regret_of_retained_oracle_mean_pct": {
+                  "cap_rule": 0.33469633102454865,
+                  "random_mean": 0.24810682240856288,
+                  "random_p025": 0.08818235431988482,
+                  "random_p975": 0.43572283170771436,
+                  "share_random_le": 0.82,
+                  "share_random_ge": 0.18,
+                  "n_draws": 200
+                },
+                "delta_pp_unsharded_table_mean": {
+                  "cap_rule": 0.07713642492893058,
+                  "random_mean": -0.12994311019007113,
+                  "random_p025": -0.8136037309032049,
+                  "random_p975": 0.9089198127423009,
+                  "share_random_le": 0.695,
+                  "share_random_ge": 0.305,
+                  "n_draws": 200
+                },
+                "delta_pp_calibration_width_table_mean": {
+                  "cap_rule": -0.1973597849252151,
+                  "random_mean": 0.21928897707291917,
+                  "random_p025": -0.2701696749556173,
+                  "random_p975": 0.6573948146629698,
+                  "share_random_le": 0.05,
+                  "share_random_ge": 0.95,
+                  "n_draws": 200
+                },
+                "delta_pp_cost_model_mean": {
+                  "cap_rule": 0.3395274907160877,
+                  "random_mean": 0.3528611837860247,
+                  "random_p025": -0.05145051088347336,
+                  "random_p975": 0.7536711340976762,
+                  "share_random_le": 0.505,
+                  "share_random_ge": 0.495,
+                  "n_draws": 200
+                },
+                "delta_pp_best_static_mean": {
+                  "cap_rule": 0.34894867928555584,
+                  "random_mean": 0.4184130161575652,
+                  "random_p025": -0.05825925950178296,
+                  "random_p975": 0.9952943354356834,
+                  "share_random_le": 0.39,
+                  "share_random_ge": 0.61,
+                  "n_draws": 200
+                },
+                "delta_pp_retuned_at_shard_width_cross_round_mean": {
+                  "cap_rule": -0.04087090861863629,
+                  "random_mean": -0.1011698931725198,
+                  "random_p025": -0.9924196275962388,
+                  "random_p975": 0.7826709276059327,
+                  "share_random_le": 0.555,
+                  "share_random_ge": 0.445,
+                  "n_draws": 200
+                }
+              }
+            }
+          },
+          "round_pairs": {
+            "cap_in_any_reading": {
+              "same_status": {
+                "pairs": 300,
+                "argmin_agreement": 0.6733333333333333,
+                "abs_latency_diff_pct_median": 0.9991867230570883
+              },
+              "mixed_status": {
+                "pairs": 204,
+                "argmin_agreement": 0.5686274509803921,
+                "abs_latency_diff_pct_median": 2.5329684363592397,
+                "capped_vs_uncapped_latency_diff_pct": {
+                  "median": 0.07101036708623276,
+                  "p05": -15.829909668045426,
+                  "p95": 18.243674430796162,
+                  "share_capped_slower": 0.5196078431372549
+                }
+              }
+            },
+            "cap_in_both_readings": {
+              "same_status": {
+                "pairs": 354,
+                "argmin_agreement": 0.5480225988700564,
+                "abs_latency_diff_pct_median": 2.925668130359249
+              },
+              "mixed_status": {
+                "pairs": 150,
+                "argmin_agreement": 0.8266666666666667,
+                "abs_latency_diff_pct_median": 0.38363915037068486,
+                "capped_vs_uncapped_latency_diff_pct": {
+                  "median": -0.0705687077184658,
+                  "p05": -7.613245396073659,
+                  "p95": 1.0394654706893798,
+                  "share_capped_slower": 0.4266666666666667
+                }
+              }
+            }
+          },
+          "cap_share_of_blocks": {
+            "batch": {
+              "1": {
+                "rows": 168,
+                "cap_in_any_reading": 0.47619047619047616,
+                "cap_in_both_readings": 0.07738095238095238
+              },
+              "4": {
+                "rows": 168,
+                "cap_in_any_reading": 0.6011904761904762,
+                "cap_in_both_readings": 0.2261904761904762
+              },
+              "16": {
+                "rows": 168,
+                "cap_in_any_reading": 0.75,
+                "cap_in_both_readings": 0.35714285714285715
+              }
+            },
+            "d": {
+              "512": {
+                "rows": 63,
+                "cap_in_any_reading": 0.5873015873015873,
+                "cap_in_both_readings": 0.15873015873015872
+              },
+              "640": {
+                "rows": 63,
+                "cap_in_any_reading": 0.5079365079365079,
+                "cap_in_both_readings": 0.14285714285714285
+              },
+              "1024": {
+                "rows": 63,
+                "cap_in_any_reading": 0.5714285714285714,
+                "cap_in_both_readings": 0.15873015873015872
+              },
+              "1280": {
+                "rows": 63,
+                "cap_in_any_reading": 0.5873015873015873,
+                "cap_in_both_readings": 0.15873015873015872
+              },
+              "2048": {
+                "rows": 63,
+                "cap_in_any_reading": 0.6507936507936508,
+                "cap_in_both_readings": 0.2698412698412698
+              },
+              "2560": {
+                "rows": 63,
+                "cap_in_any_reading": 0.6507936507936508,
+                "cap_in_both_readings": 0.2857142857142857
+              },
+              "4096": {
+                "rows": 63,
+                "cap_in_any_reading": 0.6666666666666666,
+                "cap_in_both_readings": 0.2857142857142857
+              },
+              "5120": {
+                "rows": 63,
+                "cap_in_any_reading": 0.6507936507936508,
+                "cap_in_both_readings": 0.30158730158730157
+              }
+            },
+            "L": {
+              "128": {
+                "rows": 72,
+                "cap_in_any_reading": 0.4166666666666667,
+                "cap_in_both_readings": 0.1388888888888889
+              },
+              "256": {
+                "rows": 72,
+                "cap_in_any_reading": 0.4305555555555556,
+                "cap_in_both_readings": 0.1388888888888889
+              },
+              "512": {
+                "rows": 72,
+                "cap_in_any_reading": 0.6388888888888888,
+                "cap_in_both_readings": 0.16666666666666666
+              },
+              "1024": {
+                "rows": 72,
+                "cap_in_any_reading": 0.5,
+                "cap_in_both_readings": 0.1388888888888889
+              },
+              "2048": {
+                "rows": 72,
+                "cap_in_any_reading": 0.7083333333333334,
+                "cap_in_both_readings": 0.2222222222222222
+              },
+              "4096": {
+                "rows": 72,
+                "cap_in_any_reading": 0.7916666666666666,
+                "cap_in_both_readings": 0.4027777777777778
+              },
+              "8192": {
+                "rows": 72,
+                "cap_in_any_reading": 0.7777777777777778,
+                "cap_in_both_readings": 0.3333333333333333
+              }
+            }
+          }
+        }
+      }
+    },
+    "E17c_production_kernels_rtx3090": {
+      "file": "e17_workbound_vgpu3090full.jsonl",
+      "conventions": "round mean per chunk; tie margin 2.0% as in the E17 analysis",
+      "launch_floor_ms": 0.020989952128380538,
+      "all_data": {
+        "n_cells": 120,
+        "ssd_cells_above_8192_tokens": 18,
+        "ssd_cells_above_8192_tokens_best_256": 18,
+        "gdn_cells": 75,
+        "gdn_cells_best_64": 73,
+        "per_shape": {
+          "gdn:16x128x128": {
+            "n_cells": 15,
+            "best_static_chunk": 64,
+            "best_static_regret_pct": {
+              "mean": 0.0,
+              "max": 0.0
+            },
+            "best_chunk_counts": {
+              "16": 0,
+              "32": 0,
+              "64": 15
+            }
+          },
+          "gdn:32x128x128": {
+            "n_cells": 15,
+            "best_static_chunk": 64,
+            "best_static_regret_pct": {
+              "mean": 0.754169743596873,
+              "max": 11.312546153953097
+            },
+            "best_chunk_counts": {
+              "16": 0,
+              "32": 1,
+              "64": 14
+            }
+          },
+          "gdn:4x256x256": {
+            "n_cells": 15,
+            "best_static_chunk": 64,
+            "best_static_regret_pct": {
+              "mean": 0.49876341208277,
+              "max": 7.48145118124155
+            },
+            "best_chunk_counts": {
+              "16": 0,
+              "32": 1,
+              "64": 14
+            }
+          },
+          "gdn:4x256x512": {
+            "n_cells": 15,
+            "best_static_chunk": 64,
+            "best_static_regret_pct": {
+              "mean": 0.0,
+              "max": 0.0
+            },
+            "best_chunk_counts": {
+              "16": 0,
+              "32": 0,
+              "64": 15
+            }
+          },
+          "gdn:64x128x128": {
+            "n_cells": 15,
+            "best_static_chunk": 64,
+            "best_static_regret_pct": {
+              "mean": 0.0,
+              "max": 0.0
+            },
+            "best_chunk_counts": {
+              "16": 0,
+              "32": 0,
+              "64": 15
+            }
+          },
+          "ssd:d2048": {
+            "n_cells": 15,
+            "best_static_chunk": 256,
+            "best_static_regret_pct": {
+              "mean": 1.667812870154662,
+              "max": 10.813310721393975
+            },
+            "best_chunk_counts": {
+              "32": 3,
+              "64": 0,
+              "128": 3,
+              "256": 7,
+              "512": 2
+            }
+          },
+          "ssd:d4096": {
+            "n_cells": 15,
+            "best_static_chunk": 256,
+            "best_static_regret_pct": {
+              "mean": 1.679231756076261,
+              "max": 5.996277184919774
+            },
+            "best_chunk_counts": {
+              "32": 1,
+              "64": 2,
+              "128": 3,
+              "256": 9,
+              "512": 0
+            }
+          },
+          "ssd:d5120": {
+            "n_cells": 15,
+            "best_static_chunk": 256,
+            "best_static_regret_pct": {
+              "mean": 1.601696354143584,
+              "max": 8.968843063482247
+            },
+            "best_chunk_counts": {
+              "32": 3,
+              "64": 1,
+              "128": 2,
+              "256": 9,
+              "512": 0
+            }
+          }
+        }
+      },
+      "variants": {
+        "drop_any_capped": {
+          "rule": "a block or cell is removed when either of its two readings shows the cap",
+          "rows_total": 360,
+          "rows_kept": 44,
+          "shapes_total": 120,
+          "shapes_kept": 32,
+          "shapes_with_all_rounds_kept": 2,
+          "detail": {
+            "retained_data": {
+              "n_cells": 32,
+              "ssd_cells_above_8192_tokens": 1,
+              "ssd_cells_above_8192_tokens_best_256": 1,
+              "gdn_cells": 19,
+              "gdn_cells_best_64": 18,
+              "per_shape": {
+                "gdn:16x128x128": {
+                  "n_cells": 4,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.5743190079553817,
+                    "max": 2.297276031821527
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 1,
+                    "64": 3
+                  }
+                },
+                "gdn:32x128x128": {
+                  "n_cells": 3,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 3
+                  }
+                },
+                "gdn:4x256x256": {
+                  "n_cells": 4,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 4
+                  }
+                },
+                "gdn:4x256x512": {
+                  "n_cells": 5,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 5
+                  }
+                },
+                "gdn:64x128x128": {
+                  "n_cells": 3,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 3
+                  }
+                },
+                "ssd:d2048": {
+                  "n_cells": 5,
+                  "best_static_chunk": 256,
+                  "best_static_regret_pct": {
+                    "mean": 1.9954734917394432,
+                    "max": 8.377128458931725
+                  },
+                  "best_chunk_counts": {
+                    "32": 1,
+                    "64": 0,
+                    "128": 1,
+                    "256": 3,
+                    "512": 0
+                  }
+                },
+                "ssd:d4096": {
+                  "n_cells": 4,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 2.814899517477526,
+                    "max": 7.84801115644691
+                  },
+                  "best_chunk_counts": {
+                    "32": 1,
+                    "64": 1,
+                    "128": 0,
+                    "256": 0,
+                    "512": 2
+                  }
+                },
+                "ssd:d5120": {
+                  "n_cells": 4,
+                  "best_static_chunk": 256,
+                  "best_static_regret_pct": {
+                    "mean": 3.7265761438085243,
+                    "max": 9.779782319132435
+                  },
+                  "best_chunk_counts": {
+                    "32": 0,
+                    "64": 1,
+                    "128": 0,
+                    "256": 2,
+                    "512": 1
+                  }
+                }
+              }
+            },
+            "all_data_same_cells": {
+              "n_cells": 32,
+              "ssd_cells_above_8192_tokens": 1,
+              "ssd_cells_above_8192_tokens_best_256": 1,
+              "gdn_cells": 19,
+              "gdn_cells_best_64": 19,
+              "per_shape": {
+                "gdn:16x128x128": {
+                  "n_cells": 4,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 4
+                  }
+                },
+                "gdn:32x128x128": {
+                  "n_cells": 3,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 3
+                  }
+                },
+                "gdn:4x256x256": {
+                  "n_cells": 4,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 4
+                  }
+                },
+                "gdn:4x256x512": {
+                  "n_cells": 5,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 5
+                  }
+                },
+                "gdn:64x128x128": {
+                  "n_cells": 3,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 3
+                  }
+                },
+                "ssd:d2048": {
+                  "n_cells": 5,
+                  "best_static_chunk": 256,
+                  "best_static_regret_pct": {
+                    "mean": 2.744776210881561,
+                    "max": 10.813310721393975
+                  },
+                  "best_chunk_counts": {
+                    "32": 2,
+                    "64": 0,
+                    "128": 1,
+                    "256": 1,
+                    "512": 1
+                  }
+                },
+                "ssd:d4096": {
+                  "n_cells": 4,
+                  "best_static_chunk": 128,
+                  "best_static_regret_pct": {
+                    "mean": 2.688966893249778,
+                    "max": 5.671055610424358
+                  },
+                  "best_chunk_counts": {
+                    "32": 1,
+                    "64": 1,
+                    "128": 2,
+                    "256": 0,
+                    "512": 0
+                  }
+                },
+                "ssd:d5120": {
+                  "n_cells": 4,
+                  "best_static_chunk": 256,
+                  "best_static_regret_pct": {
+                    "mean": 1.8396419252826202,
+                    "max": 5.098241523480773
+                  },
+                  "best_chunk_counts": {
+                    "32": 2,
+                    "64": 1,
+                    "128": 0,
+                    "256": 1,
+                    "512": 0
+                  }
+                }
+              }
+            }
+          },
+          "statistics": {
+            "oracle_agreement_exact": {
+              "cap_rule": 0.71875,
+              "random_mean": 0.7925,
+              "random_p025": 0.71796875,
+              "random_p975": 0.8757812500000002,
+              "share_random_le": 0.15,
+              "share_random_ge": 0.975,
+              "n_draws": 200
+            },
+            "oracle_within_tie_margin_of_all_data": {
+              "cap_rule": 0.84375,
+              "random_mean": 0.87671875,
+              "random_p025": 0.8125,
+              "random_p975": 0.96875,
+              "share_random_le": 0.345,
+              "share_random_ge": 0.88,
+              "n_draws": 200
+            },
+            "oracle_in_all_data_ci_tie_set": {
+              "cap_rule": 1.0,
+              "random_mean": 1.0,
+              "random_p025": 1.0,
+              "random_p975": 1.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "all_data_regret_of_retained_oracle_mean_pct": {
+              "cap_rule": 0.8344938243298557,
+              "random_mean": 0.9309914247513033,
+              "random_p025": 0.21760798794311006,
+              "random_p975": 1.6693213403699967,
+              "share_random_le": 0.51,
+              "share_random_ge": 0.49,
+              "n_draws": 200
+            },
+            "ssd_above_8192_share_best_256": {
+              "cap_rule": 1.0,
+              "random_mean": 1.0,
+              "random_p025": 1.0,
+              "random_p975": 1.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "gdn_share_best_64": {
+              "cap_rule": 0.9473684210526315,
+              "random_mean": 0.9381578947368422,
+              "random_p025": 0.8421052631578947,
+              "random_p975": 1.0,
+              "share_random_le": 0.79,
+              "share_random_ge": 0.65,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_gdn:16x128x128": {
+              "cap_rule": 0.5743190079553817,
+              "random_mean": 0.23547079326170653,
+              "random_p025": 0.0,
+              "random_p975": 0.5743190079553817,
+              "share_random_le": 1.0,
+              "share_random_ge": 0.41,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_gdn:32x128x128": {
+              "cap_rule": 0.0,
+              "random_mean": 0.0,
+              "random_p025": 0.0,
+              "random_p975": 0.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_gdn:4x256x256": {
+              "cap_rule": 0.0,
+              "random_mean": 0.26543475279291984,
+              "random_p025": 0.0,
+              "random_p975": 0.680601930238256,
+              "share_random_le": 0.61,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_gdn:4x256x512": {
+              "cap_rule": 0.0,
+              "random_mean": 0.42715568694334016,
+              "random_p025": 0.0,
+              "random_p975": 1.139081831848907,
+              "share_random_le": 0.625,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_gdn:64x128x128": {
+              "cap_rule": 0.0,
+              "random_mean": 0.0,
+              "random_p025": 0.0,
+              "random_p975": 0.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_ssd:d2048": {
+              "cap_rule": -0.7493027191421178,
+              "random_mean": 0.4804733729361891,
+              "random_p025": -1.0693505190952155,
+              "random_p975": 2.1634258347658974,
+              "share_random_le": 0.085,
+              "share_random_ge": 0.945,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_ssd:d4096": {
+              "cap_rule": 0.1259326242277483,
+              "random_mean": -0.19014153559083552,
+              "random_p025": -1.324481976540759,
+              "random_p975": 1.4328085242334474,
+              "share_random_le": 0.67,
+              "share_random_ge": 0.33,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_ssd:d5120": {
+              "cap_rule": 1.8869342185259041,
+              "random_mean": 0.6721257779551538,
+              "random_p025": -1.8396419252826202,
+              "random_p975": 2.2580625634600504,
+              "share_random_le": 0.865,
+              "share_random_ge": 0.235,
+              "n_draws": 200
+            }
+          }
+        },
+        "drop_capped_throughout": {
+          "rule": "a block or cell is removed only when both of its readings show the cap",
+          "rows_total": 360,
+          "rows_kept": 184,
+          "shapes_total": 120,
+          "shapes_kept": 99,
+          "shapes_with_all_rounds_kept": 27,
+          "detail": {
+            "retained_data": {
+              "n_cells": 99,
+              "ssd_cells_above_8192_tokens": 17,
+              "ssd_cells_above_8192_tokens_best_256": 17,
+              "gdn_cells": 60,
+              "gdn_cells_best_64": 57,
+              "per_shape": {
+                "gdn:16x128x128": {
+                  "n_cells": 13,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 1.0516481319937876,
+                    "max": 13.671425715919238
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 1,
+                    "64": 12
+                  }
+                },
+                "gdn:32x128x128": {
+                  "n_cells": 11,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 1.4822645879828178,
+                    "max": 16.304910467810995
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 1,
+                    "64": 10
+                  }
+                },
+                "gdn:4x256x256": {
+                  "n_cells": 13,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.08400420959153891,
+                    "max": 1.0920547246900059
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 1,
+                    "64": 12
+                  }
+                },
+                "gdn:4x256x512": {
+                  "n_cells": 13,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 13
+                  }
+                },
+                "gdn:64x128x128": {
+                  "n_cells": 10,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 10
+                  }
+                },
+                "ssd:d2048": {
+                  "n_cells": 14,
+                  "best_static_chunk": 256,
+                  "best_static_regret_pct": {
+                    "mean": 1.4940944003898353,
+                    "max": 10.813310721393975
+                  },
+                  "best_chunk_counts": {
+                    "32": 1,
+                    "64": 0,
+                    "128": 1,
+                    "256": 9,
+                    "512": 3
+                  }
+                },
+                "ssd:d4096": {
+                  "n_cells": 12,
+                  "best_static_chunk": 256,
+                  "best_static_regret_pct": {
+                    "mean": 2.5566592645329584,
+                    "max": 10.907392187049725
+                  },
+                  "best_chunk_counts": {
+                    "32": 1,
+                    "64": 2,
+                    "128": 2,
+                    "256": 7,
+                    "512": 0
+                  }
+                },
+                "ssd:d5120": {
+                  "n_cells": 13,
+                  "best_static_chunk": 256,
+                  "best_static_regret_pct": {
+                    "mean": 1.8000650113321228,
+                    "max": 6.90275076305098
+                  },
+                  "best_chunk_counts": {
+                    "32": 2,
+                    "64": 1,
+                    "128": 1,
+                    "256": 8,
+                    "512": 1
+                  }
+                }
+              }
+            },
+            "all_data_same_cells": {
+              "n_cells": 99,
+              "ssd_cells_above_8192_tokens": 17,
+              "ssd_cells_above_8192_tokens_best_256": 17,
+              "gdn_cells": 60,
+              "gdn_cells_best_64": 58,
+              "per_shape": {
+                "gdn:16x128x128": {
+                  "n_cells": 13,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 13
+                  }
+                },
+                "gdn:32x128x128": {
+                  "n_cells": 11,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 1.0284132867230087,
+                    "max": 11.312546153953097
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 1,
+                    "64": 10
+                  }
+                },
+                "gdn:4x256x256": {
+                  "n_cells": 13,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.5754962447108884,
+                    "max": 7.48145118124155
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 1,
+                    "64": 12
+                  }
+                },
+                "gdn:4x256x512": {
+                  "n_cells": 13,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 13
+                  }
+                },
+                "gdn:64x128x128": {
+                  "n_cells": 10,
+                  "best_static_chunk": 64,
+                  "best_static_regret_pct": {
+                    "mean": 0.0,
+                    "max": 0.0
+                  },
+                  "best_chunk_counts": {
+                    "16": 0,
+                    "32": 0,
+                    "64": 10
+                  }
+                },
+                "ssd:d2048": {
+                  "n_cells": 14,
+                  "best_static_chunk": 256,
+                  "best_static_regret_pct": {
+                    "mean": 1.68167156401563,
+                    "max": 10.813310721393975
+                  },
+                  "best_chunk_counts": {
+                    "32": 3,
+                    "64": 0,
+                    "128": 2,
+                    "256": 7,
+                    "512": 2
+                  }
+                },
+                "ssd:d4096": {
+                  "n_cells": 12,
+                  "best_static_chunk": 256,
+                  "best_static_regret_pct": {
+                    "mean": 2.0990396950953265,
+                    "max": 5.996277184919774
+                  },
+                  "best_chunk_counts": {
+                    "32": 1,
+                    "64": 2,
+                    "128": 3,
+                    "256": 6,
+                    "512": 0
+                  }
+                },
+                "ssd:d5120": {
+                  "n_cells": 13,
+                  "best_static_chunk": 256,
+                  "best_static_regret_pct": {
+                    "mean": 1.3546210008161772,
+                    "max": 8.968843063482247
+                  },
+                  "best_chunk_counts": {
+                    "32": 3,
+                    "64": 1,
+                    "128": 1,
+                    "256": 8,
+                    "512": 0
+                  }
+                }
+              }
+            }
+          },
+          "statistics": {
+            "oracle_agreement_exact": {
+              "cap_rule": 0.9292929292929293,
+              "random_mean": 0.9414646464646463,
+              "random_p025": 0.9090909090909091,
+              "random_p975": 0.9797979797979798,
+              "share_random_le": 0.345,
+              "share_random_ge": 0.845,
+              "n_draws": 200
+            },
+            "oracle_within_tie_margin_of_all_data": {
+              "cap_rule": 0.9595959595959596,
+              "random_mean": 0.9654040404040404,
+              "random_p025": 0.9393939393939394,
+              "random_p975": 0.98989898989899,
+              "share_random_le": 0.48,
+              "share_random_ge": 0.8,
+              "n_draws": 200
+            },
+            "oracle_in_all_data_ci_tie_set": {
+              "cap_rule": 1.0,
+              "random_mean": 1.0,
+              "random_p025": 1.0,
+              "random_p975": 1.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "all_data_regret_of_retained_oracle_mean_pct": {
+              "cap_rule": 0.15785592569898885,
+              "random_mean": 0.16354222199379226,
+              "random_p025": 0.04241036073641727,
+              "random_p975": 0.2939900028636429,
+              "share_random_le": 0.5,
+              "share_random_ge": 0.505,
+              "n_draws": 200
+            },
+            "ssd_above_8192_share_best_256": {
+              "cap_rule": 1.0,
+              "random_mean": 1.0,
+              "random_p025": 1.0,
+              "random_p975": 1.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "gdn_share_best_64": {
+              "cap_rule": 0.95,
+              "random_mean": 0.9667499999999998,
+              "random_p025": 0.95,
+              "random_p975": 0.9833333333333333,
+              "share_random_le": 0.24,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_gdn:16x128x128": {
+              "cap_rule": 1.0516481319937876,
+              "random_mean": 0.3838515681777325,
+              "random_p025": 0.0,
+              "random_p975": 1.0516481319937876,
+              "share_random_le": 1.0,
+              "share_random_ge": 0.365,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_gdn:32x128x128": {
+              "cap_rule": 0.4538513012598091,
+              "random_mean": 0.13078266786487144,
+              "random_p025": -1.0284132867230087,
+              "random_p975": 1.2309866949105157,
+              "share_random_le": 0.71,
+              "share_random_ge": 0.63,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_gdn:4x256x256": {
+              "cap_rule": -0.4914920351193495,
+              "random_mean": 0.2514605230368096,
+              "random_p025": -0.4914920351193495,
+              "random_p975": 0.9091787760690162,
+              "share_random_le": 0.345,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_gdn:4x256x512": {
+              "cap_rule": 0.0,
+              "random_mean": 0.0,
+              "random_p025": 0.0,
+              "random_p975": 0.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_gdn:64x128x128": {
+              "cap_rule": 0.0,
+              "random_mean": 0.0,
+              "random_p025": 0.0,
+              "random_p975": 0.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_ssd:d2048": {
+              "cap_rule": -0.18757716362579457,
+              "random_mean": 0.30440935084318144,
+              "random_p025": -0.18757716362579457,
+              "random_p975": 1.1249537161640801,
+              "share_random_le": 0.135,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_ssd:d4096": {
+              "cap_rule": 0.45761956943763193,
+              "random_mean": 0.2530002235724913,
+              "random_p025": -0.6358270137466984,
+              "random_p975": 0.9860370377104415,
+              "share_random_le": 0.72,
+              "share_random_ge": 0.315,
+              "n_draws": 200
+            },
+            "delta_pp_best_static_mean_ssd:d5120": {
+              "cap_rule": 0.4454440105159456,
+              "random_mean": 0.3047706303154767,
+              "random_p025": -0.479884683265027,
+              "random_p975": 0.9232623626354686,
+              "share_random_le": 0.705,
+              "share_random_ge": 0.345,
+              "n_draws": 200
+            }
+          }
+        }
+      },
+      "round_pairs": {
+        "cap_in_any_reading": {
+          "same_status": {
+            "pairs": 300,
+            "argmin_agreement": 0.8633333333333333,
+            "abs_latency_diff_pct_median": 0.32879849407154715
+          },
+          "mixed_status": {
+            "pairs": 60,
+            "argmin_agreement": 0.6333333333333333,
+            "abs_latency_diff_pct_median": 2.3245335561255964,
+            "capped_vs_uncapped_latency_diff_pct": {
+              "median": 0.18685778768321448,
+              "p05": -7.397188062038877,
+              "p95": 16.29500589205744,
+              "share_capped_slower": 0.5833333333333334
+            }
+          }
+        },
+        "cap_in_both_readings": {
+          "same_status": {
+            "pairs": 216,
+            "argmin_agreement": 0.7870370370370371,
+            "abs_latency_diff_pct_median": 0.630244731901286
+          },
+          "mixed_status": {
+            "pairs": 144,
+            "argmin_agreement": 0.8819444444444444,
+            "abs_latency_diff_pct_median": 0.27874943730138435,
+            "capped_vs_uncapped_latency_diff_pct": {
+              "median": 0.024261333359021364,
+              "p05": -8.459571230155692,
+              "p95": 5.051504721474716,
+              "share_capped_slower": 0.5208333333333334
+            }
+          }
+        }
+      },
+      "cap_share_of_blocks": {
+        "family": {
+          "gdn": {
+            "rows": 225,
+            "cap_in_any_reading": 0.8933333333333333,
+            "cap_in_both_readings": 0.5022222222222222
+          },
+          "ssd": {
+            "rows": 135,
+            "cap_in_any_reading": 0.8518518518518519,
+            "cap_in_both_readings": 0.4666666666666667
+          }
+        },
+        "batch": {
+          "1": {
+            "rows": 120,
+            "cap_in_any_reading": 0.7916666666666666,
+            "cap_in_both_readings": 0.35833333333333334
+          },
+          "4": {
+            "rows": 120,
+            "cap_in_any_reading": 0.9083333333333333,
+            "cap_in_both_readings": 0.5333333333333333
+          },
+          "16": {
+            "rows": 120,
+            "cap_in_any_reading": 0.9333333333333333,
+            "cap_in_both_readings": 0.575
+          }
+        },
+        "L": {
+          "512": {
+            "rows": 72,
+            "cap_in_any_reading": 0.7777777777777778,
+            "cap_in_both_readings": 0.2916666666666667
+          },
+          "1024": {
+            "rows": 72,
+            "cap_in_any_reading": 0.8888888888888888,
+            "cap_in_both_readings": 0.4444444444444444
+          },
+          "2048": {
+            "rows": 72,
+            "cap_in_any_reading": 0.8333333333333334,
+            "cap_in_both_readings": 0.4861111111111111
+          },
+          "4096": {
+            "rows": 72,
+            "cap_in_any_reading": 0.9166666666666666,
+            "cap_in_both_readings": 0.5138888888888888
+          },
+          "8192": {
+            "rows": 72,
+            "cap_in_any_reading": 0.9722222222222222,
+            "cap_in_both_readings": 0.7083333333333334
+          }
+        }
+      }
+    },
+    "E9_placement_rtx3090": {
+      "file": "e9_placement_vgpu3090.jsonl",
+      "conventions": "per-cell readings; decision rule of the value-invariance analysis (input-agnostic chunk = argmin of the median over input-round cells; own best chunk of an input = argmin of its median over rounds)",
+      "n_cells": 9000,
+      "n_decisions": 20,
+      "variants": {
+        "drop_any_capped": {
+          "rule": "a block or cell is removed when either of its two readings shows the cap",
+          "cells_kept": 5501,
+          "cells_total": 9000,
+          "detail": {
+            "decisions_compared": 19,
+            "input_decisions_compared": 274,
+            "changed_decisions": [
+              {
+                "design": "mamba1:B",
+                "L": 8192,
+                "mode": "act",
+                "all_data": 512,
+                "retained": 64,
+                "retained_chunks": [
+                  32,
+                  64
+                ],
+                "all_data_best_among_retained_chunks": 64,
+                "all_data_regret_of_retained_pct": 48.03397843384592
+              },
+              {
+                "design": "mamba1:A",
+                "L": 8192,
+                "mode": "act",
+                "all_data": 512,
+                "retained": 64,
+                "retained_chunks": [
+                  32,
+                  64
+                ],
+                "all_data_best_among_retained_chunks": 64,
+                "all_data_regret_of_retained_pct": 47.93419385069784
+              },
+              {
+                "design": "mamba1:C",
+                "L": 8192,
+                "mode": "act",
+                "all_data": 512,
+                "retained": 64,
+                "retained_chunks": [
+                  32,
+                  64
+                ],
+                "all_data_best_among_retained_chunks": 64,
+                "all_data_regret_of_retained_pct": 48.01222832309557
+              },
+              {
+                "design": "ref:C",
+                "L": 8192,
+                "mode": "act",
+                "all_data": 512,
+                "retained": 2048,
+                "retained_chunks": [
+                  2048
+                ],
+                "all_data_best_among_retained_chunks": 2048,
+                "all_data_regret_of_retained_pct": 3.257632034854696
+              },
+              {
+                "design": "mamba1:C",
+                "L": 8192,
+                "mode": "all",
+                "all_data": 128,
+                "retained": 64,
+                "retained_chunks": [
+                  32,
+                  64
+                ],
+                "all_data_best_among_retained_chunks": 64,
+                "all_data_regret_of_retained_pct": 48.1020054531488
+              },
+              {
+                "design": "ref:A",
+                "L": 8192,
+                "mode": "all",
+                "all_data": 512,
+                "retained": 2048,
+                "retained_chunks": [
+                  128,
+                  512,
+                  1024,
+                  2048
+                ],
+                "all_data_best_among_retained_chunks": 512,
+                "all_data_regret_of_retained_pct": 2.986656682625366
+              },
+              {
+                "design": "ref:C",
+                "L": 8192,
+                "mode": "all",
+                "all_data": 512,
+                "retained": 2048,
+                "retained_chunks": [
+                  2048
+                ],
+                "all_data_best_among_retained_chunks": 2048,
+                "all_data_regret_of_retained_pct": 3.401614502068173
+              }
+            ],
+            "regret_of_input_agnostic_chunk_mean_pct": {
+              "all_data": 0.28315587433355843,
+              "retained_data": 0.248125553212202
+            }
+          },
+          "statistics": {
+            "share_decisions_all_data_chunk_retained": {
+              "cap_rule": 0.6842105263157895,
+              "random_mean": 0.6842105263157896,
+              "random_p025": 0.6842105263157895,
+              "random_p975": 0.6842105263157895,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "input_agnostic_chunk_agreement_within_retained_chunks": {
+              "cap_rule": 0.9473684210526315,
+              "random_mean": 0.9965789473684211,
+              "random_p025": 0.9473684210526315,
+              "random_p975": 1.0,
+              "share_random_le": 0.065,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "all_data_regret_vs_best_retained_chunk_mean_pct": {
+              "cap_rule": 0.15719245698028242,
+              "random_mean": 0.010217509703718358,
+              "random_p025": 0.0,
+              "random_p975": 0.15719245698028242,
+              "share_random_le": 1.0,
+              "share_random_ge": 0.065,
+              "n_draws": 200
+            },
+            "own_best_chunk_agreement_within_retained_chunks": {
+              "cap_rule": 0.9927007299270073,
+              "random_mean": 0.9956569343065693,
+              "random_p025": 0.9890510948905109,
+              "random_p975": 1.0,
+              "share_random_le": 0.325,
+              "share_random_ge": 0.96,
+              "n_draws": 200
+            },
+            "input_agnostic_chunk_agreement_unrestricted": {
+              "cap_rule": 0.631578947368421,
+              "random_mean": 0.6807894736842105,
+              "random_p025": 0.631578947368421,
+              "random_p975": 0.6842105263157895,
+              "share_random_le": 0.065,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "all_data_regret_of_retained_input_agnostic_chunk_unrestricted_mean_pct": {
+              "cap_rule": 10.617279435807177,
+              "random_mean": 10.470304488530612,
+              "random_p025": 10.460086978826896,
+              "random_p975": 10.617279435807177,
+              "share_random_le": 1.0,
+              "share_random_ge": 0.065,
+              "n_draws": 200
+            },
+            "own_best_chunk_agreement_unrestricted": {
+              "cap_rule": 0.6094890510948905,
+              "random_mean": 0.6124452554744525,
+              "random_p025": 0.6058394160583942,
+              "random_p975": 0.6167883211678832,
+              "share_random_le": 0.325,
+              "share_random_ge": 0.96,
+              "n_draws": 200
+            },
+            "all_data_regret_of_retained_own_best_unrestricted_mean_pct": {
+              "cap_rule": 15.403373967213014,
+              "random_mean": 15.395863726235616,
+              "random_p025": 15.39100368823343,
+              "random_p975": 15.405042767382088,
+              "share_random_le": 0.96,
+              "share_random_ge": 0.065,
+              "n_draws": 200
+            },
+            "delta_pp_regret_of_input_agnostic_chunk_mean": {
+              "cap_rule": -0.03503032112135643,
+              "random_mean": -0.021394280719367977,
+              "random_p025": -0.03211224468565005,
+              "random_p975": -0.005344640808025158,
+              "share_random_le": 0.005,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            }
+          }
+        },
+        "drop_capped_throughout": {
+          "rule": "a block or cell is removed only when both of its readings show the cap",
+          "cells_kept": 5712,
+          "cells_total": 9000,
+          "detail": {
+            "decisions_compared": 20,
+            "input_decisions_compared": 303,
+            "changed_decisions": [
+              {
+                "design": "mamba1:A",
+                "L": 8192,
+                "mode": "act",
+                "all_data": 512,
+                "retained": 64,
+                "retained_chunks": [
+                  32,
+                  64
+                ],
+                "all_data_best_among_retained_chunks": 64,
+                "all_data_regret_of_retained_pct": 47.93419385069784
+              },
+              {
+                "design": "mamba1:C",
+                "L": 8192,
+                "mode": "act",
+                "all_data": 512,
+                "retained": 128,
+                "retained_chunks": [
+                  32,
+                  64,
+                  128
+                ],
+                "all_data_best_among_retained_chunks": 128,
+                "all_data_regret_of_retained_pct": 0.4899124028058255
+              },
+              {
+                "design": "ref:C",
+                "L": 8192,
+                "mode": "act",
+                "all_data": 512,
+                "retained": 2048,
+                "retained_chunks": [
+                  1024,
+                  2048
+                ],
+                "all_data_best_among_retained_chunks": 2048,
+                "all_data_regret_of_retained_pct": 3.257632034854696
+              },
+              {
+                "design": "ref:A",
+                "L": 8192,
+                "mode": "all",
+                "all_data": 512,
+                "retained": 2048,
+                "retained_chunks": [
+                  128,
+                  512,
+                  1024,
+                  2048
+                ],
+                "all_data_best_among_retained_chunks": 512,
+                "all_data_regret_of_retained_pct": 2.986656682625366
+              }
+            ],
+            "regret_of_input_agnostic_chunk_mean_pct": {
+              "all_data": 0.2689980806168805,
+              "retained_data": 0.26643238565732724
+            }
+          },
+          "statistics": {
+            "share_decisions_all_data_chunk_retained": {
+              "cap_rule": 0.85,
+              "random_mean": 0.8499999999999998,
+              "random_p025": 0.85,
+              "random_p975": 0.85,
+              "share_random_le": 1.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "input_agnostic_chunk_agreement_within_retained_chunks": {
+              "cap_rule": 0.95,
+              "random_mean": 1.0,
+              "random_p025": 1.0,
+              "random_p975": 1.0,
+              "share_random_le": 0.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "all_data_regret_vs_best_retained_chunk_mean_pct": {
+              "cap_rule": 0.1493328341312683,
+              "random_mean": 0.0,
+              "random_p025": 0.0,
+              "random_p975": 0.0,
+              "share_random_le": 1.0,
+              "share_random_ge": 0.0,
+              "n_draws": 200
+            },
+            "own_best_chunk_agreement_within_retained_chunks": {
+              "cap_rule": 0.9867986798679867,
+              "random_mean": 0.9943894389438944,
+              "random_p025": 0.9867986798679867,
+              "random_p975": 1.0,
+              "share_random_le": 0.04,
+              "share_random_ge": 0.99,
+              "n_draws": 200
+            },
+            "input_agnostic_chunk_agreement_unrestricted": {
+              "cap_rule": 0.8,
+              "random_mean": 0.8499999999999998,
+              "random_p025": 0.85,
+              "random_p975": 0.85,
+              "share_random_le": 0.0,
+              "share_random_ge": 1.0,
+              "n_draws": 200
+            },
+            "all_data_regret_of_retained_input_agnostic_chunk_unrestricted_mean_pct": {
+              "cap_rule": 2.7334197485491862,
+              "random_mean": 2.5840869144179175,
+              "random_p025": 2.584086914417918,
+              "random_p975": 2.584086914417918,
+              "share_random_le": 1.0,
+              "share_random_ge": 0.0,
+              "n_draws": 200
+            },
+            "own_best_chunk_agreement_unrestricted": {
+              "cap_rule": 0.5907590759075908,
+              "random_mean": 0.5983498349834983,
+              "random_p025": 0.5907590759075908,
+              "random_p975": 0.6039603960396039,
+              "share_random_le": 0.04,
+              "share_random_ge": 0.99,
+              "n_draws": 200
+            },
+            "all_data_regret_of_retained_own_best_unrestricted_mean_pct": {
+              "cap_rule": 13.102095555019003,
+              "random_mean": 13.07761349747691,
+              "random_p025": 13.067657978104672,
+              "random_p975": 13.094358466157951,
+              "share_random_le": 0.99,
+              "share_random_ge": 0.015,
+              "n_draws": 200
+            },
+            "delta_pp_regret_of_input_agnostic_chunk_mean": {
+              "cap_rule": -0.0025656949595532774,
+              "random_mean": -0.01666017029635436,
+              "random_p025": -0.02936479603062227,
+              "random_p975": 0.006023062166767871,
+              "share_random_le": 0.915,
+              "share_random_ge": 0.085,
+              "n_draws": 200
+            }
+          }
+        }
+      },
+      "all_data_reproduces_stored_decisions": true,
+      "all_data": {
+        "input_agnostic_chunks": {
+          "mamba1:A|L2048|act": 128,
+          "mamba1:A|L2048|all": 128,
+          "mamba1:A|L8192|act": 512,
+          "mamba1:A|L8192|all": 512,
+          "mamba1:B|L2048|act": 128,
+          "mamba1:B|L2048|all": 128,
+          "mamba1:B|L8192|act": 512,
+          "mamba1:B|L8192|all": 512,
+          "mamba1:C|L2048|act": 128,
+          "mamba1:C|L2048|all": 128,
+          "mamba1:C|L8192|act": 512,
+          "mamba1:C|L8192|all": 128,
+          "ref:A|L2048|act": 2048,
+          "ref:A|L2048|all": 512,
+          "ref:A|L8192|act": 512,
+          "ref:A|L8192|all": 512,
+          "ref:C|L2048|act": 512,
+          "ref:C|L2048|all": 512,
+          "ref:C|L8192|act": 512,
+          "ref:C|L8192|all": 512
+        },
+        "regret_of_input_agnostic_chunk_mean_pct": 0.2689980806168805,
+        "regret_of_input_agnostic_chunk_max_pct": 5.529938739674867
+      },
+      "latency_effect": {
+        "definition": "per (design, length, mode, input, chunk) with both statuses: median latency of the rounds with a capped reading over that of the other rounds, minus one",
+        "n_cells": 108,
+        "median_pct": -0.18772730589278752,
+        "p05_pct": -12.301125053373804,
+        "p95_pct": 0.12675803354620924,
+        "share_capped_slower": 0.24074074074074073
+      },
+      "cap_share_of_cells_by_design_length_chunk": {
+        "mamba1:A|L2048|c1024": {
+          "rows": 200,
+          "cap_in_any_reading": 0.045,
+          "cap_in_both_readings": 0.045
+        },
+        "mamba1:A|L2048|c128": {
+          "rows": 200,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:A|L2048|c256": {
+          "rows": 200,
+          "cap_in_any_reading": 0.02,
+          "cap_in_both_readings": 0.02
+        },
+        "mamba1:A|L2048|c32": {
+          "rows": 200,
+          "cap_in_any_reading": 0.025,
+          "cap_in_both_readings": 0.01
+        },
+        "mamba1:A|L2048|c512": {
+          "rows": 200,
+          "cap_in_any_reading": 0.005,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:A|L2048|c64": {
+          "rows": 200,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:A|L8192|c1024": {
+          "rows": 200,
+          "cap_in_any_reading": 0.98,
+          "cap_in_both_readings": 0.92
+        },
+        "mamba1:A|L8192|c128": {
+          "rows": 200,
+          "cap_in_any_reading": 0.97,
+          "cap_in_both_readings": 0.925
+        },
+        "mamba1:A|L8192|c256": {
+          "rows": 200,
+          "cap_in_any_reading": 0.945,
+          "cap_in_both_readings": 0.835
+        },
+        "mamba1:A|L8192|c32": {
+          "rows": 200,
+          "cap_in_any_reading": 0.025,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:A|L8192|c512": {
+          "rows": 200,
+          "cap_in_any_reading": 0.985,
+          "cap_in_both_readings": 0.935
+        },
+        "mamba1:A|L8192|c64": {
+          "rows": 200,
+          "cap_in_any_reading": 0.03,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:B|L2048|c1024": {
+          "rows": 200,
+          "cap_in_any_reading": 0.035,
+          "cap_in_both_readings": 0.03
+        },
+        "mamba1:B|L2048|c128": {
+          "rows": 200,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:B|L2048|c256": {
+          "rows": 200,
+          "cap_in_any_reading": 0.01,
+          "cap_in_both_readings": 0.005
+        },
+        "mamba1:B|L2048|c32": {
+          "rows": 200,
+          "cap_in_any_reading": 0.025,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:B|L2048|c512": {
+          "rows": 200,
+          "cap_in_any_reading": 0.01,
+          "cap_in_both_readings": 0.005
+        },
+        "mamba1:B|L2048|c64": {
+          "rows": 200,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:B|L8192|c1024": {
+          "rows": 200,
+          "cap_in_any_reading": 0.985,
+          "cap_in_both_readings": 0.94
+        },
+        "mamba1:B|L8192|c128": {
+          "rows": 200,
+          "cap_in_any_reading": 0.975,
+          "cap_in_both_readings": 0.93
+        },
+        "mamba1:B|L8192|c256": {
+          "rows": 200,
+          "cap_in_any_reading": 0.945,
+          "cap_in_both_readings": 0.835
+        },
+        "mamba1:B|L8192|c32": {
+          "rows": 200,
+          "cap_in_any_reading": 0.02,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:B|L8192|c512": {
+          "rows": 200,
+          "cap_in_any_reading": 0.985,
+          "cap_in_both_readings": 0.955
+        },
+        "mamba1:B|L8192|c64": {
+          "rows": 200,
+          "cap_in_any_reading": 0.015,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:C|L2048|c1024": {
+          "rows": 100,
+          "cap_in_any_reading": 0.06,
+          "cap_in_both_readings": 0.03
+        },
+        "mamba1:C|L2048|c128": {
+          "rows": 100,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:C|L2048|c256": {
+          "rows": 100,
+          "cap_in_any_reading": 0.01,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:C|L2048|c32": {
+          "rows": 100,
+          "cap_in_any_reading": 0.01,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:C|L2048|c512": {
+          "rows": 100,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:C|L2048|c64": {
+          "rows": 100,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:C|L8192|c1024": {
+          "rows": 100,
+          "cap_in_any_reading": 1.0,
+          "cap_in_both_readings": 1.0
+        },
+        "mamba1:C|L8192|c128": {
+          "rows": 100,
+          "cap_in_any_reading": 1.0,
+          "cap_in_both_readings": 0.97
+        },
+        "mamba1:C|L8192|c256": {
+          "rows": 100,
+          "cap_in_any_reading": 1.0,
+          "cap_in_both_readings": 0.98
+        },
+        "mamba1:C|L8192|c32": {
+          "rows": 100,
+          "cap_in_any_reading": 0.03,
+          "cap_in_both_readings": 0.0
+        },
+        "mamba1:C|L8192|c512": {
+          "rows": 100,
+          "cap_in_any_reading": 1.0,
+          "cap_in_both_readings": 1.0
+        },
+        "mamba1:C|L8192|c64": {
+          "rows": 100,
+          "cap_in_any_reading": 0.01,
+          "cap_in_both_readings": 0.0
+        },
+        "ref:A|L2048|c1024": {
+          "rows": 200,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "ref:A|L2048|c128": {
+          "rows": 200,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "ref:A|L2048|c2048": {
+          "rows": 200,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "ref:A|L2048|c256": {
+          "rows": 200,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "ref:A|L2048|c512": {
+          "rows": 200,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "ref:A|L8192|c1024": {
+          "rows": 200,
+          "cap_in_any_reading": 0.995,
+          "cap_in_both_readings": 0.96
+        },
+        "ref:A|L8192|c128": {
+          "rows": 200,
+          "cap_in_any_reading": 0.98,
+          "cap_in_both_readings": 0.925
+        },
+        "ref:A|L8192|c2048": {
+          "rows": 200,
+          "cap_in_any_reading": 0.96,
+          "cap_in_both_readings": 0.86
+        },
+        "ref:A|L8192|c256": {
+          "rows": 200,
+          "cap_in_any_reading": 1.0,
+          "cap_in_both_readings": 1.0
+        },
+        "ref:A|L8192|c512": {
+          "rows": 200,
+          "cap_in_any_reading": 0.975,
+          "cap_in_both_readings": 0.93
+        },
+        "ref:C|L2048|c1024": {
+          "rows": 100,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "ref:C|L2048|c128": {
+          "rows": 100,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "ref:C|L2048|c2048": {
+          "rows": 100,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "ref:C|L2048|c256": {
+          "rows": 100,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "ref:C|L2048|c512": {
+          "rows": 100,
+          "cap_in_any_reading": 0.0,
+          "cap_in_both_readings": 0.0
+        },
+        "ref:C|L8192|c1024": {
+          "rows": 100,
+          "cap_in_any_reading": 1.0,
+          "cap_in_both_readings": 0.98
+        },
+        "ref:C|L8192|c128": {
+          "rows": 100,
+          "cap_in_any_reading": 1.0,
+          "cap_in_both_readings": 1.0
+        },
+        "ref:C|L8192|c2048": {
+          "rows": 100,
+          "cap_in_any_reading": 0.98,
+          "cap_in_both_readings": 0.81
+        },
+        "ref:C|L8192|c256": {
+          "rows": 100,
+          "cap_in_any_reading": 1.0,
+          "cap_in_both_readings": 1.0
+        },
+        "ref:C|L8192|c512": {
+          "rows": 100,
+          "cap_in_any_reading": 1.0,
+          "cap_in_both_readings": 0.98
+        }
+      },
+      "not_recomputed": "input-effect F tests and TOST: they need complete inputs x rounds blocks, which the exclusion breaks"
+    },
+    "E10_routed_rtx3090": {
+      "file": "e10_routed_vgpu3090.jsonl",
+      "conventions": "per length, mean over rounds of each configuration (as the routed analysis); one reading per generate call; warm-up runs not used",
+      "n_runs": 2250,
+      "n_runs_capped": 6,
+      "capped_runs": [
+        {
+          "config": "hook_learned_table",
+          "L": 4096,
+          "round": 8,
+          "reason": "0x24",
+          "sm_mhz": 1950.0,
+          "power_w": 138.0,
+          "temp_c": 43.0
+        },
+        {
+          "config": "token_hist_s8",
+          "L": 4096,
+          "round": 8,
+          "reason": "0x24",
+          "sm_mhz": 1950.0,
+          "power_w": 137.12,
+          "temp_c": 43.0
+        },
+        {
+          "config": "hook_sampled_hist_s8",
+          "L": 4096,
+          "round": 8,
+          "reason": "0x24",
+          "sm_mhz": 1950.0,
+          "power_w": 137.18,
+          "temp_c": 43.0
+        },
+        {
+          "config": "token_hist_s8",
+          "L": 4096,
+          "round": 10,
+          "reason": "0x24",
+          "sm_mhz": 1950.0,
+          "power_w": 138.65,
+          "temp_c": 44.0
+        },
+        {
+          "config": "hook_hist",
+          "L": 4096,
+          "round": 20,
+          "reason": "0x24",
+          "sm_mhz": 1950.0,
+          "power_w": 139.11,
+          "temp_c": 44.0
+        },
+        {
+          "config": "hook_cheap_proxy",
+          "L": 4096,
+          "round": 27,
+          "reason": "0x24",
+          "sm_mhz": 1950.0,
+          "power_w": 138.37,
+          "temp_c": 43.0
+        }
+      ],
+      "lengths": {
+        "256": {
+          "prefill_ms": {
+            "n_configs": 25,
+            "kendall_tau_all_vs_uncapped": 0.9999999999999998,
+            "same_order": true,
+            "max_abs_change_pct": 0.0,
+            "best_static_all": "static_chunk_512",
+            "best_static_uncapped": "static_chunk_512"
+          },
+          "total_ms": {
+            "n_configs": 25,
+            "kendall_tau_all_vs_uncapped": 0.9999999999999998,
+            "same_order": true,
+            "max_abs_change_pct": 0.0,
+            "best_static_all": "static_chunk_2048",
+            "best_static_uncapped": "static_chunk_2048"
+          }
+        },
+        "976": {
+          "prefill_ms": {
+            "n_configs": 25,
+            "kendall_tau_all_vs_uncapped": 0.9999999999999998,
+            "same_order": true,
+            "max_abs_change_pct": 0.0,
+            "best_static_all": "static_chunk_256",
+            "best_static_uncapped": "static_chunk_256"
+          },
+          "total_ms": {
+            "n_configs": 25,
+            "kendall_tau_all_vs_uncapped": 0.9999999999999998,
+            "same_order": true,
+            "max_abs_change_pct": 0.0,
+            "best_static_all": "static_chunk_128",
+            "best_static_uncapped": "static_chunk_128"
+          }
+        },
+        "4096": {
+          "prefill_ms": {
+            "n_configs": 25,
+            "kendall_tau_all_vs_uncapped": 0.9933333333333332,
+            "same_order": false,
+            "max_abs_change_pct": 0.27501049622928875,
+            "best_static_all": "static_chunk_512",
+            "best_static_uncapped": "static_chunk_512"
+          },
+          "total_ms": {
+            "n_configs": 25,
+            "kendall_tau_all_vs_uncapped": 0.9866666666666666,
+            "same_order": false,
+            "max_abs_change_pct": 0.3132000019730574,
+            "best_static_all": "static_chunk_2048",
+            "best_static_uncapped": "static_chunk_2048"
+          }
+        }
+      }
+    }
+  },
+  "rtx3090_datasets_without_state": {
+    "note": "timed without GPU-state logging (no clock, power or throttle readings): ranking stability under capped-sample exclusion cannot be evaluated for them. They include every per-call selector table (captured-call sweeps, their repeated rounds and CUDA-graph replays, the reference-scan sweeps), the value-invariance runs and the calibration and auto-tuning sweeps",
+    "files": [
+      "cost_model_curves_vgpu3090.csv",
+      "cost_model_curves_vgpu3090_r3spin.csv",
+      "e1_vgpu3090.jsonl",
+      "e1_vgpu3090_r3spin.jsonl",
+      "e2_gdn_vgpu3090_1p4b_r3.csv",
+      "e2_gdn_vgpu3090_1p4b_r4graph.csv",
+      "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "e2_gdn_vgpu3090_1p4b_r4graph3_rounds.jsonl",
+      "e2_gdn_vgpu3090_1p4b_r4graphcold.csv",
+      "e2_mamba1_vgpu3090.csv",
+      "e2_mamba1_vgpu3090_1p4b.csv",
+      "e2_mamba1_vgpu3090_1p4b_r3.csv",
+      "e2_mamba1_vgpu3090_1p4b_r3plain.csv",
+      "e2_mamba1_vgpu3090_2p8b.csv",
+      "e2_mamba1_vgpu3090_2p8b_r3.csv",
+      "e2_mamba1_vgpu3090_2p8b_r3plain.csv",
+      "e2_mamba1_vgpu3090_r3spin.csv",
+      "e2_mamba1_vgpu3090_r4graph.csv",
+      "e2_mamba1_vgpu3090_r4graph3.csv",
+      "e2_mamba1_vgpu3090_r4graph3_rounds.jsonl",
+      "e2_mamba1_vgpu3090_r4plain.csv",
+      "e2_mamba1_vgpu3090_r4plain_rounds.jsonl",
+      "e2_mamba1_vgpu3090_r4plain_u2048b4.csv",
+      "e2_mamba1_vgpu3090_r4plain_u2048b4_rounds.jsonl",
+      "e2_mamba1_vgpu3090_r4spin.csv",
+      "e2_mamba1_vgpu3090_r4spin_rounds.jsonl",
+      "e2_mamba1_vgpu3090_r4spin_u2048b4.csv",
+      "e2_mamba1_vgpu3090_r4spin_u2048b4_rounds.jsonl",
+      "e2_mamba2_vgpu3090.csv",
+      "e2_mamba2_vgpu3090_2p7b_r3.csv",
+      "e2_mamba2_vgpu3090_2p7b_r4graph.csv",
+      "e2_mamba2_vgpu3090_2p7b_r4graph3.csv",
+      "e2_mamba2_vgpu3090_2p7b_r4graph3_rounds.jsonl",
+      "e2_mamba2_vgpu3090_2p7b_r4graphcold.csv",
+      "e2_mamba2_vgpu3090_r3spin.csv",
+      "e2_mamba2_vgpu3090_r4graph.csv",
+      "e2_mamba2_vgpu3090_r4graph3.csv",
+      "e2_mamba2_vgpu3090_r4graph3_rounds.jsonl",
+      "e2_mamba2_vgpu3090_r4graphcold.csv",
+      "e4_vgpu3090.jsonl",
+      "e4_vgpu3090_r3spin.jsonl",
+      "e7_vgpu3090.jsonl",
+      "e8_refscan_vgpu3090.csv",
+      "e8_refscan_vgpu3090_r4t32.csv"
+    ]
+  },
+  "summary": {
+    "sw_power_cap_share_rtx3090": {
+      "e10_routed_vgpu3090.jsonl": 0.0024242424242424242,
+      "e12_tp_widths_vgpu3090.jsonl": 0.44146825396825395,
+      "e17_workbound_vgpu3090full.jsonl": 0.6833333333333333,
+      "e24_tfla_vgpu3090_r4plainb.jsonl": 0.9232804232804233,
+      "e24_tfla_vgpu3090_r4spinb.jsonl": 0.8597883597883598,
+      "e9_placement_vgpu3090.jsonl": 0.37705555555555553
+    },
+    "by_gpu_range": {
+      "NVIDIA GeForce RTX 3090": [
+        0.0024242424242424242,
+        0.9232804232804233
+      ],
+      "NVIDIA H800 PCIe": [
+        0.0818452380952381,
+        0.0818452380952381
+      ],
+      "NVIDIA RTX PRO 6000 Blackwell Server Edition": [
+        0.0,
+        0.0
+      ]
+    },
+    "stability": {
+      "E24_tfla_device_time": {
+        "drop_any_capped": {
+          "rows_kept": 10,
+          "rows_total": 189,
+          "shapes_kept": 10,
+          "oracle_agreement_exact": {
+            "cap_rule": 0.9,
+            "random_mean": 0.9330000000000002,
+            "random_p025": 0.9,
+            "random_p975": 1.0,
+            "share_random_le": 0.67,
+            "share_random_ge": 1.0
+          },
+          "all_data_regret_of_retained_oracle_mean_pct": {
+            "cap_rule": 0.008572681057288367,
+            "random_mean": 0.005743696308383206,
+            "random_p025": 0.0,
+            "random_p975": 0.008572681057288367,
+            "share_random_le": 1.0,
+            "share_random_ge": 0.67
+          },
+          "delta_pp_library_default_128_mean": {
+            "cap_rule": 0.01228807590031522,
+            "random_mean": 0.014354467260100413,
+            "random_p025": -0.013206399024430215,
+            "random_p975": 0.051878067486972324,
+            "share_random_le": 0.6,
+            "share_random_ge": 0.48
+          }
+        },
+        "drop_capped_throughout": {
+          "rows_kept": 43,
+          "rows_total": 189,
+          "shapes_kept": 34,
+          "oracle_agreement_exact": {
+            "cap_rule": 0.9705882352941176,
+            "random_mean": 0.9822058823529413,
+            "random_p025": 0.9705882352941176,
+            "random_p975": 1.0,
+            "share_random_le": 0.605,
+            "share_random_ge": 1.0
+          },
+          "all_data_regret_of_retained_oracle_mean_pct": {
+            "cap_rule": 0.002521376781555402,
+            "random_mean": 0.0015254329528410183,
+            "random_p025": 0.0,
+            "random_p975": 0.002521376781555402,
+            "share_random_le": 1.0,
+            "share_random_ge": 0.605
+          },
+          "delta_pp_library_default_128_mean": {
+            "cap_rule": 0.009259516199728757,
+            "random_mean": -0.004609926405420374,
+            "random_p025": -0.08132112563003696,
+            "random_p975": 0.06439554371415837,
+            "share_random_le": 0.555,
+            "share_random_ge": 0.445
+          }
+        }
+      },
+      "E24_tfla_launch_inclusive": {
+        "drop_any_capped": {
+          "rows_kept": 2,
+          "rows_total": 189,
+          "shapes_kept": 2,
+          "oracle_agreement_exact": {
+            "cap_rule": 0.5,
+            "random_mean": 0.53,
+            "random_p025": 0.0,
+            "random_p975": 1.0,
+            "share_random_le": 0.745,
+            "share_random_ge": 0.805
+          },
+          "all_data_regret_of_retained_oracle_mean_pct": {
+            "cap_rule": 1.9294998828319865,
+            "random_mean": 2.13764034444306,
+            "random_p025": 0.0,
+            "random_p975": 6.674025130431083,
+            "share_random_le": 0.705,
+            "share_random_ge": 0.52
+          },
+          "delta_pp_library_default_128_mean": {
+            "cap_rule": 3.3379520950872936,
+            "random_mean": 4.029644824774168,
+            "random_p025": 0.7465170622131594,
+            "random_p975": 10.371537838504054,
+            "share_random_le": 0.705,
+            "share_random_ge": 0.52
+          }
+        },
+        "drop_capped_throughout": {
+          "rows_kept": 27,
+          "rows_total": 189,
+          "shapes_kept": 18,
+          "oracle_agreement_exact": {
+            "cap_rule": 1.0,
+            "random_mean": 0.9633333333333334,
+            "random_p025": 0.8888888888888888,
+            "random_p975": 1.0,
+            "share_random_le": 1.0,
+            "share_random_ge": 0.485
+          },
+          "all_data_regret_of_retained_oracle_mean_pct": {
+            "cap_rule": 0.0,
+            "random_mean": 0.19223496863255246,
+            "random_p025": 0.0,
+            "random_p975": 0.5677861849795105,
+            "share_random_le": 0.485,
+            "share_random_ge": 1.0
+          },
+          "delta_pp_library_default_128_mean": {
+            "cap_rule": 0.009766652706166834,
+            "random_mean": 0.2833230588320217,
+            "random_p025": -0.021543288025282336,
+            "random_p975": 0.8533817464180644,
+            "share_random_le": 0.485,
+            "share_random_ge": 0.535
+          }
+        }
+      },
+      "E17c_production_kernels_rtx3090": {
+        "drop_any_capped": {
+          "rows_kept": 44,
+          "rows_total": 360,
+          "shapes_kept": 32,
+          "oracle_agreement_exact": {
+            "cap_rule": 0.71875,
+            "random_mean": 0.7925,
+            "random_p025": 0.71796875,
+            "random_p975": 0.8757812500000002,
+            "share_random_le": 0.15,
+            "share_random_ge": 0.975
+          },
+          "all_data_regret_of_retained_oracle_mean_pct": {
+            "cap_rule": 0.8344938243298557,
+            "random_mean": 0.9309914247513033,
+            "random_p025": 0.21760798794311006,
+            "random_p975": 1.6693213403699967,
+            "share_random_le": 0.51,
+            "share_random_ge": 0.49
+          },
+          "delta_pp_library_default_128_mean": null
+        },
+        "drop_capped_throughout": {
+          "rows_kept": 184,
+          "rows_total": 360,
+          "shapes_kept": 99,
+          "oracle_agreement_exact": {
+            "cap_rule": 0.9292929292929293,
+            "random_mean": 0.9414646464646463,
+            "random_p025": 0.9090909090909091,
+            "random_p975": 0.9797979797979798,
+            "share_random_le": 0.345,
+            "share_random_ge": 0.845
+          },
+          "all_data_regret_of_retained_oracle_mean_pct": {
+            "cap_rule": 0.15785592569898885,
+            "random_mean": 0.16354222199379226,
+            "random_p025": 0.04241036073641727,
+            "random_p975": 0.2939900028636429,
+            "share_random_le": 0.5,
+            "share_random_ge": 0.505
+          },
+          "delta_pp_library_default_128_mean": null
+        }
+      },
+      "E12_ref": {
+        "drop_any_capped": {
+          "rows_kept": 154,
+          "rows_total": 504,
+          "oracle_agreement_exact": {
+            "cap_rule": 0.8494623655913979,
+            "random_mean": 0.8520967741935483,
+            "random_p025": 0.8064516129032258,
+            "random_p975": 0.9032258064516129,
+            "share_random_le": 0.525,
+            "share_random_ge": 0.615
+          },
+          "delta_pp_unsharded_table_mean": {
+            "cap_rule": 7.672450891112092,
+            "random_mean": 3.8458033069207316,
+            "random_p025": 1.028095046190294,
+            "random_p975": 6.944662118587823,
+            "share_random_le": 0.98,
+            "share_random_ge": 0.02
+          },
+          "delta_pp_calibration_width_table_mean": {
+            "cap_rule": 3.431081845391841,
+            "random_mean": 2.7347822025555812,
+            "random_p025": -0.9194950588551369,
+            "random_p975": 6.4296987591784065,
+            "share_random_le": 0.64,
+            "share_random_ge": 0.36
+          },
+          "delta_pp_cost_model_mean": {
+            "cap_rule": 3.593598173973728,
+            "random_mean": 1.9441869855856584,
+            "random_p025": 0.1190574701616869,
+            "random_p975": 4.250938814556967,
+            "share_random_le": 0.935,
+            "share_random_ge": 0.065
+          },
+          "delta_pp_best_static_mean": {
+            "cap_rule": 3.7878955965460044,
+            "random_mean": 2.373918656203746,
+            "random_p025": -0.19573015296244697,
+            "random_p975": 5.1107429608878165,
+            "share_random_le": 0.845,
+            "share_random_ge": 0.155
+          },
+          "delta_pp_retuned_at_shard_width_cross_round_mean": {
+            "cap_rule": -1.0566831451979297,
+            "random_mean": -0.49871138801933695,
+            "random_p025": -4.033285671186239,
+            "random_p975": 1.7108831400648445,
+            "share_random_le": 0.335,
+            "share_random_ge": 0.665
+          }
+        },
+        "drop_capped_throughout": {
+          "rows_kept": 382,
+          "rows_total": 504,
+          "oracle_agreement_exact": {
+            "cap_rule": 0.9570552147239264,
+            "random_mean": 0.9678220858895705,
+            "random_p025": 0.9447852760736196,
+            "random_p975": 0.9877300613496932,
+            "share_random_le": 0.22,
+            "share_random_ge": 0.89
+          },
+          "delta_pp_unsharded_table_mean": {
+            "cap_rule": 1.2155673167239187,
+            "random_mean": 0.4430287207124083,
+            "random_p025": -0.0007043522120352571,
+            "random_p975": 1.1215062798667963,
+            "share_random_le": 0.995,
+            "share_random_ge": 0.005
+          },
+          "delta_pp_calibration_width_table_mean": {
+            "cap_rule": 0.06137517225515232,
+            "random_mean": 0.04524812410787298,
+            "random_p025": -0.04481735328263479,
+            "random_p975": 0.1613402331899076,
+            "share_random_le": 0.635,
+            "share_random_ge": 0.365
+          },
+          "delta_pp_cost_model_mean": {
+            "cap_rule": 0.0024763336080013687,
+            "random_mean": 0.027155724351250195,
+            "random_p025": -0.036475272916465705,
+            "random_p975": 0.11425834347413208,
+            "share_random_le": 0.315,
+            "share_random_ge": 0.685
+          },
+          "delta_pp_best_static_mean": {
+            "cap_rule": 0.038570071550189766,
+            "random_mean": 0.06268908574991086,
+            "random_p025": -0.38637417862144036,
+            "random_p975": 0.5138014784472943,
+            "share_random_le": 0.45,
+            "share_random_ge": 0.55
+          },
+          "delta_pp_retuned_at_shard_width_cross_round_mean": {
+            "cap_rule": 0.013324514479185368,
+            "random_mean": 0.15786166222147638,
+            "random_p025": -0.06942078610675154,
+            "random_p975": 0.32259006463219597,
+            "share_random_le": 0.27,
+            "share_random_ge": 0.73
+          }
+        }
+      },
+      "E12_triton": {
+        "drop_any_capped": {
+          "rows_kept": 197,
+          "rows_total": 504,
+          "oracle_agreement_exact": {
+            "cap_rule": 0.7983193277310925,
+            "random_mean": 0.7928991596638656,
+            "random_p025": 0.7392857142857143,
+            "random_p975": 0.8489495798319328,
+            "share_random_le": 0.635,
+            "share_random_ge": 0.46
+          },
+          "delta_pp_unsharded_table_mean": {
+            "cap_rule": 3.912298112781606,
+            "random_mean": 2.6721270018455665,
+            "random_p025": -0.6682035575165652,
+            "random_p975": 7.079560568611867,
+            "share_random_le": 0.745,
+            "share_random_ge": 0.255
+          },
+          "delta_pp_calibration_width_table_mean": {
+            "cap_rule": 6.125099943711135,
+            "random_mean": 6.804085462963439,
+            "random_p025": 1.5409589599575775,
+            "random_p975": 13.039996795028651,
+            "share_random_le": 0.48,
+            "share_random_ge": 0.52
+          },
+          "delta_pp_cost_model_mean": {
+            "cap_rule": 5.377811386713456,
+            "random_mean": 4.690881768667575,
+            "random_p025": 1.274849752026006,
+            "random_p975": 7.720192371973707,
+            "share_random_le": 0.67,
+            "share_random_ge": 0.33
+          },
+          "delta_pp_best_static_mean": {
+            "cap_rule": 4.702181070060096,
+            "random_mean": 5.285038446737095,
+            "random_p025": 2.1980227862195747,
+            "random_p975": 9.366246112513759,
+            "share_random_le": 0.445,
+            "share_random_ge": 0.555
+          },
+          "delta_pp_retuned_at_shard_width_cross_round_mean": {
+            "cap_rule": -1.5248005039879722,
+            "random_mean": 0.24968290567697482,
+            "random_p025": -3.1590378886544026,
+            "random_p975": 3.1677111523633177,
+            "share_random_le": 0.135,
+            "share_random_ge": 0.865
+          }
+        },
+        "drop_capped_throughout": {
+          "rows_kept": 393,
+          "rows_total": 504,
+          "oracle_agreement_exact": {
+            "cap_rule": 0.9575757575757575,
+            "random_mean": 0.9574242424242422,
+            "random_p025": 0.9393939393939394,
+            "random_p975": 0.9818181818181818,
+            "share_random_le": 0.61,
+            "share_random_ge": 0.605
+          },
+          "delta_pp_unsharded_table_mean": {
+            "cap_rule": 0.07713642492893058,
+            "random_mean": -0.12994311019007113,
+            "random_p025": -0.8136037309032049,
+            "random_p975": 0.9089198127423009,
+            "share_random_le": 0.695,
+            "share_random_ge": 0.305
+          },
+          "delta_pp_calibration_width_table_mean": {
+            "cap_rule": -0.1973597849252151,
+            "random_mean": 0.21928897707291917,
+            "random_p025": -0.2701696749556173,
+            "random_p975": 0.6573948146629698,
+            "share_random_le": 0.05,
+            "share_random_ge": 0.95
+          },
+          "delta_pp_cost_model_mean": {
+            "cap_rule": 0.3395274907160877,
+            "random_mean": 0.3528611837860247,
+            "random_p025": -0.05145051088347336,
+            "random_p975": 0.7536711340976762,
+            "share_random_le": 0.505,
+            "share_random_ge": 0.495
+          },
+          "delta_pp_best_static_mean": {
+            "cap_rule": 0.34894867928555584,
+            "random_mean": 0.4184130161575652,
+            "random_p025": -0.05825925950178296,
+            "random_p975": 0.9952943354356834,
+            "share_random_le": 0.39,
+            "share_random_ge": 0.61
+          },
+          "delta_pp_retuned_at_shard_width_cross_round_mean": {
+            "cap_rule": -0.04087090861863629,
+            "random_mean": -0.1011698931725198,
+            "random_p025": -0.9924196275962388,
+            "random_p975": 0.7826709276059327,
+            "share_random_le": 0.555,
+            "share_random_ge": 0.445
+          }
+        }
+      },
+      "E9": {
+        "drop_any_capped": {
+          "cells_kept": 5501,
+          "cells_total": 9000,
+          "share_decisions_all_data_chunk_retained": {
+            "cap_rule": 0.6842105263157895,
+            "random_mean": 0.6842105263157896,
+            "random_p025": 0.6842105263157895,
+            "random_p975": 0.6842105263157895,
+            "share_random_le": 1.0,
+            "share_random_ge": 1.0
+          },
+          "input_agnostic_chunk_agreement_within_retained_chunks": {
+            "cap_rule": 0.9473684210526315,
+            "random_mean": 0.9965789473684211,
+            "random_p025": 0.9473684210526315,
+            "random_p975": 1.0,
+            "share_random_le": 0.065,
+            "share_random_ge": 1.0
+          },
+          "all_data_regret_vs_best_retained_chunk_mean_pct": {
+            "cap_rule": 0.15719245698028242,
+            "random_mean": 0.010217509703718358,
+            "random_p025": 0.0,
+            "random_p975": 0.15719245698028242,
+            "share_random_le": 1.0,
+            "share_random_ge": 0.065
+          },
+          "own_best_chunk_agreement_within_retained_chunks": {
+            "cap_rule": 0.9927007299270073,
+            "random_mean": 0.9956569343065693,
+            "random_p025": 0.9890510948905109,
+            "random_p975": 1.0,
+            "share_random_le": 0.325,
+            "share_random_ge": 0.96
+          }
+        },
+        "drop_capped_throughout": {
+          "cells_kept": 5712,
+          "cells_total": 9000,
+          "share_decisions_all_data_chunk_retained": {
+            "cap_rule": 0.85,
+            "random_mean": 0.8499999999999998,
+            "random_p025": 0.85,
+            "random_p975": 0.85,
+            "share_random_le": 1.0,
+            "share_random_ge": 1.0
+          },
+          "input_agnostic_chunk_agreement_within_retained_chunks": {
+            "cap_rule": 0.95,
+            "random_mean": 1.0,
+            "random_p025": 1.0,
+            "random_p975": 1.0,
+            "share_random_le": 0.0,
+            "share_random_ge": 1.0
+          },
+          "all_data_regret_vs_best_retained_chunk_mean_pct": {
+            "cap_rule": 0.1493328341312683,
+            "random_mean": 0.0,
+            "random_p025": 0.0,
+            "random_p975": 0.0,
+            "share_random_le": 1.0,
+            "share_random_ge": 0.0
+          },
+          "own_best_chunk_agreement_within_retained_chunks": {
+            "cap_rule": 0.9867986798679867,
+            "random_mean": 0.9943894389438944,
+            "random_p025": 0.9867986798679867,
+            "random_p975": 1.0,
+            "share_random_le": 0.04,
+            "share_random_ge": 0.99
+          }
+        }
+      }
+    }
+  }
+}
