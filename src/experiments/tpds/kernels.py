@@ -275,6 +275,16 @@ def mamba2_ssd(x, dt, A, B, C, chunk_size: int, D=None, dt_bias=None, dt_softplu
     return fn(x, dt, A, B, C, chunk_size, D=D, z=z, dt_bias=dt_bias, dt_softplus=dt_softplus)
 
 
+def mamba2_ssd_varlen(x, dt, A, B, C, chunk_size: int, seq_idx, D=None, dt_bias=None, initial_states=None,
+                      dt_softplus=True):
+    """Packed variable-length SSD forward: batch 1, ``seq_idx`` (1, T) int32 gives the sequence of each token,
+    and the state is reset at sequence boundaries. ``initial_states`` (1, h, p, n), when given, is the carried
+    state of the first packed sequence (a prompt whose chunked prefill began in an earlier step)."""
+    fn = _load_ssd()
+    return fn(x, dt, A, B, C, chunk_size, D=D, dt_bias=dt_bias, initial_states=initial_states, seq_idx=seq_idx,
+              dt_softplus=dt_softplus)
+
+
 def ref_ssd(x, dt, A, B, C, D=None, dt_bias=None, dt_softplus=True):
     """fp32 reference for SSD, expressed as a Mamba-1 selective scan with per-head scalar decay."""
     bsz, L, h, p = x.shape
@@ -342,6 +352,17 @@ def gdn_chunk_prod(q, k, v, g, beta, A_log, dt_bias, chunk_size: int = 64, allow
               use_beta_sigmoid_in_kernel=True, allow_neg_eigval=allow_neg_eigval, state_v_first=True,
               chunk_size=chunk_size)
     return o
+
+
+def gdn_chunk_prod_varlen(q, k, v, g, beta, A_log, dt_bias, cu_seqlens, chunk_size: int = 64,
+                          allow_neg_eigval: bool = False, initial_state=None, output_final_state: bool = False):
+    """Packed variable-length Gated DeltaNet forward on the production path: batch 1, ``cu_seqlens`` (N+1,) int64
+    sequence offsets; ``initial_state`` (N, HV, V, K) carried states (state_v_first). Returns (o, final_state)."""
+    fn = _load_gdn()
+    return fn(q=q, k=k, v=v, g=g, beta=beta, A_log=A_log, dt_bias=dt_bias, initial_state=initial_state,
+              output_final_state=output_final_state, use_qk_l2norm_in_kernel=True, use_gate_in_kernel=True,
+              use_beta_sigmoid_in_kernel=True, allow_neg_eigval=allow_neg_eigval, state_v_first=True,
+              cu_seqlens=cu_seqlens, chunk_size=chunk_size)
 
 
 def ref_gdn(q, k, v, g, beta):

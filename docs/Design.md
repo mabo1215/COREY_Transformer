@@ -1,3 +1,40 @@
+# Experiment Design - Cycle taco-r1 (2026-10-15): independent ACM TACO review, major revision
+
+Review: `docs/revision_suggestions.tex` (M1-M10, N1-N20, V1-V4); reports in
+`docs/review_reports/taco_r1_*.md`. Author decisions (2026-10-15): narrative A (characterization and
+tuning economics; the cost model as a single-kernel case study; the bound as a lemma; title without
+"No-Gain Bound"), cite arXiv:2604.10597 in the third person, GPU work on the RTX PRO 6000 only (no
+data-centre GPU rented: H800-specific items M6d are scoped in the text instead).
+
+## E26 - CUDA-graph replays on the RTX PRO 6000 (M6a)
+
+Purpose: the CUDA-graph result for the production kernels (defaults lose 16-22% per call, 1-3% of scan
+time) rests on one modified RTX 3090. Repeat E25 (three rounds, chunk order shuffled per call and round,
+round-median oracle, warm L2, one CUDA graph per (call, chunk) and round, 10 warmup and 50 replays, batch 1,
+4, 16) on the RTX PRO 6000 with the same traces (identical calls). Steps: E26c SSD 2.7B, E26a SSD 370M,
+E26b Gated DeltaNet 1.4B, E26d Triton Mamba-1 370M. Offline after the run: per-call and latency-weighted
+regret of the defaults, shape tree, cost/work-term model calibrated only on the replays at the calibration
+shapes (M6a part 2), compared with the RTX 3090. Lane `taco_lane_pro6000.sh`. ~5-7 GPU-h. Peak VRAM ~15 GB.
+
+## E27 - Packed variable-length calls (M6b)
+
+Purpose: serving engines issue packed variable-length prefill calls (batch 1, state reset at sequence
+boundaries, the first sequence possibly continuing from a carried state); the study timed equal-length
+batches only, and the recipe's packed-length key was untested. Steps: packed prefill steps sampled from
+the Azure 2023 code and conversation traces through the chunked-prefill scheduler of the serving replay
+(budgets 2048 and 8192, offered load 0.5, decode colocated), stratified by packed sequences (1, 2-3, 4-7,
+8+; 12 steps per stratum; `packed_steps.py`). Each sequence is a slice of a captured prompt (370M and 2.7B
+Mamba-2, 1.4B Gated DeltaNet). Every chunk (SSD 32-512, GDN 16-64), variants fresh and carried state,
+three rounds, device time. Metrics: default within 2% of the oracle, per-step and latency-weighted regret
+of the default, best single chunk, held-out tables keyed on packed-token bucket vs (bucket, sequences),
+share of steps whose optimum the carried state moves. ~1-1.5 GPU-h. Result: `e27_varlen_pro6000_taco.*`.
+
+## M2b - compile facts of the reference CUDA scan (CPU, in prep)
+
+Build the runtime-chunk reference scan for sm_86 with `ptxas -v` and record registers, spills and shared
+memory per (threads, items) instantiation (`refscan_compile_facts_sm86.json`); refit the stock-pairing and
+32-thread cost-model instances offline with these facts.
+
 # Experiment Design - Cycle tpds-r4 (2026-10-08): independent TPDS review, major revision
 
 Review: `docs/revision_suggestions.tex` (M1-M12, N1-N8, V1-V6); decision letter

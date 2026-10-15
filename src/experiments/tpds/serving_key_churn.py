@@ -224,9 +224,17 @@ def length_summary(ctx: np.ndarray, gen: np.ndarray, duration_s: float) -> dict:
 
 
 # --------------------------------------------------------------------------- scheduler
-def simulate_chunked(arr: np.ndarray, ctx: np.ndarray, gen: np.ndarray, T: int, colocate: bool) -> dict:
-    """Chunked-prefill continuous batching (FCFS). Returns per-step prefill shapes and queueing stats."""
+def simulate_chunked(arr: np.ndarray, ctx: np.ndarray, gen: np.ndarray, T: int, colocate: bool,
+                     record_lens: bool = False) -> dict:
+    """Chunked-prefill continuous batching (FCFS). Returns per-step prefill shapes and queueing stats.
+
+    With ``record_lens`` the result also holds ``steps``: per prefill step, the list of (tokens, continued)
+    pairs of its packed sequences, ``continued`` marking a request whose prefill started in an earlier
+    step (its scan starts from a carried state).
+    """
     arr_l, rem, gen_l = arr.tolist(), ctx.tolist(), gen.tolist()
+    ctx_l = ctx.tolist()
+    steps_o: list = []
     n = len(arr_l)
     q: deque = deque()
     dec: list = []                    # heap of the step index at which a decoding request finishes
@@ -266,10 +274,13 @@ def simulate_chunked(arr: np.ndarray, ctx: np.ndarray, gen: np.ndarray, T: int, 
         avail = budget
         cnt = lmax = tot = 0
         done = []
+        seqs = [] if record_lens else None
         while q and budget > 0 and cnt < slots:
             j = q[0]
             r = rem[j]
             c = r if r < budget else budget
+            if seqs is not None:
+                seqs.append((int(c), bool(r < ctx_l[j])))
             rem[j] = r - c
             budget -= c
             tot += c
@@ -292,10 +303,13 @@ def simulate_chunked(arr: np.ndarray, ctx: np.ndarray, gen: np.ndarray, T: int, 
         lmax_o.append(lmax)
         tot_o.append(tot)
         tend_o.append(now)
+        if seqs is not None:
+            steps_o.append(seqs)
     nseq = np.frombuffer(nseq_o, dtype=np.int32).astype(np.int64)
     tot = np.frombuffer(tot_o, dtype=np.int32).astype(np.int64)
     span = float(arr[-1]) if n else 0.0
-    return {"nseq": nseq, "lmax": np.frombuffer(lmax_o, dtype=np.int32).astype(np.int64), "tot": tot,
+    out_steps = {"steps": steps_o} if record_lens else {}
+    return {**out_steps, "nseq": nseq, "lmax": np.frombuffer(lmax_o, dtype=np.int32).astype(np.int64), "tot": tot,
             "stats": {"prefill_steps": int(len(nseq)), "decode_only_steps": int(dec_only),
                       "mean_seqs_per_prefill_step": float(nseq.mean()),
                       "share_multi_seq_steps": float((nseq > 1).mean()),
