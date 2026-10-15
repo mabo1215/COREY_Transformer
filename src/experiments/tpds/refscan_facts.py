@@ -18,19 +18,39 @@ Output: ``refscan_compile_facts_<arch>.json`` in the results directory.
 from __future__ import annotations
 
 import argparse
+import importlib.util
+import json
 import re
 import shutil
 import subprocess
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
-from src.experiments.tpds.common import RESULTS_DIR, utc_now, write_json
-
+# No torch import (and none of the modules that import it): the no-GPU container of the host has a 2 GB
+# memory limit, which torch plus nvcc exceed.
 ROOT = Path(__file__).resolve().parents[3]
+RESULTS_DIR = ROOT / "src" / "experiments" / "results" / "tpds"
 KERNEL_DIR = ROOT / "src" / "kernels" / "mamba1_runtime_chunk"
 TRAITS = re.compile(r"Selective_Scan_fwd_kernel_traits<(\d+), (\d+), (\d+), (true|false), (true|false), (true|false), "
                     r"(true|false), ([\w:]+), ([\w:]+)>")
 USAGE = re.compile(r"REG:(\d+) STACK:(\d+) SHARED:(\d+) LOCAL:(\d+)")
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def write_json(path: Path, obj) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(obj, indent=1) + "\n")
+
+
+def torch_include_dir() -> Path:
+    spec = importlib.util.find_spec("torch")
+    if spec is None or not spec.submodule_search_locations:
+        raise SystemExit("torch not found; pass --torch-include")
+    return Path(list(spec.submodule_search_locations)[0]) / "include"
 
 
 def find_module(explicit: Path | None) -> Path:
@@ -108,10 +128,7 @@ def main(argv=None):
     res = {"experiment": "M2b reference-scan compile facts", "created_utc": utc_now(), "module": module.name,
            "archs": archs, "n_instantiations": len(facts), "source": "cuobjdump --dump-resource-usage"}
     if args.mamba_csrc:
-        inc = args.torch_include
-        if inc is None:
-            import torch.utils.cpp_extension as ext
-            inc = Path(ext.include_paths()[0])
+        inc = args.torch_include or torch_include_dir()
         sizes = dynamic_smem(args.mamba_csrc, tool("nvcc"), inc)
         for f in facts:
             f["dynamic_smem"] = sizes.get((f["threads"], f["items"], f["even_len"], f["variable_b"], f["variable_c"],
