@@ -807,8 +807,9 @@ def scrub_metadata(text: str) -> str:
 TAG_CRC_MODULE = '''"""CRC-32 of seed keys under the original result tags.
 
 Several analyses derive bootstrap and permutation seeds from the CRC-32 of a key that contains a
-result tag, for example ``mamba1_<tag>``. The tags of this package name the GPU ({names}); the
-stored analyses were produced under the host labels the measurements were first recorded with.
+result tag, for example ``mamba1_<tag>``. The tags of this package name the GPU
+({names}); the stored analyses were produced under the host labels the
+measurements were first recorded with.
 ``tag_crc32`` returns the checksum a key had under those labels, so a recomputed analysis draws the
 same random streams and reproduces the stored file. Each renamed tag component is described by the
 length and the CRC-32 of its original spelling: CRC-32 is affine in the message, so the checksum of

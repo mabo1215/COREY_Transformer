@@ -1,28 +1,37 @@
-# Assemble the TPDS submission package under submit\ from the current paper\ build.
+# Assemble the paper submission package (double-anonymous review) under submit\ from the current paper\ build.
 #
-#   powershell -ExecutionPolicy Bypass -File src\revloop\make_submit.ps1 [-Build] [-Verify] [-NoArchive]
+#   powershell -ExecutionPolicy Bypass -File src\revloop\make_submit.ps1 [-Build] [-Verify] [-NoArchive] [-OutDir <dir>]
 #
 #   -Build      run paper\build.bat first (otherwise the existing paper\build\ outputs are used)
 #   -Verify     extract the two LaTeX zips into a temporary directory, compile them standalone and
 #               report pages, undefined references and errors
-#   -NoArchive  replace the package in place instead of moving it to submit\old\<timestamp>\
+#   -NoArchive  replace the package in place instead of moving it to <package>\old\<timestamp>\
+#   -OutDir     assemble the package in this directory instead of submit\ (e.g. for a test build)
 #
 # Layout (one folder per upload file type, plus a zip of each LaTeX folder):
-#   submit\main.pdf, appendix.pdf             compiled main paper and Supplementary Material
-#   submit\MainManuscript\                    main.tex, ref.bib, main.bbl, IEEEtran.cls/.bst, figs\,
+#   main.pdf, appendix.pdf                    compiled main paper and Supplementary Material
+#   MainManuscript\                           main.tex, ref.bib, main.bbl, the document class and
+#                                             bibliography style that main.tex names, figs\,
 #                                             build\appendix_only.aux (resolves S-prefixed references)
-#   submit\LaTeXSupplementaryFile\            appendix_only.tex (standalone wrapper), appendix.tex,
+#   LaTeXSupplementaryFile\                   appendix_only.tex (standalone wrapper), appendix.tex,
 #                                             appendix_only.bbl, figs\, build\main.aux (M- references)
-#   submit\Image\                             every figure file of the main paper and the supplement
-#   submit\SupplementaryMaterialForReview\    Supplementary_Material.pdf
-#   submit\cover_letter.txt, Title_Page.docx  from docs\ (they carry author names: editor-only uploads)
+#   Image\                                    every figure file of the main paper and the supplement
+#   SupplementaryMaterialForReview\           Supplementary_Material.pdf
+#   cover_letter.txt, Title_Page.docx         from docs\ (they carry author names: editor-only uploads)
+# Figures: only the files named by \includegraphics commands that are not commented out in main.tex
+# and appendix.tex. A figure in paper\figs\profile\ (author photos) or in paper\backup\, legacy\ or
+# template\ (material of earlier venues) stops the script, and at the end every packaged figure is
+# checked against the included ones. Nothing else from paper\ is copied.
 # submit\ is git-ignored. Earlier packages are kept under submit\old\.
-param([switch]$Build, [switch]$Verify, [switch]$NoArchive)
+param([switch]$Build, [switch]$Verify, [switch]$NoArchive, [string]$OutDir = '')
 $ErrorActionPreference = 'Stop'
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $paper = Join-Path $Root 'paper'
-$sub = Join-Path $Root 'submit'
+if ($OutDir) { $sub = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutDir) }
+else { $sub = Join-Path $Root 'submit' }
 $managed = 'MainManuscript', 'LaTeXSupplementaryFile', 'Image', 'SupplementaryMaterialForReview'
+# folders of paper\ that must never reach an upload (author photos, earlier venues' material)
+$forbidden = 'profile', 'backup', 'legacy', 'template'
 
 if ($Build) {
   & cmd /c (Join-Path $paper 'build.bat')
@@ -37,9 +46,55 @@ $stale = 'main.tex', 'appendix.tex', 'ref.bib' | ForEach-Object { Get-Item (Join
   Where-Object { $_.LastWriteTime -gt $builtAt }
 if ($stale) { Write-Warning ("sources newer than paper\main.pdf: " + ($stale.Name -join ', ') + "; consider -Build") }
 
-$cls = & kpsewhich IEEEtran.cls
-$bst = & kpsewhich IEEEtran.bst
-if (-not $cls -or -not $bst) { throw 'kpsewhich could not find IEEEtran.cls/.bst' }
+# LaTeX source without comments (text after an unescaped %)
+function Get-Uncommented($tex) {
+  ((Get-Content $tex) | ForEach-Object { $_ -replace '(?<!\\)%.*$', '' }) -join "`n"
+}
+
+# document class and bibliography style named in main.tex (packaged so that the zips compile standalone)
+$mainSource = Get-Uncommented (Join-Path $paper 'main.tex')
+$clsName = [regex]::Match($mainSource, '\\documentclass\s*(\[[^\]]*\])?\s*\{([^}]+)\}').Groups[2].Value.Trim()
+$bstName = [regex]::Match($mainSource, '\\bibliographystyle\s*\{([^}]+)\}').Groups[1].Value.Trim()
+if (-not $clsName) { throw 'no \documentclass in paper\main.tex' }
+$styleFiles = @()
+foreach ($f in @("$clsName.cls") + @(if ($bstName) { "$bstName.bst" })) {
+  $p = & kpsewhich $f
+  if ($p) { $styleFiles += $p } else { Write-Warning "kpsewhich could not find $f; it is not packaged" }
+}
+$styleNames = ($styleFiles | ForEach-Object { Split-Path $_ -Leaf }) -join ', '
+if (-not $styleNames) { $styleNames = '(none packaged)' }
+
+# figures: targets of the \includegraphics commands that are not commented out, as paths relative to paper\
+function Get-Figures($tex) {
+  $names = [regex]::Matches((Get-Uncommented $tex), '\\includegraphics\s*(\[[^\]]*\])?\s*\{([^}]*)\}') |
+    ForEach-Object { $_.Groups[2].Value.Trim() } | Sort-Object -Unique
+  foreach ($n in $names) {
+    $file = $n
+    if (-not [IO.Path]::GetExtension($file)) {  # extension left to LaTeX
+      $ext = '.pdf', '.png', '.jpg', '.jpeg', '.eps' | Where-Object { Test-Path (Join-Path $paper ($n + $_)) } |
+        Select-Object -First 1
+      if (-not $ext) { throw "figure '$n' of $(Split-Path $tex -Leaf) not found" }
+      $file = $n + $ext
+    }
+    $full = [IO.Path]::GetFullPath((Join-Path $paper $file))
+    if (-not $full.StartsWith($paper + '\', [StringComparison]::OrdinalIgnoreCase)) {
+      throw "figure '$n' of $(Split-Path $tex -Leaf) lies outside paper\"
+    }
+    $rel = $full.Substring($paper.Length + 1)
+    $bad = @((Split-Path $rel -Parent) -split '\\' | Where-Object { $forbidden -contains $_.ToLower() })
+    if ($bad) { throw "figure '$n' of $(Split-Path $tex -Leaf) is in paper\$(Split-Path $rel -Parent), which must not be uploaded" }
+    if (-not (Test-Path $full -PathType Leaf)) { throw "figure '$n' of $(Split-Path $tex -Leaf) not found" }
+    $rel
+  }
+}
+$mainFigs = @(Get-Figures (Join-Path $paper 'main.tex'))
+$suppFigs = @(Get-Figures (Join-Path $paper 'appendix.tex'))
+
+function Copy-Figure($rel, $destRoot) {
+  $dst = Join-Path $destRoot $rel
+  New-Item -ItemType Directory -Force (Split-Path $dst -Parent) | Out-Null
+  Copy-Item (Join-Path $paper $rel) $dst
+}
 
 # 1. archive (or clear) the previous package
 New-Item -ItemType Directory -Force $sub | Out-Null
@@ -56,31 +111,26 @@ if ($previous) {
   }
 }
 
-function Get-Figures($tex) {
-  Select-String -Path $tex -Pattern 'includegraphics(\[[^\]]*\])?\{([^}]*)\}' -AllMatches |
-    ForEach-Object { $_.Matches | ForEach-Object { $_.Groups[2].Value } } | Sort-Object -Unique
-}
-$mainFigs = @(Get-Figures (Join-Path $paper 'main.tex'))
-$suppFigs = @(Get-Figures (Join-Path $paper 'appendix.tex'))
-
 # 2. Main Manuscript
 $m = Join-Path $sub 'MainManuscript'
 New-Item -ItemType Directory -Force (Join-Path $m 'figs'), (Join-Path $m 'build') | Out-Null
-Copy-Item (Join-Path $paper 'main.tex'), (Join-Path $paper 'ref.bib'), (Join-Path $paper 'main.pdf'), $cls, $bst $m
+Copy-Item (Join-Path $paper 'main.tex'), (Join-Path $paper 'ref.bib'), (Join-Path $paper 'main.pdf') $m
+foreach ($f in $styleFiles) { Copy-Item $f $m }
 Copy-Item (Join-Path $paper 'build\main.bbl') (Join-Path $m 'main.bbl')
 Copy-Item (Join-Path $paper 'build\appendix_only.aux') (Join-Path $m 'build\appendix_only.aux')
-foreach ($f in $mainFigs) { Copy-Item (Join-Path $paper $f) (Join-Path $m $f) }
+foreach ($f in $mainFigs) { Copy-Figure $f $m }
 
 # 3. LaTeX Supplementary File
 $s = Join-Path $sub 'LaTeXSupplementaryFile'
 New-Item -ItemType Directory -Force (Join-Path $s 'figs'), (Join-Path $s 'build') | Out-Null
 (Get-Content (Join-Path $paper 'build\appendix_only.tex') -Raw).Replace('\input{../appendix}', '\input{appendix}') |
   Out-File -Encoding ascii (Join-Path $s 'appendix_only.tex')
-Copy-Item (Join-Path $paper 'appendix.tex'), (Join-Path $paper 'ref.bib'), $cls, $bst $s
+Copy-Item (Join-Path $paper 'appendix.tex'), (Join-Path $paper 'ref.bib') $s
+foreach ($f in $styleFiles) { Copy-Item $f $s }
 Copy-Item (Join-Path $paper 'build\appendix_only.bbl') (Join-Path $s 'appendix_only.bbl')
 Copy-Item (Join-Path $paper 'appendix.pdf') (Join-Path $s 'appendix.pdf')
 Copy-Item (Join-Path $paper 'build\main.aux') (Join-Path $s 'build\main.aux')
-foreach ($f in $suppFigs) { Copy-Item (Join-Path $paper $f) (Join-Path $s $f) }
+foreach ($f in $suppFigs) { Copy-Figure $f $s }
 
 # 4. Images
 $i = Join-Path $sub 'Image'
@@ -100,12 +150,13 @@ foreach ($f in 'cover_letter.txt', 'Title_Page.docx') {
 }
 
 # 7. READMEs
-@'
-MAIN MANUSCRIPT - IEEE TPDS regular paper (double-anonymous review)
+@"
+MAIN MANUSCRIPT (double-anonymous review)
 
 main.pdf            compiled manuscript
 main.tex, ref.bib   LaTeX source and bibliography; main.bbl is the prebuilt bibliography
-IEEEtran.cls/.bst   IEEE class and BibTeX style
+$styleNames
+                    document class and bibliography style
 figs/               figures used by the main paper
 build/appendix_only.aux
                     labels of the Supplementary Material, so that references to
@@ -113,43 +164,55 @@ build/appendix_only.aux
                     resolve when the main paper is compiled on its own
 
 Compile: pdflatex main; bibtex main; pdflatex main; pdflatex main
-'@ | Out-File -Encoding ascii (Join-Path $m 'README.txt')
-@'
+"@ | Out-File -Encoding ascii (Join-Path $m 'README.txt')
+@"
 LATEX SUPPLEMENTARY FILE - Supplementary Material (double-anonymous review)
 
-appendix_only.tex   standalone wrapper (IEEEtran journal class, S-numbered sections,
-                    tables, figures and equations)
+appendix_only.tex   standalone wrapper (document class of the main paper, S-numbered
+                    sections, tables, figures and equations)
 appendix.tex        body of the Supplementary Material
-appendix_only.bbl   prebuilt bibliography; ref.bib, IEEEtran.cls/.bst
+appendix_only.bbl   prebuilt bibliography; ref.bib, $styleNames
 appendix.pdf        compiled Supplementary Material
 figs/               figures used by the Supplementary Material
 build/main.aux      labels of the main paper, so that references to main-paper
                     sections, tables and equations resolve
 
 Compile: pdflatex appendix_only; bibtex appendix_only; pdflatex appendix_only; pdflatex appendix_only
-'@ | Out-File -Encoding ascii (Join-Path $s 'README.txt')
+"@ | Out-File -Encoding ascii (Join-Path $s 'README.txt')
 
-# 8. zips for upload
+# 8. figure check: every packaged figure is one of the included ones; nothing from a forbidden folder
+$included = @($mainFigs + $suppFigs | ForEach-Object { Split-Path $_ -Leaf })
+foreach ($d in 'MainManuscript\figs', 'LaTeXSupplementaryFile\figs', 'Image') {
+  foreach ($f in Get-ChildItem (Join-Path $sub $d) -Recurse -File) {
+    if ($included -notcontains $f.Name) { throw "$d contains $($f.Name), which main.tex and appendix.tex do not include" }
+  }
+}
+foreach ($f in Get-ChildItem $managed.ForEach({ Join-Path $sub $_ }) -Recurse -File) {
+  $parts = $f.FullName.Substring($sub.Length + 1) -split '\\'
+  if ($parts | Where-Object { $forbidden -contains $_.ToLower() }) { throw "packaged file from a forbidden folder: $($f.FullName)" }
+}
+
+# 9. zips for upload
 foreach ($d in 'MainManuscript', 'LaTeXSupplementaryFile', 'Image') {
   Compress-Archive -Path (Join-Path $sub "$d\*") -DestinationPath (Join-Path $sub "$d.zip") -Force
 }
 
-# 9. checks: freshness, identifying strings, PDF info dictionary
-$pairs = @(('paper\main.tex', 'submit\MainManuscript\main.tex'), ('paper\appendix.tex', 'submit\LaTeXSupplementaryFile\appendix.tex'),
-           ('paper\ref.bib', 'submit\MainManuscript\ref.bib'), ('paper\main.pdf', 'submit\main.pdf'),
-           ('paper\appendix.pdf', 'submit\SupplementaryMaterialForReview\Supplementary_Material.pdf'))
+# 10. checks: freshness, identifying strings, PDF info dictionary
+$pairs = @(('main.tex', 'MainManuscript\main.tex'), ('appendix.tex', 'LaTeXSupplementaryFile\appendix.tex'),
+           ('ref.bib', 'MainManuscript\ref.bib'), ('main.pdf', 'main.pdf'),
+           ('appendix.pdf', 'SupplementaryMaterialForReview\Supplementary_Material.pdf'))
 foreach ($p in $pairs) {
-  if ((Get-FileHash (Join-Path $Root $p[0])).Hash -ne (Get-FileHash (Join-Path $Root $p[1])).Hash) { Write-Warning "$($p[1]) differs from $($p[0])" }
+  if ((Get-FileHash (Join-Path $paper $p[0])).Hash -ne (Get-FileHash (Join-Path $sub $p[1])).Hash) { Write-Warning "$($p[1]) differs from paper\$($p[0])" }
 }
 $hits = Get-ChildItem $managed.ForEach({ Join-Path $sub $_ }) -Recurse -File -Include *.tex, *.bib, *.bbl, *.aux, *.txt |
-  Select-String -Pattern 'corey|mabo|bobsteam|autodl|/root/|C:\\source|\\Users\\|codeocean'
+  Select-String -Pattern 'corey|mabo|bobsteam|autodl|/root/|C:\\source|\\Users\\|codeocean|tpds|vgpu|nza1|figs[\\/]profile'
 foreach ($h in $hits) { Write-Warning ("identifying text: {0}:{1}: {2}" -f $h.Path.Substring($sub.Length + 1), $h.LineNumber, $h.Line.Trim()) }
 foreach ($f in 'main.pdf', 'appendix.pdf') {
   $bytes = [IO.File]::ReadAllText((Join-Path $sub $f), [Text.Encoding]::GetEncoding(28591))
   foreach ($k in '/Author', '/Title', '/CreationDate') { if ($bytes.Contains($k)) { Write-Warning "$f carries $k in its info dictionary" } }
 }
 
-# 10. optional standalone compile of the zips
+# 11. optional standalone compile of the zips
 if ($Verify) {
   $tmp = Join-Path ([IO.Path]::GetTempPath()) ('submit_verify_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
   Expand-Archive (Join-Path $sub 'MainManuscript.zip') (Join-Path $tmp 'main')
