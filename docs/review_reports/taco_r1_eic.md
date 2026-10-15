@@ -1,5 +1,7 @@
 # EIC Review Report: ACM TACO, Round 1
 
+> Note added 2026-10-16: supplement numbers in this report (Table S..., Fig. S..., Sec. S...) refer to the reviewed 48-page supplement. The supplement has since been renumbered; see `taco_r1_supplement_numbering.md` for the current numbers. The report text itself is unchanged.
+
 **Submission:** "Shape Sets the Chunk: A Compile-Informed Cost Model and a No-Gain Bound for Data-Dependent Dispatch of Chunked Linear-Recurrence Kernels" (main article, 23 pp. including references, plus a 48-page Supplementary Material)
 
 **Reviewer role:** Editor-in-Chief / handling editor, ACM Transactions on Architecture and Code Optimization. I reviewed independently and saw no other reports.

@@ -1,5 +1,7 @@
 # TACO Review, Round 1: Reviewer 3 (Perspective: Production Inference Systems)
 
+> Note added 2026-10-16: supplement numbers in this report (Table S..., Fig. S..., Sec. S...) refer to the reviewed 48-page supplement. The supplement has since been renumbered; see `taco_r1_supplement_numbering.md` for the current numbers. The report text itself is unchanged.
+
 **Manuscript:** "Shape Sets the Chunk: A Compile-Informed Cost Model and a No-Gain Bound for Data-Dependent Dispatch of Chunked Linear-Recurrence Kernels" (main article, 23 pp. including references, plus a 48-page Supplementary Material, reviewed together as one paper)
 
 **Reviewer identity.** I work on production LLM inference: serving engines (vLLM, SGLang, TensorRT-LLM), attention and recurrence kernels (FlashInfer, FLA, mamba_ssm), CUDA-graph capture, continuous batching, chunked prefill and tensor parallelism, and I run kernel tuning caches in deployed fleets. I read TACO as a practitioner who wants results I can act on. I am not an SSM modelling specialist. Where I comment on modelling conventions or statistics, I am speaking from the deployment side.

@@ -1,5 +1,7 @@
 # Devil's Advocate Review: "Shape Sets the Chunk" (ACM TACO, new submission, round 1)
 
+> Note added 2026-10-16: supplement numbers in this report (Table S..., Fig. S..., Sec. S...) refer to the reviewed 48-page supplement. The supplement has since been renumbered; see `taco_r1_supplement_numbering.md` for the current numbers. The report text itself is unchanged.
+
 Reviewed jointly: main article (`paper/main.tex`, `main.pdf`, 20 body pages + references) and Supplementary Material (`paper/appendix.tex`, `appendix.pdf`, 48 pages). Section, table and page numbers refer to the compiled PDFs (main: Sec. 1-10, Tables 1-8, Figs. 1-3; supplement: Sec. S1-S17, Tables S1-S47). Several claims were re-derived from the released result files with read-only scripts; those checks are marked **[verified]**.
 
 ## What the paper does well
