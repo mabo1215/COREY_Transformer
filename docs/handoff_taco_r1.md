@@ -224,8 +224,29 @@ S1.2 and S1.3; keep the reduction-kernel sentence (7.3/42 us) in sec:supp_kernel
 (~2401, 2492-2505), "the single round that preceded them" (~2357); (5) never remove a label main.tex references
 via \Sref (grep main.tex again; keep S-eq:chunk_rule). Before deleting any table, check that main.tex does not
 cite its numbers.
-### A. Offline analyses A - IN PROGRESS at shutdown
-The agent was still writing src/experiments/tpds/taco_report_numbers.py when the machine shut down; the
-partial script is committed as is (it may not run yet, and taco_report_numbers.json may be missing or
-partial). Resume: read the script, finish the 8 items listed under section 4.A, run it, and check the JSON
-against the published numbers before using any of them in the paper.
+### A. Offline analyses A - script complete, smoke run only
+src/experiments/tpds/taco_report_numbers.py covers all 8 items and runs. Smoke run (--no-learned --n-boot 50,
+96 s) saved as src/experiments/results/tpds/taco_report_numbers_smoke.json: 1453/1453 cross-checks against
+stored JSONs and 123/123 numbers printed in main.tex reproduced. Point values are final; intervals need the
+full run (adds GBR/MLP selectors, 2000 cluster-bootstrap replicates, writes taco_report_numbers.json; 6-8 min
+on 20 cores): PYTHONPATH=. python3 -m src.experiments.tpds.taco_report_numbers --jobs 6
+Key numbers (smoke): (1) M4b CUDA-graph defaults, RTX 3090 three rounds - per call / latency-weighted over
+oracle / ms per forward pass / oracle scan ms per pass: SSD 370M 19.1% / 2.8% / 0.563 / 20.1; SSD 2.7B 22.3% /
+2.2% / 1.436 / 65.4; GDN 1.4B 16.2% / 1.02% / 0.102 / 10.0. Best single Triton chunk batch 1 device time:
+PRO 6000 18.8% (chunk 256, lw 17.8%), RTX 3090 26.1% (128, lw 6.6%), H800 28.3% (256, lw 7.7%). Cost model
+device time per call / lw / ms per pass: PRO 6000 0.40 / 2.29 / 0.30; RTX 3090 3.52 / 9.73 / 2.90; H800 3.01 /
+5.33 / 1.29. (3) M4d: 57 distinct (L, batch) shapes; 773/2360 calls on a calibration key; cost model on-key /
+off-key / per-shape unweighted [CI]: PRO 6000 0.28 / 0.46 / 1.79 [1.16, 2.47]; RTX 3090 3.93 / 3.32 / 5.16
+[3.65, 7.12]; H800 3.03 / 3.00 / 6.11 [3.09, 9.66]. (5) M3d deployment, ms per pass, 256 vs best per batch /
+by total latency: PRO 6000 LI 4.30 vs 2.96 / 1.64; RTX 3090 LI 5.71 vs best single 4.71, per batch 0.83; H800
+LI 4.13 vs 3.41 / 1.47; 1.4B 14.47 vs 3.86; 2.8B 25.16 vs 6.33. (6) M7a TP pooled: RTX 3090 cost model 6.5%,
+calibration-width table 16.5%, unsharded 36.8% (per-shard max cost model 15.2%, unsharded 62.7%); H800 2.9 /
+2.2 / 22.1 (max 65.0); retune at shard width 14.9% (RTX 3090, suspect round noise - check before quoting) and
+0.7% (H800); profiling cost per key median 154 ms (RTX 3090), 168 ms (H800). (7) TOST at selected chunk:
+pooled-mean bound median 3.58 / 3.16 (PRO 6000 / RTX 3090); pairwise median 5.70 / 5.26, max 44.5 / 21.2;
+GDN F df (6, 12), others (7, 14). (8) N2 normalized CMI 0.066-0.25, excess over permutation null / H at most
+0.108; N3 397/2360 SSD 2.7B (16.8%) and 155/1770 GDN (8.8%) above the floor; N8 cost model p95/max device
+time 3.8/18.0, 20.8/30.9, 13.7/50.2 (LI maxima 116.3, 103.8, 74.8).
+Unavailable (in JSON): graphs on PRO 6000/H800 (E26 will add PRO 6000), H800 three-round device time, Mamba-2
+device time on PRO 6000/H800, within-2% for log-length interpolation, wall-clock tuning at shard widths,
+reference-scan model on H800, second H800 LI session, per-data-set N2 noise floor.
