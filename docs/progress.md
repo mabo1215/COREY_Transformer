@@ -745,6 +745,20 @@ AAAI-27 Submission #3464（COREY）已收到最终决定：Phase 1 拒稿，未�
    - B：保持现状（如果你认为现在的描述符合实际）。
    - C：你提供措辞。
    A: B
+7. 【共享网盘 inode 清理】`/autodl-fs/data` 共 20 万个 inode，已用 89%（176,911 个，剩 23,089 个）；容量只用了 44%（440/1000 GB），所以问题是文件个数而不是空间。2026-10-16 只读盘点结果：没有一个大户能确定是"不用的"，它们都属于其他项目（BodhiNet、ExternalCalibration、PPEDCRF），BodhiNet 的脚本还在引用这些路径。建议用可逆的方式：把每个目录打成一个 tar（不压缩，jpg 本来也压不动），核对 tar 内文件数和抽样校验和与原目录一致后，再删除原目录；要用时 `tar -xf` 原地恢复。打包过程中会临时多占同样大小的空间（盘上还有 561 GB 空闲，够用）。候选项（括号内依次为 inode 数、大小、最后修改时间、所属项目）：
+   - a `datasets/tnnls_e1_flickr30k_20260811/annotations`（63,569；85 MB；08-12；BodhiNet TNNLS E1 的 Flickr30k Entities 标注，xml+txt）
+   - b `datasets/tnnls_e1_flickr30k_20260811/ms_lmms_flickr30k_parquet/images`（31,783 张 jpg；4.4 GB；08-12）。同目录下 9 个 parquet（4.2 GB）看起来就是这些图的来源，若抽样核对确认一致，这些 jpg 可以从 parquet 重新生成
+   - c `BodhiNet/from_vgpu48_release_20260805/outputs`（20,530；3.4 GB；08-05；清洗后的 RefCOCO 训练集，含 20,447 张 COCO train2014 原图，是 vGPU 4090 释放前抢救下来的）
+   - d `av2_test27_verification/test`（13,214；6.4 GB；08-28；ExternalCalibration 的 Argoverse 2 测试数据）
+   - e `BodhiNet/refl4_images_full`（9,737；3.4 GB；08-06；Ref-L4 评测图片）
+   - f `BodhiNet/from_5090_release_20260805/certiground_transfer`（7,359；3.2 GB；08-05）
+   - g `ppedcrf_stage/msls`（7,665；1.5 GB；09-09；MSLS 图片）
+   - 不建议动：`corey_r4_traces_vgpu3090`（本项目 E30 正要用）、`hkvlm_r*`（HKVLM 正在用）、`models`、`cache_pro6000`（E31 会用里面的 Mamba-2 权重）；空文件和空目录（有些是 READY、done 这类标记文件）；`__pycache__`/`.pyc` 一共才约 380 个，删了也没有实际意义
+   - 只打包 a+b+c，就能腾出约 11.5 万个 inode（使用率从 89% 降到约 31%）。
+   需要你决定（按删数据的规则，必须逐项明确同意，我才会执行）：
+   1. 哪几项可以打包后删除原目录？（例如回复 "a b c"，或 "全部"，或 "都不动"）
+   2. b 项：如果核对确认 jpg 和 parquet 里的图片一致，是直接删掉 jpg（以后用 parquet 重新生成），还是也打成 tar？
+   A:
 需要你操作：
 - 【E28 停止】你已决定 E28（4c 双卡张量并行）不进投稿版。本机无法连到 4c（实验室内网 10.126.126.3，连接超时）。请在实验室网络（或 VPN）下登录 4c 执行：`screen -S taco-4c -X quit`（该 lane 只在等空闲 GPU，没有需要删除的数据）。账本已把 E28 标为 cancelled，M7b 标为不处理；论文已写明未运行多 GPU 实验。
 - 在 Code Ocean 网页上发布 capsule 新版本（`0f4554b` 已推送）。发布前可以先点一次 Reproducible Run 确认能跑通。
