@@ -118,7 +118,7 @@ VENUE = [(re.compile(p, f), r) for p, r, f in [
     (r"\bIEEE single-column\b", "single-column", 0),            # figure format of that venue
     (r"TPDS_", VENUE_NEUTRAL.upper() + "_", 0),                    # environment variables
     (r"\btpds-(r\d+)\b", r"\1", re.I),                            # review-cycle labels ("tpds-r4" -> "r4")
-    (r"\btaco-(r\d+)\b", r"\1", re.I),                            # internal revision-cycle labels of this venue
+    (r"(?:(?<=\\n)|\b)taco-(r\d+)\b", r"\1", re.I),                # internal revision-cycle labels (also after an escaped newline)
     (r"\bACM TACO revision\b", "revision", 0),
     (r"tpds", VENUE_NEUTRAL, re.I),                               # package, paths, identifiers, prose
 ]]
