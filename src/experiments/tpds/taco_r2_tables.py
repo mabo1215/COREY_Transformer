@@ -98,6 +98,34 @@ def e32(labels: list[str], tags: tuple[str, str]) -> dict:
     return out
 
 
+def e32_rows(labels: list[str], tags: tuple[str, str]) -> list[str]:
+    """Per-shape LaTeX rows of the supplementary whole-prefill table (graph mode, both sessions)."""
+    names = {"ssd370m": "SSD 370M", "ssd2p7b": "SSD 2.7B", "gdn1p4b": "GDN 1.4B"}
+    lines = []
+    for lab in labels:
+        p = RESULTS_DIR / f"e32_model_graph_{tags[0]}_{lab}_{tags[1]}_{lab}.json"
+        if not p.exists():
+            continue
+        d = json.loads(p.read_text())
+        cells: dict = {}
+        for c in d["cells"]:
+            if c["mode"] == "graph":
+                cells.setdefault((c["batch"], c["L"]), {})[c["session"]] = c
+        first = True
+        for (B, L), v in sorted(cells.items()):
+            a, b = v.get(f"{tags[0]}_{lab}"), v.get(f"{tags[1]}_{lab}")
+            if a is None or b is None:
+                continue
+            lines.append(f"{names[lab] if first else ''} & {L}$\\times${B} & {a['median_ms'][a['default']]:.1f} & "
+                         f"{a.get('scan_share_pct', 0):.1f} & {a.get('table_chunk')} & "
+                         f"${a.get('gain_table_pct', 0):+.2f}$ / ${b.get('gain_table_pct', 0):+.2f}$ & "
+                         f"{a['best'][1:]} / {b['best'][1:]} & {a['gain_best_pct']:.2f} / {b['gain_best_pct']:.2f} \\\\")
+            first = False
+    for ln in lines:
+        print(ln)
+    return lines
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--e33-tags", default="4c_e33,4c_e33m1")
@@ -107,6 +135,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
     res = {"e33": e33(a.e33_tags.split(","))}
     res["e32"] = e32(a.e32_labels.split(","), tuple(a.e32_sessions.split(",")))
+    res["e32_rows"] = e32_rows(a.e32_labels.split(","), tuple(a.e32_sessions.split(",")))
     if a.json:
         (RESULTS_DIR / "taco_r2_table_numbers.json").write_text(json.dumps(res, indent=1))
 
