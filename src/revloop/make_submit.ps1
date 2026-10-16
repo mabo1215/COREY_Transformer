@@ -16,7 +16,9 @@
 #   LaTeXSupplementaryFile\                   appendix_only.tex (standalone wrapper), appendix.tex,
 #                                             appendix_only.bbl, figs\, build\main.aux (M- references)
 #   Image\                                    every figure file of the main paper and the supplement
-#   SupplementaryMaterialForReview\           Supplementary_Material.pdf
+#   SupplementaryMaterialForReview\           Supplementary_Material.pdf and Anonymized_Artifact.zip (the
+#                                             anonymized code and result archive: codeocean\code as last
+#                                             built by capsule_build.py, which scans it for identifying text)
 #   cover_letter.txt, Title_Page.docx         from docs\ (they carry author names: editor-only uploads)
 # Figures: only the files named by \includegraphics commands that are not commented out in main.tex
 # and appendix.tex. A figure in paper\figs\profile\ (author photos) or in paper\backup\, legacy\ or
@@ -45,6 +47,23 @@ $builtAt = (Get-Item (Join-Path $paper 'main.pdf')).LastWriteTime
 $stale = 'main.tex', 'appendix.tex', 'ref.bib' | ForEach-Object { Get-Item (Join-Path $paper $_) } |
   Where-Object { $_.LastWriteTime -gt $builtAt }
 if ($stale) { Write-Warning ("sources newer than paper\main.pdf: " + ($stale.Name -join ', ') + "; consider -Build") }
+
+# zip with forward-slash entry names (Compress-Archive of Windows PowerShell 5.1 writes backslashes,
+# which other systems extract as flat file names)
+Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+function New-PortableZip($dir, $zip) {
+  if (Test-Path $zip) { Remove-Item $zip -Force }
+  $base = (Resolve-Path $dir).Path.TrimEnd('\')
+  $fs = [IO.File]::Open($zip, [IO.FileMode]::CreateNew)
+  $za = New-Object IO.Compression.ZipArchive($fs, [IO.Compression.ZipArchiveMode]::Create)
+  try {
+    foreach ($f in Get-ChildItem $dir -Recurse -File) {
+      $name = $f.FullName.Substring($base.Length + 1).Replace('\', '/')
+      [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($za, $f.FullName, $name,
+        [IO.Compression.CompressionLevel]::Optimal)
+    }
+  } finally { $za.Dispose(); $fs.Dispose() }
+}
 
 # LaTeX source without comments (text after an unescaped %)
 function Get-Uncommented($tex) {
@@ -141,6 +160,10 @@ foreach ($f in ($mainFigs + $suppFigs | Sort-Object -Unique)) { Copy-Item (Join-
 $r = Join-Path $sub 'SupplementaryMaterialForReview'
 New-Item -ItemType Directory -Force $r | Out-Null
 Copy-Item (Join-Path $paper 'appendix.pdf') (Join-Path $r 'Supplementary_Material.pdf')
+$artifact = Join-Path $Root 'codeocean\code'
+if (Test-Path (Join-Path $artifact 'README.md')) {
+  New-PortableZip $artifact (Join-Path $r 'Anonymized_Artifact.zip')
+} else { Write-Warning 'codeocean\code not built: run python src\revloop\capsule_build.py first; no artifact archive packaged' }
 
 # 6. top-level PDFs, cover letter, title page
 Copy-Item (Join-Path $paper 'main.pdf'), (Join-Path $paper 'appendix.pdf') $sub
@@ -180,6 +203,21 @@ build/main.aux      labels of the main paper, so that references to main-paper
 Compile: pdflatex appendix_only; bibtex appendix_only; pdflatex appendix_only; pdflatex appendix_only
 "@ | Out-File -Encoding ascii (Join-Path $s 'README.txt')
 
+@"
+UPLOAD MAP (ACM TACO, double-anonymous review)
+
+Main document (reviewers see it)       main.pdf
+Supplementary material for review      SupplementaryMaterialForReview\Supplementary_Material.pdf
+                                       SupplementaryMaterialForReview\Anonymized_Artifact.zip
+                                       (code, result files and scripts; anonymized)
+Cover letter (editor only)             cover_letter.txt  - contains author names and the
+                                       confidential note on the related preprint
+Title page (editor only)               Title_Page.docx   - contains author names
+LaTeX sources (only when requested)    MainManuscript.zip, LaTeXSupplementaryFile.zip, Image.zip
+
+Never upload anything from old\ or the whole paper folder.
+"@ | Out-File -Encoding ascii (Join-Path $sub 'UPLOAD.txt')
+
 # 8. figure check: every packaged figure is one of the included ones; nothing from a forbidden folder
 $included = @($mainFigs + $suppFigs | ForEach-Object { Split-Path $_ -Leaf })
 foreach ($d in 'MainManuscript\figs', 'LaTeXSupplementaryFile\figs', 'Image') {
@@ -194,7 +232,7 @@ foreach ($f in Get-ChildItem $managed.ForEach({ Join-Path $sub $_ }) -Recurse -F
 
 # 9. zips for upload
 foreach ($d in 'MainManuscript', 'LaTeXSupplementaryFile', 'Image') {
-  Compress-Archive -Path (Join-Path $sub "$d\*") -DestinationPath (Join-Path $sub "$d.zip") -Force
+  New-PortableZip (Join-Path $sub $d) (Join-Path $sub "$d.zip")
 }
 
 # 10. checks: freshness, identifying strings, PDF info dictionary
