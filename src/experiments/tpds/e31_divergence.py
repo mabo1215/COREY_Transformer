@@ -751,8 +751,9 @@ def download_only(args, log) -> None:
 
 
 # --------------------------------------------------------------------------- analysis (CPU only)
-def load_table(model: str, path: Path) -> dict[str, Any] | None:
-    """Batch-1 per-length-bucket chunk table from a stored sweep (lowest mean latency over the bucket)."""
+def load_table(model: str, path: Path, batch: int = 1) -> dict[str, Any] | None:
+    """Per-length-bucket chunk table of one batch size (default 1) from a stored sweep (lowest mean latency
+    over the bucket)."""
     from src.experiments.tpds.analysis import chunk_columns, load_e2, round_median_view
 
     path = Path(path)
@@ -766,7 +767,7 @@ def load_table(model: str, path: Path) -> dict[str, Any] | None:
         df = round_median_view(df)
         view = "round medians"
     prefix = {"mamba1": "mamba1|", "mamba2": "mamba2|", "gdn": "gdn|"}[model]
-    df = df[(df["batch"] == 1) & (df["layer"] >= 0) & df["key"].astype(str).str.startswith(prefix)]
+    df = df[(df["batch"] == batch) & (df["layer"] >= 0) & df["key"].astype(str).str.startswith(prefix)]
     chunks = chunk_columns(df)
     buckets: dict[str, Any] = {}
     for b, g in df.groupby("L_bucket"):
@@ -779,7 +780,8 @@ def load_table(model: str, path: Path) -> dict[str, Any] | None:
         buckets[str(int(b))] = {"chunk": int(best), "oracle_mode": int(mode), "n_calls": int(len(g)),
                                 "mean_ms": {str(c): round(v, 5) for c, v in means.items()},
                                 "oracle_counts": {str(c): n for c, n in sorted(oc.items())}}
-    return {"source": path.name, "latency": view, "selection": "lowest mean latency over the bucket's batch-1 calls",
+    return {"source": path.name, "latency": view, "batch": batch,
+            "selection": f"lowest mean latency over the bucket's batch-{batch} calls",
             "chunks": chunks, "buckets": buckets}
 
 
