@@ -66,16 +66,35 @@ def e33(tags: list[str]) -> dict:
 
 
 def e32(labels: list[str], tags: tuple[str, str]) -> dict:
+    """Whole-prefill CUDA-graph rows: prefill range, scan share, table and best gains (graph mode), sessions."""
     out = {"models": {}}
+    names = {"ssd370m": "SSD 370M", "ssd2p7b": "SSD 2.7B", "gdn1p4b": "GDN 1.4B"}
     for lab in labels:
-        p = RESULTS_DIR / f"e32_model_graph_{tags[0]}_{lab}_{tags[1]}_{lab}.json"
-        if not p.exists():
-            p = RESULTS_DIR / f"e32_model_graph_{tags[0]}_{lab}.json"
+        p2 = RESULTS_DIR / f"e32_model_graph_{tags[0]}_{lab}_{tags[1]}_{lab}.json"
+        p1 = RESULTS_DIR / f"e32_model_graph_{tags[0]}_{lab}.json"
+        p = p2 if p2.exists() else p1
         if not p.exists():
             continue
         d = json.loads(p.read_text())
-        out["models"][lab] = {"summary": d["summary"].get(lab), "file": p.name}
-        print(lab, json.dumps(d["summary"].get(lab, {}), indent=None)[:1500])
+        cells = [c for c in d["cells"] if c["mode"] == "graph" and c["session"] == f"{tags[0]}_{lab}"]
+        summ = d["summary"].get(lab, {}).get("graph", {})
+        s1 = summ.get(f"{tags[0]}_{lab}", {})
+        s2 = summ.get(f"{tags[1]}_{lab}", {})
+        xs = summ.get("cross_session", {})
+        pre = [c["median_ms"][c["default"]] for c in cells]
+        row = {"label": names.get(lab, lab), "n_shapes": len(cells),
+               "prefill_ms_range": [min(pre), max(pre)] if pre else None,
+               "scan_share_range": s1.get("scan_share_range_pct"), "scan_share_lw": s1.get("scan_share_latency_weighted_pct"),
+               "table_gain_lw": [s1.get("gain_table_latency_weighted_pct"), s2.get("gain_table_latency_weighted_pct")],
+               "table_gain_range": s1.get("gain_table_range_pct"),
+               "best_gain_lw": [s1.get("gain_best_latency_weighted_pct"), s2.get("gain_best_latency_weighted_pct")],
+               "best_gain_range": s1.get("gain_best_range_pct"),
+               "same_best": f"{xs.get('same_best_chunk')}/{xs.get('n_cells')}" if xs else None,
+               "transferred_best_gain_lw": xs.get("in_session_best_table_transferred_gain_latency_weighted_pct"),
+               "default_session_ratio_median_pct": xs.get("default_latency_session_ratio_abs_pct_median"),
+               "capture_s": None, "graph_gb": None}
+        out["models"][lab] = row
+        print(json.dumps(row))
     return out
 
 

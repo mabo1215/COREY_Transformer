@@ -1,0 +1,830 @@
+{
+  "experiment": "taco-r2 M7b 32-bit index limit",
+  "definitions": "taco-r2 item M7b (offline part): where the 32-bit indexing of the chunk-state tensor faults, from the stored\nresult files. CPU only; reads stored result files and times nothing.\n\nThe Triton SSD kernels of mamba_ssm (2.3.2) index the chunk-state tensor (batch x ceil(L / C) x heads x head dim x\nstate) with 32-bit offsets and fault with an illegal memory access above 2^31 elements; the sweeps skip such\ncells and record them as unavailable. TFLA's mLSTM kernels do the same for their saved chunk states (batch x heads\nx (L / C + 1) x d_qk x d_v), at 2^31 elements or more. This script\n\n  1. lists every unavailable (shape, chunk) cell of every per-call table (``e2_*.csv``: NaN latency at a chunk) and\n     of the synthetic sweeps (E17 ``skipped_chunks_int32``, E24 ``index_limit_chunks``), with the state-tensor\n     size that the 2^31 rule predicts, and checks that the rule predicts exactly the recorded cells;\n  2. derives the candidate-set rule of the recipe: per kernel instance and chunk, the largest batch x length\n     product (and the largest length at batch 1, 4, 16) whose state tensor stays below 2^31 elements.\n\nOutput: ``taco_r2_baselines_m7b.json``.\n\nUsage:  PYTHONPATH=. python3 -m src.experiments.tpds.taco_r2_index_limit\n",
+  "limit_elements": 2147483648,
+  "per_call_tables_with_unavailable_cells": {
+    "e2_mamba2_pro6000_2p7b_taco_graph3.csv": {
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "n_unavailable_cells": 24,
+      "instance": "Mamba-2 2.7B",
+      "n_cells_predicted_by_2p31_rule": 24,
+      "rule_matches_recorded_cells_exactly": true,
+      "largest_available_L_at_batch16": {
+        "32": 4096
+      },
+      "unavailable": [
+        {
+          "chunk": 32,
+          "n_calls": 24,
+          "shapes_batch_L": [
+            [
+              16,
+              8192,
+              24
+            ]
+          ],
+          "min_L": 8192,
+          "batches": [
+            16
+          ],
+          "state_elems_range": [
+            2684354560,
+            2684354560
+          ]
+        }
+      ]
+    },
+    "e2_mamba2_vgpu3090_2p7b_r3.csv": {
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "n_unavailable_cells": 24,
+      "instance": "Mamba-2 2.7B",
+      "n_cells_predicted_by_2p31_rule": 24,
+      "rule_matches_recorded_cells_exactly": true,
+      "largest_available_L_at_batch16": {
+        "32": 4096
+      },
+      "unavailable": [
+        {
+          "chunk": 32,
+          "n_calls": 24,
+          "shapes_batch_L": [
+            [
+              16,
+              8192,
+              24
+            ]
+          ],
+          "min_L": 8192,
+          "batches": [
+            16
+          ],
+          "state_elems_range": [
+            2684354560,
+            2684354560
+          ]
+        }
+      ]
+    },
+    "e2_mamba2_vgpu3090_2p7b_r4graph.csv": {
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "n_unavailable_cells": 24,
+      "instance": "Mamba-2 2.7B",
+      "n_cells_predicted_by_2p31_rule": 24,
+      "rule_matches_recorded_cells_exactly": true,
+      "largest_available_L_at_batch16": {
+        "32": 4096
+      },
+      "unavailable": [
+        {
+          "chunk": 32,
+          "n_calls": 24,
+          "shapes_batch_L": [
+            [
+              16,
+              8192,
+              24
+            ]
+          ],
+          "min_L": 8192,
+          "batches": [
+            16
+          ],
+          "state_elems_range": [
+            2684354560,
+            2684354560
+          ]
+        }
+      ]
+    },
+    "e2_mamba2_vgpu3090_2p7b_r4graph3.csv": {
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "n_unavailable_cells": 24,
+      "instance": "Mamba-2 2.7B",
+      "n_cells_predicted_by_2p31_rule": 24,
+      "rule_matches_recorded_cells_exactly": true,
+      "largest_available_L_at_batch16": {
+        "32": 4096
+      },
+      "unavailable": [
+        {
+          "chunk": 32,
+          "n_calls": 24,
+          "shapes_batch_L": [
+            [
+              16,
+              8192,
+              24
+            ]
+          ],
+          "min_L": 8192,
+          "batches": [
+            16
+          ],
+          "state_elems_range": [
+            2684354560,
+            2684354560
+          ]
+        }
+      ]
+    },
+    "e2_mamba2_vgpu3090_2p7b_r4graphcold.csv": {
+      "n_calls": 544,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "n_unavailable_cells": 24,
+      "instance": "Mamba-2 2.7B",
+      "n_cells_predicted_by_2p31_rule": 24,
+      "rule_matches_recorded_cells_exactly": true,
+      "largest_available_L_at_batch16": {
+        "32": 4096
+      },
+      "unavailable": [
+        {
+          "chunk": 32,
+          "n_calls": 24,
+          "shapes_batch_L": [
+            [
+              16,
+              8192,
+              24
+            ]
+          ],
+          "min_L": 8192,
+          "batches": [
+            16
+          ],
+          "state_elems_range": [
+            2684354560,
+            2684354560
+          ]
+        }
+      ]
+    }
+  },
+  "per_call_tables_checked": 38,
+  "per_call_tables_without_unavailable_cells": [
+    "e2_gdn_pro6000_1p4b_taco_graph3.csv",
+    "e2_gdn_vgpu3090_1p4b_r3.csv",
+    "e2_gdn_vgpu3090_1p4b_r4graph.csv",
+    "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+    "e2_gdn_vgpu3090_1p4b_r4graphcold.csv",
+    "e2_mamba1_h800.csv",
+    "e2_mamba1_h800_r3spin.csv",
+    "e2_mamba1_pro6000.csv",
+    "e2_mamba1_pro6000_r4cold.csv",
+    "e2_mamba1_pro6000_r4plain.csv",
+    "e2_mamba1_pro6000_r4spin.csv",
+    "e2_mamba1_pro6000_taco_graph3.csv",
+    "e2_mamba1_vgpu3090.csv",
+    "e2_mamba1_vgpu3090_1p4b.csv",
+    "e2_mamba1_vgpu3090_1p4b_r3.csv",
+    "e2_mamba1_vgpu3090_1p4b_r3plain.csv",
+    "e2_mamba1_vgpu3090_2p8b.csv",
+    "e2_mamba1_vgpu3090_2p8b_r3.csv",
+    "e2_mamba1_vgpu3090_2p8b_r3plain.csv",
+    "e2_mamba1_vgpu3090_r3spin.csv",
+    "e2_mamba1_vgpu3090_r4graph.csv",
+    "e2_mamba1_vgpu3090_r4graph3.csv",
+    "e2_mamba1_vgpu3090_r4plain.csv",
+    "e2_mamba1_vgpu3090_r4plain_u2048b4.csv",
+    "e2_mamba1_vgpu3090_r4spin.csv",
+    "e2_mamba1_vgpu3090_r4spin_u2048b4.csv",
+    "e2_mamba2_pro6000.csv",
+    "e2_mamba2_pro6000_taco_graph3.csv",
+    "e2_mamba2_vgpu3090.csv",
+    "e2_mamba2_vgpu3090_r3spin.csv",
+    "e2_mamba2_vgpu3090_r4graph.csv",
+    "e2_mamba2_vgpu3090_r4graph3.csv",
+    "e2_mamba2_vgpu3090_r4graphcold.csv"
+  ],
+  "synthetic_sweeps": {
+    "e17_workbound_vgpu3090.jsonl": {
+      "n_rows": 63,
+      "unavailable": [
+        {
+          "family": "ssd",
+          "shape": "d5120",
+          "L": 8192,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 1
+        }
+      ],
+      "ssd_rule_matches_recorded_cells_exactly": true
+    },
+    "e17_workbound_vgpu3090full.jsonl": {
+      "n_rows": 360,
+      "unavailable": [
+        {
+          "family": "ssd",
+          "shape": "d5120",
+          "L": 8192,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3
+        }
+      ],
+      "ssd_rule_matches_recorded_cells_exactly": true
+    },
+    "e24_tfla_vgpu3090_r4plain.jsonl": {
+      "n_rows": 1,
+      "unavailable": [],
+      "n_distinct_cells": 0,
+      "rule_matches_recorded_cells_exactly": true
+    },
+    "e24_tfla_vgpu3090_r4plainb.jsonl": {
+      "n_rows": 189,
+      "unavailable": [
+        {
+          "layout": "1.4b",
+          "L": 4096,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 2164260864
+        },
+        {
+          "layout": "1.4b",
+          "L": 6144,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 3238002688
+        },
+        {
+          "layout": "1.4b",
+          "L": 8192,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 4311744512
+        },
+        {
+          "layout": "1.4b",
+          "L": 8192,
+          "batch": 16,
+          "chunk": 64,
+          "n_rounds": 3,
+          "state_elems": 2164260864
+        },
+        {
+          "layout": "2.8b",
+          "L": 4096,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 2705326080
+        },
+        {
+          "layout": "2.8b",
+          "L": 6144,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 4047503360
+        },
+        {
+          "layout": "2.8b",
+          "L": 8192,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 5389680640
+        },
+        {
+          "layout": "2.8b",
+          "L": 8192,
+          "batch": 16,
+          "chunk": 64,
+          "n_rounds": 3,
+          "state_elems": 2705326080
+        },
+        {
+          "layout": "370m",
+          "L": 8192,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 2155872256
+        }
+      ],
+      "n_distinct_cells": 9,
+      "rule_matches_recorded_cells_exactly": true
+    },
+    "e24_tfla_vgpu3090_r4spin.jsonl": {
+      "n_rows": 1,
+      "unavailable": [],
+      "n_distinct_cells": 0,
+      "rule_matches_recorded_cells_exactly": true
+    },
+    "e24_tfla_vgpu3090_r4spinb.jsonl": {
+      "n_rows": 189,
+      "unavailable": [
+        {
+          "layout": "1.4b",
+          "L": 4096,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 2164260864
+        },
+        {
+          "layout": "1.4b",
+          "L": 6144,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 3238002688
+        },
+        {
+          "layout": "1.4b",
+          "L": 8192,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 4311744512
+        },
+        {
+          "layout": "1.4b",
+          "L": 8192,
+          "batch": 16,
+          "chunk": 64,
+          "n_rounds": 3,
+          "state_elems": 2164260864
+        },
+        {
+          "layout": "2.8b",
+          "L": 4096,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 2705326080
+        },
+        {
+          "layout": "2.8b",
+          "L": 6144,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 4047503360
+        },
+        {
+          "layout": "2.8b",
+          "L": 8192,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 5389680640
+        },
+        {
+          "layout": "2.8b",
+          "L": 8192,
+          "batch": 16,
+          "chunk": 64,
+          "n_rounds": 3,
+          "state_elems": 2705326080
+        },
+        {
+          "layout": "370m",
+          "L": 8192,
+          "batch": 16,
+          "chunk": 32,
+          "n_rounds": 3,
+          "state_elems": 2155872256
+        }
+      ],
+      "n_distinct_cells": 9,
+      "rule_matches_recorded_cells_exactly": true
+    }
+  },
+  "limits": {
+    "ssd": {
+      "Mamba-2 370M": {
+        "elements_per_chunk_and_sequence": 262144,
+        "max_batch_x_chunks": 8192,
+        "max_L_by_chunk_and_batch": {
+          "32": {
+            "1": 262144,
+            "4": 65536,
+            "16": 16384,
+            "64": 4096
+          },
+          "64": {
+            "1": 524288,
+            "4": 131072,
+            "16": 32768,
+            "64": 8192
+          },
+          "128": {
+            "1": 1048576,
+            "4": 262144,
+            "16": 65536,
+            "64": 16384
+          },
+          "256": {
+            "1": 2097152,
+            "4": 524288,
+            "16": 131072,
+            "64": 32768
+          },
+          "512": {
+            "1": 4194304,
+            "4": 1048576,
+            "16": 262144,
+            "64": 65536
+          }
+        }
+      },
+      "Mamba-2 2.7B": {
+        "elements_per_chunk_and_sequence": 655360,
+        "max_batch_x_chunks": 3276,
+        "max_L_by_chunk_and_batch": {
+          "32": {
+            "1": 104832,
+            "4": 26208,
+            "16": 6528,
+            "64": 1632
+          },
+          "64": {
+            "1": 209664,
+            "4": 52416,
+            "16": 13056,
+            "64": 3264
+          },
+          "128": {
+            "1": 419328,
+            "4": 104832,
+            "16": 26112,
+            "64": 6528
+          },
+          "256": {
+            "1": 838656,
+            "4": 209664,
+            "16": 52224,
+            "64": 13056
+          },
+          "512": {
+            "1": 1677312,
+            "4": 419328,
+            "16": 104448,
+            "64": 26112
+          }
+        }
+      },
+      "Mamba-2 synthetic d4096": {
+        "elements_per_chunk_and_sequence": 524288,
+        "max_batch_x_chunks": 4096,
+        "max_L_by_chunk_and_batch": {
+          "32": {
+            "1": 131072,
+            "4": 32768,
+            "16": 8192,
+            "64": 2048
+          },
+          "64": {
+            "1": 262144,
+            "4": 65536,
+            "16": 16384,
+            "64": 4096
+          },
+          "128": {
+            "1": 524288,
+            "4": 131072,
+            "16": 32768,
+            "64": 8192
+          },
+          "256": {
+            "1": 1048576,
+            "4": 262144,
+            "16": 65536,
+            "64": 16384
+          },
+          "512": {
+            "1": 2097152,
+            "4": 524288,
+            "16": 131072,
+            "64": 32768
+          }
+        }
+      }
+    },
+    "tfla": {
+      "370m": {
+        "elements_per_chunk_and_sequence": 524288,
+        "max_batch_x_chunks_plus_one": 4095,
+        "max_L_by_chunk_and_batch": {
+          "32": {
+            "1": 131008,
+            "4": 32704,
+            "16": 8128
+          },
+          "64": {
+            "1": 262016,
+            "4": 65408,
+            "16": 16256
+          },
+          "128": {
+            "1": 524032,
+            "4": 130816,
+            "16": 32512
+          },
+          "256": {
+            "1": 1048064,
+            "4": 261632,
+            "16": 65024
+          },
+          "512": {
+            "1": 2096128,
+            "4": 523264,
+            "16": 130048
+          },
+          "1024": {
+            "1": 4192256,
+            "4": 1046528,
+            "16": 260096
+          },
+          "2048": {
+            "1": 8384512,
+            "4": 2093056,
+            "16": 520192
+          }
+        }
+      },
+      "1.4b": {
+        "elements_per_chunk_and_sequence": 1048576,
+        "max_batch_x_chunks_plus_one": 2047,
+        "max_L_by_chunk_and_batch": {
+          "32": {
+            "1": 65472,
+            "4": 16320,
+            "16": 4032
+          },
+          "64": {
+            "1": 130944,
+            "4": 32640,
+            "16": 8064
+          },
+          "128": {
+            "1": 261888,
+            "4": 65280,
+            "16": 16128
+          },
+          "256": {
+            "1": 523776,
+            "4": 130560,
+            "16": 32256
+          },
+          "512": {
+            "1": 1047552,
+            "4": 261120,
+            "16": 64512
+          },
+          "1024": {
+            "1": 2095104,
+            "4": 522240,
+            "16": 129024
+          },
+          "2048": {
+            "1": 4190208,
+            "4": 1044480,
+            "16": 258048
+          }
+        }
+      },
+      "2.8b": {
+        "elements_per_chunk_and_sequence": 1310720,
+        "max_batch_x_chunks_plus_one": 1638,
+        "max_L_by_chunk_and_batch": {
+          "32": {
+            "1": 52384,
+            "4": 13056,
+            "16": 3232
+          },
+          "64": {
+            "1": 104768,
+            "4": 26112,
+            "16": 6464
+          },
+          "128": {
+            "1": 209536,
+            "4": 52224,
+            "16": 12928
+          },
+          "256": {
+            "1": 419072,
+            "4": 104448,
+            "16": 25856
+          },
+          "512": {
+            "1": 838144,
+            "4": 208896,
+            "16": 51712
+          },
+          "1024": {
+            "1": 1676288,
+            "4": 417792,
+            "16": 103424
+          },
+          "2048": {
+            "1": 3352576,
+            "4": 835584,
+            "16": 206848
+          }
+        }
+      }
+    }
+  },
+  "checks": {
+    "n": 19,
+    "n_match": 19,
+    "mismatches": [],
+    "rows": [
+      {
+        "check": "e2_mamba2_pro6000.csv: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e2_mamba2_pro6000.csv",
+        "match": true
+      },
+      {
+        "check": "e2_mamba2_pro6000_2p7b_taco_graph3.csv: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e2_mamba2_pro6000_2p7b_taco_graph3.csv",
+        "match": true
+      },
+      {
+        "check": "e2_mamba2_pro6000_taco_graph3.csv: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e2_mamba2_pro6000_taco_graph3.csv",
+        "match": true
+      },
+      {
+        "check": "e2_mamba2_vgpu3090.csv: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e2_mamba2_vgpu3090.csv",
+        "match": true
+      },
+      {
+        "check": "e2_mamba2_vgpu3090_2p7b_r3.csv: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e2_mamba2_vgpu3090_2p7b_r3.csv",
+        "match": true
+      },
+      {
+        "check": "e2_mamba2_vgpu3090_2p7b_r4graph.csv: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e2_mamba2_vgpu3090_2p7b_r4graph.csv",
+        "match": true
+      },
+      {
+        "check": "e2_mamba2_vgpu3090_2p7b_r4graph3.csv: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e2_mamba2_vgpu3090_2p7b_r4graph3.csv",
+        "match": true
+      },
+      {
+        "check": "e2_mamba2_vgpu3090_2p7b_r4graphcold.csv: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e2_mamba2_vgpu3090_2p7b_r4graphcold.csv",
+        "match": true
+      },
+      {
+        "check": "e2_mamba2_vgpu3090_r3spin.csv: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e2_mamba2_vgpu3090_r3spin.csv",
+        "match": true
+      },
+      {
+        "check": "e2_mamba2_vgpu3090_r4graph.csv: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e2_mamba2_vgpu3090_r4graph.csv",
+        "match": true
+      },
+      {
+        "check": "e2_mamba2_vgpu3090_r4graph3.csv: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e2_mamba2_vgpu3090_r4graph3.csv",
+        "match": true
+      },
+      {
+        "check": "e2_mamba2_vgpu3090_r4graphcold.csv: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e2_mamba2_vgpu3090_r4graphcold.csv",
+        "match": true
+      },
+      {
+        "check": "e17_workbound_vgpu3090.jsonl: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e17_workbound_vgpu3090.jsonl",
+        "match": true
+      },
+      {
+        "check": "e17_workbound_vgpu3090full.jsonl: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e17_workbound_vgpu3090full.jsonl",
+        "match": true
+      },
+      {
+        "check": "e24_tfla_vgpu3090_r4plain.jsonl: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e24_tfla_vgpu3090_r4plain.jsonl",
+        "match": true
+      },
+      {
+        "check": "e24_tfla_vgpu3090_r4plainb.jsonl: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e24_tfla_vgpu3090_r4plainb.jsonl",
+        "match": true
+      },
+      {
+        "check": "e24_tfla_vgpu3090_r4spin.jsonl: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e24_tfla_vgpu3090_r4spin.jsonl",
+        "match": true
+      },
+      {
+        "check": "e24_tfla_vgpu3090_r4spinb.jsonl: 2^31 rule predicts the unavailable cells",
+        "computed": 1.0,
+        "reference": 1,
+        "tolerance": 0,
+        "source": "e24_tfla_vgpu3090_r4spinb.jsonl",
+        "match": true
+      },
+      {
+        "check": "SSD 2.7B: chunk 32 at batch 16 allowed up to L = 6528",
+        "computed": 6528.0,
+        "reference": 6528,
+        "tolerance": 0,
+        "source": "Supplementary S6",
+        "match": true
+      }
+    ]
+  },
+  "created_utc": "2026-10-16T05:15:38Z"
+}
