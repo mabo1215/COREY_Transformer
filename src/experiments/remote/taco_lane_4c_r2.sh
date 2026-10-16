@@ -160,6 +160,11 @@ case "$LANE" in
     rm -f "$MARK_DIR/E37.FAIL"
     $RUN E37 -- bash "$SELF" step e37
     ;;
+  G1e)  # after G1d: rerun the second E30 session (its guard now watches this GPU; resumable)
+    wait_marker E37 || lanelog "continuing without E37"
+    rm -f "$MARK_DIR/E30s2.FAIL"
+    $RUN E30s2 -- bash "$SELF" step e30s2
+    ;;
   *) echo "unknown lane $LANE"; exit 2 ;;
 esac
 lanelog "taco-r2 4c lane $LANE done"

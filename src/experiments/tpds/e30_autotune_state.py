@@ -70,6 +70,7 @@ walk (smoke only; the pinned file records it).
 from __future__ import annotations
 
 import argparse
+import os
 import ast
 import glob
 import hashlib
@@ -530,10 +531,13 @@ def run(args) -> None:
     jsonl_path = out_dir / f"e30_autotune_state_{tag}.jsonl"
     pinned_path = out_dir / f"e30_autotune_state_{tag}_pinned.json"
 
-    gpu_baseline = all_gpu_pids()
+    # the guard watches the physical GPU this process runs on (first entry of CUDA_VISIBLE_DEVICES)
+    vis = os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(",")[0].strip()
+    gidx = int(vis) if vis.isdigit() else 0
+    gpu_baseline = all_gpu_pids(gidx)
     torch.zeros(1, device="cuda")
     torch.cuda.synchronize()
-    own = register_own_gpu_pids(gpu_baseline, log=log) if args.exclusive_guard else set()
+    own = register_own_gpu_pids(gpu_baseline, index=gidx, log=log) if args.exclusive_guard else set()
 
     manifest = load_manifest(args.trace_dir, kind)
     if not manifest:
@@ -561,13 +565,13 @@ def run(args) -> None:
     tmpl, _, _, _ = E2.stack_inputs(kind, args.trace_dir, anchor["members"], anchor["layer"], params[anchor["layer"]])
 
     def guard_wait():
-        if args.exclusive_guard and wait_for_exclusive_gpu(args.guard_until, log) is None:
+        if args.exclusive_guard and wait_for_exclusive_gpu(args.guard_until, log, index=gidx) is None:
             log("GPU still busy at the guard deadline; stopping (restart resumes)")
             raise SystemExit(3)
 
     def guard_check(where: str):
         if args.exclusive_guard:
-            pids = foreign_gpu_pids()
+            pids = foreign_gpu_pids(gidx)
             if pids:
                 log(f"foreign GPU processes {pids} during {where}; redoing it")
                 raise _Foreign()
