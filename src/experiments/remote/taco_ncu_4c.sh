@@ -2,7 +2,7 @@
 # Cycle taco-r2 E35b on the 4c lab host: Nsight Compute counters for the mechanism of the chunk effect (review M5e).
 # The driver restricts performance counters to administrators (RmProfilingAdminOnly=1), so this script is run by
 # the account owner with sudo (the password is typed interactively, never stored):
-#   ssh -t 4c sudo bash /home1/mabo1215/COREY_Transformer_taco/src/experiments/remote/taco_ncu_4c.sh
+#   ssh -t 4c sudo bash /home1/mabo1215/COREY_Transformer_taco/src/experiments/remote/taco_ncu_4c.sh [GPU]
 # It waits until physical GPU 0 or 1 has no compute process (timing lanes must not be disturbed), profiles the
 # E35 cells on that GPU (one profiled call per cell, kernel replay, natural clocks, no cache control), parses the
 # counters, and returns ownership of the new files to the repository owner. Needs the E35 breakdown file
@@ -26,7 +26,11 @@ free_gpu() {
   done
   return 1
 }
-until G=$(free_gpu); do echo "[$(date '+%F %T')] GPUs 0 and 1 busy; waiting"; sleep 60; done
+# Optional argument: the physical GPU to profile on (0 or 1) without waiting for it to be free. The timing lanes
+# carry an exclusive-GPU guard: they pause while this process is resident and re-time any cell it overlapped.
+if [ -n "${1:-}" ]; then G=$1; else
+  until G=$(free_gpu); do echo "[$(date '+%F %T')] GPUs 0 and 1 busy; waiting"; sleep 60; done
+fi
 echo "[$(date '+%F %T')] profiling on physical GPU $G"
 CUDA_VISIBLE_DEVICES=$G "$PY" -m src.experiments.tpds.e35_mechanism --part ncu --tag 4c_e35 --breakdown-tag 4c_e35 \
   --gdn-trace-dir "$T/tpds_traces_gdn_1p4b" --ncu /usr/local/cuda-12.4/bin/ncu
