@@ -8,9 +8,14 @@
 #       same process (e33_value_invariance_graph.py); then aligned vs unaligned lengths (E33b).
 #   E34 (review M2d): the Triton Mamba-1 scan's whole launch space (184 configurations) at the twelve tuning keys
 #       under the full protocol, so that the chunk effect can be read at fixed launch configurations (e34_fixed_launch.py).
+#   E35 (review M5e): per-kernel breakdown (time, grid, registers, estimated occupancy) of the Triton Mamba-1, SSD and
+#       Gated DeltaNet scans versus chunk with the PyTorch profiler (e35_mechanism.py); the hardware-counter part
+#       needs administrator rights and is run separately by the account owner (taco_ncu_4c.sh).
 # One lane per GPU (each with its own timing lock, so the two lanes run concurrently):
 #   TACO_LANE=G0 CUDA_VISIBLE_DEVICES=0 bash src/experiments/remote/taco_lane_4c_r2.sh
 #   TACO_LANE=G1 CUDA_VISIBLE_DEVICES=1 bash src/experiments/remote/taco_lane_4c_r2.sh
+#   TACO_LANE=G1b CUDA_VISIBLE_DEVICES=1 bash src/experiments/remote/taco_lane_4c_r2.sh   (after G1: E35)
+# Update this file on the host by rename (scp to a temporary name, then mv), never in place: running lanes read it.
 # Smoke tests only:  bash src/experiments/remote/taco_lane_4c_r2.sh step e32_smoke | e33_smoke
 # Markers: src/logs/revloop/<ID>.{START,OK,FAIL}; results come back by rsync (remote.sh fetch 4c <IDs>).
 # Env: TACO_TRACE_ROOT, TACO_HF_HOME (/data/hf_home), TACO_HF_HUB_CACHE (/data/hf_cache), TACO_GUARD_H (48),
@@ -65,6 +70,10 @@ if [ "${1:-}" = "step" ]; then
     e34_smoke) flock "$LOCK" $PY -m src.experiments.tpds.e34_fixed_launch --lengths 512 --batches 1 --rounds 1 \
                  --warmup 2 --repeats 3 --out-dir "$SMOKE_DIR" --tag ${H}_e34smoke ;;
     e34) flock "$LOCK" $PY -m src.experiments.tpds.e34_fixed_launch $GUARD --tag ${H}_e34 ;;
+    e35_smoke) flock "$LOCK" $PY -m src.experiments.tpds.e35_mechanism --part breakdown --families ssd,gdn \
+                 --gdn-trace-dir "$T/tpds_traces_gdn_1p4b" --repeats 2 --out-dir "$SMOKE_DIR" --tag ${H}_e35smoke ;;
+    e35) flock "$LOCK" $PY -m src.experiments.tpds.e35_mechanism --part breakdown \
+           --gdn-trace-dir "$T/tpds_traces_gdn_1p4b" --tag ${H}_e35 ;;
     *) echo "unknown step $2"; exit 2 ;;
   esac
   exit $?
@@ -100,6 +109,10 @@ case "$LANE" in
     $RUN E33a -- bash "$SELF" step e33a
     $RUN E33b -- bash "$SELF" step e33b
     $RUN E34-smoke -- bash "$SELF" step e34_smoke && $RUN E34 -- bash "$SELF" step e34
+    ;;
+  G1b)  # follow-up work on GPU 1 (started separately while G1 runs; waits for E34)
+    wait_marker E34 || lanelog "continuing without E34"
+    $RUN E35-smoke -- bash "$SELF" step e35_smoke && $RUN E35 -- bash "$SELF" step e35
     ;;
   *) echo "unknown lane $LANE"; exit 2 ;;
 esac
