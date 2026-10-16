@@ -44,8 +44,8 @@ from pathlib import Path
 from typing import Any
 
 from src.experiments.tpds.common import (GDN_CHUNKS, LOG_DIR, MAMBA2_CHUNKS, RESULTS_DIR, JsonlWriter, Logger, check_disk,
-                                         cuda_time, env_metadata, foreign_gpu_pids, host_name, read_jsonl, utc_now,
-                                         wait_for_exclusive_gpu, write_json)
+                                         cuda_time, env_metadata, foreign_gpu_pids, gpu_state, host_name, read_jsonl,
+                                         utc_now, wait_for_exclusive_gpu, write_json)
 
 FAMILIES = {"ssd370m": {"kind": "mamba2", "H": 32, "P": 64, "N": 128, "default": 256, "chunks": MAMBA2_CHUNKS},
             "ssd2p7b": {"kind": "mamba2", "H": 80, "P": 64, "N": 128, "default": 256, "chunks": MAMBA2_CHUNKS},
@@ -221,7 +221,8 @@ def run_ssd(args, log, w, fam, spec, steps, prm) -> None:
                     w.write({"kind": "timing", "key": key, "family": fam, "sid": st["sid"], "trace": st["trace"],
                              "budget": st["budget"], "step": st["step"], "variant": v, "round": r,
                              "tokens": st["tokens"], "P": P, "nseq": st["nseq"], "lens": st["lens"],
-                             "lat_ms": lat, "retimed": foreign, "mode": "padded_graph_reused", "utc": utc_now()})
+                             "lat_ms": lat, "retimed": foreign, "mode": "padded_graph_reused", "utc": utc_now(),
+                             "gpu_after": gpu_state(args.guard_gpu) if args.record_gpu_state else None})
             log(f"{fam} P={P} round {r}: {len(sts)} steps")
         del graphs, inp, seq_buf, state
         torch.cuda.empty_cache()
@@ -284,7 +285,8 @@ def run_gdn(args, log, w, fam, spec, steps, prm) -> None:
                 w.write({"kind": "timing", "key": key, "family": fam, "sid": st["sid"], "trace": st["trace"],
                          "budget": st["budget"], "step": st["step"], "variant": v, "round": r,
                          "tokens": st["tokens"], "P": P, "nseq": st["nseq"], "lens": st["lens"], "lat_ms": lat,
-                         "errors": err, "retimed": foreign, "mode": "padded_graph_per_step", "utc": utc_now()})
+                         "errors": err, "retimed": foreign, "mode": "padded_graph_per_step", "utc": utc_now(),
+                         "gpu_after": gpu_state(args.guard_gpu) if args.record_gpu_state else None})
             del inp
         log(f"{fam} round {r}: {len(steps)} steps")
         torch.cuda.empty_cache()
@@ -400,6 +402,7 @@ def parse_args(argv=None):
     p.add_argument("--exclusive-guard", action="store_true")
     p.add_argument("--guard-until", type=float, default=None)
     p.add_argument("--guard-gpu", type=int, default=None)
+    p.add_argument("--record-gpu-state", action="store_true", help="store SM clock, power and throttle reasons per row")
     p.add_argument("--out-dir", type=Path, default=RESULTS_DIR)
     p.add_argument("--log-dir", type=Path, default=LOG_DIR)
     p.add_argument("--tag", default=None)
