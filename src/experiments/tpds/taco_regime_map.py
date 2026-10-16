@@ -41,6 +41,8 @@ PANELS = {
 EXTRA = {"Mamba-2 SSD 370M": [("device time (RTX 3090)", "ssd370m_device")],
          "Mamba-2 SSD 2.7B": [("device time (RTX 3090)", "ssd2p7b_device")],
          "Gated DeltaNet 1.4B": [("device time (RTX 3090)", "gdn1p4b_device")]}
+TITLES = {"Mamba-2 SSD 370M": "SSD 370M", "Mamba-2 SSD 2.7B": "SSD 2.7B", "Gated DeltaNet 1.4B": "Gated DeltaNet 1.4B",
+          "Triton Mamba-1 370M": "Triton scan (ours), 370M"}
 SERIES = ["host-bound (RTX 3090)", "device time (RTX 3090)", "CUDA graph (RTX 3090)", "CUDA graph (RTX PRO 6000)"]
 MIN_BIN = 10
 
@@ -53,12 +55,15 @@ def table_record(name: str, in_dir: Path) -> dict:
     tokens = t.L.astype(float) * t.batch.astype(float)
     b = np.floor(np.log2(np.maximum(tokens, 1))).astype(int)
     bins = []
+    total_orc = float(t.orc.sum())
     for k in sorted(set(b.tolist())):
         m = b == k
         if m.sum() >= MIN_BIN:
             bins.append({"tokens_lo": int(2 ** k), "tokens_hi": int(2 ** (k + 1)), "n": int(m.sum()),
                          "mean_regret_pct": float(100 * reg[m].mean()),
-                         "median_regret_pct": float(100 * np.median(reg[m]))})
+                         "median_regret_pct": float(100 * np.median(reg[m])),
+                         # this bin's excess over the oracle as a share of the whole workload's oracle scan time
+                         "excess_share_of_total_pct": float(100 * (t.lat[m, d] - t.orc[m]).sum() / total_orc)})
 
     def part(mask):
         if not mask.any():
@@ -81,8 +86,11 @@ def figure(res: dict, out: Path) -> None:
 
     from src.experiments.tpds.make_figures import MARKERS, OKABE, STYLES, _save
 
-    fig, axes = plt.subplots(1, 4, figsize=(7.0, 1.95), sharey=True)
-    for ax, (panel, series) in zip(axes, PANELS.items()):
+    plt.rcParams.update({"font.size": 8.5, "axes.titlesize": 8.5, "axes.labelsize": 8.5, "xtick.labelsize": 7.5,
+                         "ytick.labelsize": 7.5, "legend.fontsize": 8})
+    fig, axes = plt.subplots(2, 4, figsize=(7.0, 3.6), sharex=True, sharey="row")
+    ticks = [2 ** k for k in range(4, 18, 2)]
+    for j, (panel, series) in enumerate(PANELS.items()):
         for label, name in series:
             rec = res["panels"][panel].get(label)
             if not rec:
@@ -90,14 +98,22 @@ def figure(res: dict, out: Path) -> None:
             i = SERIES.index(label)
             x = [np.sqrt(bn["tokens_lo"] * bn["tokens_hi"]) for bn in rec["bins"]]
             y = [bn["mean_regret_pct"] for bn in rec["bins"]]
-            ax.plot(x, y, color=OKABE[i], marker=MARKERS[i], ls=STYLES[i], lw=1.4, ms=3.5, label=label)
-        ax.set_xscale("log", base=2)
-        ax.set_title(panel, loc="left", fontsize=7.5)
-        ax.set_xlabel("tokens per call")
-        ax.grid(True, which="major", axis="y", lw=0.4, alpha=0.5)
-    axes[0].set_ylabel("default regret (%)")
+            z = [bn.get("excess_share_of_total_pct", np.nan) for bn in rec["bins"]]
+            kw = dict(color=OKABE[i], marker=MARKERS[i], ls=STYLES[i], lw=1.4, ms=3.5, label=label)
+            axes[0, j].plot(x, y, **kw)
+            axes[1, j].plot(x, z, **kw)
+        axes[0, j].set_title(TITLES.get(panel, panel), loc="left")
+        for ax in axes[:, j]:
+            ax.set_xscale("log", base=2)
+            ax.set_xticks(ticks)
+            ax.set_xticklabels([f"$2^{{{k}}}$" for k in range(4, 18, 2)])
+            ax.minorticks_off()
+            ax.grid(True, which="major", axis="y", lw=0.4, alpha=0.5)
+        axes[1, j].set_xlabel("tokens per call")
+    axes[0, 0].set_ylabel("default regret\nper call (%)")
+    axes[1, 0].set_ylabel("share of scan\ntime lost (%)")
     h, lab = [], []
-    for ax in axes:
+    for ax in axes[0]:
         for hh, ll in zip(*ax.get_legend_handles_labels()):
             if ll not in lab:
                 h.append(hh)
@@ -105,7 +121,7 @@ def figure(res: dict, out: Path) -> None:
     order = [lab.index(s) for s in SERIES if s in lab]
     fig.legend([h[i] for i in order], [lab[i] for i in order], loc="lower center", ncol=4, frameon=False,
                bbox_to_anchor=(0.5, 1.0), handlelength=2.2, columnspacing=1.0)
-    fig.tight_layout(w_pad=0.6)
+    fig.tight_layout(w_pad=0.6, h_pad=0.4)
     _save(fig, out, "fig_regime_map.pdf")
 
 
