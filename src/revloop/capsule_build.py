@@ -51,13 +51,12 @@ ROOT = Path(__file__).resolve().parents[2]
 CAPSULE = ROOT / "codeocean"
 CREDENTIAL_HELPER = ROOT / "src" / "revloop" / "codeocean_credential.sh"
 
-TITLE = ("Shape Sets the Chunk: A Compile-Informed Cost Model and a No-Gain Bound for "
-         "Data-Dependent Dispatch of Chunked Linear-Recurrence Kernels")
+TITLE = "Shape Sets the Chunk: Selecting and Keying the Chunk of Chunked Linear-Recurrence GPU Kernels"
 DESCRIPTION = ("Code, measurements and analysis scripts for a study of chunk selection in chunked "
-               "linear-recurrence GPU kernels (Mamba-1 selective scan, Mamba-2 SSD, Gated DeltaNet): "
-               "a compile-informed cost model, a no-gain bound for data-dependent dispatch, and "
-               "key-churn analysis. The reproducible run recomputes analyses, tables and figures "
-               "from the stored measurements on the CPU.")
+               "linear-recurrence GPU kernels (Mamba-1 selective scan, Mamba-2 SSD, Gated DeltaNet): value "
+               "invariance and placement controls, shape keys, execution regimes, whole prefill steps captured as "
+               "CUDA graphs, and a compile-informed cost model against profiling. The reproducible run recomputes "
+               "analyses, tables and figures from the stored measurements on the CPU.")
 
 # Entry scripts of the experiments reported in the paper and its supplement.
 ENTRIES = [
@@ -125,6 +124,9 @@ VENUE = [(re.compile(p, f), r) for p, r, f in [
 # whole tag component (not inside a longer alphanumeric word), and the mapping is not re-applied to its
 # own output.
 HOST_LABELS = {"vgpu3090": "rtx3090", "pro6000": "rtxpro6000", "h800": "h800pcie"}
+# The lab host's label "4c" is renamed only as a whole tag component followed by "_" or a quote, so that hex strings
+# that merely contain "4c" stay untouched.
+LAB_HOST = (re.compile(r"(?<![A-Za-z0-9])4c(?=[_\"'])"), "labrtx3090")
 # upper-case spellings in identifiers (e.g. PRO6000_TABLES); "H800" is the GPU's product name and is kept
 UPPER_CASE_LABELS = ("vgpu3090", "pro6000")
 
@@ -139,6 +141,7 @@ def _label_rule(old: str, new: str) -> tuple[re.Pattern, str]:
 
 HOSTS = [_label_rule(old, new) for old, new in HOST_LABELS.items()]
 HOSTS += [_label_rule(old.upper(), HOST_LABELS[old].upper()) for old in UPPER_CASE_LABELS]
+HOSTS.append(LAB_HOST)
 # Text formats the RENAME rules are applied to (everything else is copied unchanged).
 TEXT_SUFFIXES = {".py", ".md", ".txt", ".json", ".jsonl", ".csv", ".log", ".tsv", ".sh", ".toml", ".cfg",
                  ".yml", ".yaml", ".cu", ".cuh", ".cpp", ".h", ".c", ".in", ""}
@@ -150,7 +153,7 @@ IDENTIFYING = [r"mabo", r"bo\s+ma\b", r"weiqi", r"jinsong", r"aut\.ac\.nz", r"\b
                r"ssh\s+-p", r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", r"hkvlm", r"github\.com/mabo",
                r"corey", r"/root/", r"/home/", r"tpds", r"git_commit", r"nza1",
                # host labels; "_NVGPU" (Nsight Compute's ERR_NVGPUCTRPERM error code) is not one
-               r"(?<!_n)vgpu", r"(?<!rtx)pro6000"]
+               r"(?<!_n)vgpu", r"(?<!rtx)pro6000", r"/home1/", r"(?<![A-Za-z0-9])4c_"]
 IP_ALLOW = {"0.0.0.0", "127.0.0.1"}
 # Public benchmark text under src/data/ is checked for personal identifiers only, not for
 # place names or numeric patterns that occur in ordinary prose.
@@ -840,6 +843,8 @@ SANITIZE = [(re.compile(r"autodl-container-[A-Za-z0-9-]+"), "gpu-host"),
             # any other path in a home directory
             (re.compile(r"(?<![\w.~-])/root(?=/)"), "~"),
             (re.compile(r"(?<![\w.~-])/home/[^/\s\"',]+(?=/)"), "~"),
+            (re.compile(r"(?<![\w.~-])/home1/[^/\s\"',]+(?=/)"), "~"),
+            (re.compile(r"/data/[A-Za-z0-9]*mabo[A-Za-z0-9_]*"), "/data/lab"),
             (re.compile(r"Linux-\d+\.\d+\.\d+(?:\.\d+)?[A-Za-z0-9_.+-]*"), "Linux")]
 # Metadata fields of JSON / JSONL result files: the version-control hash is removed; host and user
 # names not neutralized by SANITIZE are replaced by a placeholder. Measurement fields are not touched.
