@@ -26,6 +26,8 @@ Inputs: real text. The capture corpus (as the trace capture selected it) is toke
 into one token stream; row b of a batch is the slice of L tokens starting at b * max(L). Falls back to
 seeded random token ids if the corpus cannot be loaded (recorded in the metadata).
 
+Shapes: every L in ``--lengths`` and B in ``--batches`` with L * B <= ``--max-tokens`` (a prefill token budget).
+
 Protocol per (L, B):
   1. eager forward at the default chunk (reference logits of the last position, stored scan output for
      ``noscan``), then one eager forward per chunk (Triton autotuning, chunk check, logits difference to
@@ -265,7 +267,8 @@ def run(args, log) -> None:
             meta = env_metadata()
             meta.update({"experiment": "E32", "model": args.model, "label": args.label, "model_id": args.model_id,
                          "dtype": args.dtype, "default_chunk": default, "chunks": chunks, "variants": variants,
-                         "modes": modes, "lengths": lengths, "batches": batches, "rounds": args.rounds,
+                         "modes": modes, "lengths": lengths, "batches": batches, "max_tokens": args.max_tokens,
+                         "rounds": args.rounds,
                          "warmup": args.warmup, "repeats": args.repeats, "eager_repeats": args.eager_repeats,
                          "pre_spin_ms": args.pre_spin_ms, "inputs": stream_src, "model_info": sm.info,
                          "guard_gpu": args.guard_gpu, "session": args.tag,
@@ -280,6 +283,8 @@ def run(args, log) -> None:
             with torch.inference_mode():
                 for B in batches:
                     for L in lengths:
+                        if L * B > args.max_tokens:
+                            continue
                         keys = [row_key(args.label, args.dtype, L, B, m, r, v) for m in modes
                                 for r in range(args.rounds) for v in variants]
                         if all(k in w.done for k in keys):
@@ -596,8 +601,9 @@ def parse_args(argv=None):
     p.add_argument("--modes", default="graph,eager")
     p.add_argument("--rounds", type=int, default=5)
     p.add_argument("--warmup", type=int, default=3)
-    p.add_argument("--repeats", type=int, default=20)
-    p.add_argument("--eager-repeats", type=int, default=10)
+    p.add_argument("--repeats", type=int, default=10)
+    p.add_argument("--eager-repeats", type=int, default=5)
+    p.add_argument("--max-tokens", type=int, default=8192, help="skip (L, B) with L * B above this prefill budget")
     p.add_argument("--pre-spin-ms", type=float, default=50.0)
     p.add_argument("--skip-noscan", action="store_true")
     p.add_argument("--max-cells", type=int, default=None, help="stop after this many (L, B) cells (smoke tests)")
