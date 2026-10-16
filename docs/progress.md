@@ -197,10 +197,11 @@
 - V3：`docs/cover_letter.txt` 按当前论文重写（新标题、五条发现、TACO 适配性），加入给编辑的保密说明：预印本 arXiv:2604.10597 是同一批作者所写、未经同行评审；本稿结论与之部分相反，撤回其 split-call 结果；正文以第三人称引用、不说明是本人工作。`docs/Title_Page.docx` 的期刊改为 ACM TACO、标题改为新标题。
 - 正文发现并修正了一处泄露修订过程的措辞：三处 "fixed in this revision"（首投稿件不应出现"本次修订"）改为 "fixed only after comparing/evaluating six"。
 
+- 匿名代码包里约 70 个文件名含 `taco_r2_…`：按作者决定（遗留问题 13「不改」）不改名，capsule 与 `submit/` 保持当前版本。
+- 仓库根目录的 `y.html`（1.3 KB，未纳入 git，10-16 存下的一个网页跳转页，内容只是跳到 PyTorch 文档 notes/randomness.html，仓库内无引用）：按作者指示删除。
+
 ### 未修改或部分修改
-- 匿名代码包里约 70 个文件名仍含 `taco_r2_…`（venue 名 + 内部轮次）。不泄露作者身份，但审稿人可能把 "r2" 误读为修订稿。改名要同步改 import 和 README 映射，风险较大，目前未改。
-  - 需要你决定：是否把这些文件名中的 `taco_r2_`/`taco_` 前缀去掉后重新推送 capsule 并重建投稿包？（推荐：不改，影响很小）
-  - A:
+- 无（投稿包已就绪；只剩你在 Code Ocean 网页上发布新版本和在投稿系统上传）。
 
 ## 2026-10-17（晚）taco-r2：最终独立复核后的修改（复核报告 `docs/review_reports/taco_r2_recheck_final.md`）
 
@@ -937,7 +938,7 @@ AAAI-27 Submission #3464（COREY）已收到最终决定：Phase 1 拒稿，未�
 
 13. 【匿名代码包文件名】约 70 个文件名含 `taco_r2_…`（venue 名 + 内部轮次），不泄露作者身份，但 "r2" 可能被误读为修订稿。
    需要你决定：是否去掉这些前缀后重新推送 capsule 并重建 `submit/`？（推荐：不改）
-   A: 不改
+   A: 不改（2026-10-17；已消费：capsule 与 `submit/` 保持当前版本）
 
 需要你操作：
 - 【E28 停止】你已决定 E28（4c 双卡张量并行）不进投稿版。本机无法连到 4c（实验室内网 10.126.126.3，连接超时）。请在实验室网络（或 VPN）下登录 4c 执行：`screen -S taco-4c -X quit`（该 lane 只在等空闲 GPU，没有需要删除的数据）。账本已把 E28 标为 cancelled，M7b 标为不处理；论文已写明未运行多 GPU 实验。
