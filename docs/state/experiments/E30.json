@@ -2,6 +2,7 @@
   "created_at": "2026-10-15T13:09:58Z",
   "design_ref": "docs/Design.md#E30",
   "est_hours": 2.0,
+  "eta": null,
   "host": "4c",
   "id": "E30",
   "items": [
@@ -17,17 +18,22 @@
       "at": "2026-10-15T22:19:02Z",
       "by": "bobsteam1215",
       "text": "author 2026-10-16: run on 4c (stock RTX 3090, physical GPU 0, lane taco_lane_4c_e30e31.sh TACO_LANE=E30); inputs = the E30 subset of the vGPU 3090 traces (386 files, 4.69 GB) and its 166 on-disk Triton autotune results, copied from the vGPU 3090 (no-GPU mode); tags 4c_e30_*"
+    },
+    {
+      "at": "2026-10-16T01:25:09Z",
+      "by": "bobsteam1215",
+      "text": "analysis e30_autotune_state_4c_e30.json: 120 calls, 519 (call, chunk) pairs; configs changed in 99% of pairs, retuned/pinned latency median 0.995 [p5 0.941, p95 1.010]; per-call oracle agreement 97% (98% within 2%); pinned-oracle regret under re-tuning 0.10% mean; default-chunk regret 20.8% pinned vs 19.3% re-tuned"
     }
   ],
-  "progress": 0,
+  "progress": 100,
   "purpose": "Does per-shape re-tuning of the inner tiles change the chunk decision (M6c)",
   "results": [
     "src/experiments/results/tpds/e30_autotune_state_vgpu3090*.json*"
   ],
   "started_at": "2026-10-15T23:55:24Z",
-  "status": "running",
+  "status": "pulled",
   "title": "SSD and Gated DeltaNet autotuner state: pinned vs re-tuned per shape",
-  "updated_at": "2026-10-15T23:55:24Z",
+  "updated_at": "2026-10-16T01:25:09Z",
   "updated_by": "bobsteam1215",
   "vram_gb": 10.0
 }

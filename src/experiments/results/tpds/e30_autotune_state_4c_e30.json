@@ -1,0 +1,2349 @@
+{
+  "experiment": "E30",
+  "inputs": [
+    "src/experiments/results/tpds/e30_autotune_state_4c_e30_ssd370m.jsonl",
+    "src/experiments/results/tpds/e30_autotune_state_4c_e30_ssd2p7b.jsonl",
+    "src/experiments/results/tpds/e30_autotune_state_4c_e30_gdn1p4b.jsonl"
+  ],
+  "models": {
+    "4c_e30_ssd370m": {
+      "label": "SSD 370M",
+      "model": "mamba2",
+      "source": "src/experiments/results/tpds/e30_autotune_state_4c_e30_ssd370m.jsonl",
+      "summary": {
+        "calls": 40,
+        "pairs": 200,
+        "block_stat": "mean",
+        "share_pairs_config_changed": 0.99,
+        "share_pairs_material_change": 0.24,
+        "predicted_excess_share_of_call": {
+          "median": 0.008265045742158392,
+          "p95": 0.0609674621997563,
+          "max": 0.1526717566526518,
+          "pairs": 200
+        },
+        "per_autotuner": {
+          "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+            "entries": 200,
+            "share_changed": 0.595,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.15432422334234933,
+            "isolated_gap_pinned_cfg_max": 0.20000007275957787
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+            "entries": 200,
+            "share_changed": 0.11,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.053620147303102154,
+            "isolated_gap_pinned_cfg_max": 0.11111104374113556
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+            "entries": 200,
+            "share_changed": 0.655,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.610119044770431,
+            "isolated_gap_pinned_cfg_max": 2.6603772419301905
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+            "entries": 200,
+            "share_changed": 0.665,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.004428665442481217,
+            "isolated_gap_pinned_cfg_p95": 0.1683333129707579,
+            "isolated_gap_pinned_cfg_max": 0.41666664140292586
+          },
+          "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+            "entries": 200,
+            "share_changed": 0.92,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.003973837290139892,
+            "isolated_gap_pinned_cfg_p95": 0.06666669091985922,
+            "isolated_gap_pinned_cfg_max": 0.12500004263256415
+          }
+        },
+        "ratio_retuned_over_pinned": {
+          "median": 0.992457766301869,
+          "p5": 0.9342241477445178,
+          "p95": 1.0118534175637326,
+          "min": 0.8920363223614564,
+          "max": 1.0765795905725204,
+          "share_retuned_faster_2pct": 0.295,
+          "share_retuned_slower_2pct": 0.02,
+          "median_where_config_changed": 0.9921491399865967,
+          "median_where_material_change": 0.9588841976264522
+        },
+        "oracle_agreement": 0.95,
+        "oracle_agreement_within_2pct": 0.95,
+        "regret_pinned_oracle_under_retuned_pct": {
+          "mean": 0.23898423729348692,
+          "max": 5.058596246377101
+        },
+        "gain_retuned_oracle_vs_pinned_oracle_pct": {
+          "mean": 0.5316837855884943,
+          "min": -3.523956053641175,
+          "max": 5.486781155892406
+        },
+        "oracle_pinned_distribution": {
+          "32": 4,
+          "64": 8,
+          "128": 16,
+          "256": 12
+        },
+        "oracle_retuned_distribution": {
+          "32": 5,
+          "64": 8,
+          "128": 15,
+          "256": 12
+        },
+        "max_out_diff": 0.0625,
+        "nonfinite_pairs": 0,
+        "keys_tuned_while_timing": 0,
+        "retune_s_mean": 26.163999999999998,
+        "peak_vram_gb": 7.122,
+        "default_chunk_regret_pct": {
+          "pinned_mean": 22.749560552015485,
+          "retuned_mean": 20.517725535813533,
+          "pinned_max": 93.8214680330602,
+          "retuned_max": 84.07079516998672,
+          "calls": 40
+        }
+      },
+      "by_batch": {
+        "1": {
+          "calls": 14,
+          "pairs": 70,
+          "block_stat": "mean",
+          "share_pairs_config_changed": 0.9714285714285714,
+          "share_pairs_material_change": 0.38571428571428573,
+          "predicted_excess_share_of_call": {
+            "median": 0.012142514763530603,
+            "p95": 0.09595322480940452,
+            "max": 0.1526717566526518,
+            "pairs": 70
+          },
+          "per_autotuner": {
+            "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+              "entries": 70,
+              "share_changed": 0.4857142857142857,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.16089741473718394,
+              "isolated_gap_pinned_cfg_max": 0.20000007275957787
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+              "entries": 70,
+              "share_changed": 0.11428571428571428,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.04230770710716231,
+              "isolated_gap_pinned_cfg_max": 0.11111104374113556
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+              "entries": 70,
+              "share_changed": 0.5571428571428572,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.24999997157829057,
+              "isolated_gap_pinned_cfg_max": 0.6666665656117035
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+              "entries": 70,
+              "share_changed": 0.7142857142857143,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.020251613767458765,
+              "isolated_gap_pinned_cfg_p95": 0.3119047744335151,
+              "isolated_gap_pinned_cfg_max": 0.41666664140292586
+            },
+            "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+              "entries": 70,
+              "share_changed": 0.7714285714285715,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.015211402114064562,
+              "isolated_gap_pinned_cfg_max": 0.12500004263256415
+            }
+          },
+          "ratio_retuned_over_pinned": {
+            "median": 0.9928343881052695,
+            "p5": 0.9175744643974034,
+            "p95": 1.01560122039657,
+            "min": 0.8920363223614564,
+            "max": 1.0765795905725204,
+            "share_retuned_faster_2pct": 0.32857142857142857,
+            "share_retuned_slower_2pct": 0.04285714285714286,
+            "median_where_config_changed": 0.9927585281477014,
+            "median_where_material_change": 0.9689618577057229
+          },
+          "oracle_agreement": 0.8571428571428571,
+          "oracle_agreement_within_2pct": 0.8571428571428571,
+          "regret_pinned_oracle_under_retuned_pct": {
+            "mean": 0.6828121065528199,
+            "max": 5.058596246377101
+          },
+          "gain_retuned_oracle_vs_pinned_oracle_pct": {
+            "mean": -0.23435529301368513,
+            "min": -2.5579136263627067,
+            "max": 3.904373051846244
+          },
+          "oracle_pinned_distribution": {
+            "64": 5,
+            "128": 8,
+            "256": 1
+          },
+          "oracle_retuned_distribution": {
+            "32": 1,
+            "64": 5,
+            "128": 7,
+            "256": 1
+          },
+          "max_out_diff": 0.0078125,
+          "nonfinite_pairs": 0,
+          "keys_tuned_while_timing": 0,
+          "retune_s_mean": 23.682142857142857,
+          "peak_vram_gb": 0.668,
+          "default_chunk_regret_pct": {
+            "pinned_mean": 16.08702285089119,
+            "retuned_mean": 10.807260510745328,
+            "pinned_max": 28.82480884244716,
+            "retuned_max": 19.825097307203254,
+            "calls": 14
+          }
+        },
+        "4": {
+          "calls": 13,
+          "pairs": 65,
+          "block_stat": "mean",
+          "share_pairs_config_changed": 1.0,
+          "share_pairs_material_change": 0.23076923076923078,
+          "predicted_excess_share_of_call": {
+            "median": 0.010673024055112097,
+            "p95": 0.04277164429374321,
+            "max": 0.05724714674639562,
+            "pairs": 65
+          },
+          "per_autotuner": {
+            "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.6307692307692307,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.1791623872558406,
+              "isolated_gap_pinned_cfg_max": 0.20000007275957787
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.09230769230769231,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.04000001455191548,
+              "isolated_gap_pinned_cfg_max": 0.055555574269438246
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.6615384615384615,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.4444443770744688,
+              "isolated_gap_pinned_cfg_max": 0.6666665656117035
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.5846153846153846,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.07487182124893549,
+              "isolated_gap_pinned_cfg_max": 0.10526319820475316
+            },
+            "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 1.0,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.015243496006416501,
+              "isolated_gap_pinned_cfg_p95": 0.06666669091985922,
+              "isolated_gap_pinned_cfg_max": 0.07100588115488593
+            }
+          },
+          "ratio_retuned_over_pinned": {
+            "median": 0.9847609375500112,
+            "p5": 0.9430721119517255,
+            "p95": 1.0005954739970542,
+            "min": 0.9208368367737936,
+            "max": 1.0118420237987193,
+            "share_retuned_faster_2pct": 0.4461538461538462,
+            "share_retuned_slower_2pct": 0.0,
+            "median_where_config_changed": 0.9847609375500112,
+            "median_where_material_change": 0.9482860353308885
+          },
+          "oracle_agreement": 1.0,
+          "oracle_agreement_within_2pct": 1.0,
+          "regret_pinned_oracle_under_retuned_pct": {
+            "mean": 0.0,
+            "max": 0.0
+          },
+          "gain_retuned_oracle_vs_pinned_oracle_pct": {
+            "mean": 2.120266775090157,
+            "min": -0.3824509194471082,
+            "max": 5.486781155892406
+          },
+          "oracle_pinned_distribution": {
+            "32": 2,
+            "64": 1,
+            "128": 6,
+            "256": 4
+          },
+          "oracle_retuned_distribution": {
+            "32": 2,
+            "64": 1,
+            "128": 6,
+            "256": 4
+          },
+          "max_out_diff": 0.03125,
+          "nonfinite_pairs": 0,
+          "keys_tuned_while_timing": 0,
+          "retune_s_mean": 27.051538461538463,
+          "peak_vram_gb": 1.909,
+          "default_chunk_regret_pct": {
+            "pinned_mean": 21.841113423214193,
+            "retuned_mean": 21.835938527562192,
+            "pinned_max": 78.51381850489187,
+            "retuned_max": 80.85025699589457,
+            "calls": 13
+          }
+        },
+        "16": {
+          "calls": 13,
+          "pairs": 65,
+          "block_stat": "mean",
+          "share_pairs_config_changed": 1.0,
+          "share_pairs_material_change": 0.09230769230769231,
+          "predicted_excess_share_of_call": {
+            "median": 0.00513928437106457,
+            "p95": 0.03856321683810586,
+            "max": 0.05663189078410587,
+            "pairs": 65
+          },
+          "per_autotuner": {
+            "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.676923076923077,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.008196783883538838,
+              "isolated_gap_pinned_cfg_p95": 0.12222224285427839,
+              "isolated_gap_pinned_cfg_max": 0.16340785052272278
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.12307692307692308,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.07471431247755989,
+              "isolated_gap_pinned_cfg_max": 0.1016042747457655
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.7538461538461538,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.8841558060119833,
+              "isolated_gap_pinned_cfg_max": 2.6603772419301905
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.6923076923076923,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0027002906820481343,
+              "isolated_gap_pinned_cfg_p95": 0.03333334545992961,
+              "isolated_gap_pinned_cfg_max": 0.04186051454084949
+            },
+            "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 1.0,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.003875998723943619,
+              "isolated_gap_pinned_cfg_p95": 0.014150913932353681,
+              "isolated_gap_pinned_cfg_max": 0.01709904960205666
+            }
+          },
+          "ratio_retuned_over_pinned": {
+            "median": 0.9956618020043169,
+            "p5": 0.952223670417759,
+            "p95": 1.011748878168524,
+            "min": 0.9337823424060909,
+            "max": 1.0352395605364118,
+            "share_retuned_faster_2pct": 0.1076923076923077,
+            "share_retuned_slower_2pct": 0.015384615384615385,
+            "median_where_config_changed": 0.9956618020043169,
+            "median_where_material_change": 0.9470129278402362
+          },
+          "oracle_agreement": 1.0,
+          "oracle_agreement_within_2pct": 1.0,
+          "regret_pinned_oracle_under_retuned_pct": {
+            "mean": 0.0,
+            "max": 0.0
+          },
+          "gain_retuned_oracle_vs_pinned_oracle_pct": {
+            "mean": -0.23193404234159035,
+            "min": -3.523956053641175,
+            "max": 1.5360501840529839
+          },
+          "oracle_pinned_distribution": {
+            "32": 2,
+            "64": 2,
+            "128": 2,
+            "256": 7
+          },
+          "oracle_retuned_distribution": {
+            "32": 2,
+            "64": 2,
+            "128": 2,
+            "256": 7
+          },
+          "max_out_diff": 0.0625,
+          "nonfinite_pairs": 0,
+          "keys_tuned_while_timing": 0,
+          "retune_s_mean": 27.949230769230766,
+          "peak_vram_gb": 7.122,
+          "default_chunk_regret_pct": {
+            "pinned_mean": 30.83304828202756,
+            "retuned_mean": 29.656936417215253,
+            "pinned_max": 93.8214680330602,
+            "retuned_max": 84.07079516998672,
+            "calls": 13
+          }
+        }
+      },
+      "anchor": {
+        "calls": 1,
+        "pairs": 5,
+        "block_stat": "mean",
+        "share_pairs_config_changed": 0.8,
+        "share_pairs_material_change": 0.0,
+        "predicted_excess_share_of_call": {
+          "median": 0.004573952702852685,
+          "p95": 0.010180565239084607,
+          "max": 0.010912556631304814,
+          "pairs": 5
+        },
+        "per_autotuner": {
+          "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+            "entries": 5,
+            "share_changed": 0.4,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+            "entries": 5,
+            "share_changed": 0.0,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+            "entries": 5,
+            "share_changed": 0.6,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.17671958949492117,
+            "isolated_gap_pinned_cfg_max": 0.18518520115436576
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+            "entries": 5,
+            "share_changed": 0.0,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          },
+          "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+            "entries": 5,
+            "share_changed": 0.6,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.06705198563829885,
+            "isolated_gap_pinned_cfg_max": 0.08333328280585173
+          }
+        },
+        "ratio_retuned_over_pinned": {
+          "median": 1.0002455313580265,
+          "p5": 0.9962357571133537,
+          "p95": 1.003014075378827,
+          "min": 0.9953583348601677,
+          "max": 1.0036396736343085,
+          "share_retuned_faster_2pct": 0.0,
+          "share_retuned_slower_2pct": 0.0,
+          "median_where_config_changed": 0.9999954887420619,
+          "median_where_material_change": null
+        },
+        "oracle_agreement": 1.0,
+        "oracle_agreement_within_2pct": 1.0,
+        "regret_pinned_oracle_under_retuned_pct": {
+          "mean": 0.0,
+          "max": 0.0
+        },
+        "gain_retuned_oracle_vs_pinned_oracle_pct": {
+          "mean": -0.36396736343085045,
+          "min": -0.36396736343085045,
+          "max": -0.36396736343085045
+        },
+        "oracle_pinned_distribution": {
+          "128": 1
+        },
+        "oracle_retuned_distribution": {
+          "128": 1
+        },
+        "max_out_diff": 0.001953125,
+        "nonfinite_pairs": 0,
+        "keys_tuned_while_timing": 0,
+        "retune_s_mean": 20.66,
+        "peak_vram_gb": 0.307,
+        "default_chunk_regret_pct": {
+          "pinned_mean": 4.228277084167753,
+          "retuned_mean": 3.875794404448274,
+          "pinned_max": 4.228277084167753,
+          "retuned_max": 3.875794404448274,
+          "calls": 1
+        }
+      },
+      "documentation": {
+        "n_autotuners_scanned": 42,
+        "library_prefixes": [
+          "mamba_ssm.ops.triton"
+        ],
+        "fla_cache_mode_original": null,
+        "used": {
+          "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "chunk_size",
+              "K",
+              "IS_CAUSAL"
+            ],
+            "n_configs": 9,
+            "wrappers": [],
+            "cache_results_library": false,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel"
+            ]
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "chunk_size",
+              "hdim",
+              "dstate",
+              "IS_CAUSAL"
+            ],
+            "n_configs": 11,
+            "wrappers": [],
+            "cache_results_library": false,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel"
+            ]
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "chunk_size",
+              "nheads"
+            ],
+            "n_configs": 7,
+            "wrappers": [],
+            "cache_results_library": false,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel"
+            ]
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "hdim",
+              "dstate",
+              "chunk_size"
+            ],
+            "n_configs": 9,
+            "wrappers": [],
+            "cache_results_library": false,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel"
+            ]
+          },
+          "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "dim"
+            ],
+            "n_configs": 6,
+            "wrappers": [],
+            "cache_results_library": false,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel"
+            ]
+          }
+        },
+        "note": "autotuners with one configuration never tune and are not listed as used"
+      },
+      "pinned_disk": false,
+      "disk_cache": null,
+      "timing": {
+        "cuda_graph": true,
+        "warmup": 10,
+        "repeats": 50,
+        "pre_spin_ms": 0.0,
+        "rounds": 3
+      },
+      "env": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "pkg_triton": "3.4.0",
+        "pkg_mamba_ssm": "2.3.2.post1",
+        "pkg_fla-core": "0.5.2",
+        "torch": "2.8.0+cu128",
+        "git_commit": null
+      }
+    },
+    "4c_e30_ssd2p7b": {
+      "label": "SSD 2.7B",
+      "model": "mamba2",
+      "source": "src/experiments/results/tpds/e30_autotune_state_4c_e30_ssd2p7b.jsonl",
+      "summary": {
+        "calls": 40,
+        "pairs": 199,
+        "block_stat": "mean",
+        "share_pairs_config_changed": 0.9849246231155779,
+        "share_pairs_material_change": 0.1658291457286432,
+        "predicted_excess_share_of_call": {
+          "median": 0.003729266975786053,
+          "p95": 0.057385866369795445,
+          "max": 0.10107813853746683,
+          "pairs": 199
+        },
+        "per_autotuner": {
+          "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+            "entries": 199,
+            "share_changed": 0.5376884422110553,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.16666664140292586,
+            "isolated_gap_pinned_cfg_max": 0.20000007275957787
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+            "entries": 199,
+            "share_changed": 0.1658291457286432,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.09104898366805504,
+            "isolated_gap_pinned_cfg_max": 0.15789479730712963
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+            "entries": 199,
+            "share_changed": 0.8040201005025126,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.404347838007239,
+            "isolated_gap_pinned_cfg_max": 1.2781956499618694
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+            "entries": 199,
+            "share_changed": 0.6080402010050251,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0769231038312046,
+            "isolated_gap_pinned_cfg_max": 0.15789479730712963
+          },
+          "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+            "entries": 199,
+            "share_changed": 0.44221105527638194,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.005858801091585473,
+            "isolated_gap_pinned_cfg_max": 0.02941177414700369
+          }
+        },
+        "ratio_retuned_over_pinned": {
+          "median": 0.9980689528881618,
+          "p5": 0.9493542453641658,
+          "p95": 1.0121049295226698,
+          "min": 0.9147574007494923,
+          "max": 1.0331016326939753,
+          "share_retuned_faster_2pct": 0.1306532663316583,
+          "share_retuned_slower_2pct": 0.02512562814070352,
+          "median_where_config_changed": 0.9980501673179327,
+          "median_where_material_change": 0.965782863630671
+        },
+        "oracle_agreement": 0.95,
+        "oracle_agreement_within_2pct": 0.975,
+        "regret_pinned_oracle_under_retuned_pct": {
+          "mean": 0.07577112136026187,
+          "max": 2.872070689459849
+        },
+        "gain_retuned_oracle_vs_pinned_oracle_pct": {
+          "mean": 0.24267532257227498,
+          "min": -2.1179497181890383,
+          "max": 3.230436718728802
+        },
+        "oracle_pinned_distribution": {
+          "32": 5,
+          "64": 5,
+          "128": 15,
+          "256": 15
+        },
+        "oracle_retuned_distribution": {
+          "32": 5,
+          "64": 5,
+          "128": 15,
+          "256": 15
+        },
+        "max_out_diff": 0.03125,
+        "nonfinite_pairs": 0,
+        "keys_tuned_while_timing": 0,
+        "retune_s_mean": 21.94475,
+        "peak_vram_gb": 10.21,
+        "default_chunk_regret_pct": {
+          "pinned_mean": 24.978606507920667,
+          "retuned_mean": 23.09047063701976,
+          "pinned_max": 106.32633332574923,
+          "retuned_max": 93.71794046060144,
+          "calls": 40
+        }
+      },
+      "by_batch": {
+        "1": {
+          "calls": 14,
+          "pairs": 70,
+          "block_stat": "mean",
+          "share_pairs_config_changed": 0.9857142857142858,
+          "share_pairs_material_change": 0.2571428571428571,
+          "predicted_excess_share_of_call": {
+            "median": 0.0034586511375415832,
+            "p95": 0.06912475878638467,
+            "max": 0.10107813853746683,
+            "pairs": 70
+          },
+          "per_autotuner": {
+            "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+              "entries": 70,
+              "share_changed": 0.5142857142857142,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.16781249738520335,
+              "isolated_gap_pinned_cfg_max": 0.20000007275957787
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+              "entries": 70,
+              "share_changed": 0.15714285714285714,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.08695647016098218,
+              "isolated_gap_pinned_cfg_max": 0.15789479730712963
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+              "entries": 70,
+              "share_changed": 0.8,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.24999997157829057,
+              "isolated_gap_pinned_cfg_max": 0.24999997157829057
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+              "entries": 70,
+              "share_changed": 0.6142857142857143,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.10645048277671672,
+              "isolated_gap_pinned_cfg_max": 0.15789479730712963
+            },
+            "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+              "entries": 70,
+              "share_changed": 0.14285714285714285,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.0,
+              "isolated_gap_pinned_cfg_max": 0.0
+            }
+          },
+          "ratio_retuned_over_pinned": {
+            "median": 0.9984359735372298,
+            "p5": 0.9522142346939073,
+            "p95": 1.0180120471573817,
+            "min": 0.9147574007494923,
+            "max": 1.0331016326939753,
+            "share_retuned_faster_2pct": 0.18571428571428572,
+            "share_retuned_slower_2pct": 0.05714285714285714,
+            "median_where_config_changed": 0.9984335834243181,
+            "median_where_material_change": 0.9790437825373957
+          },
+          "oracle_agreement": 0.9285714285714286,
+          "oracle_agreement_within_2pct": 0.9285714285714286,
+          "regret_pinned_oracle_under_retuned_pct": {
+            "mean": 0.2051479063899892,
+            "max": 2.872070689459849
+          },
+          "gain_retuned_oracle_vs_pinned_oracle_pct": {
+            "mean": 0.32935105156298555,
+            "min": -2.0100950860118205,
+            "max": 3.230436718728802
+          },
+          "oracle_pinned_distribution": {
+            "32": 1,
+            "64": 2,
+            "128": 10,
+            "256": 1
+          },
+          "oracle_retuned_distribution": {
+            "32": 1,
+            "64": 2,
+            "128": 9,
+            "256": 2
+          },
+          "max_out_diff": 0.015625,
+          "nonfinite_pairs": 0,
+          "keys_tuned_while_timing": 0,
+          "retune_s_mean": 20.97714285714286,
+          "peak_vram_gb": 1.289,
+          "default_chunk_regret_pct": {
+            "pinned_mean": 18.41811126545157,
+            "retuned_mean": 16.40592183547064,
+            "pinned_max": 56.34463774280538,
+            "retuned_max": 53.55618722448252,
+            "calls": 14
+          }
+        },
+        "4": {
+          "calls": 13,
+          "pairs": 65,
+          "block_stat": "mean",
+          "share_pairs_config_changed": 0.9846153846153847,
+          "share_pairs_material_change": 0.13846153846153847,
+          "predicted_excess_share_of_call": {
+            "median": 0.002752868313987623,
+            "p95": 0.04987204981661513,
+            "max": 0.062674778379285,
+            "pairs": 65
+          },
+          "per_autotuner": {
+            "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.5538461538461539,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.16606058713242686,
+              "isolated_gap_pinned_cfg_max": 0.19254665346389133
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.13846153846153847,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.09090912370829951,
+              "isolated_gap_pinned_cfg_max": 0.11111104374113556
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.8307692307692308,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.05263159910237647,
+              "isolated_gap_pinned_cfg_p95": 0.24999997157829057,
+              "isolated_gap_pinned_cfg_max": 0.3142857083461572
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.5692307692307692,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.04688886316703231,
+              "isolated_gap_pinned_cfg_max": 0.05555547134308614
+            },
+            "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+              "entries": 65,
+              "share_changed": 0.4307692307692308,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.004493302815907051,
+              "isolated_gap_pinned_cfg_max": 0.02941177414700369
+            }
+          },
+          "ratio_retuned_over_pinned": {
+            "median": 0.9988167218294383,
+            "p5": 0.9515706777029684,
+            "p95": 1.0111803483559239,
+            "min": 0.9371317904360028,
+            "max": 1.0211794971818904,
+            "share_retuned_faster_2pct": 0.1076923076923077,
+            "share_retuned_slower_2pct": 0.015384615384615385,
+            "median_where_config_changed": 0.9986528222894581,
+            "median_where_material_change": 0.9600497312219857
+          },
+          "oracle_agreement": 0.9230769230769231,
+          "oracle_agreement_within_2pct": 1.0,
+          "regret_pinned_oracle_under_retuned_pct": {
+            "mean": 0.012213397303894293,
+            "max": 0.1587741649506258
+          },
+          "gain_retuned_oracle_vs_pinned_oracle_pct": {
+            "mean": 0.184744485925323,
+            "min": -2.1179497181890383,
+            "max": 2.9691001371436987
+          },
+          "oracle_pinned_distribution": {
+            "32": 2,
+            "64": 1,
+            "128": 4,
+            "256": 6
+          },
+          "oracle_retuned_distribution": {
+            "32": 2,
+            "64": 1,
+            "128": 5,
+            "256": 5
+          },
+          "max_out_diff": 0.03125,
+          "nonfinite_pairs": 0,
+          "keys_tuned_while_timing": 0,
+          "retune_s_mean": 21.783076923076923,
+          "peak_vram_gb": 4.435,
+          "default_chunk_regret_pct": {
+            "pinned_mean": 23.04718285855653,
+            "retuned_mean": 21.295024957658715,
+            "pinned_max": 85.89603835762823,
+            "retuned_max": 76.03904811691893,
+            "calls": 13
+          }
+        },
+        "16": {
+          "calls": 13,
+          "pairs": 64,
+          "block_stat": "mean",
+          "share_pairs_config_changed": 0.984375,
+          "share_pairs_material_change": 0.09375,
+          "predicted_excess_share_of_call": {
+            "median": 0.004345837094291399,
+            "p95": 0.0454885630240698,
+            "max": 0.062278772380133685,
+            "pairs": 64
+          },
+          "per_autotuner": {
+            "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+              "entries": 64,
+              "share_changed": 0.546875,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.12291669279884979,
+              "isolated_gap_pinned_cfg_max": 0.16666664140292586
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+              "entries": 64,
+              "share_changed": 0.203125,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.09603892508359796,
+              "isolated_gap_pinned_cfg_max": 0.10284466068881182
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+              "entries": 64,
+              "share_changed": 0.78125,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.09090912097503123,
+              "isolated_gap_pinned_cfg_p95": 0.607221467071986,
+              "isolated_gap_pinned_cfg_max": 1.2781956499618694
+            },
+            "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+              "entries": 64,
+              "share_changed": 0.640625,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.00018767454286017227,
+              "isolated_gap_pinned_cfg_p95": 0.024224442505591668,
+              "isolated_gap_pinned_cfg_max": 0.03900708048736745
+            },
+            "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+              "entries": 64,
+              "share_changed": 0.78125,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.007417925457063334,
+              "isolated_gap_pinned_cfg_max": 0.01063828368375419
+            }
+          },
+          "ratio_retuned_over_pinned": {
+            "median": 0.9957837441590931,
+            "p5": 0.9491209251613784,
+            "p95": 1.0076973232985482,
+            "min": 0.928461875682551,
+            "max": 1.0111077841419955,
+            "share_retuned_faster_2pct": 0.09375,
+            "share_retuned_slower_2pct": 0.0,
+            "median_where_config_changed": 0.9955995899659775,
+            "median_where_material_change": 0.9462399269796535
+          },
+          "oracle_agreement": 1.0,
+          "oracle_agreement_within_2pct": 1.0,
+          "regret_pinned_oracle_under_retuned_pct": {
+            "mean": 0.0,
+            "max": 0.0
+          },
+          "gain_retuned_oracle_vs_pinned_oracle_pct": {
+            "mean": 0.20726306646000014,
+            "min": -1.1107784141995536,
+            "max": 1.618536647447144
+          },
+          "oracle_pinned_distribution": {
+            "32": 2,
+            "64": 2,
+            "128": 1,
+            "256": 8
+          },
+          "oracle_retuned_distribution": {
+            "32": 2,
+            "64": 2,
+            "128": 1,
+            "256": 8
+          },
+          "max_out_diff": 0.03125,
+          "nonfinite_pairs": 0,
+          "keys_tuned_while_timing": 0,
+          "retune_s_mean": 23.14846153846154,
+          "peak_vram_gb": 10.21,
+          "default_chunk_regret_pct": {
+            "pinned_mean": 33.975178879943826,
+            "retuned_mean": 32.08466117958754,
+            "pinned_max": 106.32633332574923,
+            "retuned_max": 93.71794046060144,
+            "calls": 13
+          }
+        }
+      },
+      "anchor": {
+        "calls": 1,
+        "pairs": 5,
+        "block_stat": "mean",
+        "share_pairs_config_changed": 0.6,
+        "share_pairs_material_change": 0.0,
+        "predicted_excess_share_of_call": {
+          "median": 0.0,
+          "p95": 0.0,
+          "max": 0.0,
+          "pairs": 5
+        },
+        "per_autotuner": {
+          "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+            "entries": 5,
+            "share_changed": 0.2,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+            "entries": 5,
+            "share_changed": 0.0,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+            "entries": 5,
+            "share_changed": 0.2,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+            "entries": 5,
+            "share_changed": 0.2,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          },
+          "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+            "entries": 5,
+            "share_changed": 0.0,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          }
+        },
+        "ratio_retuned_over_pinned": {
+          "median": 1.005085190336613,
+          "p5": 0.9993241745325161,
+          "p95": 1.0669902652469632,
+          "min": 0.9990797344984457,
+          "max": 1.0824313032522463,
+          "share_retuned_faster_2pct": 0.0,
+          "share_retuned_slower_2pct": 0.2,
+          "median_where_config_changed": 1.000301934668798,
+          "median_where_material_change": null
+        },
+        "oracle_agreement": 1.0,
+        "oracle_agreement_within_2pct": 1.0,
+        "regret_pinned_oracle_under_retuned_pct": {
+          "mean": 0.0,
+          "max": 0.0
+        },
+        "gain_retuned_oracle_vs_pinned_oracle_pct": {
+          "mean": -8.243130325224634,
+          "min": -8.243130325224634,
+          "max": -8.243130325224634
+        },
+        "oracle_pinned_distribution": {
+          "128": 1
+        },
+        "oracle_retuned_distribution": {
+          "128": 1
+        },
+        "max_out_diff": 0.0009765625,
+        "nonfinite_pairs": 0,
+        "keys_tuned_while_timing": 0,
+        "retune_s_mean": 20.81,
+        "peak_vram_gb": 0.391,
+        "default_chunk_regret_pct": {
+          "pinned_mean": 11.452607391694247,
+          "retuned_mean": 2.9961517768609447,
+          "pinned_max": 11.452607391694247,
+          "retuned_max": 2.9961517768609447,
+          "calls": 1
+        }
+      },
+      "documentation": {
+        "n_autotuners_scanned": 42,
+        "library_prefixes": [
+          "mamba_ssm.ops.triton"
+        ],
+        "fla_cache_mode_original": null,
+        "used": {
+          "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "chunk_size",
+              "K",
+              "IS_CAUSAL"
+            ],
+            "n_configs": 9,
+            "wrappers": [],
+            "cache_results_library": false,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel"
+            ]
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "chunk_size",
+              "hdim",
+              "dstate",
+              "IS_CAUSAL"
+            ],
+            "n_configs": 11,
+            "wrappers": [],
+            "cache_results_library": false,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel"
+            ]
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "chunk_size",
+              "nheads"
+            ],
+            "n_configs": 7,
+            "wrappers": [],
+            "cache_results_library": false,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel"
+            ]
+          },
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "hdim",
+              "dstate",
+              "chunk_size"
+            ],
+            "n_configs": 9,
+            "wrappers": [],
+            "cache_results_library": false,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel"
+            ]
+          },
+          "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "dim"
+            ],
+            "n_configs": 6,
+            "wrappers": [],
+            "cache_results_library": false,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel"
+            ]
+          }
+        },
+        "note": "autotuners with one configuration never tune and are not listed as used"
+      },
+      "pinned_disk": false,
+      "disk_cache": null,
+      "timing": {
+        "cuda_graph": true,
+        "warmup": 10,
+        "repeats": 50,
+        "pre_spin_ms": 0.0,
+        "rounds": 3
+      },
+      "env": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "pkg_triton": "3.4.0",
+        "pkg_mamba_ssm": "2.3.2.post1",
+        "pkg_fla-core": "0.5.2",
+        "torch": "2.8.0+cu128",
+        "git_commit": null
+      }
+    },
+    "4c_e30_gdn1p4b": {
+      "label": "GDN 1.4B",
+      "model": "gdn",
+      "source": "src/experiments/results/tpds/e30_autotune_state_4c_e30_gdn1p4b.jsonl",
+      "summary": {
+        "calls": 40,
+        "pairs": 120,
+        "block_stat": "mean",
+        "share_pairs_config_changed": 1.0,
+        "share_pairs_material_change": 0.2833333333333333,
+        "predicted_excess_share_of_call": {
+          "median": 0.005082046424100128,
+          "p95": 0.05850357738545497,
+          "max": 0.12232415840049835,
+          "pairs": 120
+        },
+        "per_autotuner": {
+          "fla.modules.l2norm.l2norm_fwd_kernel": {
+            "entries": 120,
+            "share_changed": 0.65,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.24999997157829057,
+            "isolated_gap_pinned_cfg_max": 0.24999997157829057
+          },
+          "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": {
+            "entries": 120,
+            "share_changed": 0.025,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.08333328280585173
+          },
+          "fla.ops.common.chunk_o.chunk_fwd_kernel_o": {
+            "entries": 120,
+            "share_changed": 0.18333333333333332,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.03181919688460606,
+            "isolated_gap_pinned_cfg_max": 0.06871302849205896
+          },
+          "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": {
+            "entries": 80,
+            "share_changed": 0.675,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.19881990474731837,
+            "isolated_gap_pinned_cfg_max": 0.33333336220618115
+          },
+          "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": {
+            "entries": 40,
+            "share_changed": 0.375,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.055524515201214514,
+            "isolated_gap_pinned_cfg_max": 0.13616064482653756
+          },
+          "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": {
+            "entries": 120,
+            "share_changed": 0.45,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.2007422560220785,
+            "isolated_gap_pinned_cfg_max": 0.24999997157829057
+          },
+          "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": {
+            "entries": 120,
+            "share_changed": 0.7833333333333333,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.005601777682380904,
+            "isolated_gap_pinned_cfg_p95": 0.4285713728880802,
+            "isolated_gap_pinned_cfg_max": 0.5
+          },
+          "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": {
+            "entries": 40,
+            "share_changed": 0.55,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.03103991144615158,
+            "isolated_gap_pinned_cfg_max": 0.05726871060605787
+          },
+          "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": {
+            "entries": 40,
+            "share_changed": 0.775,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.09506253255848922,
+            "isolated_gap_pinned_cfg_max": 0.16666664140292586
+          }
+        },
+        "ratio_retuned_over_pinned": {
+          "median": 0.9948078042769131,
+          "p5": 0.9385563270244753,
+          "p95": 1.0049508701594791,
+          "min": 0.9006622258991392,
+          "max": 1.010603595404896,
+          "share_retuned_faster_2pct": 0.25,
+          "share_retuned_slower_2pct": 0.0,
+          "median_where_config_changed": 0.9948078042769131,
+          "median_where_material_change": 0.9582629365833311
+        },
+        "oracle_agreement": 1.0,
+        "oracle_agreement_within_2pct": 1.0,
+        "regret_pinned_oracle_under_retuned_pct": {
+          "mean": 0.0,
+          "max": 0.0
+        },
+        "gain_retuned_oracle_vs_pinned_oracle_pct": {
+          "mean": 1.1750098430922225,
+          "min": -0.9275028408736841,
+          "max": 8.51299699298913
+        },
+        "oracle_pinned_distribution": {
+          "16": 1,
+          "32": 17,
+          "64": 22
+        },
+        "oracle_retuned_distribution": {
+          "16": 1,
+          "32": 17,
+          "64": 22
+        },
+        "max_out_diff": 6.103515625e-05,
+        "nonfinite_pairs": 0,
+        "keys_tuned_while_timing": 0,
+        "retune_s_mean": 26.39575,
+        "peak_vram_gb": 13.063,
+        "default_chunk_regret_pct": {
+          "pinned_mean": 14.534528007636851,
+          "retuned_mean": 14.367486856310613,
+          "pinned_max": 67.31858600150564,
+          "retuned_max": 68.31790089050548,
+          "calls": 40
+        }
+      },
+      "by_batch": {
+        "1": {
+          "calls": 14,
+          "pairs": 42,
+          "block_stat": "mean",
+          "share_pairs_config_changed": 1.0,
+          "share_pairs_material_change": 0.5238095238095238,
+          "predicted_excess_share_of_call": {
+            "median": 0.02256957288935587,
+            "p95": 0.0931021180217468,
+            "max": 0.12232415840049835,
+            "pairs": 42
+          },
+          "per_autotuner": {
+            "fla.modules.l2norm.l2norm_fwd_kernel": {
+              "entries": 42,
+              "share_changed": 0.7857142857142857,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.12500004263256415,
+              "isolated_gap_pinned_cfg_p95": 0.24999997157829057,
+              "isolated_gap_pinned_cfg_max": 0.24999997157829057
+            },
+            "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": {
+              "entries": 42,
+              "share_changed": 0.0,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.0,
+              "isolated_gap_pinned_cfg_max": 0.0
+            },
+            "fla.ops.common.chunk_o.chunk_fwd_kernel_o": {
+              "entries": 42,
+              "share_changed": 0.14285714285714285,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.031250010658141036,
+              "isolated_gap_pinned_cfg_max": 0.05263159910237647
+            },
+            "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": {
+              "entries": 28,
+              "share_changed": 0.5714285714285714,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.20000007275957787,
+              "isolated_gap_pinned_cfg_max": 0.33333336220618115
+            },
+            "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": {
+              "entries": 14,
+              "share_changed": 0.6428571428571429,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.03571429731498332,
+              "isolated_gap_pinned_cfg_p95": 0.04907406756654429,
+              "isolated_gap_pinned_cfg_max": 0.07142852966606017
+            },
+            "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": {
+              "entries": 42,
+              "share_changed": 0.4523809523809524,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.014843755062616926,
+              "isolated_gap_pinned_cfg_max": 0.24218752575717417
+            },
+            "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": {
+              "entries": 42,
+              "share_changed": 0.7619047619047619,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.4964285686444037,
+              "isolated_gap_pinned_cfg_max": 0.5
+            },
+            "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": {
+              "entries": 14,
+              "share_changed": 0.35714285714285715,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.020044048712120236,
+              "isolated_gap_pinned_cfg_max": 0.05726871060605787
+            },
+            "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": {
+              "entries": 14,
+              "share_changed": 0.6428571428571429,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.10293753606288635,
+              "isolated_gap_pinned_cfg_max": 0.12000004365574668
+            }
+          },
+          "ratio_retuned_over_pinned": {
+            "median": 0.9835724201223366,
+            "p5": 0.916010326748701,
+            "p95": 1.0034007065360875,
+            "min": 0.9006622258991392,
+            "max": 1.010603595404896,
+            "share_retuned_faster_2pct": 0.4523809523809524,
+            "share_retuned_slower_2pct": 0.0,
+            "median_where_config_changed": 0.9835724201223366,
+            "median_where_material_change": 0.9554678574076765
+          },
+          "oracle_agreement": 1.0,
+          "oracle_agreement_within_2pct": 1.0,
+          "regret_pinned_oracle_under_retuned_pct": {
+            "mean": 0.0,
+            "max": 0.0
+          },
+          "gain_retuned_oracle_vs_pinned_oracle_pct": {
+            "mean": 2.3940361316343624,
+            "min": -0.32983354453728353,
+            "max": 8.51299699298913
+          },
+          "oracle_pinned_distribution": {
+            "16": 1,
+            "32": 8,
+            "64": 5
+          },
+          "oracle_retuned_distribution": {
+            "16": 1,
+            "32": 8,
+            "64": 5
+          },
+          "max_out_diff": 0.0,
+          "nonfinite_pairs": 0,
+          "keys_tuned_while_timing": 0,
+          "retune_s_mean": 25.520714285714288,
+          "peak_vram_gb": 1.046,
+          "default_chunk_regret_pct": {
+            "pinned_mean": 22.905673515952802,
+            "retuned_mean": 23.355661710560863,
+            "pinned_max": 67.31858600150564,
+            "retuned_max": 68.31790089050548,
+            "calls": 14
+          }
+        },
+        "4": {
+          "calls": 13,
+          "pairs": 39,
+          "block_stat": "mean",
+          "share_pairs_config_changed": 1.0,
+          "share_pairs_material_change": 0.2564102564102564,
+          "predicted_excess_share_of_call": {
+            "median": 0.0032361666007659803,
+            "p95": 0.043363226359412727,
+            "max": 0.05403139771550416,
+            "pairs": 39
+          },
+          "per_autotuner": {
+            "fla.modules.l2norm.l2norm_fwd_kernel": {
+              "entries": 39,
+              "share_changed": 0.6666666666666666,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.20000007275957787,
+              "isolated_gap_pinned_cfg_max": 0.20000007275957787
+            },
+            "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": {
+              "entries": 39,
+              "share_changed": 0.02564102564102564,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.0,
+              "isolated_gap_pinned_cfg_max": 0.08333328280585173
+            },
+            "fla.ops.common.chunk_o.chunk_fwd_kernel_o": {
+              "entries": 39,
+              "share_changed": 0.1794871794871795,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.032812504697477166,
+              "isolated_gap_pinned_cfg_max": 0.05263159910237647
+            },
+            "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": {
+              "entries": 26,
+              "share_changed": 0.6923076923076923,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.14275954030886667,
+              "isolated_gap_pinned_cfg_max": 0.19875779064140997
+            },
+            "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": {
+              "entries": 13,
+              "share_changed": 0.3076923076923077,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.07589283631960488,
+              "isolated_gap_pinned_cfg_max": 0.13616064482653756
+            },
+            "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": {
+              "entries": 39,
+              "share_changed": 0.4358974358974359,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.2183593613664613,
+              "isolated_gap_pinned_cfg_max": 0.24999997157829057
+            },
+            "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": {
+              "entries": 39,
+              "share_changed": 0.7948717948717948,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.005580334594001313,
+              "isolated_gap_pinned_cfg_p95": 0.2428571069723193,
+              "isolated_gap_pinned_cfg_max": 0.4285713728880802
+            },
+            "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": {
+              "entries": 13,
+              "share_changed": 0.46153846153846156,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.01735591758840943,
+              "isolated_gap_pinned_cfg_max": 0.022556454321754904
+            },
+            "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": {
+              "entries": 13,
+              "share_changed": 0.9230769230769231,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.0414781322058149,
+              "isolated_gap_pinned_cfg_max": 0.08333328280585173
+            }
+          },
+          "ratio_retuned_over_pinned": {
+            "median": 0.9959862971896595,
+            "p5": 0.9381302357604202,
+            "p95": 1.004554142169116,
+            "min": 0.9243608486491006,
+            "max": 1.0092750284087368,
+            "share_retuned_faster_2pct": 0.23076923076923078,
+            "share_retuned_slower_2pct": 0.0,
+            "median_where_config_changed": 0.9959862971896595,
+            "median_where_material_change": 0.9609531816114303
+          },
+          "oracle_agreement": 1.0,
+          "oracle_agreement_within_2pct": 1.0,
+          "regret_pinned_oracle_under_retuned_pct": {
+            "mean": 0.0,
+            "max": 0.0
+          },
+          "gain_retuned_oracle_vs_pinned_oracle_pct": {
+            "mean": 0.8045878008634143,
+            "min": -0.9275028408736841,
+            "max": 4.532686185383195
+          },
+          "oracle_pinned_distribution": {
+            "32": 5,
+            "64": 8
+          },
+          "oracle_retuned_distribution": {
+            "32": 5,
+            "64": 8
+          },
+          "max_out_diff": 0.0,
+          "nonfinite_pairs": 0,
+          "keys_tuned_while_timing": 0,
+          "retune_s_mean": 26.13692307692308,
+          "peak_vram_gb": 3.399,
+          "default_chunk_regret_pct": {
+            "pinned_mean": 11.171166790051625,
+            "retuned_mean": 10.764328098649147,
+            "pinned_max": 47.51144208325828,
+            "retuned_max": 50.16806743164104,
+            "calls": 13
+          }
+        },
+        "16": {
+          "calls": 13,
+          "pairs": 39,
+          "block_stat": "mean",
+          "share_pairs_config_changed": 1.0,
+          "share_pairs_material_change": 0.05128205128205128,
+          "predicted_excess_share_of_call": {
+            "median": 0.0032753130933371754,
+            "p95": 0.016729165265429325,
+            "max": 0.0233761414390267,
+            "pairs": 39
+          },
+          "per_autotuner": {
+            "fla.modules.l2norm.l2norm_fwd_kernel": {
+              "entries": 39,
+              "share_changed": 0.48717948717948717,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.12500004263256415,
+              "isolated_gap_pinned_cfg_max": 0.12500004263256415
+            },
+            "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": {
+              "entries": 39,
+              "share_changed": 0.05128205128205128,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.0013333240201080588,
+              "isolated_gap_pinned_cfg_max": 0.026666577414924175
+            },
+            "fla.ops.common.chunk_o.chunk_fwd_kernel_o": {
+              "entries": 39,
+              "share_changed": 0.23076923076923078,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.03000903230293963,
+              "isolated_gap_pinned_cfg_max": 0.06871302849205896
+            },
+            "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": {
+              "entries": 26,
+              "share_changed": 0.7692307692307693,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.09531252330580237,
+              "isolated_gap_pinned_cfg_max": 0.14285712429602682
+            },
+            "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": {
+              "entries": 13,
+              "share_changed": 0.15384615384615385,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.051171878241851224,
+              "isolated_gap_pinned_cfg_max": 0.05468746180832795
+            },
+            "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": {
+              "entries": 39,
+              "share_changed": 0.46153846153846156,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.11999994664297992,
+              "isolated_gap_pinned_cfg_max": 0.24999997157829057
+            },
+            "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": {
+              "entries": 39,
+              "share_changed": 0.7948717948717948,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.010910154357477664,
+              "isolated_gap_pinned_cfg_p95": 0.0769231038312046,
+              "isolated_gap_pinned_cfg_max": 0.07831323664140744
+            },
+            "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": {
+              "entries": 13,
+              "share_changed": 0.8461538461538461,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0024096569738285556,
+              "isolated_gap_pinned_cfg_p95": 0.03779289515970718,
+              "isolated_gap_pinned_cfg_max": 0.049369438668659615
+            },
+            "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": {
+              "entries": 13,
+              "share_changed": 0.7692307692307693,
+              "missing_pinned": 0,
+              "isolated_gap_pinned_cfg_median": 0.0,
+              "isolated_gap_pinned_cfg_p95": 0.07079508829326325,
+              "isolated_gap_pinned_cfg_max": 0.16666664140292586
+            }
+          },
+          "ratio_retuned_over_pinned": {
+            "median": 0.997314248190987,
+            "p5": 0.9799390070796339,
+            "p95": 1.0060208520309617,
+            "min": 0.9603830082970181,
+            "max": 1.008952631780434,
+            "share_retuned_faster_2pct": 0.05128205128205128,
+            "share_retuned_slower_2pct": 0.0,
+            "median_where_config_changed": 0.997314248190987,
+            "median_where_material_change": 0.9914862434249334
+          },
+          "oracle_agreement": 1.0,
+          "oracle_agreement_within_2pct": 1.0,
+          "regret_pinned_oracle_under_retuned_pct": {
+            "mean": 0.0,
+            "max": 0.0
+          },
+          "gain_retuned_oracle_vs_pinned_oracle_pct": {
+            "mean": 0.2326343438141113,
+            "min": -0.8952631780434039,
+            "max": 1.1701341248998576
+          },
+          "oracle_pinned_distribution": {
+            "32": 4,
+            "64": 9
+          },
+          "oracle_retuned_distribution": {
+            "32": 4,
+            "64": 9
+          },
+          "max_out_diff": 6.103515625e-05,
+          "nonfinite_pairs": 0,
+          "keys_tuned_while_timing": 0,
+          "retune_s_mean": 27.596923076923076,
+          "peak_vram_gb": 13.063,
+          "default_chunk_regret_pct": {
+            "pinned_mean": 8.882809447035669,
+            "retuned_mean": 8.291072694010275,
+            "pinned_max": 49.011501654341046,
+            "retuned_max": 49.04799304112699,
+            "calls": 13
+          }
+        }
+      },
+      "anchor": {
+        "calls": 1,
+        "pairs": 3,
+        "block_stat": "mean",
+        "share_pairs_config_changed": 1.0,
+        "share_pairs_material_change": 0.0,
+        "predicted_excess_share_of_call": {
+          "median": 0.00525596245712994,
+          "p95": 0.0055792654106379645,
+          "max": 0.005615187961027745,
+          "pairs": 3
+        },
+        "per_autotuner": {
+          "fla.modules.l2norm.l2norm_fwd_kernel": {
+            "entries": 3,
+            "share_changed": 1.0,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.07499995452526655,
+            "isolated_gap_pinned_cfg_max": 0.08333328280585173
+          },
+          "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": {
+            "entries": 3,
+            "share_changed": 0.0,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          },
+          "fla.ops.common.chunk_o.chunk_fwd_kernel_o": {
+            "entries": 3,
+            "share_changed": 0.0,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          },
+          "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": {
+            "entries": 2,
+            "share_changed": 0.5,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.050000018189894524,
+            "isolated_gap_pinned_cfg_p95": 0.09500003456079958,
+            "isolated_gap_pinned_cfg_max": 0.10000003637978905
+          },
+          "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": {
+            "entries": 1,
+            "share_changed": 0.0,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          },
+          "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": {
+            "entries": 3,
+            "share_changed": 0.0,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          },
+          "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": {
+            "entries": 3,
+            "share_changed": 0.6666666666666666,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.033984359723331733,
+            "isolated_gap_pinned_cfg_max": 0.03776039969259082
+          },
+          "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": {
+            "entries": 1,
+            "share_changed": 0.0,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.0,
+            "isolated_gap_pinned_cfg_p95": 0.0,
+            "isolated_gap_pinned_cfg_max": 0.0
+          },
+          "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": {
+            "entries": 1,
+            "share_changed": 1.0,
+            "missing_pinned": 0,
+            "isolated_gap_pinned_cfg_median": 0.09765619804156223,
+            "isolated_gap_pinned_cfg_p95": 0.09765619804156223,
+            "isolated_gap_pinned_cfg_max": 0.09765619804156223
+          }
+        },
+        "ratio_retuned_over_pinned": {
+          "median": 1.0708341149453633,
+          "p5": 1.0511726909562642,
+          "p95": 1.0822962689321642,
+          "min": 1.0489880882908087,
+          "max": 1.0835698415973642,
+          "share_retuned_faster_2pct": 0.0,
+          "share_retuned_slower_2pct": 1.0,
+          "median_where_config_changed": 1.0708341149453633,
+          "median_where_material_change": null
+        },
+        "oracle_agreement": 1.0,
+        "oracle_agreement_within_2pct": 1.0,
+        "regret_pinned_oracle_under_retuned_pct": {
+          "mean": 0.0,
+          "max": 0.0
+        },
+        "gain_retuned_oracle_vs_pinned_oracle_pct": {
+          "mean": -8.356984159736424,
+          "min": -8.356984159736424,
+          "max": -8.356984159736424
+        },
+        "oracle_pinned_distribution": {
+          "64": 1
+        },
+        "oracle_retuned_distribution": {
+          "64": 1
+        },
+        "max_out_diff": 0.0,
+        "nonfinite_pairs": 0,
+        "keys_tuned_while_timing": 0,
+        "retune_s_mean": 25.44,
+        "peak_vram_gb": 0.36,
+        "default_chunk_regret_pct": {
+          "pinned_mean": 0.0,
+          "retuned_mean": 0.0,
+          "pinned_max": 0.0,
+          "retuned_max": 0.0,
+          "calls": 1
+        }
+      },
+      "documentation": {
+        "n_autotuners_scanned": 190,
+        "library_prefixes": [
+          "fla."
+        ],
+        "fla_cache_mode_original": "disabled",
+        "used": {
+          "fla.modules.l2norm.l2norm_fwd_kernel": {
+            "class": "fla.ops.utils.cache.CachedAutotuner",
+            "keys": [
+              "D",
+              "NB"
+            ],
+            "n_configs": 25,
+            "wrappers": [],
+            "cache_results_library": true,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "fla.modules.l2norm.l2norm_fwd_kernel"
+            ]
+          },
+          "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": {
+            "class": "fla.ops.utils.cache.CachedAutotuner",
+            "keys": [
+              "H",
+              "HV",
+              "K",
+              "V",
+              "BT",
+              "STATE_V_FIRST"
+            ],
+            "n_configs": 8,
+            "wrappers": [
+              "Heuristics"
+            ],
+            "cache_results_library": true,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64"
+            ]
+          },
+          "fla.ops.common.chunk_o.chunk_fwd_kernel_o": {
+            "class": "fla.ops.utils.cache.CachedAutotuner",
+            "keys": [
+              "H",
+              "HV",
+              "K",
+              "V",
+              "BT",
+              "STATE_V_FIRST"
+            ],
+            "n_configs": 3,
+            "wrappers": [
+              "Heuristics"
+            ],
+            "cache_results_library": true,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "fla.ops.common.chunk_o.chunk_fwd_kernel_o"
+            ]
+          },
+          "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "H",
+              "HV",
+              "K",
+              "BT",
+              "IS_VARLEN"
+            ],
+            "n_configs": 27,
+            "wrappers": [
+              "Heuristics"
+            ],
+            "cache_results_library": true,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel"
+            ]
+          },
+          "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": {
+            "class": "fla.ops.utils.cache.CachedAutotuner",
+            "keys": [
+              "H",
+              "HV",
+              "K",
+              "BC"
+            ],
+            "n_configs": 6,
+            "wrappers": [
+              "Heuristics"
+            ],
+            "cache_results_library": true,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel"
+            ]
+          },
+          "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": {
+            "class": "fla.ops.utils.cache.CachedAutotuner",
+            "keys": [
+              "H",
+              "BT",
+              "IS_VARLEN",
+              "REVERSE"
+            ],
+            "n_configs": 4,
+            "wrappers": [
+              "Heuristics"
+            ],
+            "cache_results_library": true,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel"
+            ]
+          },
+          "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": {
+            "class": "fla.ops.utils.cache.CachedAutotuner",
+            "keys": [
+              "H",
+              "HV",
+              "K",
+              "V",
+              "BT",
+              "BK",
+              "BV",
+              "IS_VARLEN"
+            ],
+            "n_configs": 9,
+            "wrappers": [
+              "Heuristics"
+            ],
+            "cache_results_library": true,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel"
+            ]
+          },
+          "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "H",
+              "BT",
+              "IS_VARLEN"
+            ],
+            "n_configs": 16,
+            "wrappers": [
+              "Heuristics"
+            ],
+            "cache_results_library": true,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel"
+            ]
+          },
+          "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": {
+            "class": "triton.runtime.autotuner.Autotuner",
+            "keys": [
+              "BT"
+            ],
+            "n_configs": 16,
+            "wrappers": [
+              "Heuristics"
+            ],
+            "cache_results_library": true,
+            "early_config_prune": false,
+            "perf_model": false,
+            "reset_to_zero": [],
+            "restore_value": [],
+            "aliases": [
+              "fla.ops.utils.solve_tril.solve_tril_16x16_kernel"
+            ]
+          }
+        },
+        "note": "autotuners with one configuration never tune and are not listed as used"
+      },
+      "pinned_disk": true,
+      "disk_cache": {
+        "keys": 23,
+        "hits": 15,
+        "hits_equal_to_fresh_walk": 9,
+        "per_autotuner": {
+          "fla.modules.l2norm.l2norm_fwd_kernel": {
+            "keys": 6,
+            "hits": 1,
+            "equal": 0
+          },
+          "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": {
+            "keys": 3,
+            "hits": 0,
+            "equal": 0
+          },
+          "fla.ops.common.chunk_o.chunk_fwd_kernel_o": {
+            "keys": 3,
+            "hits": 3,
+            "equal": 3
+          },
+          "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": {
+            "keys": 2,
+            "hits": 2,
+            "equal": 1
+          },
+          "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": {
+            "keys": 1,
+            "hits": 1,
+            "equal": 1
+          },
+          "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": {
+            "keys": 3,
+            "hits": 3,
+            "equal": 1
+          },
+          "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": {
+            "keys": 3,
+            "hits": 3,
+            "equal": 1
+          },
+          "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": {
+            "keys": 1,
+            "hits": 1,
+            "equal": 1
+          },
+          "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": {
+            "keys": 1,
+            "hits": 1,
+            "equal": 1
+          }
+        }
+      },
+      "timing": {
+        "cuda_graph": true,
+        "warmup": 10,
+        "repeats": 50,
+        "pre_spin_ms": 0.0,
+        "rounds": 3
+      },
+      "env": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "pkg_triton": "3.4.0",
+        "pkg_mamba_ssm": "2.3.2.post1",
+        "pkg_fla-core": "0.5.2",
+        "torch": "2.8.0+cu128",
+        "git_commit": null
+      }
+    }
+  },
+  "overall": {
+    "calls": 120,
+    "pairs": 519,
+    "block_stat": "mean",
+    "share_pairs_config_changed": 0.9903660886319846,
+    "share_pairs_material_change": 0.22157996146435452,
+    "predicted_excess_share_of_call": {
+      "median": 0.005642754544289499,
+      "p95": 0.05857834462915037,
+      "max": 0.1526717566526518,
+      "pairs": 519
+    },
+    "per_autotuner": {
+      "fla.modules.l2norm.l2norm_fwd_kernel": {
+        "entries": 120,
+        "share_changed": 0.65,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.24999997157829057,
+        "isolated_gap_pinned_cfg_max": 0.24999997157829057
+      },
+      "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": {
+        "entries": 120,
+        "share_changed": 0.025,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.0,
+        "isolated_gap_pinned_cfg_max": 0.08333328280585173
+      },
+      "fla.ops.common.chunk_o.chunk_fwd_kernel_o": {
+        "entries": 120,
+        "share_changed": 0.18333333333333332,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.03181919688460606,
+        "isolated_gap_pinned_cfg_max": 0.06871302849205896
+      },
+      "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": {
+        "entries": 80,
+        "share_changed": 0.675,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.19881990474731837,
+        "isolated_gap_pinned_cfg_max": 0.33333336220618115
+      },
+      "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": {
+        "entries": 40,
+        "share_changed": 0.375,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.055524515201214514,
+        "isolated_gap_pinned_cfg_max": 0.13616064482653756
+      },
+      "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": {
+        "entries": 120,
+        "share_changed": 0.45,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.2007422560220785,
+        "isolated_gap_pinned_cfg_max": 0.24999997157829057
+      },
+      "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": {
+        "entries": 120,
+        "share_changed": 0.7833333333333333,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.005601777682380904,
+        "isolated_gap_pinned_cfg_p95": 0.4285713728880802,
+        "isolated_gap_pinned_cfg_max": 0.5
+      },
+      "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": {
+        "entries": 40,
+        "share_changed": 0.55,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.03103991144615158,
+        "isolated_gap_pinned_cfg_max": 0.05726871060605787
+      },
+      "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": {
+        "entries": 40,
+        "share_changed": 0.775,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.09506253255848922,
+        "isolated_gap_pinned_cfg_max": 0.16666664140292586
+      },
+      "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+        "entries": 399,
+        "share_changed": 0.5664160401002506,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.16393939718568026,
+        "isolated_gap_pinned_cfg_max": 0.20000007275957787
+      },
+      "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+        "entries": 399,
+        "share_changed": 0.13784461152882205,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.08130623428711393,
+        "isolated_gap_pinned_cfg_max": 0.15789479730712963
+      },
+      "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+        "entries": 399,
+        "share_changed": 0.7293233082706767,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.5555555218705679,
+        "isolated_gap_pinned_cfg_max": 2.6603772419301905
+      },
+      "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+        "entries": 399,
+        "share_changed": 0.6365914786967418,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.14285712429602682,
+        "isolated_gap_pinned_cfg_max": 0.41666664140292586
+      },
+      "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+        "entries": 399,
+        "share_changed": 0.681704260651629,
+        "missing_pinned": 0,
+        "isolated_gap_pinned_cfg_median": 0.0,
+        "isolated_gap_pinned_cfg_p95": 0.0434782746237381,
+        "isolated_gap_pinned_cfg_max": 0.12500004263256415
+      }
+    },
+    "ratio_retuned_over_pinned": {
+      "median": 0.9953830246863479,
+      "p5": 0.9413782039761609,
+      "p95": 1.0101152680487762,
+      "min": 0.8920363223614564,
+      "max": 1.0765795905725204,
+      "share_retuned_faster_2pct": 0.22157996146435452,
+      "share_retuned_slower_2pct": 0.017341040462427744,
+      "median_where_config_changed": 0.995362052961631,
+      "median_where_material_change": 0.9593242399763325
+    },
+    "oracle_agreement": 0.9666666666666667,
+    "oracle_agreement_within_2pct": 0.975,
+    "regret_pinned_oracle_under_retuned_pct": {
+      "mean": 0.10491845288458294,
+      "max": 5.058596246377101
+    },
+    "gain_retuned_oracle_vs_pinned_oracle_pct": {
+      "mean": 0.6497896504176639,
+      "min": -3.523956053641175,
+      "max": 8.51299699298913
+    },
+    "oracle_pinned_distribution": {
+      "16": 1,
+      "32": 26,
+      "64": 35,
+      "128": 31,
+      "256": 27
+    },
+    "oracle_retuned_distribution": {
+      "16": 1,
+      "32": 27,
+      "64": 35,
+      "128": 30,
+      "256": 27
+    },
+    "max_out_diff": 0.0625,
+    "nonfinite_pairs": 0,
+    "keys_tuned_while_timing": 0,
+    "retune_s_mean": 24.834833333333332,
+    "peak_vram_gb": 13.063,
+    "default_chunk_regret_pct": {
+      "pinned_mean": 20.754231689191002,
+      "retuned_mean": 19.325227676381303,
+      "pinned_max": 106.32633332574923,
+      "retuned_max": 93.71794046060144,
+      "calls": 120
+    }
+  },
+  "tolerance": 0.02
+}
