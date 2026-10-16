@@ -36,7 +36,8 @@ every cell; the exclusive-GPU guard (``--guard-gpu``: physical index) pauses whi
 the GPU and a cell is re-timed once if one appeared during it.
 
 Resumable: one fsynced JSONL row per (family, L, B, design, round, chunk, input/placement).
-With ``--inputs gaussian#0 --designs A`` the script is a plain CUDA-graph timing grid of the production
+``--ssd-dtype bfloat16`` runs the SSD families in bf16 instead of fp16 (E38: does the best chunk depend on the
+data type that the cache key records?). With ``--inputs gaussian#0 --designs A`` the script is a plain CUDA-graph timing grid of the production
 scans over shapes and chunks (used for the graph-timed calibration keys of the work-term model, E37).
 
 ``--analyze`` (CPU) writes ``e33_value_graph_<tag>.json``: per (family, L, B, chunk) the round-median of the
@@ -127,7 +128,7 @@ def sample(dist: str, shape, gen, device="cuda"):
 class Family:
     """Buffers and kernel call of one (family, L, B)."""
 
-    def __init__(self, name: str, L: int, B: int, real: tuple | None, log):
+    def __init__(self, name: str, L: int, B: int, real: tuple | None, log, ssd_dtype: str = "float16"):
         import torch
 
         self.name, self.L, self.B = name, L, B
@@ -138,7 +139,8 @@ class Family:
         if self.kind == "mamba2":
             H, P, G, N = spec["H"], spec["P"], spec["G"], spec["N"]
             self.shapes = {"x": (B, L, H, P), "dt": (B, L, H), "B": (B, L, G, N), "C": (B, L, G, N)}
-            self.dtypes = {"x": torch.float16, "dt": torch.float16, "B": torch.float16, "C": torch.float16}
+            dt = getattr(torch, ssd_dtype)
+            self.dtypes = {"x": dt, "dt": dt, "B": dt, "C": dt}
             self.params = {"A": -torch.exp(torch.rand(H, device="cuda") * math.log(16.0)),
                            "D": torch.randn(H, device="cuda"), "dt_bias": torch.randn(H, device="cuda") * 0.1}
             self.real = None
@@ -332,7 +334,7 @@ def run(args, log) -> None:
     shapes = _parse_shapes(args.shapes)
     with exclusive_lock(Path(args.log_dir) / f"e33_value_graph_{args.tag}.lock"):
         meta = env_metadata()
-        meta.update({"experiment": "E33", "families": fams, "shapes": shapes, "designs": args.designs,
+        meta.update({"experiment": "E33", "ssd_dtype": args.ssd_dtype, "families": fams, "shapes": shapes, "designs": args.designs,
                      "draws": args.draws, "placements": args.placements, "rounds": args.rounds,
                      "warmup": args.warmup, "repeats": args.repeats, "pre_spin_ms": args.pre_spin_ms,
                      "guard_gpu": args.guard_gpu, "args": {k: str(v) for k, v in vars(args).items()}})
@@ -345,7 +347,7 @@ def run(args, log) -> None:
             td = trace_dirs.get(fam)
             real = load_real(Path(td), kind, log) if td else None
             for (L, B) in shapes:
-                F = Family(fam, L, B, real, log)
+                F = Family(fam, L, B, real, log, ssd_dtype=args.ssd_dtype)
                 cell_inputs = [i for i in inputs if i != "real" or F.real is not None]
                 chunks = [c for c in F.chunks if F.feasible(c)]
                 log(f"E33 {fam} L={L} B={B}: chunks {chunks}, inputs {len(cell_inputs)} (real: {F.real_src}), "
@@ -575,6 +577,8 @@ def parse_args(argv=None):
     p.add_argument("--trace-dirs", default="", help="family=trace_dir,... (captured calls for the real input)")
     p.add_argument("--designs", default="AC")
     p.add_argument("--draws", type=int, default=2)
+    p.add_argument("--ssd-dtype", default="float16", choices=("float16", "bfloat16"),
+                   help="data type of the SSD inputs (the study's default is float16; bfloat16 for the dtype check)")
     p.add_argument("--inputs", default=None, help="restrict to these inputs (e.g. gaussian#0: a plain timing grid)")
     p.add_argument("--placements", type=int, default=6)
     p.add_argument("--rounds", type=int, default=5)

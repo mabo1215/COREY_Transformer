@@ -17,7 +17,8 @@
 #   TACO_LANE=G1b CUDA_VISIBLE_DEVICES=1 bash src/experiments/remote/taco_lane_4c_r2.sh   (after G1: E35)
 #   G0b (after G0): E36 packed steps under CUDA graphs at padded capture sizes (review M3d);
 #   G1c (after G1b): E37 graph-timed calibration keys of the work-term model (M4f), E33c the Triton scan's value
-#       invariance in graph replay with captured Mamba-1 activations (M5c), E30s2 second E30 session (M5f).
+#       invariance in graph replay with captured Mamba-1 activations (M5c), E38 SSD bf16 vs fp16 (M7f),
+#       E30s2 second E30 session (M5f).
 # Update this file on the host by rename (scp to a temporary name, then mv), never in place: running lanes read it.
 # Smoke tests only:  bash src/experiments/remote/taco_lane_4c_r2.sh step e32_smoke | e33_smoke
 # Markers: src/logs/revloop/<ID>.{START,OK,FAIL}; results come back by rsync (remote.sh fetch 4c <IDs>).
@@ -92,6 +93,11 @@ if [ "${1:-}" = "step" ]; then
         --trace-dir "$M1T" ;;
     e33c) flock "$LOCK" $E33 --families m1triton --shapes 2048x1,8192x1,2048x4 --trace-dirs "m1triton=$M1T" \
             $GUARD --tag ${H}_e33m1 ;;
+    e38)  # M7f: SSD in bf16 and fp16 on the same shapes, Gaussian and captured inputs, same process order per dtype
+      for dt in float16 bfloat16; do
+        flock "$LOCK" $E33 --families ssd370m,ssd2p7b --shapes 512x1,2048x1,16384x1,4096x4 --designs A \
+          --inputs 'gaussian#0,real' --ssd-dtype $dt --trace-dirs "$TRACES" $GUARD --tag ${H}_e38_$dt || exit 1
+      done ;;
     e30s2)  # second session of E30 on this board: cross-session and cross-board reproducibility (review M5f)
       E30="$PY -m src.experiments.tpds.e30_autotune_state"
       G30="--exclusive-guard --guard-until $(( $(date +%s) + ${TACO_GUARD_H:-48} * 3600 ))"
@@ -146,6 +152,7 @@ case "$LANE" in
     wait_marker E35 || lanelog "continuing without E35"
     $RUN E37 -- bash "$SELF" step e37
     $RUN E33c-capture -- bash "$SELF" step m1capture && $RUN E33c -- bash "$SELF" step e33c
+    $RUN E38 -- bash "$SELF" step e38
     $RUN E30s2 -- bash "$SELF" step e30s2
     ;;
   *) echo "unknown lane $LANE"; exit 2 ;;

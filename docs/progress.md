@@ -877,16 +877,16 @@ AAAI-27 Submission #3464（COREY）已收到最终决定：Phase 1 拒稿，未�
 9. 【taco-r2 M5e 硬件计数器】评审要求用 Nsight Compute 采集 occupancy、stall 原因、spill、L2 命中率。4c 驱动设置 `RmProfilingAdminOnly=1`，计数器只能 root 采集，而 sudo 需要你的密码（我不会也不能代输密码）。
    - A（推荐）：我把采集脚本准备好并提交（只读计数器，约 1–2 GPU 小时，在 GPU 0/1 空闲时跑），你在本会话里输入 `! ssh -t 4c sudo bash /home1/mabo1215/COREY_Transformer_taco/src/experiments/remote/taco_ncu_4c.sh` 自己输入密码运行；结果我来拉回分析。
    - B：不采集计数器，用不需要 root 的替代证据：编译期寄存器/spill（cuobjdump）+ CUPTI 逐 kernel 时间分解（SSD 五个 kernel、GDN 六个 kernel 随 chunk 的变化）；Limitations 写明计数器未采集。
-   A:
+   A: A（2026-10-16；已消费：E35 逐 kernel 分解跑完后，由作者在本会话用 `! ssh -t 4c sudo bash /home1/mabo1215/COREY_Transformer_taco/src/experiments/remote/taco_ncu_4c.sh` 自己输入密码运行；E35 完成时我会提醒）
 10. 【taco-r2 M1d 论文主线（评审要求作者决定）】E32 正在 4c 上测「整模型 prefill 作为一个 CUDA graph 时，默认 chunk vs 形状表」的端到端差别。评审给的判据：若端到端差别约 1% 或更小，就把它作为结论（对生产 kernel，chunk 是端到端的二阶旋钮；真正重要的是 key 的定义与测量陷阱），并相应缩短全文；若更大，则用它开篇。
    - A（推荐）：按 E32 数据自动套用上述判据（结果出来后我先给你看数字，再改摘要与结论）。
    - B：无论结果如何，保留现在的主线（会被评审继续质疑意义）。
-   A:
+   A: A（2026-10-16；已消费：E32 全部完成后按判据改写摘要与结论，先给作者看数字）
 11. 【taco-r2 可选 GPU 项（4c）】评审标为 optional、可在 4c 上做的：M7f SSD bf16 与 fp16 对比（<1 GPU 小时）、M3g 生产 kernel 在 TP 分片布局下的计时（2–4 小时）、M2f 改进自研 Triton kernel 或按 GPU 重调 launch 表后复测（3–6 小时 + kernel 工程）。
    - A（推荐）：只做 M7f（便宜）；M3g、M2f 不做，正文按评审要求把自研 kernel 明确定位为 stress case、TP 结论限定在 Mamba-1。
    - B：M7f + M3g。
    - C：三项都做。
-   A:
+   A: A（2026-10-16；已消费：只做 M7f SSD bf16 vs fp16（E38）；M3g、M2f 不做，正文把自研 kernel 定位为 stress case，TP 结论限定在 Triton scan）
 
 需要你操作：
 - 【E28 停止】你已决定 E28（4c 双卡张量并行）不进投稿版。本机无法连到 4c（实验室内网 10.126.126.3，连接超时）。请在实验室网络（或 VPN）下登录 4c 执行：`screen -S taco-4c -X quit`（该 lane 只在等空闲 GPU，没有需要删除的数据）。账本已把 E28 标为 cancelled，M7b 标为不处理；论文已写明未运行多 GPU 实验。
