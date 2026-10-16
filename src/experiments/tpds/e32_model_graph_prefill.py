@@ -118,10 +118,11 @@ class ScanModel:
             from transformers import AutoTokenizer, Mamba2ForCausalLM
             from transformers.models.mamba2 import modeling_mamba2 as m2
 
-            if not bool(getattr(m2, "is_fast_path_available", False)):
-                raise SystemExit("transformers' Mamba-2 fast path (mamba_ssm + causal_conv1d) is unavailable")
             self.tok = AutoTokenizer.from_pretrained(model_id)
             self.model = Mamba2ForCausalLM.from_pretrained(model_id, dtype=self.dtype).to("cuda").eval()
+            # transformers resolves the kernels lazily while building the mixers, so check after loading
+            if not bool(getattr(m2, "is_fast_path_available", False)):
+                raise SystemExit("transformers' Mamba-2 fast path (mamba_ssm + causal_conv1d) is unavailable")
             self.mixers = [layer.mixer for layer in self.model.backbone.layers]
             self.n_scan_layers = len(self.mixers)
             self.mod, self.entry = m2, "mamba_chunk_scan_combined"

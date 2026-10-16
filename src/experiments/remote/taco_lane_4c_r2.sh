@@ -6,6 +6,8 @@
 #   E33 (review M5c, M7d): value invariance of the production SSD and Gated DeltaNet scans above the launch
 #       floor in CUDA-graph replay, designs A (values only) and C (placement only), captured activations in the
 #       same process (e33_value_invariance_graph.py); then aligned vs unaligned lengths (E33b).
+#   E34 (review M2d): the Triton Mamba-1 scan's whole launch space (184 configurations) at the twelve tuning keys
+#       under the full protocol, so that the chunk effect can be read at fixed launch configurations (e34_fixed_launch.py).
 # One lane per GPU (each with its own timing lock, so the two lanes run concurrently):
 #   TACO_LANE=G0 CUDA_VISIBLE_DEVICES=0 bash src/experiments/remote/taco_lane_4c_r2.sh
 #   TACO_LANE=G1 CUDA_VISIBLE_DEVICES=1 bash src/experiments/remote/taco_lane_4c_r2.sh
@@ -60,6 +62,9 @@ if [ "${1:-}" = "step" ]; then
     e33a) flock "$LOCK" $E33 --trace-dirs "$TRACES" $GUARD --tag ${H}_e33 ;;
     e33b) flock "$LOCK" $E33 --trace-dirs "$TRACES" --shapes 2040x1,2047x1,2048x1,2049x1,2056x1 --designs A --draws 1 \
             $GUARD --tag ${H}_e33align ;;
+    e34_smoke) flock "$LOCK" $PY -m src.experiments.tpds.e34_fixed_launch --lengths 512 --batches 1 --rounds 1 \
+                 --warmup 2 --repeats 3 --out-dir "$SMOKE_DIR" --tag ${H}_e34smoke ;;
+    e34) flock "$LOCK" $PY -m src.experiments.tpds.e34_fixed_launch $GUARD --tag ${H}_e34 ;;
     *) echo "unknown step $2"; exit 2 ;;
   esac
   exit $?
@@ -94,6 +99,7 @@ case "$LANE" in
     $RUN E33-smoke -- bash "$SELF" step e33_smoke || { lanelog "E33 smoke failed"; exit 1; }
     $RUN E33a -- bash "$SELF" step e33a
     $RUN E33b -- bash "$SELF" step e33b
+    $RUN E34-smoke -- bash "$SELF" step e34_smoke && $RUN E34 -- bash "$SELF" step e34
     ;;
   *) echo "unknown lane $LANE"; exit 2 ;;
 esac
