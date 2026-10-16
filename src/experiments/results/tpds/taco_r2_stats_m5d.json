@@ -1,0 +1,3807 @@
+{
+  "item": "M5d",
+  "meta": {
+    "script": "taco_r2_stats_m5d_h800_inputs",
+    "created_utc": "2026-10-16T05:12:27Z",
+    "seed": 20261015,
+    "args": {
+      "in_dir": "/mnt/c/source/COREY_Transformer/src/experiments/results/tpds"
+    }
+  },
+  "definitions": "Review item M5d (cycle taco-r2): input effects of the value-invariance sweep on the H800, for the main text. CPU only.\n\nData: the value-invariance sweep ``e1_<tag>.json`` (every chunk of each kernel timed on eight inputs: uniform,\nGaussian, Laplace, sparse 50 / 10 / 2 %, constant and captured activations; batch 1, L in {512, 2048, 8192}; two\nperturbation modes, ``act`` and ``all``; three shuffled rounds). The H800 ran Mamba-1 (Triton scan) only, once\nlaunch-inclusive (``h800``) and once in device time (``h800_r3spin``). Next to it, the RTX PRO 6000 (``pro6000``,\nlaunch-inclusive: the value-invariance table of the main text; ``pro6000_r4spin``: device time) and the RTX 3090\n(``vgpu3090``, launch-inclusive; ``vgpu3090_r3spin``, device time).\n\nEvery quantity is recomputed from the raw rows with the functions of ``e1_analysis`` (decision, effects with\nBenjamini-Hochberg over the fixed-chunk tests of the tag, TOST equivalence) and checked against the stored\n``e1_analysis_<tag>.json`` where it exists; the tie share under the 2% rule is ``taco_within2_ties.invariance_ties``\n(share of (input, round) cells in which the input-agnostic chunk is within 2% of the cell's own best chunk; minimum\nover the two modes, the column \"Tied\" of the value-invariance table).\n\nReported per tag and per kernel family (Mamba-1 for the comparison across GPUs): the number of fixed-chunk\nconfigurations with a significant input effect (BH, alpha 0.05); the input range (slowest minus fastest input mean,\npercent of the mean over inputs) maximum overall, per length and at the input-agnostic chunk; the per-input best chunk\nper length and mode and whether it moves; the tie shares (2% rule; 95% CI overlap); the largest regret of the\ninput-agnostic chunk against an input's own best (median over rounds); the TOST summaries (median and maximum\nequivalence bound, configurations equivalent at 2% and 5%). The H800 has no placement or L2 control.\n\nOutput: ``taco_r2_stats_m5d.json``.\n\nUsage:  PYTHONPATH=. python3 -m src.experiments.tpds.taco_r2_stats_m5d_h800_inputs\n",
+  "alpha": 0.05,
+  "tags": {
+    "h800": {
+      "gpu": "H800 PCIe",
+      "convention": "launch-inclusive",
+      "source": "e1_h800.json",
+      "families": [
+        "mamba1"
+      ],
+      "all_families": {
+        "n_fixed_chunk_tests": 36,
+        "n_significant_input_effects_bh": 28,
+        "within_2pct_tie_share_pooled": 0.8958333333333334,
+        "n_cells": 144
+      },
+      "by_family": {
+        "mamba1": {
+          "n_fixed_chunk_tests": 36,
+          "n_significant_input_effects_bh": 28,
+          "input_range_pct": {
+            "max_all_configs": {
+              "pct": 47.60833556528977,
+              "L": 2048,
+              "mode": "all",
+              "chunk": 32,
+              "fastest_input": "sparse10",
+              "slowest_input": "real",
+              "p_bh": 1.755154189486685e-07
+            },
+            "max_significant_configs": {
+              "pct": 47.60833556528977,
+              "L": 2048,
+              "mode": "all",
+              "chunk": 32,
+              "fastest_input": "sparse10",
+              "slowest_input": "real",
+              "p_bh": 1.755154189486685e-07
+            },
+            "max_at_input_agnostic_chunk": {
+              "pct": 10.634639000384501,
+              "L": 512,
+              "mode": "all",
+              "chunk": 256,
+              "fastest_input": "constant",
+              "slowest_input": "laplace",
+              "p_bh": 0.5217238310785111
+            },
+            "max_significant_at_input_agnostic_chunk": {
+              "pct": 4.35790500869637,
+              "L": 2048,
+              "mode": "all",
+              "chunk": 1024,
+              "fastest_input": "sparse02",
+              "slowest_input": "gaussian",
+              "p_bh": 2.418403255433077e-10
+            },
+            "median_all_configs": 3.8992773399386955,
+            "median_at_input_agnostic_chunk": 2.460562765592645
+          },
+          "by_length": {
+            "512": {
+              "n_tests": 12,
+              "n_significant_bh": 4,
+              "max_input_range_pct": {
+                "pct": 13.909714253735116,
+                "L": 512,
+                "mode": "act",
+                "chunk": 512,
+                "fastest_input": "sparse10",
+                "slowest_input": "sparse02",
+                "p_bh": 0.5255277888552957
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 10.634639000384501,
+                "L": 512,
+                "mode": "all",
+                "chunk": 256,
+                "fastest_input": "constant",
+                "slowest_input": "laplace",
+                "p_bh": 0.5217238310785111
+              },
+              "share_within_2pct_min_over_modes": 0.9583333333333334,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 0.9583333333333334
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 256,
+                  "own_best_chunk_per_input": {
+                    "constant": 256,
+                    "uniform": 256,
+                    "gaussian": 256,
+                    "laplace": 256,
+                    "sparse50": 256,
+                    "sparse02": 256,
+                    "real": 256,
+                    "sparse10": 256
+                  },
+                  "distinct_own_best_chunks": [
+                    256
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 0.875,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.8344901175855859
+                },
+                "all": {
+                  "input_agnostic_chunk": 256,
+                  "own_best_chunk_per_input": {
+                    "laplace": 256,
+                    "sparse02": 256,
+                    "uniform": 256,
+                    "sparse50": 256,
+                    "gaussian": 256,
+                    "real": 256,
+                    "constant": 256,
+                    "sparse10": 256
+                  },
+                  "distinct_own_best_chunks": [
+                    256
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 0.8333333333333334,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.8310186849747994
+                }
+              }
+            },
+            "2048": {
+              "n_tests": 12,
+              "n_significant_bh": 12,
+              "max_input_range_pct": {
+                "pct": 47.60833556528977,
+                "L": 2048,
+                "mode": "all",
+                "chunk": 32,
+                "fastest_input": "sparse10",
+                "slowest_input": "real",
+                "p_bh": 1.755154189486685e-07
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 4.35790500869637,
+                "L": 2048,
+                "mode": "all",
+                "chunk": 1024,
+                "fastest_input": "sparse02",
+                "slowest_input": "gaussian",
+                "p_bh": 2.418403255433077e-10
+              },
+              "share_within_2pct_min_over_modes": 0.7083333333333334,
+              "share_within_2pct_by_mode": {
+                "act": 0.7083333333333334,
+                "all": 0.7083333333333334
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 5.560639464692141,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 1024,
+                  "own_best_chunk_per_input": {
+                    "sparse50": 256,
+                    "uniform": 1024,
+                    "sparse02": 1024,
+                    "real": 256,
+                    "gaussian": 256,
+                    "laplace": 1024,
+                    "sparse10": 1024,
+                    "constant": 1024
+                  },
+                  "distinct_own_best_chunks": [
+                    256,
+                    1024
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "real",
+                    "sparse50"
+                  ],
+                  "argmin_agreement": 0.5833333333333334,
+                  "ci_overlap_tie_share": 0.6666666666666666,
+                  "max_regret_of_input_agnostic_chunk_pct": 3.227740252871003,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.7558208509237996,
+                  "chunk_spread": 3.0109380639385117
+                },
+                "all": {
+                  "input_agnostic_chunk": 1024,
+                  "own_best_chunk_per_input": {
+                    "sparse10": 256,
+                    "gaussian": 1024,
+                    "laplace": 256,
+                    "uniform": 1024,
+                    "real": 1024,
+                    "sparse50": 1024,
+                    "constant": 1024,
+                    "sparse02": 1024
+                  },
+                  "distinct_own_best_chunks": [
+                    256,
+                    1024
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "laplace",
+                    "sparse10"
+                  ],
+                  "argmin_agreement": 0.6666666666666666,
+                  "ci_overlap_tie_share": 0.7083333333333334,
+                  "max_regret_of_input_agnostic_chunk_pct": 5.560639464692141,
+                  "mean_regret_of_input_agnostic_chunk_pct": 1.0300683414169842,
+                  "chunk_spread": 2.835110593997425
+                }
+              }
+            },
+            "8192": {
+              "n_tests": 12,
+              "n_significant_bh": 12,
+              "max_input_range_pct": {
+                "pct": 8.484898668525735,
+                "L": 8192,
+                "mode": "all",
+                "chunk": 32,
+                "fastest_input": "uniform",
+                "slowest_input": "laplace",
+                "p_bh": 0.0
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 0.6808335334419732,
+                "L": 8192,
+                "mode": "all",
+                "chunk": 1024,
+                "fastest_input": "constant",
+                "slowest_input": "gaussian",
+                "p_bh": 2.2234731397240218e-07
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 1024,
+                  "own_best_chunk_per_input": {
+                    "sparse02": 1024,
+                    "sparse10": 1024,
+                    "real": 1024,
+                    "laplace": 1024,
+                    "constant": 1024,
+                    "uniform": 1024,
+                    "sparse50": 1024,
+                    "gaussian": 1024
+                  },
+                  "distinct_own_best_chunks": [
+                    1024
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 3.9194480666167384
+                },
+                "all": {
+                  "input_agnostic_chunk": 1024,
+                  "own_best_chunk_per_input": {
+                    "sparse10": 1024,
+                    "sparse02": 1024,
+                    "real": 1024,
+                    "uniform": 1024,
+                    "laplace": 1024,
+                    "sparse50": 1024,
+                    "constant": 1024,
+                    "gaussian": 1024
+                  },
+                  "distinct_own_best_chunks": [
+                    1024
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 4.073079019112248
+                }
+              }
+            }
+          },
+          "cells": {
+            "n_cells": 144,
+            "ci_overlap_tie_share": 0.8958333333333334,
+            "argmin_agreement": 0.8263888888888888,
+            "within_2pct_tie_share_pooled": 0.8958333333333334,
+            "within_2pct_min_over_modes_range": [
+              0.7083333333333334,
+              1.0
+            ],
+            "max_regret_of_input_agnostic_chunk_pct": 5.560639464692141
+          },
+          "tost": {
+            "alpha": 0.05,
+            "all_chunks": {
+              "n": 36,
+              "equivalent_2pct": 15,
+              "equivalent_5pct": 23,
+              "median_bound_pct": 2.6214685052829054,
+              "max_bound_pct": 40.20825683157352
+            },
+            "at_input_agnostic_chunk": {
+              "n": 6,
+              "equivalent_2pct": 3,
+              "equivalent_5pct": 5,
+              "median_bound_pct": 1.8809502507608804,
+              "max_bound_pct": 14.605537159425278
+            }
+          }
+        }
+      }
+    },
+    "h800_r3spin": {
+      "gpu": "H800 PCIe",
+      "convention": "device time",
+      "source": "e1_h800_r3spin.json",
+      "families": [
+        "mamba1"
+      ],
+      "all_families": {
+        "n_fixed_chunk_tests": 36,
+        "n_significant_input_effects_bh": 36,
+        "within_2pct_tie_share_pooled": 0.9097222222222222,
+        "n_cells": 144
+      },
+      "by_family": {
+        "mamba1": {
+          "n_fixed_chunk_tests": 36,
+          "n_significant_input_effects_bh": 36,
+          "input_range_pct": {
+            "max_all_configs": {
+              "pct": 39.856546818847164,
+              "L": 2048,
+              "mode": "act",
+              "chunk": 32,
+              "fastest_input": "gaussian",
+              "slowest_input": "sparse02",
+              "p_bh": 5.076711171274038e-06
+            },
+            "max_significant_configs": {
+              "pct": 39.856546818847164,
+              "L": 2048,
+              "mode": "act",
+              "chunk": 32,
+              "fastest_input": "gaussian",
+              "slowest_input": "sparse02",
+              "p_bh": 5.076711171274038e-06
+            },
+            "max_at_input_agnostic_chunk": {
+              "pct": 5.081404775599177,
+              "L": 2048,
+              "mode": "all",
+              "chunk": 1024,
+              "fastest_input": "sparse02",
+              "slowest_input": "gaussian",
+              "p_bh": 3.5324918023443335e-06
+            },
+            "max_significant_at_input_agnostic_chunk": {
+              "pct": 5.081404775599177,
+              "L": 2048,
+              "mode": "all",
+              "chunk": 1024,
+              "fastest_input": "sparse02",
+              "slowest_input": "gaussian",
+              "p_bh": 3.5324918023443335e-06
+            },
+            "median_all_configs": 2.6458819864786083,
+            "median_at_input_agnostic_chunk": 0.6335289220613655
+          },
+          "by_length": {
+            "512": {
+              "n_tests": 12,
+              "n_significant_bh": 12,
+              "max_input_range_pct": {
+                "pct": 1.6785562228207753,
+                "L": 512,
+                "mode": "act",
+                "chunk": 32,
+                "fastest_input": "sparse02",
+                "slowest_input": "uniform",
+                "p_bh": 7.72836340378159e-13
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 0.5599155379401496,
+                "L": 512,
+                "mode": "act",
+                "chunk": 256,
+                "fastest_input": "sparse02",
+                "slowest_input": "uniform",
+                "p_bh": 7.107117267202145e-07
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 256,
+                  "own_best_chunk_per_input": {
+                    "constant": 256,
+                    "uniform": 256,
+                    "gaussian": 256,
+                    "laplace": 256,
+                    "sparse50": 256,
+                    "sparse02": 256,
+                    "real": 256,
+                    "sparse10": 256
+                  },
+                  "distinct_own_best_chunks": [
+                    256
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 2.641210228305366
+                },
+                "all": {
+                  "input_agnostic_chunk": 256,
+                  "own_best_chunk_per_input": {
+                    "laplace": 256,
+                    "sparse02": 256,
+                    "uniform": 256,
+                    "sparse50": 256,
+                    "gaussian": 256,
+                    "real": 256,
+                    "constant": 256,
+                    "sparse10": 256
+                  },
+                  "distinct_own_best_chunks": [
+                    256
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 2.64109998441279
+                }
+              }
+            },
+            "2048": {
+              "n_tests": 12,
+              "n_significant_bh": 12,
+              "max_input_range_pct": {
+                "pct": 39.856546818847164,
+                "L": 2048,
+                "mode": "act",
+                "chunk": 32,
+                "fastest_input": "gaussian",
+                "slowest_input": "sparse02",
+                "p_bh": 5.076711171274038e-06
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 5.081404775599177,
+                "L": 2048,
+                "mode": "all",
+                "chunk": 1024,
+                "fastest_input": "sparse02",
+                "slowest_input": "gaussian",
+                "p_bh": 3.5324918023443335e-06
+              },
+              "share_within_2pct_min_over_modes": 0.7083333333333334,
+              "share_within_2pct_by_mode": {
+                "act": 0.7083333333333334,
+                "all": 0.75
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 5.652630953173143,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 1024,
+                  "own_best_chunk_per_input": {
+                    "sparse50": 1024,
+                    "uniform": 256,
+                    "sparse02": 1024,
+                    "real": 256,
+                    "gaussian": 256,
+                    "laplace": 1024,
+                    "sparse10": 256,
+                    "constant": 1024
+                  },
+                  "distinct_own_best_chunks": [
+                    256,
+                    1024
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "real",
+                    "sparse10",
+                    "uniform"
+                  ],
+                  "argmin_agreement": 0.5416666666666666,
+                  "ci_overlap_tie_share": 0.5416666666666666,
+                  "max_regret_of_input_agnostic_chunk_pct": 3.764859100404383,
+                  "mean_regret_of_input_agnostic_chunk_pct": 1.2827247067642045,
+                  "chunk_spread": 2.9905361416181098
+                },
+                "all": {
+                  "input_agnostic_chunk": 1024,
+                  "own_best_chunk_per_input": {
+                    "sparse10": 256,
+                    "gaussian": 1024,
+                    "laplace": 256,
+                    "uniform": 1024,
+                    "real": 1024,
+                    "sparse50": 1024,
+                    "constant": 1024,
+                    "sparse02": 1024
+                  },
+                  "distinct_own_best_chunks": [
+                    256,
+                    1024
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "laplace",
+                    "sparse10"
+                  ],
+                  "argmin_agreement": 0.7083333333333334,
+                  "ci_overlap_tie_share": 0.7083333333333334,
+                  "max_regret_of_input_agnostic_chunk_pct": 5.652630953173143,
+                  "mean_regret_of_input_agnostic_chunk_pct": 1.1682681755170232,
+                  "chunk_spread": 3.076335928868174
+                }
+              }
+            },
+            "8192": {
+              "n_tests": 12,
+              "n_significant_bh": 12,
+              "max_input_range_pct": {
+                "pct": 8.3981463106287,
+                "L": 8192,
+                "mode": "all",
+                "chunk": 32,
+                "fastest_input": "uniform",
+                "slowest_input": "laplace",
+                "p_bh": 0.0
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 0.6958520640147855,
+                "L": 8192,
+                "mode": "all",
+                "chunk": 1024,
+                "fastest_input": "constant",
+                "slowest_input": "gaussian",
+                "p_bh": 3.837426105451109e-07
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 1024,
+                  "own_best_chunk_per_input": {
+                    "sparse02": 1024,
+                    "sparse10": 1024,
+                    "real": 1024,
+                    "laplace": 1024,
+                    "constant": 1024,
+                    "uniform": 1024,
+                    "sparse50": 1024,
+                    "gaussian": 1024
+                  },
+                  "distinct_own_best_chunks": [
+                    1024
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 3.9164360007341417
+                },
+                "all": {
+                  "input_agnostic_chunk": 1024,
+                  "own_best_chunk_per_input": {
+                    "sparse10": 1024,
+                    "sparse02": 1024,
+                    "real": 1024,
+                    "uniform": 1024,
+                    "laplace": 1024,
+                    "sparse50": 1024,
+                    "constant": 1024,
+                    "gaussian": 1024
+                  },
+                  "distinct_own_best_chunks": [
+                    1024
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 4.072370408200114
+                }
+              }
+            }
+          },
+          "cells": {
+            "n_cells": 144,
+            "ci_overlap_tie_share": 0.875,
+            "argmin_agreement": 0.875,
+            "within_2pct_tie_share_pooled": 0.9097222222222222,
+            "within_2pct_min_over_modes_range": [
+              0.7083333333333334,
+              1.0
+            ],
+            "max_regret_of_input_agnostic_chunk_pct": 5.652630953173143
+          },
+          "tost": {
+            "alpha": 0.05,
+            "all_chunks": {
+              "n": 36,
+              "equivalent_2pct": 18,
+              "equivalent_5pct": 26,
+              "median_bound_pct": 1.592530628317022,
+              "max_bound_pct": 32.6792393521287
+            },
+            "at_input_agnostic_chunk": {
+              "n": 6,
+              "equivalent_2pct": 4,
+              "equivalent_5pct": 6,
+              "median_bound_pct": 0.4839078955923703,
+              "max_bound_pct": 3.153446642580292
+            }
+          }
+        }
+      }
+    },
+    "pro6000": {
+      "gpu": "RTX PRO 6000",
+      "convention": "launch-inclusive (value-invariance table of the main text)",
+      "source": "e1_pro6000.json",
+      "families": [
+        "gdn",
+        "mamba1",
+        "mamba2"
+      ],
+      "all_families": {
+        "n_fixed_chunk_tests": 84,
+        "n_significant_input_effects_bh": 12,
+        "within_2pct_tie_share_pooled": 0.9347826086956522,
+        "n_cells": 414
+      },
+      "by_family": {
+        "gdn": {
+          "n_fixed_chunk_tests": 18,
+          "n_significant_input_effects_bh": 0,
+          "input_range_pct": {
+            "max_all_configs": {
+              "pct": 11.18091894272355,
+              "L": 512,
+              "mode": "all",
+              "chunk": 32,
+              "fastest_input": "constant",
+              "slowest_input": "laplace",
+              "p_bh": 0.7218958765860481
+            },
+            "max_significant_configs": null,
+            "max_at_input_agnostic_chunk": {
+              "pct": 4.095017495023725,
+              "L": 2048,
+              "mode": "act",
+              "chunk": 64,
+              "fastest_input": "laplace",
+              "slowest_input": "gaussian",
+              "p_bh": 0.8485901073863429
+            },
+            "max_significant_at_input_agnostic_chunk": null,
+            "median_all_configs": 1.974238053662106,
+            "median_at_input_agnostic_chunk": 2.5153224273265136
+          },
+          "by_length": {
+            "512": {
+              "n_tests": 6,
+              "n_significant_bh": 0,
+              "max_input_range_pct": {
+                "pct": 11.18091894272355,
+                "L": 512,
+                "mode": "all",
+                "chunk": 32,
+                "fastest_input": "constant",
+                "slowest_input": "laplace",
+                "p_bh": 0.7218958765860481
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 3.036678245513458,
+                "L": 512,
+                "mode": "all",
+                "chunk": 64,
+                "fastest_input": "sparse50",
+                "slowest_input": "gaussian",
+                "p_bh": 0.7499168417070959
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "sparse02": 64,
+                    "uniform": 64,
+                    "sparse10": 64,
+                    "constant": 64,
+                    "gaussian": 64,
+                    "laplace": 64,
+                    "sparse50": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.154250742043717
+                },
+                "all": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "sparse50": 64,
+                    "sparse10": 64,
+                    "gaussian": 64,
+                    "constant": 64,
+                    "sparse02": 64,
+                    "laplace": 64,
+                    "uniform": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.155556733712437
+                }
+              }
+            },
+            "2048": {
+              "n_tests": 6,
+              "n_significant_bh": 0,
+              "max_input_range_pct": {
+                "pct": 4.6750872591809856,
+                "L": 2048,
+                "mode": "all",
+                "chunk": 16,
+                "fastest_input": "constant",
+                "slowest_input": "sparse02",
+                "p_bh": 0.2144846491886821
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 4.095017495023725,
+                "L": 2048,
+                "mode": "act",
+                "chunk": 64,
+                "fastest_input": "laplace",
+                "slowest_input": "gaussian",
+                "p_bh": 0.8485901073863429
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "uniform": 64,
+                    "laplace": 64,
+                    "sparse10": 64,
+                    "sparse50": 64,
+                    "sparse02": 64,
+                    "constant": 64,
+                    "gaussian": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.153024552216534
+                },
+                "all": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "constant": 64,
+                    "gaussian": 64,
+                    "sparse02": 64,
+                    "sparse50": 64,
+                    "uniform": 64,
+                    "sparse10": 64,
+                    "laplace": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.1449129758668322
+                }
+              }
+            },
+            "8192": {
+              "n_tests": 6,
+              "n_significant_bh": 0,
+              "max_input_range_pct": {
+                "pct": 1.2568794653506257,
+                "L": 8192,
+                "mode": "act",
+                "chunk": 64,
+                "fastest_input": "laplace",
+                "slowest_input": "constant",
+                "p_bh": 0.6449181910628804
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 1.2568794653506257,
+                "L": 8192,
+                "mode": "act",
+                "chunk": 64,
+                "fastest_input": "laplace",
+                "slowest_input": "constant",
+                "p_bh": 0.6449181910628804
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "gaussian": 64,
+                    "sparse10": 64,
+                    "sparse50": 64,
+                    "sparse02": 64,
+                    "constant": 64,
+                    "uniform": 64,
+                    "laplace": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.9995043789385545
+                },
+                "all": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "uniform": 64,
+                    "sparse02": 64,
+                    "sparse10": 64,
+                    "gaussian": 64,
+                    "constant": 64,
+                    "sparse50": 64,
+                    "laplace": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.9943518944883931
+                }
+              }
+            }
+          },
+          "cells": {
+            "n_cells": 126,
+            "ci_overlap_tie_share": 1.0,
+            "argmin_agreement": 1.0,
+            "within_2pct_tie_share_pooled": 1.0,
+            "within_2pct_min_over_modes_range": [
+              1.0,
+              1.0
+            ],
+            "max_regret_of_input_agnostic_chunk_pct": 0.0
+          },
+          "tost": {
+            "alpha": 0.05,
+            "all_chunks": {
+              "n": 18,
+              "equivalent_2pct": 7,
+              "equivalent_5pct": 15,
+              "median_bound_pct": 2.7011151283210055,
+              "max_bound_pct": 14.517730123895603
+            },
+            "at_input_agnostic_chunk": {
+              "n": 6,
+              "equivalent_2pct": 2,
+              "equivalent_5pct": 5,
+              "median_bound_pct": 2.9030842057886073,
+              "max_bound_pct": 5.346150687280515
+            }
+          }
+        },
+        "mamba1": {
+          "n_fixed_chunk_tests": 36,
+          "n_significant_input_effects_bh": 11,
+          "input_range_pct": {
+            "max_all_configs": {
+              "pct": 43.04692006663691,
+              "L": 8192,
+              "mode": "all",
+              "chunk": 256,
+              "fastest_input": "constant",
+              "slowest_input": "sparse10",
+              "p_bh": 0.002181377287047148
+            },
+            "max_significant_configs": {
+              "pct": 43.04692006663691,
+              "L": 8192,
+              "mode": "all",
+              "chunk": 256,
+              "fastest_input": "constant",
+              "slowest_input": "sparse10",
+              "p_bh": 0.002181377287047148
+            },
+            "max_at_input_agnostic_chunk": {
+              "pct": 10.97557157113959,
+              "L": 512,
+              "mode": "act",
+              "chunk": 256,
+              "fastest_input": "sparse10",
+              "slowest_input": "gaussian",
+              "p_bh": 0.7499168417070959
+            },
+            "max_significant_at_input_agnostic_chunk": {
+              "pct": 8.604693967318472,
+              "L": 8192,
+              "mode": "act",
+              "chunk": 512,
+              "fastest_input": "gaussian",
+              "slowest_input": "sparse50",
+              "p_bh": 0.002181377287047148
+            },
+            "median_all_configs": 6.829275226141542,
+            "median_at_input_agnostic_chunk": 5.0513729608269164
+          },
+          "by_length": {
+            "512": {
+              "n_tests": 12,
+              "n_significant_bh": 3,
+              "max_input_range_pct": {
+                "pct": 10.97557157113959,
+                "L": 512,
+                "mode": "act",
+                "chunk": 256,
+                "fastest_input": "sparse10",
+                "slowest_input": "gaussian",
+                "p_bh": 0.7499168417070959
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 10.97557157113959,
+                "L": 512,
+                "mode": "act",
+                "chunk": 256,
+                "fastest_input": "sparse10",
+                "slowest_input": "gaussian",
+                "p_bh": 0.7499168417070959
+              },
+              "share_within_2pct_min_over_modes": 0.9166666666666666,
+              "share_within_2pct_by_mode": {
+                "act": 0.9166666666666666,
+                "all": 0.9583333333333334
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 1.3601027984444292,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 256,
+                  "own_best_chunk_per_input": {
+                    "uniform": 256,
+                    "gaussian": 256,
+                    "laplace": 256,
+                    "sparse50": 256,
+                    "sparse02": 512,
+                    "sparse10": 256,
+                    "constant": 512,
+                    "real": 1024
+                  },
+                  "distinct_own_best_chunks": [
+                    256,
+                    512,
+                    1024
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "constant",
+                    "real",
+                    "sparse02"
+                  ],
+                  "argmin_agreement": 0.5833333333333334,
+                  "ci_overlap_tie_share": 0.9583333333333334,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.8481931745954574,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.1828689956442725,
+                  "chunk_spread": 2.494729675129036
+                },
+                "all": {
+                  "input_agnostic_chunk": 256,
+                  "own_best_chunk_per_input": {
+                    "laplace": 256,
+                    "sparse10": 256,
+                    "gaussian": 512,
+                    "constant": 256,
+                    "sparse50": 256,
+                    "uniform": 512,
+                    "sparse02": 256,
+                    "real": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    256,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "real",
+                    "uniform"
+                  ],
+                  "argmin_agreement": 0.625,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 1.3601027984444292,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.22000805485476727,
+                  "chunk_spread": 2.4973571824514678
+                }
+              }
+            },
+            "2048": {
+              "n_tests": 12,
+              "n_significant_bh": 3,
+              "max_input_range_pct": {
+                "pct": 32.87588081061276,
+                "L": 2048,
+                "mode": "act",
+                "chunk": 128,
+                "fastest_input": "real",
+                "slowest_input": "sparse10",
+                "p_bh": 0.6536101932068379
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 2.13374550895727,
+                "L": 2048,
+                "mode": "act",
+                "chunk": 512,
+                "fastest_input": "gaussian",
+                "slowest_input": "sparse50",
+                "p_bh": 0.6242213791604612
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "sparse50": 512,
+                    "sparse02": 512,
+                    "uniform": 512,
+                    "constant": 512,
+                    "sparse10": 512,
+                    "gaussian": 512,
+                    "laplace": 512,
+                    "real": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 5.514064105536542
+                },
+                "all": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "laplace": 512,
+                    "sparse10": 512,
+                    "sparse50": 512,
+                    "gaussian": 512,
+                    "sparse02": 512,
+                    "constant": 512,
+                    "uniform": 512,
+                    "real": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 5.515371456535972
+                }
+              }
+            },
+            "8192": {
+              "n_tests": 12,
+              "n_significant_bh": 5,
+              "max_input_range_pct": {
+                "pct": 43.04692006663691,
+                "L": 8192,
+                "mode": "all",
+                "chunk": 256,
+                "fastest_input": "constant",
+                "slowest_input": "sparse10",
+                "p_bh": 0.002181377287047148
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 8.604693967318472,
+                "L": 8192,
+                "mode": "act",
+                "chunk": 512,
+                "fastest_input": "gaussian",
+                "slowest_input": "sparse50",
+                "p_bh": 0.002181377287047148
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 0.5665827928379219,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "sparse02": 512,
+                    "laplace": 512,
+                    "uniform": 512,
+                    "gaussian": 512,
+                    "constant": 512,
+                    "sparse10": 512,
+                    "sparse50": 1024,
+                    "real": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    512,
+                    1024
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "sparse50"
+                  ],
+                  "argmin_agreement": 0.9583333333333334,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.5665827928379219,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.07082284910474024,
+                  "chunk_spread": 8.515130308802517
+                },
+                "all": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "sparse10": 512,
+                    "constant": 512,
+                    "sparse50": 512,
+                    "uniform": 512,
+                    "laplace": 512,
+                    "gaussian": 512,
+                    "sparse02": 512,
+                    "real": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 0.9166666666666666,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 8.341818570615253
+                }
+              }
+            }
+          },
+          "cells": {
+            "n_cells": 144,
+            "ci_overlap_tie_share": 0.9930555555555556,
+            "argmin_agreement": 0.8472222222222222,
+            "within_2pct_tie_share_pooled": 0.9791666666666666,
+            "within_2pct_min_over_modes_range": [
+              0.9166666666666666,
+              1.0
+            ],
+            "max_regret_of_input_agnostic_chunk_pct": 1.3601027984444292
+          },
+          "tost": {
+            "alpha": 0.05,
+            "all_chunks": {
+              "n": 36,
+              "equivalent_2pct": 0,
+              "equivalent_5pct": 13,
+              "median_bound_pct": 6.873633720808367,
+              "max_bound_pct": 36.60496744484277
+            },
+            "at_input_agnostic_chunk": {
+              "n": 6,
+              "equivalent_2pct": 0,
+              "equivalent_5pct": 3,
+              "median_bound_pct": 4.57014594705068,
+              "max_bound_pct": 14.763970993056356
+            }
+          }
+        },
+        "mamba2": {
+          "n_fixed_chunk_tests": 30,
+          "n_significant_input_effects_bh": 1,
+          "input_range_pct": {
+            "max_all_configs": {
+              "pct": 40.79374496792863,
+              "L": 2048,
+              "mode": "all",
+              "chunk": 32,
+              "fastest_input": "constant",
+              "slowest_input": "uniform",
+              "p_bh": 0.7499168417070959
+            },
+            "max_significant_configs": {
+              "pct": 0.5045632448161017,
+              "L": 8192,
+              "mode": "all",
+              "chunk": 32,
+              "fastest_input": "constant",
+              "slowest_input": "real",
+              "p_bh": 0.00011324266662493532
+            },
+            "max_at_input_agnostic_chunk": {
+              "pct": 25.43314822170974,
+              "L": 2048,
+              "mode": "all",
+              "chunk": 64,
+              "fastest_input": "sparse10",
+              "slowest_input": "sparse50",
+              "p_bh": 0.6242213791604612
+            },
+            "max_significant_at_input_agnostic_chunk": null,
+            "median_all_configs": 2.9693206538473698,
+            "median_at_input_agnostic_chunk": 2.8587177550214173
+          },
+          "by_length": {
+            "512": {
+              "n_tests": 10,
+              "n_significant_bh": 0,
+              "max_input_range_pct": {
+                "pct": 18.212904370847518,
+                "L": 512,
+                "mode": "act",
+                "chunk": 512,
+                "fastest_input": "sparse02",
+                "slowest_input": "sparse10",
+                "p_bh": 0.6242213791604612
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 3.619385278397732,
+                "L": 512,
+                "mode": "all",
+                "chunk": 128,
+                "fastest_input": "sparse50",
+                "slowest_input": "gaussian",
+                "p_bh": 0.796353247713181
+              },
+              "share_within_2pct_min_over_modes": 0.7083333333333334,
+              "share_within_2pct_by_mode": {
+                "act": 0.7083333333333334,
+                "all": 0.7083333333333334
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 3.495986159104003,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 32,
+                  "own_best_chunk_per_input": {
+                    "laplace": 32,
+                    "sparse02": 64,
+                    "constant": 32,
+                    "uniform": 128,
+                    "sparse10": 256,
+                    "sparse50": 32,
+                    "gaussian": 128,
+                    "real": 256
+                  },
+                  "distinct_own_best_chunks": [
+                    32,
+                    64,
+                    128,
+                    256
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "real",
+                    "sparse02",
+                    "sparse10",
+                    "uniform"
+                  ],
+                  "argmin_agreement": 0.375,
+                  "ci_overlap_tie_share": 0.7916666666666666,
+                  "max_regret_of_input_agnostic_chunk_pct": 3.495986159104003,
+                  "mean_regret_of_input_agnostic_chunk_pct": 1.083410100697374,
+                  "chunk_spread": 1.010164931330431
+                },
+                "all": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "sparse10": 512,
+                    "sparse02": 128,
+                    "gaussian": 256,
+                    "laplace": 128,
+                    "uniform": 128,
+                    "constant": 128,
+                    "sparse50": 128,
+                    "real": 128
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    256,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "sparse10"
+                  ],
+                  "argmin_agreement": 0.4583333333333333,
+                  "ci_overlap_tie_share": 0.9166666666666666,
+                  "max_regret_of_input_agnostic_chunk_pct": 2.822093891039157,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.5593684523330117,
+                  "chunk_spread": 1.010528620955155
+                }
+              }
+            },
+            "2048": {
+              "n_tests": 10,
+              "n_significant_bh": 0,
+              "max_input_range_pct": {
+                "pct": 40.79374496792863,
+                "L": 2048,
+                "mode": "all",
+                "chunk": 32,
+                "fastest_input": "constant",
+                "slowest_input": "uniform",
+                "p_bh": 0.7499168417070959
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 25.43314822170974,
+                "L": 2048,
+                "mode": "all",
+                "chunk": 64,
+                "fastest_input": "sparse10",
+                "slowest_input": "sparse50",
+                "p_bh": 0.6242213791604612
+              },
+              "share_within_2pct_min_over_modes": 0.875,
+              "share_within_2pct_by_mode": {
+                "act": 0.875,
+                "all": 0.875
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 5.7909349067471805,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 32,
+                  "own_best_chunk_per_input": {
+                    "uniform": 32,
+                    "constant": 64,
+                    "sparse10": 32,
+                    "laplace": 64,
+                    "gaussian": 32,
+                    "sparse02": 64,
+                    "sparse50": 64,
+                    "real": 32
+                  },
+                  "distinct_own_best_chunks": [
+                    32,
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "constant",
+                    "laplace",
+                    "sparse02",
+                    "sparse50"
+                  ],
+                  "argmin_agreement": 0.4166666666666667,
+                  "ci_overlap_tie_share": 0.6666666666666666,
+                  "max_regret_of_input_agnostic_chunk_pct": 2.150434076444263,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.5397573084993335,
+                  "chunk_spread": 1.0245440848036722
+                },
+                "all": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "constant": 32,
+                    "gaussian": 64,
+                    "sparse02": 64,
+                    "sparse10": 64,
+                    "sparse50": 32,
+                    "laplace": 64,
+                    "uniform": 64,
+                    "real": 32
+                  },
+                  "distinct_own_best_chunks": [
+                    32,
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "constant",
+                    "real",
+                    "sparse50"
+                  ],
+                  "argmin_agreement": 0.5833333333333334,
+                  "ci_overlap_tie_share": 0.9583333333333334,
+                  "max_regret_of_input_agnostic_chunk_pct": 5.7909349067471805,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.8830852747085366,
+                  "chunk_spread": 1.0318862567783686
+                }
+              }
+            },
+            "8192": {
+              "n_tests": 10,
+              "n_significant_bh": 1,
+              "max_input_range_pct": {
+                "pct": 2.5934901721916397,
+                "L": 8192,
+                "mode": "all",
+                "chunk": 64,
+                "fastest_input": "real",
+                "slowest_input": "sparse02",
+                "p_bh": 0.12390028986168448
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 1.8070062464143433,
+                "L": 8192,
+                "mode": "act",
+                "chunk": 128,
+                "fastest_input": "real",
+                "slowest_input": "laplace",
+                "p_bh": 0.5587945255359401
+              },
+              "share_within_2pct_min_over_modes": 0.875,
+              "share_within_2pct_by_mode": {
+                "act": 0.875,
+                "all": 0.9583333333333334
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 0.8233966009890903,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "gaussian": 256,
+                    "uniform": 128,
+                    "sparse50": 512,
+                    "sparse10": 128,
+                    "sparse02": 128,
+                    "laplace": 512,
+                    "constant": 128,
+                    "real": 128
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    256,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "laplace",
+                    "sparse50"
+                  ],
+                  "argmin_agreement": 0.5833333333333334,
+                  "ci_overlap_tie_share": 0.8333333333333334,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.8233966009890903,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.2199646999975713,
+                  "chunk_spread": 1.2473821710213568
+                },
+                "all": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "gaussian": 256,
+                    "sparse50": 128,
+                    "laplace": 128,
+                    "uniform": 128,
+                    "constant": 128,
+                    "sparse10": 128,
+                    "sparse02": 128,
+                    "real": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64,
+                    128,
+                    256
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "real"
+                  ],
+                  "argmin_agreement": 0.6666666666666666,
+                  "ci_overlap_tie_share": 0.9166666666666666,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.28900683143979755,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0706235816606976,
+                  "chunk_spread": 1.2489960951386894
+                }
+              }
+            }
+          },
+          "cells": {
+            "n_cells": 144,
+            "ci_overlap_tie_share": 0.8472222222222222,
+            "argmin_agreement": 0.5138888888888888,
+            "within_2pct_tie_share_pooled": 0.8333333333333334,
+            "within_2pct_min_over_modes_range": [
+              0.7083333333333334,
+              0.875
+            ],
+            "max_regret_of_input_agnostic_chunk_pct": 5.7909349067471805
+          },
+          "tost": {
+            "alpha": 0.05,
+            "all_chunks": {
+              "n": 30,
+              "equivalent_2pct": 9,
+              "equivalent_5pct": 20,
+              "median_bound_pct": 3.6871610364306946,
+              "max_bound_pct": 56.92863967506321
+            },
+            "at_input_agnostic_chunk": {
+              "n": 6,
+              "equivalent_2pct": 2,
+              "equivalent_5pct": 5,
+              "median_bound_pct": 3.12705506196901,
+              "max_bound_pct": 34.04566003697945
+            }
+          }
+        }
+      }
+    },
+    "pro6000_r4spin": {
+      "gpu": "RTX PRO 6000",
+      "convention": "device time",
+      "source": "e1_pro6000_r4spin.json",
+      "families": [
+        "mamba1"
+      ],
+      "all_families": {
+        "n_fixed_chunk_tests": 36,
+        "n_significant_input_effects_bh": 15,
+        "within_2pct_tie_share_pooled": 0.8888888888888888,
+        "n_cells": 144
+      },
+      "by_family": {
+        "mamba1": {
+          "n_fixed_chunk_tests": 36,
+          "n_significant_input_effects_bh": 15,
+          "input_range_pct": {
+            "max_all_configs": {
+              "pct": 37.27266856605482,
+              "L": 512,
+              "mode": "all",
+              "chunk": 256,
+              "fastest_input": "sparse50",
+              "slowest_input": "uniform",
+              "p_bh": 0.6102917854055624
+            },
+            "max_significant_configs": {
+              "pct": 24.17150549143968,
+              "L": 8192,
+              "mode": "act",
+              "chunk": 32,
+              "fastest_input": "gaussian",
+              "slowest_input": "sparse10",
+              "p_bh": 0.0
+            },
+            "max_at_input_agnostic_chunk": {
+              "pct": 23.34580539499255,
+              "L": 512,
+              "mode": "all",
+              "chunk": 512,
+              "fastest_input": "constant",
+              "slowest_input": "sparse50",
+              "p_bh": 0.588165025926345
+            },
+            "max_significant_at_input_agnostic_chunk": {
+              "pct": 5.817368610426753,
+              "L": 8192,
+              "mode": "act",
+              "chunk": 512,
+              "fastest_input": "gaussian",
+              "slowest_input": "laplace",
+              "p_bh": 1.4140027415621148e-07
+            },
+            "median_all_configs": 0.6960927112052109,
+            "median_at_input_agnostic_chunk": 3.7706552988263438
+          },
+          "by_length": {
+            "512": {
+              "n_tests": 12,
+              "n_significant_bh": 0,
+              "max_input_range_pct": {
+                "pct": 37.27266856605482,
+                "L": 512,
+                "mode": "all",
+                "chunk": 256,
+                "fastest_input": "sparse50",
+                "slowest_input": "uniform",
+                "p_bh": 0.6102917854055624
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 23.34580539499255,
+                "L": 512,
+                "mode": "all",
+                "chunk": 512,
+                "fastest_input": "constant",
+                "slowest_input": "sparse50",
+                "p_bh": 0.588165025926345
+              },
+              "share_within_2pct_min_over_modes": 0.6666666666666666,
+              "share_within_2pct_by_mode": {
+                "act": 0.6666666666666666,
+                "all": 0.6666666666666666
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 15.144578070379588,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 256,
+                  "own_best_chunk_per_input": {
+                    "constant": 256,
+                    "uniform": 256,
+                    "gaussian": 512,
+                    "laplace": 256,
+                    "sparse50": 256,
+                    "sparse02": 256,
+                    "real": 256,
+                    "sparse10": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    256,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "sparse10"
+                  ],
+                  "argmin_agreement": 0.625,
+                  "ci_overlap_tie_share": 0.7916666666666666,
+                  "max_regret_of_input_agnostic_chunk_pct": 15.144578070379588,
+                  "mean_regret_of_input_agnostic_chunk_pct": 2.980328762607251,
+                  "chunk_spread": 4.245099308650815
+                },
+                "all": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "laplace": 512,
+                    "sparse02": 512,
+                    "uniform": 512,
+                    "sparse50": 256,
+                    "gaussian": 256,
+                    "real": 512,
+                    "constant": 512,
+                    "sparse10": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    256,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "sparse50"
+                  ],
+                  "argmin_agreement": 0.625,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 14.020913668478352,
+                  "mean_regret_of_input_agnostic_chunk_pct": 2.511187370836515,
+                  "chunk_spread": 4.1984013798553494
+                }
+              }
+            },
+            "2048": {
+              "n_tests": 12,
+              "n_significant_bh": 5,
+              "max_input_range_pct": {
+                "pct": 1.5114934023334576,
+                "L": 2048,
+                "mode": "all",
+                "chunk": 1024,
+                "fastest_input": "sparse02",
+                "slowest_input": "laplace",
+                "p_bh": 1.0484242514152697e-06
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 0.8847407424020285,
+                "L": 2048,
+                "mode": "all",
+                "chunk": 512,
+                "fastest_input": "sparse10",
+                "slowest_input": "laplace",
+                "p_bh": 0.003252771814144133
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "sparse50": 512,
+                    "uniform": 512,
+                    "sparse02": 512,
+                    "real": 512,
+                    "gaussian": 512,
+                    "laplace": 512,
+                    "sparse10": 512,
+                    "constant": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 5.287675187051471
+                },
+                "all": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "sparse10": 512,
+                    "gaussian": 512,
+                    "laplace": 512,
+                    "uniform": 512,
+                    "real": 512,
+                    "sparse50": 512,
+                    "constant": 512,
+                    "sparse02": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 5.303702335569547
+                }
+              }
+            },
+            "8192": {
+              "n_tests": 12,
+              "n_significant_bh": 10,
+              "max_input_range_pct": {
+                "pct": 24.17150549143968,
+                "L": 8192,
+                "mode": "act",
+                "chunk": 32,
+                "fastest_input": "gaussian",
+                "slowest_input": "sparse10",
+                "p_bh": 0.0
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 5.817368610426753,
+                "L": 8192,
+                "mode": "act",
+                "chunk": 512,
+                "fastest_input": "gaussian",
+                "slowest_input": "laplace",
+                "p_bh": 1.4140027415621148e-07
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "sparse02": 512,
+                    "sparse10": 512,
+                    "real": 512,
+                    "laplace": 512,
+                    "constant": 512,
+                    "uniform": 512,
+                    "sparse50": 512,
+                    "gaussian": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 8.113710318041129
+                },
+                "all": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "sparse10": 512,
+                    "sparse02": 512,
+                    "real": 512,
+                    "uniform": 512,
+                    "laplace": 512,
+                    "sparse50": 512,
+                    "constant": 512,
+                    "gaussian": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 8.129559456174494
+                }
+              }
+            }
+          },
+          "cells": {
+            "n_cells": 144,
+            "ci_overlap_tie_share": 0.9652777777777778,
+            "argmin_agreement": 0.875,
+            "within_2pct_tie_share_pooled": 0.8888888888888888,
+            "within_2pct_min_over_modes_range": [
+              0.6666666666666666,
+              1.0
+            ],
+            "max_regret_of_input_agnostic_chunk_pct": 15.144578070379588
+          },
+          "tost": {
+            "alpha": 0.05,
+            "all_chunks": {
+              "n": 36,
+              "equivalent_2pct": 24,
+              "equivalent_5pct": 25,
+              "median_bound_pct": 0.49769998520271663,
+              "max_bound_pct": 52.00716618581664
+            },
+            "at_input_agnostic_chunk": {
+              "n": 6,
+              "equivalent_2pct": 3,
+              "equivalent_5pct": 3,
+              "median_bound_pct": 3.4412906849963547,
+              "max_bound_pct": 27.08523213175243
+            }
+          }
+        }
+      }
+    },
+    "vgpu3090": {
+      "gpu": "RTX 3090",
+      "convention": "launch-inclusive",
+      "source": "e1_vgpu3090.json",
+      "families": [
+        "gdn",
+        "mamba1",
+        "mamba2"
+      ],
+      "all_families": {
+        "n_fixed_chunk_tests": 84,
+        "n_significant_input_effects_bh": 24,
+        "within_2pct_tie_share_pooled": 0.8768115942028986,
+        "n_cells": 414
+      },
+      "by_family": {
+        "gdn": {
+          "n_fixed_chunk_tests": 18,
+          "n_significant_input_effects_bh": 5,
+          "input_range_pct": {
+            "max_all_configs": {
+              "pct": 19.035530295774755,
+              "L": 512,
+              "mode": "all",
+              "chunk": 16,
+              "fastest_input": "sparse02",
+              "slowest_input": "laplace",
+              "p_bh": 0.6962115750276833
+            },
+            "max_significant_configs": {
+              "pct": 4.079569539188011,
+              "L": 8192,
+              "mode": "all",
+              "chunk": 64,
+              "fastest_input": "constant",
+              "slowest_input": "gaussian",
+              "p_bh": 0.0007245479808215549
+            },
+            "max_at_input_agnostic_chunk": {
+              "pct": 5.1049911656753375,
+              "L": 512,
+              "mode": "all",
+              "chunk": 64,
+              "fastest_input": "constant",
+              "slowest_input": "sparse50",
+              "p_bh": 0.12544939700688773
+            },
+            "max_significant_at_input_agnostic_chunk": {
+              "pct": 4.079569539188011,
+              "L": 8192,
+              "mode": "all",
+              "chunk": 64,
+              "fastest_input": "constant",
+              "slowest_input": "gaussian",
+              "p_bh": 0.0007245479808215549
+            },
+            "median_all_configs": 3.030451715592947,
+            "median_at_input_agnostic_chunk": 3.3382805442675973
+          },
+          "by_length": {
+            "512": {
+              "n_tests": 6,
+              "n_significant_bh": 0,
+              "max_input_range_pct": {
+                "pct": 19.035530295774755,
+                "L": 512,
+                "mode": "all",
+                "chunk": 16,
+                "fastest_input": "sparse02",
+                "slowest_input": "laplace",
+                "p_bh": 0.6962115750276833
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 5.1049911656753375,
+                "L": 512,
+                "mode": "all",
+                "chunk": 64,
+                "fastest_input": "constant",
+                "slowest_input": "sparse50",
+                "p_bh": 0.12544939700688773
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "sparse02": 64,
+                    "uniform": 64,
+                    "sparse10": 64,
+                    "constant": 64,
+                    "gaussian": 64,
+                    "laplace": 64,
+                    "sparse50": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.122861259363054
+                },
+                "all": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "sparse50": 64,
+                    "sparse10": 64,
+                    "gaussian": 64,
+                    "constant": 64,
+                    "sparse02": 64,
+                    "laplace": 64,
+                    "uniform": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.1039124608854403
+                }
+              }
+            },
+            "2048": {
+              "n_tests": 6,
+              "n_significant_bh": 0,
+              "max_input_range_pct": {
+                "pct": 3.5565015418069694,
+                "L": 2048,
+                "mode": "act",
+                "chunk": 64,
+                "fastest_input": "sparse10",
+                "slowest_input": "constant",
+                "p_bh": 0.5269327828192442
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 3.5565015418069694,
+                "L": 2048,
+                "mode": "act",
+                "chunk": 64,
+                "fastest_input": "sparse10",
+                "slowest_input": "constant",
+                "p_bh": 0.5269327828192442
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "uniform": 64,
+                    "laplace": 64,
+                    "sparse10": 64,
+                    "sparse50": 64,
+                    "sparse02": 64,
+                    "constant": 64,
+                    "gaussian": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.1108463944635885
+                },
+                "all": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "constant": 64,
+                    "gaussian": 64,
+                    "sparse02": 64,
+                    "sparse50": 64,
+                    "uniform": 64,
+                    "sparse10": 64,
+                    "laplace": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.1383927201566055
+                }
+              }
+            },
+            "8192": {
+              "n_tests": 6,
+              "n_significant_bh": 5,
+              "max_input_range_pct": {
+                "pct": 4.079569539188011,
+                "L": 8192,
+                "mode": "all",
+                "chunk": 64,
+                "fastest_input": "constant",
+                "slowest_input": "gaussian",
+                "p_bh": 0.0007245479808215549
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 4.079569539188011,
+                "L": 8192,
+                "mode": "all",
+                "chunk": 64,
+                "fastest_input": "constant",
+                "slowest_input": "gaussian",
+                "p_bh": 0.0007245479808215549
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "gaussian": 64,
+                    "sparse10": 64,
+                    "sparse50": 64,
+                    "sparse02": 64,
+                    "constant": 64,
+                    "uniform": 64,
+                    "laplace": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 2.215519051351341
+                },
+                "all": {
+                  "input_agnostic_chunk": 64,
+                  "own_best_chunk_per_input": {
+                    "uniform": 64,
+                    "sparse02": 64,
+                    "sparse10": 64,
+                    "gaussian": 64,
+                    "constant": 64,
+                    "sparse50": 64,
+                    "laplace": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 2.225972527285176
+                }
+              }
+            }
+          },
+          "cells": {
+            "n_cells": 126,
+            "ci_overlap_tie_share": 1.0,
+            "argmin_agreement": 1.0,
+            "within_2pct_tie_share_pooled": 1.0,
+            "within_2pct_min_over_modes_range": [
+              1.0,
+              1.0
+            ],
+            "max_regret_of_input_agnostic_chunk_pct": 0.0
+          },
+          "tost": {
+            "alpha": 0.05,
+            "all_chunks": {
+              "n": 18,
+              "equivalent_2pct": 1,
+              "equivalent_5pct": 16,
+              "median_bound_pct": 3.1680597993444244,
+              "max_bound_pct": 26.81338658000716
+            },
+            "at_input_agnostic_chunk": {
+              "n": 6,
+              "equivalent_2pct": 0,
+              "equivalent_5pct": 6,
+              "median_bound_pct": 3.3014426159856547,
+              "max_bound_pct": 4.625801134348682
+            }
+          }
+        },
+        "mamba1": {
+          "n_fixed_chunk_tests": 36,
+          "n_significant_input_effects_bh": 17,
+          "input_range_pct": {
+            "max_all_configs": {
+              "pct": 18.60130963454402,
+              "L": 8192,
+              "mode": "all",
+              "chunk": 128,
+              "fastest_input": "sparse02",
+              "slowest_input": "real",
+              "p_bh": 0.6962115750276833
+            },
+            "max_significant_configs": {
+              "pct": 4.261107911853704,
+              "L": 2048,
+              "mode": "all",
+              "chunk": 32,
+              "fastest_input": "sparse10",
+              "slowest_input": "laplace",
+              "p_bh": 1.2916334668489071e-12
+            },
+            "max_at_input_agnostic_chunk": {
+              "pct": 11.445454083472463,
+              "L": 512,
+              "mode": "all",
+              "chunk": 128,
+              "fastest_input": "laplace",
+              "slowest_input": "gaussian",
+              "p_bh": 0.6962115750276833
+            },
+            "max_significant_at_input_agnostic_chunk": {
+              "pct": 1.7877083725879863,
+              "L": 8192,
+              "mode": "all",
+              "chunk": 512,
+              "fastest_input": "sparse02",
+              "slowest_input": "laplace",
+              "p_bh": 0.00019470574783539974
+            },
+            "median_all_configs": 2.450449738984897,
+            "median_at_input_agnostic_chunk": 1.4259881856341776
+          },
+          "by_length": {
+            "512": {
+              "n_tests": 12,
+              "n_significant_bh": 0,
+              "max_input_range_pct": {
+                "pct": 11.455318818509857,
+                "L": 512,
+                "mode": "all",
+                "chunk": 1024,
+                "fastest_input": "constant",
+                "slowest_input": "real",
+                "p_bh": 0.2559739552400781
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 11.445454083472463,
+                "L": 512,
+                "mode": "all",
+                "chunk": 128,
+                "fastest_input": "laplace",
+                "slowest_input": "gaussian",
+                "p_bh": 0.6962115750276833
+              },
+              "share_within_2pct_min_over_modes": 0.5416666666666666,
+              "share_within_2pct_by_mode": {
+                "act": 0.7916666666666666,
+                "all": 0.5416666666666666
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 12.218163796668978,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "uniform": 256,
+                    "gaussian": 128,
+                    "laplace": 512,
+                    "sparse50": 512,
+                    "sparse02": 128,
+                    "sparse10": 128,
+                    "constant": 512,
+                    "real": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    256,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "constant",
+                    "laplace",
+                    "real",
+                    "sparse50",
+                    "uniform"
+                  ],
+                  "argmin_agreement": 0.375,
+                  "ci_overlap_tie_share": 0.875,
+                  "max_regret_of_input_agnostic_chunk_pct": 4.430106692935354,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.9371741964811969,
+                  "chunk_spread": 1.430925903815436
+                },
+                "all": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "laplace": 128,
+                    "sparse10": 512,
+                    "gaussian": 512,
+                    "constant": 128,
+                    "sparse50": 256,
+                    "uniform": 128,
+                    "sparse02": 128,
+                    "real": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    256,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "real",
+                    "sparse10",
+                    "sparse50"
+                  ],
+                  "argmin_agreement": 0.4166666666666667,
+                  "ci_overlap_tie_share": 0.6666666666666666,
+                  "max_regret_of_input_agnostic_chunk_pct": 12.218163796668978,
+                  "mean_regret_of_input_agnostic_chunk_pct": 2.7532399644999734,
+                  "chunk_spread": 1.4181865704295715
+                }
+              }
+            },
+            "2048": {
+              "n_tests": 12,
+              "n_significant_bh": 7,
+              "max_input_range_pct": {
+                "pct": 4.261107911853704,
+                "L": 2048,
+                "mode": "all",
+                "chunk": 32,
+                "fastest_input": "sparse10",
+                "slowest_input": "laplace",
+                "p_bh": 1.2916334668489071e-12
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 1.064267998680369,
+                "L": 2048,
+                "mode": "act",
+                "chunk": 128,
+                "fastest_input": "sparse50",
+                "slowest_input": "sparse02",
+                "p_bh": 0.2407008743850418
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 0.7486956581692628,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "sparse50": 128,
+                    "sparse02": 512,
+                    "uniform": 128,
+                    "constant": 128,
+                    "sparse10": 128,
+                    "gaussian": 128,
+                    "laplace": 128,
+                    "real": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "real",
+                    "sparse02"
+                  ],
+                  "argmin_agreement": 0.625,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.7486956581692628,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.18518612174519,
+                  "chunk_spread": 2.017251734297134
+                },
+                "all": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "laplace": 512,
+                    "sparse10": 512,
+                    "sparse50": 128,
+                    "gaussian": 128,
+                    "sparse02": 512,
+                    "constant": 512,
+                    "uniform": 128,
+                    "real": 128
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "constant",
+                    "laplace",
+                    "sparse02",
+                    "sparse10"
+                  ],
+                  "argmin_agreement": 0.5,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.5080202376676946,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.12592704994187354,
+                  "chunk_spread": 2.0060162809130784
+                }
+              }
+            },
+            "8192": {
+              "n_tests": 12,
+              "n_significant_bh": 10,
+              "max_input_range_pct": {
+                "pct": 18.60130963454402,
+                "L": 8192,
+                "mode": "all",
+                "chunk": 128,
+                "fastest_input": "sparse02",
+                "slowest_input": "real",
+                "p_bh": 0.6962115750276833
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 1.7877083725879863,
+                "L": 8192,
+                "mode": "all",
+                "chunk": 512,
+                "fastest_input": "sparse02",
+                "slowest_input": "laplace",
+                "p_bh": 0.00019470574783539974
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 0.7444918432081282,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "sparse02": 128,
+                    "laplace": 512,
+                    "uniform": 128,
+                    "gaussian": 128,
+                    "constant": 128,
+                    "sparse10": 512,
+                    "sparse50": 128,
+                    "real": 128
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "laplace",
+                    "sparse10"
+                  ],
+                  "argmin_agreement": 0.6666666666666666,
+                  "ci_overlap_tie_share": 0.7916666666666666,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.7444918432081282,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.15483844747996023,
+                  "chunk_spread": 2.033391184542626
+                },
+                "all": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "sparse10": 512,
+                    "constant": 512,
+                    "sparse50": 512,
+                    "uniform": 128,
+                    "laplace": 128,
+                    "gaussian": 512,
+                    "sparse02": 512,
+                    "real": 128
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "laplace",
+                    "real",
+                    "uniform"
+                  ],
+                  "argmin_agreement": 0.5416666666666666,
+                  "ci_overlap_tie_share": 0.7916666666666666,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.6809761128602432,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.1318755177638964,
+                  "chunk_spread": 2.045402600530461
+                }
+              }
+            }
+          },
+          "cells": {
+            "n_cells": 144,
+            "ci_overlap_tie_share": 0.8541666666666666,
+            "argmin_agreement": 0.5208333333333334,
+            "within_2pct_tie_share_pooled": 0.8888888888888888,
+            "within_2pct_min_over_modes_range": [
+              0.5416666666666666,
+              1.0
+            ],
+            "max_regret_of_input_agnostic_chunk_pct": 12.218163796668978
+          },
+          "tost": {
+            "alpha": 0.05,
+            "all_chunks": {
+              "n": 36,
+              "equivalent_2pct": 20,
+              "equivalent_5pct": 24,
+              "median_bound_pct": 1.9449131570514295,
+              "max_bound_pct": 26.52460801748485
+            },
+            "at_input_agnostic_chunk": {
+              "n": 6,
+              "equivalent_2pct": 4,
+              "equivalent_5pct": 4,
+              "median_bound_pct": 1.1283730521409225,
+              "max_bound_pct": 12.548693879565695
+            }
+          }
+        },
+        "mamba2": {
+          "n_fixed_chunk_tests": 30,
+          "n_significant_input_effects_bh": 2,
+          "input_range_pct": {
+            "max_all_configs": {
+              "pct": 16.6353362499916,
+              "L": 8192,
+              "mode": "act",
+              "chunk": 512,
+              "fastest_input": "sparse02",
+              "slowest_input": "laplace",
+              "p_bh": 0.6962115750276833
+            },
+            "max_significant_configs": {
+              "pct": 0.8021451347502467,
+              "L": 8192,
+              "mode": "all",
+              "chunk": 32,
+              "fastest_input": "sparse02",
+              "slowest_input": "real",
+              "p_bh": 1.0330153282778198e-07
+            },
+            "max_at_input_agnostic_chunk": {
+              "pct": 4.021874929450616,
+              "L": 512,
+              "mode": "act",
+              "chunk": 256,
+              "fastest_input": "gaussian",
+              "slowest_input": "constant",
+              "p_bh": 0.9100938404504243
+            },
+            "max_significant_at_input_agnostic_chunk": null,
+            "median_all_configs": 2.9761025389815354,
+            "median_at_input_agnostic_chunk": 2.6400812354435907
+          },
+          "by_length": {
+            "512": {
+              "n_tests": 10,
+              "n_significant_bh": 0,
+              "max_input_range_pct": {
+                "pct": 4.604134768423218,
+                "L": 512,
+                "mode": "all",
+                "chunk": 32,
+                "fastest_input": "laplace",
+                "slowest_input": "sparse50",
+                "p_bh": 0.6769020200166155
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 4.021874929450616,
+                "L": 512,
+                "mode": "act",
+                "chunk": 256,
+                "fastest_input": "gaussian",
+                "slowest_input": "constant",
+                "p_bh": 0.9100938404504243
+              },
+              "share_within_2pct_min_over_modes": 0.7083333333333334,
+              "share_within_2pct_by_mode": {
+                "act": 0.7083333333333334,
+                "all": 0.8333333333333334
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 2.075355862972872,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 256,
+                  "own_best_chunk_per_input": {
+                    "laplace": 256,
+                    "sparse02": 64,
+                    "constant": 32,
+                    "uniform": 256,
+                    "sparse10": 64,
+                    "sparse50": 128,
+                    "gaussian": 256,
+                    "real": 32
+                  },
+                  "distinct_own_best_chunks": [
+                    32,
+                    64,
+                    128,
+                    256
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "constant",
+                    "real",
+                    "sparse02",
+                    "sparse10",
+                    "sparse50"
+                  ],
+                  "argmin_agreement": 0.4166666666666667,
+                  "ci_overlap_tie_share": 0.8333333333333334,
+                  "max_regret_of_input_agnostic_chunk_pct": 2.075355862972872,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.7692584063633545,
+                  "chunk_spread": 1.0125721549542057
+                },
+                "all": {
+                  "input_agnostic_chunk": 256,
+                  "own_best_chunk_per_input": {
+                    "sparse10": 256,
+                    "sparse02": 256,
+                    "gaussian": 32,
+                    "laplace": 256,
+                    "uniform": 64,
+                    "constant": 128,
+                    "sparse50": 256,
+                    "real": 128
+                  },
+                  "distinct_own_best_chunks": [
+                    32,
+                    64,
+                    128,
+                    256
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "constant",
+                    "gaussian",
+                    "real",
+                    "uniform"
+                  ],
+                  "argmin_agreement": 0.375,
+                  "ci_overlap_tie_share": 0.875,
+                  "max_regret_of_input_agnostic_chunk_pct": 1.5756789073573474,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.5368796037235751,
+                  "chunk_spread": 1.0135163484240193
+                }
+              }
+            },
+            "2048": {
+              "n_tests": 10,
+              "n_significant_bh": 0,
+              "max_input_range_pct": {
+                "pct": 4.6727574759703465,
+                "L": 2048,
+                "mode": "all",
+                "chunk": 256,
+                "fastest_input": "gaussian",
+                "slowest_input": "uniform",
+                "p_bh": 0.48773214954619465
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 2.5337459662142527,
+                "L": 2048,
+                "mode": "act",
+                "chunk": 256,
+                "fastest_input": "sparse02",
+                "slowest_input": "real",
+                "p_bh": 0.6256462146687009
+              },
+              "share_within_2pct_min_over_modes": 0.5833333333333334,
+              "share_within_2pct_by_mode": {
+                "act": 0.5833333333333334,
+                "all": 0.75
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 3.8418960254154477,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 256,
+                  "own_best_chunk_per_input": {
+                    "uniform": 64,
+                    "constant": 256,
+                    "sparse10": 256,
+                    "laplace": 64,
+                    "gaussian": 64,
+                    "sparse02": 256,
+                    "sparse50": 64,
+                    "real": 64
+                  },
+                  "distinct_own_best_chunks": [
+                    64,
+                    256
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "laplace",
+                    "real",
+                    "sparse50",
+                    "uniform"
+                  ],
+                  "argmin_agreement": 0.2916666666666667,
+                  "ci_overlap_tie_share": 0.7083333333333334,
+                  "max_regret_of_input_agnostic_chunk_pct": 3.8418960254154477,
+                  "mean_regret_of_input_agnostic_chunk_pct": 1.0463846907448393,
+                  "chunk_spread": 1.0125945886479863
+                },
+                "all": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "constant": 128,
+                    "gaussian": 256,
+                    "sparse02": 32,
+                    "sparse10": 64,
+                    "sparse50": 128,
+                    "laplace": 128,
+                    "uniform": 32,
+                    "real": 128
+                  },
+                  "distinct_own_best_chunks": [
+                    32,
+                    64,
+                    128,
+                    256
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "sparse02",
+                    "sparse10",
+                    "uniform"
+                  ],
+                  "argmin_agreement": 0.5,
+                  "ci_overlap_tie_share": 0.8333333333333334,
+                  "max_regret_of_input_agnostic_chunk_pct": 2.584235224070963,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.638836745088675,
+                  "chunk_spread": 1.0223686155552543
+                }
+              }
+            },
+            "8192": {
+              "n_tests": 10,
+              "n_significant_bh": 2,
+              "max_input_range_pct": {
+                "pct": 16.6353362499916,
+                "L": 8192,
+                "mode": "act",
+                "chunk": 512,
+                "fastest_input": "sparse02",
+                "slowest_input": "laplace",
+                "p_bh": 0.6962115750276833
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 3.891844357627694,
+                "L": 8192,
+                "mode": "all",
+                "chunk": 128,
+                "fastest_input": "uniform",
+                "slowest_input": "sparse02",
+                "p_bh": 0.47075114783511357
+              },
+              "share_within_2pct_min_over_modes": 0.75,
+              "share_within_2pct_by_mode": {
+                "act": 0.75,
+                "all": 0.9166666666666666
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 2.668693008876999,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "gaussian": 128,
+                    "uniform": 256,
+                    "sparse50": 128,
+                    "sparse10": 128,
+                    "sparse02": 256,
+                    "laplace": 256,
+                    "constant": 128,
+                    "real": 256
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    256
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "laplace",
+                    "real",
+                    "sparse02",
+                    "uniform"
+                  ],
+                  "argmin_agreement": 0.5,
+                  "ci_overlap_tie_share": 0.9166666666666666,
+                  "max_regret_of_input_agnostic_chunk_pct": 2.668693008876999,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.9374250075523616,
+                  "chunk_spread": 1.654840406678061
+                },
+                "all": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "gaussian": 256,
+                    "sparse50": 128,
+                    "laplace": 128,
+                    "uniform": 128,
+                    "constant": 128,
+                    "sparse10": 128,
+                    "sparse02": 256,
+                    "real": 128
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    256
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "sparse02"
+                  ],
+                  "argmin_agreement": 0.5416666666666666,
+                  "ci_overlap_tie_share": 0.9583333333333334,
+                  "max_regret_of_input_agnostic_chunk_pct": 1.1761687878788063,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.18613543506857122,
+                  "chunk_spread": 1.6583882281514486
+                }
+              }
+            }
+          },
+          "cells": {
+            "n_cells": 144,
+            "ci_overlap_tie_share": 0.8541666666666666,
+            "argmin_agreement": 0.4375,
+            "within_2pct_tie_share_pooled": 0.7569444444444444,
+            "within_2pct_min_over_modes_range": [
+              0.5833333333333334,
+              0.75
+            ],
+            "max_regret_of_input_agnostic_chunk_pct": 3.8418960254154477
+          },
+          "tost": {
+            "alpha": 0.05,
+            "all_chunks": {
+              "n": 30,
+              "equivalent_2pct": 4,
+              "equivalent_5pct": 25,
+              "median_bound_pct": 3.500083016525465,
+              "max_bound_pct": 22.56610984767902
+            },
+            "at_input_agnostic_chunk": {
+              "n": 6,
+              "equivalent_2pct": 0,
+              "equivalent_5pct": 5,
+              "median_bound_pct": 3.35885162086484,
+              "max_bound_pct": 5.216355840033858
+            }
+          }
+        }
+      }
+    },
+    "vgpu3090_r3spin": {
+      "gpu": "RTX 3090",
+      "convention": "device time",
+      "source": "e1_vgpu3090_r3spin.json",
+      "families": [
+        "mamba1"
+      ],
+      "all_families": {
+        "n_fixed_chunk_tests": 36,
+        "n_significant_input_effects_bh": 33,
+        "within_2pct_tie_share_pooled": 0.9791666666666666,
+        "n_cells": 144
+      },
+      "by_family": {
+        "mamba1": {
+          "n_fixed_chunk_tests": 36,
+          "n_significant_input_effects_bh": 33,
+          "input_range_pct": {
+            "max_all_configs": {
+              "pct": 5.496769631168243,
+              "L": 512,
+              "mode": "all",
+              "chunk": 512,
+              "fastest_input": "constant",
+              "slowest_input": "sparse02",
+              "p_bh": 0.2496882392703005
+            },
+            "max_significant_configs": {
+              "pct": 4.126709591277914,
+              "L": 2048,
+              "mode": "all",
+              "chunk": 1024,
+              "fastest_input": "sparse10",
+              "slowest_input": "real",
+              "p_bh": 4.956364730399882e-10
+            },
+            "max_at_input_agnostic_chunk": {
+              "pct": 5.496769631168243,
+              "L": 512,
+              "mode": "all",
+              "chunk": 512,
+              "fastest_input": "constant",
+              "slowest_input": "sparse02",
+              "p_bh": 0.2496882392703005
+            },
+            "max_significant_at_input_agnostic_chunk": {
+              "pct": 1.3451235246090576,
+              "L": 512,
+              "mode": "act",
+              "chunk": 512,
+              "fastest_input": "sparse10",
+              "slowest_input": "sparse50",
+              "p_bh": 0.01130269612238681
+            },
+            "median_all_configs": 1.6982713036152997,
+            "median_at_input_agnostic_chunk": 1.1601759258793156
+          },
+          "by_length": {
+            "512": {
+              "n_tests": 12,
+              "n_significant_bh": 11,
+              "max_input_range_pct": {
+                "pct": 5.496769631168243,
+                "L": 512,
+                "mode": "all",
+                "chunk": 512,
+                "fastest_input": "constant",
+                "slowest_input": "sparse02",
+                "p_bh": 0.2496882392703005
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 5.496769631168243,
+                "L": 512,
+                "mode": "all",
+                "chunk": 512,
+                "fastest_input": "constant",
+                "slowest_input": "sparse02",
+                "p_bh": 0.2496882392703005
+              },
+              "share_within_2pct_min_over_modes": 0.875,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 0.875
+              },
+              "own_best_chunk_moves": false,
+              "max_regret_of_input_agnostic_chunk_pct": 0.0,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "constant": 512,
+                    "uniform": 512,
+                    "gaussian": 512,
+                    "laplace": 512,
+                    "sparse50": 512,
+                    "sparse02": 512,
+                    "real": 512,
+                    "sparse10": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 1.0,
+                  "ci_overlap_tie_share": 1.0,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.9485856932975525
+                },
+                "all": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "laplace": 512,
+                    "sparse02": 512,
+                    "uniform": 512,
+                    "sparse50": 512,
+                    "gaussian": 512,
+                    "real": 512,
+                    "constant": 512,
+                    "sparse10": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [],
+                  "argmin_agreement": 0.875,
+                  "ci_overlap_tie_share": 0.875,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.0,
+                  "chunk_spread": 1.9322397177928317
+                }
+              }
+            },
+            "2048": {
+              "n_tests": 12,
+              "n_significant_bh": 12,
+              "max_input_range_pct": {
+                "pct": 4.126709591277914,
+                "L": 2048,
+                "mode": "all",
+                "chunk": 1024,
+                "fastest_input": "sparse10",
+                "slowest_input": "real",
+                "p_bh": 4.956364730399882e-10
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 0.8332670085216887,
+                "L": 2048,
+                "mode": "act",
+                "chunk": 128,
+                "fastest_input": "sparse02",
+                "slowest_input": "sparse50",
+                "p_bh": 7.252506287832497e-11
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 0.8938999247226631,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "sparse50": 128,
+                    "uniform": 128,
+                    "sparse02": 128,
+                    "real": 128,
+                    "gaussian": 512,
+                    "laplace": 512,
+                    "sparse10": 512,
+                    "constant": 128
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "gaussian",
+                    "laplace",
+                    "sparse10"
+                  ],
+                  "argmin_agreement": 0.625,
+                  "ci_overlap_tie_share": 0.6666666666666666,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.8938999247226631,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.20094237278058813,
+                  "chunk_spread": 2.0171749401259724
+                },
+                "all": {
+                  "input_agnostic_chunk": 128,
+                  "own_best_chunk_per_input": {
+                    "sparse10": 512,
+                    "gaussian": 128,
+                    "laplace": 512,
+                    "uniform": 128,
+                    "real": 128,
+                    "sparse50": 128,
+                    "constant": 512,
+                    "sparse02": 128
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "constant",
+                    "laplace",
+                    "sparse10"
+                  ],
+                  "argmin_agreement": 0.625,
+                  "ci_overlap_tie_share": 0.625,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.300424126500598,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.1046443083645876,
+                  "chunk_spread": 2.0401803984553917
+                }
+              }
+            },
+            "8192": {
+              "n_tests": 12,
+              "n_significant_bh": 10,
+              "max_input_range_pct": {
+                "pct": 2.492436538164848,
+                "L": 8192,
+                "mode": "act",
+                "chunk": 64,
+                "fastest_input": "uniform",
+                "slowest_input": "laplace",
+                "p_bh": 0.0
+              },
+              "max_input_range_at_input_agnostic_chunk_pct": {
+                "pct": 1.3101554775332354,
+                "L": 8192,
+                "mode": "act",
+                "chunk": 512,
+                "fastest_input": "sparse02",
+                "slowest_input": "sparse50",
+                "p_bh": 2.4671493432501127e-06
+              },
+              "share_within_2pct_min_over_modes": 1.0,
+              "share_within_2pct_by_mode": {
+                "act": 1.0,
+                "all": 1.0
+              },
+              "own_best_chunk_moves": true,
+              "max_regret_of_input_agnostic_chunk_pct": 0.3360724783946001,
+              "modes": {
+                "act": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "sparse02": 512,
+                    "sparse10": 512,
+                    "real": 512,
+                    "laplace": 512,
+                    "constant": 128,
+                    "uniform": 512,
+                    "sparse50": 128,
+                    "gaussian": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "constant",
+                    "sparse50"
+                  ],
+                  "argmin_agreement": 0.6666666666666666,
+                  "ci_overlap_tie_share": 0.75,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.3360724783946001,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.061157647860460296,
+                  "chunk_spread": 2.0804735944751407
+                },
+                "all": {
+                  "input_agnostic_chunk": 512,
+                  "own_best_chunk_per_input": {
+                    "sparse10": 512,
+                    "sparse02": 512,
+                    "real": 512,
+                    "uniform": 128,
+                    "laplace": 512,
+                    "sparse50": 512,
+                    "constant": 512,
+                    "gaussian": 512
+                  },
+                  "distinct_own_best_chunks": [
+                    128,
+                    512
+                  ],
+                  "inputs_with_other_best_chunk": [
+                    "uniform"
+                  ],
+                  "argmin_agreement": 0.8333333333333334,
+                  "ci_overlap_tie_share": 0.8333333333333334,
+                  "max_regret_of_input_agnostic_chunk_pct": 0.25910533042274864,
+                  "mean_regret_of_input_agnostic_chunk_pct": 0.03238816630284358,
+                  "chunk_spread": 2.077506736916706
+                }
+              }
+            }
+          },
+          "cells": {
+            "n_cells": 144,
+            "ci_overlap_tie_share": 0.7916666666666666,
+            "argmin_agreement": 0.7708333333333334,
+            "within_2pct_tie_share_pooled": 0.9791666666666666,
+            "within_2pct_min_over_modes_range": [
+              0.875,
+              1.0
+            ],
+            "max_regret_of_input_agnostic_chunk_pct": 0.8938999247226631
+          },
+          "tost": {
+            "alpha": 0.05,
+            "all_chunks": {
+              "n": 36,
+              "equivalent_2pct": 32,
+              "equivalent_5pct": 35,
+              "median_bound_pct": 1.1934830358983775,
+              "max_bound_pct": 5.849619772081002
+            },
+            "at_input_agnostic_chunk": {
+              "n": 6,
+              "equivalent_2pct": 5,
+              "equivalent_5pct": 5,
+              "median_bound_pct": 0.7844620099095913,
+              "max_bound_pct": 5.849619772081002
+            }
+          }
+        }
+      }
+    }
+  },
+  "checks": [
+    {
+      "check": "h800.n_significant_input_effects_bh",
+      "computed": 28,
+      "stored": 28,
+      "match": true
+    },
+    {
+      "check": "h800.effects.input_range_pct (all configs)",
+      "match": true
+    },
+    {
+      "check": "h800.decision (C*, max regret)",
+      "match": true
+    },
+    {
+      "check": "h800.tost summary",
+      "match": true
+    },
+    {
+      "check": "h800_r3spin.n_significant_input_effects_bh",
+      "computed": 36,
+      "stored": 36,
+      "match": true
+    },
+    {
+      "check": "h800_r3spin.effects.input_range_pct (all configs)",
+      "match": true
+    },
+    {
+      "check": "h800_r3spin.decision (C*, max regret)",
+      "match": true
+    },
+    {
+      "check": "h800_r3spin.tost summary",
+      "match": true
+    },
+    {
+      "check": "pro6000.n_significant_input_effects_bh",
+      "computed": 12,
+      "stored": 12,
+      "match": true
+    },
+    {
+      "check": "pro6000.effects.input_range_pct (all configs)",
+      "match": true
+    },
+    {
+      "check": "pro6000.decision (C*, max regret)",
+      "match": true
+    },
+    {
+      "check": "pro6000.tost summary",
+      "match": true
+    },
+    {
+      "check": "pro6000_r4spin.n_significant_input_effects_bh",
+      "computed": 15,
+      "stored": 15,
+      "match": true
+    },
+    {
+      "check": "pro6000_r4spin.effects.input_range_pct (all configs)",
+      "match": true
+    },
+    {
+      "check": "pro6000_r4spin.decision (C*, max regret)",
+      "match": true
+    },
+    {
+      "check": "pro6000_r4spin.tost summary",
+      "match": true
+    },
+    {
+      "check": "vgpu3090.n_significant_input_effects_bh",
+      "computed": 24,
+      "stored": 24,
+      "match": true
+    },
+    {
+      "check": "vgpu3090.effects.input_range_pct (all configs)",
+      "match": true
+    },
+    {
+      "check": "vgpu3090.decision (C*, max regret)",
+      "match": true
+    },
+    {
+      "check": "vgpu3090.tost summary",
+      "match": true
+    },
+    {
+      "check": "vgpu3090_r3spin: no stored e1_analysis (recomputed only)",
+      "match": null
+    }
+  ],
+  "controls_note": "No placement or L2 control was run on the H800 (the fixed-placement, multi-allocation and flushed-L2 controls exist for the RTX PRO 6000 and the RTX 3090 only), so the H800 input effects cannot be attributed to buffer placement or to the values.",
+  "checks_summary": {
+    "n": 21,
+    "n_match": 20,
+    "n_not_stored": 1
+  },
+  "headline_mamba1": {
+    "h800": {
+      "gpu": "H800 PCIe",
+      "convention": "launch-inclusive",
+      "significant_input_effects": "28 of 36",
+      "max_input_range_pct": 47.60833556528977,
+      "max_input_range_at": {
+        "L": 2048,
+        "mode": "all",
+        "chunk": 32
+      },
+      "max_input_range_at_input_agnostic_chunk_pct": 10.634639000384501,
+      "max_significant_input_range_pct": 47.60833556528977,
+      "max_significant_input_range_at_input_agnostic_chunk_pct": 4.35790500869637,
+      "within_2pct_tie_share_min_over_modes_by_L": {
+        "512": 0.9583333333333334,
+        "2048": 0.7083333333333334,
+        "8192": 1.0
+      },
+      "ci_overlap_tie_share": 0.8958333333333334,
+      "max_regret_of_input_agnostic_chunk_pct": 5.560639464692141,
+      "own_best_chunks_by_L": {
+        "512": {
+          "act": [
+            256
+          ],
+          "all": [
+            256
+          ]
+        },
+        "2048": {
+          "act": [
+            256,
+            1024
+          ],
+          "all": [
+            256,
+            1024
+          ]
+        },
+        "8192": {
+          "act": [
+            1024
+          ],
+          "all": [
+            1024
+          ]
+        }
+      },
+      "input_agnostic_chunk_by_L": {
+        "512": {
+          "act": 256,
+          "all": 256
+        },
+        "2048": {
+          "act": 1024,
+          "all": 1024
+        },
+        "8192": {
+          "act": 1024,
+          "all": 1024
+        }
+      },
+      "tost_all_chunks": {
+        "n": 36,
+        "equivalent_2pct": 15,
+        "equivalent_5pct": 23,
+        "median_bound_pct": 2.6214685052829054,
+        "max_bound_pct": 40.20825683157352
+      },
+      "tost_at_input_agnostic_chunk": {
+        "n": 6,
+        "equivalent_2pct": 3,
+        "equivalent_5pct": 5,
+        "median_bound_pct": 1.8809502507608804,
+        "max_bound_pct": 14.605537159425278
+      }
+    },
+    "h800_r3spin": {
+      "gpu": "H800 PCIe",
+      "convention": "device time",
+      "significant_input_effects": "36 of 36",
+      "max_input_range_pct": 39.856546818847164,
+      "max_input_range_at": {
+        "L": 2048,
+        "mode": "act",
+        "chunk": 32
+      },
+      "max_input_range_at_input_agnostic_chunk_pct": 5.081404775599177,
+      "max_significant_input_range_pct": 39.856546818847164,
+      "max_significant_input_range_at_input_agnostic_chunk_pct": 5.081404775599177,
+      "within_2pct_tie_share_min_over_modes_by_L": {
+        "512": 1.0,
+        "2048": 0.7083333333333334,
+        "8192": 1.0
+      },
+      "ci_overlap_tie_share": 0.875,
+      "max_regret_of_input_agnostic_chunk_pct": 5.652630953173143,
+      "own_best_chunks_by_L": {
+        "512": {
+          "act": [
+            256
+          ],
+          "all": [
+            256
+          ]
+        },
+        "2048": {
+          "act": [
+            256,
+            1024
+          ],
+          "all": [
+            256,
+            1024
+          ]
+        },
+        "8192": {
+          "act": [
+            1024
+          ],
+          "all": [
+            1024
+          ]
+        }
+      },
+      "input_agnostic_chunk_by_L": {
+        "512": {
+          "act": 256,
+          "all": 256
+        },
+        "2048": {
+          "act": 1024,
+          "all": 1024
+        },
+        "8192": {
+          "act": 1024,
+          "all": 1024
+        }
+      },
+      "tost_all_chunks": {
+        "n": 36,
+        "equivalent_2pct": 18,
+        "equivalent_5pct": 26,
+        "median_bound_pct": 1.592530628317022,
+        "max_bound_pct": 32.6792393521287
+      },
+      "tost_at_input_agnostic_chunk": {
+        "n": 6,
+        "equivalent_2pct": 4,
+        "equivalent_5pct": 6,
+        "median_bound_pct": 0.4839078955923703,
+        "max_bound_pct": 3.153446642580292
+      }
+    },
+    "pro6000": {
+      "gpu": "RTX PRO 6000",
+      "convention": "launch-inclusive (value-invariance table of the main text)",
+      "significant_input_effects": "11 of 36",
+      "max_input_range_pct": 43.04692006663691,
+      "max_input_range_at": {
+        "L": 8192,
+        "mode": "all",
+        "chunk": 256
+      },
+      "max_input_range_at_input_agnostic_chunk_pct": 10.97557157113959,
+      "max_significant_input_range_pct": 43.04692006663691,
+      "max_significant_input_range_at_input_agnostic_chunk_pct": 8.604693967318472,
+      "within_2pct_tie_share_min_over_modes_by_L": {
+        "512": 0.9166666666666666,
+        "2048": 1.0,
+        "8192": 1.0
+      },
+      "ci_overlap_tie_share": 0.9930555555555556,
+      "max_regret_of_input_agnostic_chunk_pct": 1.3601027984444292,
+      "own_best_chunks_by_L": {
+        "512": {
+          "act": [
+            256,
+            512,
+            1024
+          ],
+          "all": [
+            256,
+            512
+          ]
+        },
+        "2048": {
+          "act": [
+            512
+          ],
+          "all": [
+            512
+          ]
+        },
+        "8192": {
+          "act": [
+            512,
+            1024
+          ],
+          "all": [
+            512
+          ]
+        }
+      },
+      "input_agnostic_chunk_by_L": {
+        "512": {
+          "act": 256,
+          "all": 256
+        },
+        "2048": {
+          "act": 512,
+          "all": 512
+        },
+        "8192": {
+          "act": 512,
+          "all": 512
+        }
+      },
+      "tost_all_chunks": {
+        "n": 36,
+        "equivalent_2pct": 0,
+        "equivalent_5pct": 13,
+        "median_bound_pct": 6.873633720808367,
+        "max_bound_pct": 36.60496744484277
+      },
+      "tost_at_input_agnostic_chunk": {
+        "n": 6,
+        "equivalent_2pct": 0,
+        "equivalent_5pct": 3,
+        "median_bound_pct": 4.57014594705068,
+        "max_bound_pct": 14.763970993056356
+      }
+    },
+    "pro6000_r4spin": {
+      "gpu": "RTX PRO 6000",
+      "convention": "device time",
+      "significant_input_effects": "15 of 36",
+      "max_input_range_pct": 37.27266856605482,
+      "max_input_range_at": {
+        "L": 512,
+        "mode": "all",
+        "chunk": 256
+      },
+      "max_input_range_at_input_agnostic_chunk_pct": 23.34580539499255,
+      "max_significant_input_range_pct": 24.17150549143968,
+      "max_significant_input_range_at_input_agnostic_chunk_pct": 5.817368610426753,
+      "within_2pct_tie_share_min_over_modes_by_L": {
+        "512": 0.6666666666666666,
+        "2048": 1.0,
+        "8192": 1.0
+      },
+      "ci_overlap_tie_share": 0.9652777777777778,
+      "max_regret_of_input_agnostic_chunk_pct": 15.144578070379588,
+      "own_best_chunks_by_L": {
+        "512": {
+          "act": [
+            256,
+            512
+          ],
+          "all": [
+            256,
+            512
+          ]
+        },
+        "2048": {
+          "act": [
+            512
+          ],
+          "all": [
+            512
+          ]
+        },
+        "8192": {
+          "act": [
+            512
+          ],
+          "all": [
+            512
+          ]
+        }
+      },
+      "input_agnostic_chunk_by_L": {
+        "512": {
+          "act": 256,
+          "all": 512
+        },
+        "2048": {
+          "act": 512,
+          "all": 512
+        },
+        "8192": {
+          "act": 512,
+          "all": 512
+        }
+      },
+      "tost_all_chunks": {
+        "n": 36,
+        "equivalent_2pct": 24,
+        "equivalent_5pct": 25,
+        "median_bound_pct": 0.49769998520271663,
+        "max_bound_pct": 52.00716618581664
+      },
+      "tost_at_input_agnostic_chunk": {
+        "n": 6,
+        "equivalent_2pct": 3,
+        "equivalent_5pct": 3,
+        "median_bound_pct": 3.4412906849963547,
+        "max_bound_pct": 27.08523213175243
+      }
+    },
+    "vgpu3090": {
+      "gpu": "RTX 3090",
+      "convention": "launch-inclusive",
+      "significant_input_effects": "17 of 36",
+      "max_input_range_pct": 18.60130963454402,
+      "max_input_range_at": {
+        "L": 8192,
+        "mode": "all",
+        "chunk": 128
+      },
+      "max_input_range_at_input_agnostic_chunk_pct": 11.445454083472463,
+      "max_significant_input_range_pct": 4.261107911853704,
+      "max_significant_input_range_at_input_agnostic_chunk_pct": 1.7877083725879863,
+      "within_2pct_tie_share_min_over_modes_by_L": {
+        "512": 0.5416666666666666,
+        "2048": 1.0,
+        "8192": 1.0
+      },
+      "ci_overlap_tie_share": 0.8541666666666666,
+      "max_regret_of_input_agnostic_chunk_pct": 12.218163796668978,
+      "own_best_chunks_by_L": {
+        "512": {
+          "act": [
+            128,
+            256,
+            512
+          ],
+          "all": [
+            128,
+            256,
+            512
+          ]
+        },
+        "2048": {
+          "act": [
+            128,
+            512
+          ],
+          "all": [
+            128,
+            512
+          ]
+        },
+        "8192": {
+          "act": [
+            128,
+            512
+          ],
+          "all": [
+            128,
+            512
+          ]
+        }
+      },
+      "input_agnostic_chunk_by_L": {
+        "512": {
+          "act": 128,
+          "all": 128
+        },
+        "2048": {
+          "act": 128,
+          "all": 128
+        },
+        "8192": {
+          "act": 128,
+          "all": 512
+        }
+      },
+      "tost_all_chunks": {
+        "n": 36,
+        "equivalent_2pct": 20,
+        "equivalent_5pct": 24,
+        "median_bound_pct": 1.9449131570514295,
+        "max_bound_pct": 26.52460801748485
+      },
+      "tost_at_input_agnostic_chunk": {
+        "n": 6,
+        "equivalent_2pct": 4,
+        "equivalent_5pct": 4,
+        "median_bound_pct": 1.1283730521409225,
+        "max_bound_pct": 12.548693879565695
+      }
+    },
+    "vgpu3090_r3spin": {
+      "gpu": "RTX 3090",
+      "convention": "device time",
+      "significant_input_effects": "33 of 36",
+      "max_input_range_pct": 5.496769631168243,
+      "max_input_range_at": {
+        "L": 512,
+        "mode": "all",
+        "chunk": 512
+      },
+      "max_input_range_at_input_agnostic_chunk_pct": 5.496769631168243,
+      "max_significant_input_range_pct": 4.126709591277914,
+      "max_significant_input_range_at_input_agnostic_chunk_pct": 1.3451235246090576,
+      "within_2pct_tie_share_min_over_modes_by_L": {
+        "512": 0.875,
+        "2048": 1.0,
+        "8192": 1.0
+      },
+      "ci_overlap_tie_share": 0.7916666666666666,
+      "max_regret_of_input_agnostic_chunk_pct": 0.8938999247226631,
+      "own_best_chunks_by_L": {
+        "512": {
+          "act": [
+            512
+          ],
+          "all": [
+            512
+          ]
+        },
+        "2048": {
+          "act": [
+            128,
+            512
+          ],
+          "all": [
+            128,
+            512
+          ]
+        },
+        "8192": {
+          "act": [
+            128,
+            512
+          ],
+          "all": [
+            128,
+            512
+          ]
+        }
+      },
+      "input_agnostic_chunk_by_L": {
+        "512": {
+          "act": 512,
+          "all": 512
+        },
+        "2048": {
+          "act": 128,
+          "all": 128
+        },
+        "8192": {
+          "act": 512,
+          "all": 512
+        }
+      },
+      "tost_all_chunks": {
+        "n": 36,
+        "equivalent_2pct": 32,
+        "equivalent_5pct": 35,
+        "median_bound_pct": 1.1934830358983775,
+        "max_bound_pct": 5.849619772081002
+      },
+      "tost_at_input_agnostic_chunk": {
+        "n": 6,
+        "equivalent_2pct": 5,
+        "equivalent_5pct": 5,
+        "median_bound_pct": 0.7844620099095913,
+        "max_bound_pct": 5.849619772081002
+      }
+    }
+  }
+}

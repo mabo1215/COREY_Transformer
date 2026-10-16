@@ -1,0 +1,1743 @@
+{
+  "item": "M5b",
+  "meta": {
+    "script": "taco_r2_stats_m5b_tp_noise",
+    "created_utc": "2026-10-16T05:12:27Z",
+    "seed": 20261015,
+    "args": {
+      "in_dir": "/mnt/c/source/COREY_Transformer/src/experiments/results/tpds",
+      "n_boot": 2000
+    }
+  },
+  "definitions": "Review item M5b (cycle taco-r2): is the RTX 3090 tensor-parallel sweep noise-dominated? CPU only.\n\nData: the E12 sweep (``e12_tp_widths_<host>.jsonl``): synthetic inputs at the widths of three Mamba-1 checkpoints and\ntheir tensor-parallel shards (512 to 5120 channels), seven lengths (128 to 8192), batch 1, 4 and 16, every chunk timed\nin three rounds of one 50-repeat block (``family`` triton: the Triton scan, chunks 32 to 1024; ``ref``: the reference\nCUDA scan, chunks 128 to 2048), on the RTX 3090 (``vgpu3090``) and the H800 (``h800``).\n\nSelectors (exactly as ``taco_report_numbers.tp_family`` / ``e12_analysis``): the frozen cost model calibrated at\nd = 2048 on the same GPU (none for the reference scan on the H800), the nearest calibration key (Triton), a table tuned\nat the calibration width d = 2048, the best single chunk, the unsharded table (measured best chunk of the same\ncheckpoint at its full width), and the table retuned at the exact shard shape.\n\n1. Reproduction of the stored M7a numbers (``taco_report_numbers.json``): pooled mean regret per selector against the\n   three-round-mean oracle, the retuned table scored cross-round, and the paired shape-bootstrap intervals (same\n   generator ``taco_report_numbers.make_rng('tp', host, fam)``); the round-agreement share of ``e12_analysis``\n   (share of shapes whose per-round argmin is identical in all three rounds).\n2. Round-to-round variation of the identical kernel: between-round relative SD per (shape, chunk), |relative\n   difference| between two rounds, share of round pairs whose difference exceeds the within-block standard error\n   (|z| > 1.96), per-round argmin agreement (all three rounds; pairwise).\n3. Chunk effect against noise: per shape a two-way (chunk x round) analysis of log latency without replication\n   (F test of the chunk effect against the chunk-by-round residual; Benjamini-Hochberg over shapes); the gap between\n   the best and the second-best chunk against the round-to-round SD of that gap; per shard shape the unsharded-table\n   regret against the shape's own noise floor (the retuned table scored cross-round).\n4. One scoring for every selector. ``cross_round``: for each held-out round r the regret is R_r[c] / min_c R_r - 1;\n   fixed selectors use their fixed chunk, the retuned table the chunk with the lowest mean over the other two rounds;\n   averaged over the three held-out rounds. ``mean_oracle_loro``: every selector scored against the three-round mean\n   oracle (as stored), the retuned table choosing on two rounds (leave one round out; optimistic, the scoring\n   rounds include its choosing rounds). Paired differences (cost model minus each other selector) with 2000\n   shape-bootstrap replicates (``taco_r2_stats_common.make_rng('m5b', host, fam)``).\n\nOutput: ``taco_r2_stats_m5b.json``.\n\nUsage:  PYTHONPATH=. python3 -m src.experiments.tpds.taco_r2_stats_m5b_tp_noise [--n-boot 2000]\n",
+  "hosts": {
+    "vgpu3090": {
+      "ref": {
+        "gpu": "RTX 3090",
+        "family": "ref",
+        "chunks": [
+          128,
+          256,
+          512,
+          1024,
+          2048
+        ],
+        "n_shapes": 168,
+        "n_shard_shapes_pooled": 126,
+        "notes": {
+          "best_static_chunk": 256
+        },
+        "reproduction": {
+          "round_agreement_all_shapes_e12_definition": 0.625,
+          "round_agreement_definition": "share of shapes whose per-round argmin is the same chunk in all three rounds (e12_analysis.shape_table rounds_agree), over all shapes of the family",
+          "pooled_shards_mean_regret_vs_3round_mean_oracle_pct": {
+            "cost_model": 1.783570860944482,
+            "calibration_width_table": 4.115999758237619,
+            "best_static": 23.1034803918517,
+            "unsharded_table": 2.2202623754455675
+          },
+          "retuned_cross_round_pct": 6.129965219184082,
+          "paired": {
+            "cost_model - retuned_at_shard_width_cross_round (stored mixed scoring)": {
+              "diff_pp": -4.346394358239599,
+              "ci95_pp": [
+                -7.062715363300575,
+                -1.855344120135566
+              ]
+            }
+          },
+          "retuned_cross_round_ci95": [
+            3.7459983116860136,
+            8.680774770651894
+          ]
+        },
+        "round_variation": {
+          "shard_shapes": {
+            "n_shapes": 126,
+            "n_shape_chunk_cells": 630,
+            "between_round_rel_sd_pct": {
+              "median": 1.3689434869116368,
+              "p90": 16.705563276392496
+            },
+            "abs_rel_diff_two_rounds_pct": {
+              "median": 1.1842578855448365,
+              "p90": 20.2604883987253
+            },
+            "share_round_pairs_abs_z_gt_1p96": 0.6185185185185185,
+            "argmin_agree_all_rounds_share": 0.5873015873015873,
+            "argmin_agree_pairwise_share": 0.7037037037037037
+          },
+          "all_shapes": {
+            "n_shapes": 168,
+            "n_shape_chunk_cells": 840,
+            "between_round_rel_sd_pct": {
+              "median": 0.9336862128840495,
+              "p90": 14.064477433167252
+            },
+            "abs_rel_diff_two_rounds_pct": {
+              "median": 0.9453516166837443,
+              "p90": 15.606393626956827
+            },
+            "share_round_pairs_abs_z_gt_1p96": 0.6115079365079366,
+            "argmin_agree_all_rounds_share": 0.625,
+            "argmin_agree_pairwise_share": 0.7341269841269841
+          }
+        },
+        "chunk_effect_vs_noise": {
+          "anova": {
+            "shard_shapes": {
+              "n_shapes": 126,
+              "share_chunk_effect_significant_bh05": 0.9523809523809523,
+              "median_ms_chunk_over_ms_residual": 1750.0049646591833,
+              "top2_gap": {
+                "definition": "log latency of the second-best minus the best chunk (three-round means), per round; t = mean / (between-round SD / sqrt(3))",
+                "share_t_gt_4p30": 0.3492063492063492,
+                "median_t": 2.4521770964618135,
+                "note": "4.30 is the two-sided 5% critical value of t with 2 degrees of freedom: share of shapes whose best chunk is resolved from the runner-up by the three rounds"
+              }
+            },
+            "all_shapes": {
+              "n_shapes": 168,
+              "share_chunk_effect_significant_bh05": 0.9642857142857143,
+              "median_ms_chunk_over_ms_residual": 3086.815789397945,
+              "top2_gap": {
+                "definition": "log latency of the second-best minus the best chunk (three-round means), per round; t = mean / (between-round SD / sqrt(3))",
+                "share_t_gt_4p30": 0.42857142857142855,
+                "median_t": 3.4014499718969287,
+                "note": "4.30 is the two-sided 5% critical value of t with 2 degrees of freedom: share of shapes whose best chunk is resolved from the runner-up by the three rounds"
+              }
+            }
+          },
+          "noise_shape": {
+            "shard_shapes": {
+              "definition": "per (shape, chunk): largest and smallest deviation of a round mean from the median of the three rounds; per shape: largest |deviation| of a round's mean log latency over chunks (a whole-round level shift)",
+              "share_cells_one_round_above_median_by_10pct": 0.173015873015873,
+              "share_cells_one_round_below_median_by_10pct": 0.17142857142857143,
+              "share_cells_one_round_above_median_by_25pct": 0.049206349206349205,
+              "share_cells_one_round_below_median_by_25pct": 0.05555555555555555,
+              "round_level_shift_pct": {
+                "median": 1.6449879867798938,
+                "p90": 12.376407172122558
+              }
+            },
+            "all_shapes": {
+              "definition": "per (shape, chunk): largest and smallest deviation of a round mean from the median of the three rounds; per shape: largest |deviation| of a round's mean log latency over chunks (a whole-round level shift)",
+              "share_cells_one_round_above_median_by_10pct": 0.1488095238095238,
+              "share_cells_one_round_below_median_by_10pct": 0.1380952380952381,
+              "share_cells_one_round_above_median_by_25pct": 0.0380952380952381,
+              "share_cells_one_round_below_median_by_25pct": 0.04523809523809524,
+              "round_level_shift_pct": {
+                "median": 0.9969400121489925,
+                "p90": 10.68226549193825
+              }
+            },
+            "retuned_on_min_of_other_rounds_cross_round_pct": 5.882934218455008,
+            "retuned_on_min_of_other_rounds_ci95": [
+              3.8429054699356753,
+              8.359274188336835
+            ],
+            "cost_model_minus_retuned_on_min": {
+              "diff_pp": -1.950014820457792,
+              "ci95_pp": [
+                -3.845460176501041,
+                -0.26327762888032047
+              ]
+            },
+            "cost_model_vs_retuned_per_shape": {
+              "n_model_better": 37,
+              "n_equal": 60,
+              "n_model_worse": 29,
+              "spearman_model_advantage_vs_shape_noise": {
+                "rho": 0.4258951887512928,
+                "p": 6.630673840022674e-07
+              }
+            }
+          },
+          "noise_floor_definition": "per shard shape: table retuned at the shape, chosen on two rounds and scored on the third against that round's oracle (cross_round)",
+          "noise_floor_pooled_pct": 6.129965219184082,
+          "noise_floor_pooled_ci95": [
+            3.9118641542800194,
+            8.730836644906555
+          ],
+          "noise_floor_median_shape_pct": 0.0,
+          "noise_floor_shape_distribution": {
+            "p75_pct": 2.9305636317755623,
+            "p90_pct": 26.967199598576176,
+            "max_pct": 73.91195870337262,
+            "share_shapes_above_2pct": 0.2777777777777778,
+            "share_shapes_above_10pct": 0.16666666666666666
+          },
+          "selector_regret_vs_own_noise_floor": {
+            "unsharded_table": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 31,
+              "n_regret_above_twice_noise_floor": 30,
+              "n_regret_above_floor_plus_5pp": 12,
+              "mean_excess_over_floor_pp": -1.7344453176067605,
+              "mean_excess_over_floor_ci95_pp": [
+                -3.8252303915149453,
+                0.19629276427596629
+              ]
+            },
+            "calibration_width_table": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 29,
+              "n_regret_above_twice_noise_floor": 24,
+              "n_regret_above_floor_plus_5pp": 13,
+              "mean_excess_over_floor_pp": 0.7561006065080271,
+              "mean_excess_over_floor_ci95_pp": [
+                -1.4057790082142572,
+                2.865768096427028
+              ]
+            },
+            "best_static": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 94,
+              "n_regret_above_twice_noise_floor": 90,
+              "n_regret_above_floor_plus_5pp": 91,
+              "mean_excess_over_floor_pp": 19.84103058499219,
+              "mean_excess_over_floor_ci95_pp": [
+                14.592917212246913,
+                25.544270186406315
+              ]
+            },
+            "cost_model": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 29,
+              "n_regret_above_twice_noise_floor": 28,
+              "n_regret_above_floor_plus_5pp": 9,
+              "mean_excess_over_floor_pp": -2.1970458211868653,
+              "mean_excess_over_floor_ci95_pp": [
+                -4.110712440676934,
+                -0.34769016328502517
+              ]
+            }
+          }
+        },
+        "scoring": {
+          "cross_round": {
+            "definition": "every selector scored on each held-out round against that round's oracle; retuned table chosen on the other two rounds; mean over the three rounds",
+            "pooled": {
+              "cost_model": {
+                "mean_regret_pct": 3.9329193979972157,
+                "ci95_shape_bootstrap": [
+                  2.704198313529423,
+                  5.413455831531924
+                ],
+                "p95_regret_pct": 16.942443639507516,
+                "max_regret_pct": 52.710598336566285
+              },
+              "calibration_width_table": {
+                "mean_regret_pct": 6.88606582569211,
+                "ci95_shape_bootstrap": [
+                  4.428157432014949,
+                  9.734444191271086
+                ],
+                "p95_regret_pct": 47.22021052375939,
+                "max_regret_pct": 71.09405738976461
+              },
+              "best_static": {
+                "mean_regret_pct": 25.970995804176273,
+                "ci95_shape_bootstrap": [
+                  21.312411880045165,
+                  31.179718122990387
+                ],
+                "p95_regret_pct": 80.26283667022722,
+                "max_regret_pct": 152.40446226333128
+              },
+              "unsharded_table": {
+                "mean_regret_pct": 4.3955199015773205,
+                "ci95_shape_bootstrap": [
+                  3.0452748912547696,
+                  6.040165673782986
+                ],
+                "p95_regret_pct": 23.212984346785042,
+                "max_regret_pct": 49.98590765134641
+              },
+              "retuned_at_shard_width": {
+                "mean_regret_pct": 6.129965219184082,
+                "ci95_shape_bootstrap": [
+                  3.9118641542800194,
+                  8.730836644906555
+                ],
+                "p95_regret_pct": 36.640698008883426,
+                "max_regret_pct": 73.91195870337262
+              }
+            },
+            "paired_cost_model_minus": {
+              "cost_model - calibration_width_table": {
+                "diff_pp": -2.953146427694892,
+                "ci95_pp": [
+                  -5.40976634993255,
+                  -0.7717467633906256
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - best_static": {
+                "diff_pp": -22.038076406179055,
+                "ci95_pp": [
+                  -27.263973595234095,
+                  -17.399294077274906
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - unsharded_table": {
+                "diff_pp": -0.4626005035801049,
+                "ci95_pp": [
+                  -1.8164906285927418,
+                  0.8754264617307642
+                ],
+                "ci_excludes_zero": false
+              },
+              "cost_model - retuned_at_shard_width": {
+                "diff_pp": -2.197045821186865,
+                "ci95_pp": [
+                  -4.110712440676934,
+                  -0.3476901632850254
+                ],
+                "ci_excludes_zero": true
+              }
+            },
+            "paired_unsharded_minus_retuned": {
+              "diff_pp": -1.7344453176067602,
+              "ci95_pp": [
+                -3.8252303915149453,
+                0.19629276427596604
+              ]
+            },
+            "paired_calibration_width_minus_retuned": {
+              "diff_pp": 0.7561006065080275,
+              "ci95_pp": [
+                -1.4057790082142572,
+                2.865768096427027
+              ]
+            }
+          },
+          "mean_oracle_loro": {
+            "definition": "every selector scored against the three-round-mean oracle; retuned table chosen on two rounds (leave one round out), mean over the three choices (optimistic for the retuned table)",
+            "pooled": {
+              "cost_model": {
+                "mean_regret_pct": 1.783570860944482,
+                "ci95_shape_bootstrap": [
+                  0.9956071799195714,
+                  2.8564473917789197
+                ],
+                "p95_regret_pct": 10.622650360902352,
+                "max_regret_pct": 52.67751557620581
+              },
+              "calibration_width_table": {
+                "mean_regret_pct": 4.115999758237619,
+                "ci95_shape_bootstrap": [
+                  2.3959022110985027,
+                  6.134211892155741
+                ],
+                "p95_regret_pct": 32.64666201767797,
+                "max_regret_pct": 53.560837504451264
+              },
+              "best_static": {
+                "mean_regret_pct": 23.1034803918517,
+                "ci95_shape_bootstrap": [
+                  18.534959448716787,
+                  28.218456757007523
+                ],
+                "p95_regret_pct": 78.61013048639572,
+                "max_regret_pct": 152.40584844870395
+              },
+              "unsharded_table": {
+                "mean_regret_pct": 2.2202623754455675,
+                "ci95_shape_bootstrap": [
+                  1.2138509944882536,
+                  3.4738905605349357
+                ],
+                "p95_regret_pct": 12.606200093274012,
+                "max_regret_pct": 49.97784655767843
+              },
+              "retuned_at_shard_width": {
+                "mean_regret_pct": 0.6277261038702622,
+                "ci95_shape_bootstrap": [
+                  0.3680258925998614,
+                  0.9392004986244644
+                ],
+                "p95_regret_pct": 4.235494909452248,
+                "max_regret_pct": 9.714284780191356
+              }
+            },
+            "paired_cost_model_minus": {
+              "cost_model - calibration_width_table": {
+                "diff_pp": -2.332428897293136,
+                "ci95_pp": [
+                  -4.489586008457635,
+                  -0.4216921283540233
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - best_static": {
+                "diff_pp": -21.319909530907218,
+                "ci95_pp": [
+                  -26.477828385972522,
+                  -16.755377607309907
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - unsharded_table": {
+                "diff_pp": -0.4366915145010853,
+                "ci95_pp": [
+                  -1.7756473978697347,
+                  0.8868465628814257
+                ],
+                "ci_excludes_zero": false
+              },
+              "cost_model - retuned_at_shard_width": {
+                "diff_pp": 1.1558447570742203,
+                "ci95_pp": [
+                  0.3471551654703038,
+                  2.2369604145489688
+                ],
+                "ci_excludes_zero": true
+              }
+            }
+          }
+        }
+      },
+      "triton": {
+        "gpu": "RTX 3090",
+        "family": "triton",
+        "chunks": [
+          32,
+          64,
+          128,
+          256,
+          512,
+          1024
+        ],
+        "n_shapes": 168,
+        "n_shard_shapes_pooled": 126,
+        "notes": {
+          "best_static_chunk": 256
+        },
+        "reproduction": {
+          "round_agreement_all_shapes_e12_definition": 0.5178571428571429,
+          "round_agreement_definition": "share of shapes whose per-round argmin is the same chunk in all three rounds (e12_analysis.shape_table rounds_agree), over all shapes of the family",
+          "pooled_shards_mean_regret_vs_3round_mean_oracle_pct": {
+            "cost_model": 6.514821559183645,
+            "nearest_key": 22.191536654696538,
+            "calibration_width_table": 16.462339698876818,
+            "best_static": 21.937408425377825,
+            "unsharded_table": 36.819284350652325
+          },
+          "retuned_cross_round_pct": 14.865962183890419,
+          "paired": {
+            "cost_model - retuned_at_shard_width_cross_round (stored mixed scoring)": {
+              "diff_pp": -8.351140624706773,
+              "ci95_pp": [
+                -12.384090373764032,
+                -4.589076027731677
+              ]
+            }
+          },
+          "retuned_cross_round_ci95": [
+            11.134604508952101,
+            19.053338002178045
+          ]
+        },
+        "round_variation": {
+          "shard_shapes": {
+            "n_shapes": 126,
+            "n_shape_chunk_cells": 756,
+            "between_round_rel_sd_pct": {
+              "median": 4.1864931796057006,
+              "p90": 24.560836450995694
+            },
+            "abs_rel_diff_two_rounds_pct": {
+              "median": 2.443927119594056,
+              "p90": 34.71435267482141
+            },
+            "share_round_pairs_abs_z_gt_1p96": 0.5264550264550265,
+            "argmin_agree_all_rounds_share": 0.4523809523809524,
+            "argmin_agree_pairwise_share": 0.582010582010582
+          },
+          "all_shapes": {
+            "n_shapes": 168,
+            "n_shape_chunk_cells": 1008,
+            "between_round_rel_sd_pct": {
+              "median": 2.447413712162114,
+              "p90": 23.31631234351202
+            },
+            "abs_rel_diff_two_rounds_pct": {
+              "median": 1.3425759907530077,
+              "p90": 31.60819157302989
+            },
+            "share_round_pairs_abs_z_gt_1p96": 0.5238095238095238,
+            "argmin_agree_all_rounds_share": 0.5178571428571429,
+            "argmin_agree_pairwise_share": 0.6309523809523809
+          }
+        },
+        "chunk_effect_vs_noise": {
+          "anova": {
+            "shard_shapes": {
+              "n_shapes": 126,
+              "share_chunk_effect_significant_bh05": 0.7222222222222222,
+              "median_ms_chunk_over_ms_residual": 79.39014467062145,
+              "top2_gap": {
+                "definition": "log latency of the second-best minus the best chunk (three-round means), per round; t = mean / (between-round SD / sqrt(3))",
+                "share_t_gt_4p30": 0.3412698412698413,
+                "median_t": 1.6276429599163242,
+                "note": "4.30 is the two-sided 5% critical value of t with 2 degrees of freedom: share of shapes whose best chunk is resolved from the runner-up by the three rounds"
+              }
+            },
+            "all_shapes": {
+              "n_shapes": 168,
+              "share_chunk_effect_significant_bh05": 0.7619047619047619,
+              "median_ms_chunk_over_ms_residual": 133.00511077686735,
+              "top2_gap": {
+                "definition": "log latency of the second-best minus the best chunk (three-round means), per round; t = mean / (between-round SD / sqrt(3))",
+                "share_t_gt_4p30": 0.38095238095238093,
+                "median_t": 2.105114854711912,
+                "note": "4.30 is the two-sided 5% critical value of t with 2 degrees of freedom: share of shapes whose best chunk is resolved from the runner-up by the three rounds"
+              }
+            }
+          },
+          "noise_shape": {
+            "shard_shapes": {
+              "definition": "per (shape, chunk): largest and smallest deviation of a round mean from the median of the three rounds; per shape: largest |deviation| of a round's mean log latency over chunks (a whole-round level shift)",
+              "share_cells_one_round_above_median_by_10pct": 0.2619047619047619,
+              "share_cells_one_round_below_median_by_10pct": 0.25396825396825395,
+              "share_cells_one_round_above_median_by_25pct": 0.09126984126984126,
+              "share_cells_one_round_below_median_by_25pct": 0.12698412698412698,
+              "round_level_shift_pct": {
+                "median": 2.9517457688888284,
+                "p90": 14.375022673798316
+              }
+            },
+            "all_shapes": {
+              "definition": "per (shape, chunk): largest and smallest deviation of a round mean from the median of the three rounds; per shape: largest |deviation| of a round's mean log latency over chunks (a whole-round level shift)",
+              "share_cells_one_round_above_median_by_10pct": 0.23511904761904762,
+              "share_cells_one_round_below_median_by_10pct": 0.21924603174603174,
+              "share_cells_one_round_above_median_by_25pct": 0.08134920634920635,
+              "share_cells_one_round_below_median_by_25pct": 0.10416666666666667,
+              "round_level_shift_pct": {
+                "median": 1.8500147043994362,
+                "p90": 13.232087972274872
+              }
+            },
+            "retuned_on_min_of_other_rounds_cross_round_pct": 14.779664833035582,
+            "retuned_on_min_of_other_rounds_ci95": [
+              11.163384979430182,
+              18.74355017334255
+            ],
+            "cost_model_minus_retuned_on_min": {
+              "diff_pp": -0.9168963196618313,
+              "ci95_pp": [
+                -3.8256762184324935,
+                2.0416162706327214
+              ]
+            },
+            "cost_model_vs_retuned_per_shape": {
+              "n_model_better": 43,
+              "n_equal": 50,
+              "n_model_worse": 33,
+              "spearman_model_advantage_vs_shape_noise": {
+                "rho": 0.3880021491097546,
+                "p": 7.153777790696929e-06
+              }
+            }
+          },
+          "noise_floor_definition": "per shard shape: table retuned at the shape, chosen on two rounds and scored on the third against that round's oracle (cross_round)",
+          "noise_floor_pooled_pct": 14.865962183890419,
+          "noise_floor_pooled_ci95": [
+            10.89284435259589,
+            19.16895852762517
+          ],
+          "noise_floor_median_shape_pct": 0.6585414017430254,
+          "noise_floor_shape_distribution": {
+            "p75_pct": 25.869303550617357,
+            "p90_pct": 49.83724639520203,
+            "max_pct": 113.96643019134353,
+            "share_shapes_above_2pct": 0.4523809523809524,
+            "share_shapes_above_10pct": 0.35714285714285715
+          },
+          "selector_regret_vs_own_noise_floor": {
+            "unsharded_table": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 75,
+              "n_regret_above_twice_noise_floor": 65,
+              "n_regret_above_floor_plus_5pp": 62,
+              "mean_excess_over_floor_pp": 30.655016499115,
+              "mean_excess_over_floor_ci95_pp": [
+                18.685645718093095,
+                44.72633513226911
+              ]
+            },
+            "calibration_width_table": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 56,
+              "n_regret_above_twice_noise_floor": 48,
+              "n_regret_above_floor_plus_5pp": 43,
+              "mean_excess_over_floor_pp": 9.172519032349493,
+              "mean_excess_over_floor_ci95_pp": [
+                3.603779246730897,
+                15.212762355709492
+              ]
+            },
+            "best_static": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 92,
+              "n_regret_above_twice_noise_floor": 82,
+              "n_regret_above_floor_plus_5pp": 90,
+              "mean_excess_over_floor_pp": 15.220999038758523,
+              "mean_excess_over_floor_ci95_pp": [
+                10.912717741920229,
+                19.796382901368613
+              ]
+            },
+            "cost_model": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 33,
+              "n_regret_above_twice_noise_floor": 26,
+              "n_regret_above_floor_plus_5pp": 20,
+              "mean_excess_over_floor_pp": -1.003193670516667,
+              "mean_excess_over_floor_ci95_pp": [
+                -4.017303337524191,
+                1.9268626171748966
+              ]
+            }
+          }
+        },
+        "scoring": {
+          "cross_round": {
+            "definition": "every selector scored on each held-out round against that round's oracle; retuned table chosen on the other two rounds; mean over the three rounds",
+            "pooled": {
+              "cost_model": {
+                "mean_regret_pct": 13.86276851337375,
+                "ci95_shape_bootstrap": [
+                  10.66754114841272,
+                  17.440050782658417
+                ],
+                "p95_regret_pct": 53.075682492621965,
+                "max_regret_pct": 84.78625179882012
+              },
+              "nearest_key": {
+                "mean_regret_pct": 30.411253929113958,
+                "ci95_shape_bootstrap": [
+                  23.54817554483221,
+                  38.140957920221666
+                ],
+                "p95_regret_pct": 97.66949846222757,
+                "max_regret_pct": 270.6161049787045
+              },
+              "calibration_width_table": {
+                "mean_regret_pct": 24.03848121623991,
+                "ci95_shape_bootstrap": [
+                  19.02174074367336,
+                  29.501222342737094
+                ],
+                "p95_regret_pct": 82.25989434466162,
+                "max_regret_pct": 155.60022306020363
+              },
+              "best_static": {
+                "mean_regret_pct": 30.086961222648938,
+                "ci95_shape_bootstrap": [
+                  26.123782436682653,
+                  34.361562949847745
+                ],
+                "p95_regret_pct": 81.65201981880014,
+                "max_regret_pct": 160.23331236249382
+              },
+              "unsharded_table": {
+                "mean_regret_pct": 45.52097868300542,
+                "ci95_shape_bootstrap": [
+                  33.67799476313633,
+                  59.22902449492556
+                ],
+                "p95_regret_pct": 196.15021990611595,
+                "max_regret_pct": 450.9286615109274
+              },
+              "retuned_at_shard_width": {
+                "mean_regret_pct": 14.865962183890419,
+                "ci95_shape_bootstrap": [
+                  10.89284435259589,
+                  19.16895852762517
+                ],
+                "p95_regret_pct": 60.68661170945647,
+                "max_regret_pct": 113.96643019134353
+              }
+            },
+            "paired_cost_model_minus": {
+              "cost_model - nearest_key": {
+                "diff_pp": -16.548485415740206,
+                "ci95_pp": [
+                  -24.522930202555234,
+                  -9.704083998105958
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - calibration_width_table": {
+                "diff_pp": -10.175712702866159,
+                "ci95_pp": [
+                  -15.861458625159292,
+                  -4.9646436423127
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - best_static": {
+                "diff_pp": -16.22419270927519,
+                "ci95_pp": [
+                  -20.670983183585463,
+                  -12.169295887547365
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - unsharded_table": {
+                "diff_pp": -31.65821016963167,
+                "ci95_pp": [
+                  -45.807758465763925,
+                  -19.67746131808362
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - retuned_at_shard_width": {
+                "diff_pp": -1.0031936705166673,
+                "ci95_pp": [
+                  -4.017303337524191,
+                  1.9268626171748968
+                ],
+                "ci_excludes_zero": false
+              }
+            },
+            "paired_unsharded_minus_retuned": {
+              "diff_pp": 30.655016499115003,
+              "ci95_pp": [
+                18.6856457180931,
+                44.7263351322691
+              ]
+            },
+            "paired_calibration_width_minus_retuned": {
+              "diff_pp": 9.172519032349491,
+              "ci95_pp": [
+                3.6037792467309,
+                15.212762355709492
+              ]
+            }
+          },
+          "mean_oracle_loro": {
+            "definition": "every selector scored against the three-round-mean oracle; retuned table chosen on two rounds (leave one round out), mean over the three choices (optimistic for the retuned table)",
+            "pooled": {
+              "cost_model": {
+                "mean_regret_pct": 6.514821559183645,
+                "ci95_shape_bootstrap": [
+                  4.683354425275683,
+                  8.56864442025742
+                ],
+                "p95_regret_pct": 30.515601404414376,
+                "max_regret_pct": 54.678128658358126
+              },
+              "nearest_key": {
+                "mean_regret_pct": 22.191536654696538,
+                "ci95_shape_bootstrap": [
+                  15.866370930718329,
+                  29.934223254342417
+                ],
+                "p95_regret_pct": 90.80897076470171,
+                "max_regret_pct": 269.2932730375227
+              },
+              "calibration_width_table": {
+                "mean_regret_pct": 16.462339698876818,
+                "ci95_shape_bootstrap": [
+                  11.772145352307914,
+                  21.54214919878845
+                ],
+                "p95_regret_pct": 74.13362781644575,
+                "max_regret_pct": 148.6875212333525
+              },
+              "best_static": {
+                "mean_regret_pct": 21.937408425377825,
+                "ci95_shape_bootstrap": [
+                  18.854188753050117,
+                  25.619468557402595
+                ],
+                "p95_regret_pct": 43.69485741435366,
+                "max_regret_pct": 152.55922877354865
+              },
+              "unsharded_table": {
+                "mean_regret_pct": 36.819284350652325,
+                "ci95_shape_bootstrap": [
+                  25.572993523417747,
+                  50.22687639195016
+                ],
+                "p95_regret_pct": 184.8871658912457,
+                "max_regret_pct": 449.02079410651686
+              },
+              "retuned_at_shard_width": {
+                "mean_regret_pct": 1.2246691233767835,
+                "ci95_shape_bootstrap": [
+                  0.878384261827165,
+                  1.593458881776204
+                ],
+                "p95_regret_pct": 5.048719826257129,
+                "max_regret_pct": 9.420976575610451
+              }
+            },
+            "paired_cost_model_minus": {
+              "cost_model - nearest_key": {
+                "diff_pp": -15.676715095512893,
+                "ci95_pp": [
+                  -23.54607628951391,
+                  -9.014544544524185
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - calibration_width_table": {
+                "diff_pp": -9.947518139693178,
+                "ci95_pp": [
+                  -15.20619272439708,
+                  -5.054291389020107
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - best_static": {
+                "diff_pp": -15.422586866194175,
+                "ci95_pp": [
+                  -19.478792840450843,
+                  -11.765763014875155
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - unsharded_table": {
+                "diff_pp": -30.30446279146868,
+                "ci95_pp": [
+                  -44.13624032156508,
+                  -18.730397554761073
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - retuned_at_shard_width": {
+                "diff_pp": 5.290152435806863,
+                "ci95_pp": [
+                  3.5102326444384984,
+                  7.259431394372988
+                ],
+                "ci_excludes_zero": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "h800": {
+      "ref": {
+        "gpu": "H800 PCIe",
+        "family": "ref",
+        "chunks": [
+          128,
+          256,
+          512,
+          1024,
+          2048
+        ],
+        "n_shapes": 168,
+        "n_shard_shapes_pooled": 126,
+        "notes": {
+          "cost_model": "unavailable: no stored cost-model parameters for this kernel and GPU (FileNotFoundError(2, 'No such file or directory'))",
+          "best_static_chunk": 256
+        },
+        "reproduction": {
+          "round_agreement_all_shapes_e12_definition": 0.8869047619047619,
+          "round_agreement_definition": "share of shapes whose per-round argmin is the same chunk in all three rounds (e12_analysis.shape_table rounds_agree), over all shapes of the family",
+          "pooled_shards_mean_regret_vs_3round_mean_oracle_pct": {
+            "calibration_width_table": 6.285707643424325,
+            "best_static": 27.65099837710246,
+            "unsharded_table": 6.647065884967973
+          },
+          "retuned_cross_round_pct": 0.6724777411207009,
+          "paired": {},
+          "retuned_cross_round_ci95": [
+            0.04511487240106255,
+            1.862127330789311
+          ]
+        },
+        "round_variation": {
+          "shard_shapes": {
+            "n_shapes": 126,
+            "n_shape_chunk_cells": 630,
+            "between_round_rel_sd_pct": {
+              "median": 0.4259581881753027,
+              "p90": 1.936377926268381
+            },
+            "abs_rel_diff_two_rounds_pct": {
+              "median": 0.48708602411941715,
+              "p90": 2.284960276834315
+            },
+            "share_round_pairs_abs_z_gt_1p96": 0.4925925925925926,
+            "argmin_agree_all_rounds_share": 0.8650793650793651,
+            "argmin_agree_pairwise_share": 0.91005291005291
+          },
+          "all_shapes": {
+            "n_shapes": 168,
+            "n_shape_chunk_cells": 840,
+            "between_round_rel_sd_pct": {
+              "median": 0.4188184815172409,
+              "p90": 1.8743279212889252
+            },
+            "abs_rel_diff_two_rounds_pct": {
+              "median": 0.48184536442869697,
+              "p90": 2.2534974076605976
+            },
+            "share_round_pairs_abs_z_gt_1p96": 0.5226190476190476,
+            "argmin_agree_all_rounds_share": 0.8869047619047619,
+            "argmin_agree_pairwise_share": 0.9246031746031746
+          }
+        },
+        "chunk_effect_vs_noise": {
+          "anova": {
+            "shard_shapes": {
+              "n_shapes": 126,
+              "share_chunk_effect_significant_bh05": 1.0,
+              "median_ms_chunk_over_ms_residual": 9970.198702961097,
+              "top2_gap": {
+                "definition": "log latency of the second-best minus the best chunk (three-round means), per round; t = mean / (between-round SD / sqrt(3))",
+                "share_t_gt_4p30": 0.746031746031746,
+                "median_t": 24.30686229825702,
+                "note": "4.30 is the two-sided 5% critical value of t with 2 degrees of freedom: share of shapes whose best chunk is resolved from the runner-up by the three rounds"
+              }
+            },
+            "all_shapes": {
+              "n_shapes": 168,
+              "share_chunk_effect_significant_bh05": 1.0,
+              "median_ms_chunk_over_ms_residual": 9970.198702961097,
+              "top2_gap": {
+                "definition": "log latency of the second-best minus the best chunk (three-round means), per round; t = mean / (between-round SD / sqrt(3))",
+                "share_t_gt_4p30": 0.7678571428571429,
+                "median_t": 21.343241788031477,
+                "note": "4.30 is the two-sided 5% critical value of t with 2 degrees of freedom: share of shapes whose best chunk is resolved from the runner-up by the three rounds"
+              }
+            }
+          },
+          "noise_shape": {
+            "shard_shapes": {
+              "definition": "per (shape, chunk): largest and smallest deviation of a round mean from the median of the three rounds; per shape: largest |deviation| of a round's mean log latency over chunks (a whole-round level shift)",
+              "share_cells_one_round_above_median_by_10pct": 0.012698412698412698,
+              "share_cells_one_round_below_median_by_10pct": 0.0015873015873015873,
+              "share_cells_one_round_above_median_by_25pct": 0.007936507936507936,
+              "share_cells_one_round_below_median_by_25pct": 0.0,
+              "round_level_shift_pct": {
+                "median": 0.46787053306785004,
+                "p90": 1.7255591412017262
+              }
+            },
+            "all_shapes": {
+              "definition": "per (shape, chunk): largest and smallest deviation of a round mean from the median of the three rounds; per shape: largest |deviation| of a round's mean log latency over chunks (a whole-round level shift)",
+              "share_cells_one_round_above_median_by_10pct": 0.013095238095238096,
+              "share_cells_one_round_below_median_by_10pct": 0.0011904761904761906,
+              "share_cells_one_round_above_median_by_25pct": 0.008333333333333333,
+              "share_cells_one_round_below_median_by_25pct": 0.0,
+              "round_level_shift_pct": {
+                "median": 0.47155947957023575,
+                "p90": 1.7024006058004386
+              }
+            },
+            "retuned_on_min_of_other_rounds_cross_round_pct": 0.3092180675975582,
+            "retuned_on_min_of_other_rounds_ci95": [
+              0.10940732232022835,
+              0.6313744359907385
+            ],
+            "cost_model_minus_retuned_on_min": null
+          },
+          "noise_floor_definition": "per shard shape: table retuned at the shape, chosen on two rounds and scored on the third against that round's oracle (cross_round)",
+          "noise_floor_pooled_pct": 0.6724777411207009,
+          "noise_floor_pooled_ci95": [
+            0.04275571718535658,
+            1.854413390713422
+          ],
+          "noise_floor_median_shape_pct": 0.0,
+          "noise_floor_shape_distribution": {
+            "p75_pct": 0.0,
+            "p90_pct": 0.10037587983536081,
+            "max_pct": 69.12822330443115,
+            "share_shapes_above_2pct": 0.015873015873015872,
+            "share_shapes_above_10pct": 0.007936507936507936
+          },
+          "selector_regret_vs_own_noise_floor": {
+            "unsharded_table": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 43,
+              "n_regret_above_twice_noise_floor": 43,
+              "n_regret_above_floor_plus_5pp": 31,
+              "mean_excess_over_floor_pp": 6.160329872697191,
+              "mean_excess_over_floor_ci95_pp": [
+                3.3606316126124813,
+                9.506340160335993
+              ]
+            },
+            "calibration_width_table": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 37,
+              "n_regret_above_twice_noise_floor": 37,
+              "n_regret_above_floor_plus_5pp": 25,
+              "mean_excess_over_floor_pp": 5.798682079202781,
+              "mean_excess_over_floor_ci95_pp": [
+                2.8454387701127652,
+                9.258809180007033
+              ]
+            },
+            "best_static": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 94,
+              "n_regret_above_twice_noise_floor": 94,
+              "n_regret_above_floor_plus_5pp": 78,
+              "mean_excess_over_floor_pp": 27.351372845660393,
+              "mean_excess_over_floor_ci95_pp": [
+                21.26175784200132,
+                33.88510180628591
+              ]
+            }
+          }
+        },
+        "scoring": {
+          "cross_round": {
+            "definition": "every selector scored on each held-out round against that round's oracle; retuned table chosen on the other two rounds; mean over the three rounds",
+            "pooled": {
+              "calibration_width_table": {
+                "mean_regret_pct": 6.471159820323481,
+                "ci95_shape_bootstrap": [
+                  3.8312641213092866,
+                  9.861720163289133
+                ],
+                "p95_regret_pct": 40.728210118476724,
+                "max_regret_pct": 116.13654640486865
+              },
+              "best_static": {
+                "mean_regret_pct": 28.023850586781094,
+                "ci95_shape_bootstrap": [
+                  21.903805552453598,
+                  34.54281997144319
+                ],
+                "p95_regret_pct": 115.8506415385423,
+                "max_regret_pct": 141.61919508115633
+              },
+              "unsharded_table": {
+                "mean_regret_pct": 6.83280761381789,
+                "ci95_shape_bootstrap": [
+                  4.271818837157183,
+                  10.015049828933918
+                ],
+                "p95_regret_pct": 29.184395868422808,
+                "max_regret_pct": 116.13654640486865
+              },
+              "retuned_at_shard_width": {
+                "mean_regret_pct": 0.6724777411207009,
+                "ci95_shape_bootstrap": [
+                  0.04275571718535658,
+                  1.854413390713422
+                ],
+                "p95_regret_pct": 0.7826693455681266,
+                "max_regret_pct": 69.12822330443115
+              }
+            },
+            "paired_cost_model_minus": {},
+            "paired_unsharded_minus_retuned": {
+              "diff_pp": 6.160329872697192,
+              "ci95_pp": [
+                3.3606316126124813,
+                9.506340160335993
+              ]
+            },
+            "paired_calibration_width_minus_retuned": {
+              "diff_pp": 5.798682079202781,
+              "ci95_pp": [
+                2.8454387701127652,
+                9.258809180007034
+              ]
+            }
+          },
+          "mean_oracle_loro": {
+            "definition": "every selector scored against the three-round-mean oracle; retuned table chosen on two rounds (leave one round out), mean over the three choices (optimistic for the retuned table)",
+            "pooled": {
+              "calibration_width_table": {
+                "mean_regret_pct": 6.285707643424325,
+                "ci95_shape_bootstrap": [
+                  3.6585455193512466,
+                  9.646713786692455
+                ],
+                "p95_regret_pct": 40.70611974812579,
+                "max_regret_pct": 115.42925371853836
+              },
+              "best_static": {
+                "mean_regret_pct": 27.65099837710246,
+                "ci95_shape_bootstrap": [
+                  21.58069992770361,
+                  34.125692141554445
+                ],
+                "p95_regret_pct": 115.31958641982905,
+                "max_regret_pct": 141.6194729628071
+              },
+              "unsharded_table": {
+                "mean_regret_pct": 6.647065884967973,
+                "ci95_shape_bootstrap": [
+                  4.1048137245038,
+                  9.78063640556431
+                ],
+                "p95_regret_pct": 29.18394505108346,
+                "max_regret_pct": 115.42925371853836
+              },
+              "retuned_at_shard_width": {
+                "mean_regret_pct": 0.09443394090850261,
+                "ci95_shape_bootstrap": [
+                  0.0036930934010421285,
+                  0.2663417150909036
+                ],
+                "p95_regret_pct": 0.07508786219413051,
+                "max_regret_pct": 10.124090330458808
+              }
+            },
+            "paired_cost_model_minus": {}
+          }
+        }
+      },
+      "triton": {
+        "gpu": "H800 PCIe",
+        "family": "triton",
+        "chunks": [
+          32,
+          64,
+          128,
+          256,
+          512,
+          1024
+        ],
+        "n_shapes": 168,
+        "n_shard_shapes_pooled": 126,
+        "notes": {
+          "best_static_chunk": 256
+        },
+        "reproduction": {
+          "round_agreement_all_shapes_e12_definition": 0.6964285714285714,
+          "round_agreement_definition": "share of shapes whose per-round argmin is the same chunk in all three rounds (e12_analysis.shape_table rounds_agree), over all shapes of the family",
+          "pooled_shards_mean_regret_vs_3round_mean_oracle_pct": {
+            "cost_model": 2.911520201854125,
+            "nearest_key": 3.6586653379102754,
+            "calibration_width_table": 2.2009561695763318,
+            "best_static": 24.32973647510768,
+            "unsharded_table": 22.096517403197563
+          },
+          "retuned_cross_round_pct": 0.7486949624763141,
+          "paired": {
+            "cost_model - retuned_at_shard_width_cross_round (stored mixed scoring)": {
+              "diff_pp": 2.162825239377811,
+              "ci95_pp": [
+                1.1606069485422306,
+                3.2162663919327326
+              ]
+            }
+          },
+          "retuned_cross_round_ci95": [
+            0.306535983942115,
+            1.3337743417768573
+          ]
+        },
+        "round_variation": {
+          "shard_shapes": {
+            "n_shapes": 126,
+            "n_shape_chunk_cells": 756,
+            "between_round_rel_sd_pct": {
+              "median": 0.6122094719970606,
+              "p90": 2.899074373079495
+            },
+            "abs_rel_diff_two_rounds_pct": {
+              "median": 0.6694827464038778,
+              "p90": 3.64282647214734
+            },
+            "share_round_pairs_abs_z_gt_1p96": 0.3915343915343915,
+            "argmin_agree_all_rounds_share": 0.6825396825396826,
+            "argmin_agree_pairwise_share": 0.7566137566137566
+          },
+          "all_shapes": {
+            "n_shapes": 168,
+            "n_shape_chunk_cells": 1008,
+            "between_round_rel_sd_pct": {
+              "median": 0.568810918044147,
+              "p90": 2.6518811646942897
+            },
+            "abs_rel_diff_two_rounds_pct": {
+              "median": 0.6427201617521469,
+              "p90": 3.445337917375372
+            },
+            "share_round_pairs_abs_z_gt_1p96": 0.42824074074074076,
+            "argmin_agree_all_rounds_share": 0.6964285714285714,
+            "argmin_agree_pairwise_share": 0.7718253968253969
+          }
+        },
+        "chunk_effect_vs_noise": {
+          "anova": {
+            "shard_shapes": {
+              "n_shapes": 126,
+              "share_chunk_effect_significant_bh05": 0.9206349206349206,
+              "median_ms_chunk_over_ms_residual": 2226.195547659059,
+              "top2_gap": {
+                "definition": "log latency of the second-best minus the best chunk (three-round means), per round; t = mean / (between-round SD / sqrt(3))",
+                "share_t_gt_4p30": 0.5952380952380952,
+                "median_t": 7.978514005804788,
+                "note": "4.30 is the two-sided 5% critical value of t with 2 degrees of freedom: share of shapes whose best chunk is resolved from the runner-up by the three rounds"
+              }
+            },
+            "all_shapes": {
+              "n_shapes": 168,
+              "share_chunk_effect_significant_bh05": 0.9404761904761905,
+              "median_ms_chunk_over_ms_residual": 2226.195547659059,
+              "top2_gap": {
+                "definition": "log latency of the second-best minus the best chunk (three-round means), per round; t = mean / (between-round SD / sqrt(3))",
+                "share_t_gt_4p30": 0.6011904761904762,
+                "median_t": 7.978514005804788,
+                "note": "4.30 is the two-sided 5% critical value of t with 2 degrees of freedom: share of shapes whose best chunk is resolved from the runner-up by the three rounds"
+              }
+            }
+          },
+          "noise_shape": {
+            "shard_shapes": {
+              "definition": "per (shape, chunk): largest and smallest deviation of a round mean from the median of the three rounds; per shape: largest |deviation| of a round's mean log latency over chunks (a whole-round level shift)",
+              "share_cells_one_round_above_median_by_10pct": 0.04365079365079365,
+              "share_cells_one_round_below_median_by_10pct": 0.010582010582010581,
+              "share_cells_one_round_above_median_by_25pct": 0.026455026455026454,
+              "share_cells_one_round_below_median_by_25pct": 0.0013227513227513227,
+              "round_level_shift_pct": {
+                "median": 0.7879154459869857,
+                "p90": 3.6395573262805945
+              }
+            },
+            "all_shapes": {
+              "definition": "per (shape, chunk): largest and smallest deviation of a round mean from the median of the three rounds; per shape: largest |deviation| of a round's mean log latency over chunks (a whole-round level shift)",
+              "share_cells_one_round_above_median_by_10pct": 0.03670634920634921,
+              "share_cells_one_round_below_median_by_10pct": 0.00992063492063492,
+              "share_cells_one_round_above_median_by_25pct": 0.020833333333333332,
+              "share_cells_one_round_below_median_by_25pct": 0.000992063492063492,
+              "round_level_shift_pct": {
+                "median": 0.7325892425147548,
+                "p90": 3.4598625513686034
+              }
+            },
+            "retuned_on_min_of_other_rounds_cross_round_pct": 0.7622270533212983,
+            "retuned_on_min_of_other_rounds_ci95": [
+              0.2624147867827203,
+              1.4392383843353023
+            ],
+            "cost_model_minus_retuned_on_min": {
+              "diff_pp": 2.31643427008798,
+              "ci95_pp": [
+                1.291900388438238,
+                3.3347780531691487
+              ]
+            },
+            "cost_model_vs_retuned_per_shape": {
+              "n_model_better": 22,
+              "n_equal": 64,
+              "n_model_worse": 40,
+              "spearman_model_advantage_vs_shape_noise": {
+                "rho": 0.06352960153463252,
+                "p": 0.47973721394201313
+              }
+            }
+          },
+          "noise_floor_definition": "per shard shape: table retuned at the shape, chosen on two rounds and scored on the third against that round's oracle (cross_round)",
+          "noise_floor_pooled_pct": 0.7486949624763141,
+          "noise_floor_pooled_ci95": [
+            0.32897184425660336,
+            1.3200702317778026
+          ],
+          "noise_floor_median_shape_pct": 0.0,
+          "noise_floor_shape_distribution": {
+            "p75_pct": 0.2565063372291898,
+            "p90_pct": 1.3431691573688658,
+            "max_pct": 22.999890843690356,
+            "share_shapes_above_2pct": 0.047619047619047616,
+            "share_shapes_above_10pct": 0.023809523809523808
+          },
+          "selector_regret_vs_own_noise_floor": {
+            "unsharded_table": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 63,
+              "n_regret_above_twice_noise_floor": 61,
+              "n_regret_above_floor_plus_5pp": 45,
+              "mean_excess_over_floor_pp": 21.51973851976925,
+              "mean_excess_over_floor_ci95_pp": [
+                12.236289630361906,
+                32.474068536263665
+              ]
+            },
+            "calibration_width_table": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 39,
+              "n_regret_above_twice_noise_floor": 36,
+              "n_regret_above_floor_plus_5pp": 23,
+              "mean_excess_over_floor_pp": 1.6178834540366418,
+              "mean_excess_over_floor_ci95_pp": [
+                0.6932600824110975,
+                2.5849114268972397
+              ]
+            },
+            "best_static": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 100,
+              "n_regret_above_twice_noise_floor": 96,
+              "n_regret_above_floor_plus_5pp": 89,
+              "mean_excess_over_floor_pp": 23.790849135059137,
+              "mean_excess_over_floor_ci95_pp": [
+                17.196639234604778,
+                31.142181966712126
+              ]
+            },
+            "cost_model": {
+              "n_shapes": 126,
+              "n_regret_above_own_noise_floor": 40,
+              "n_regret_above_twice_noise_floor": 36,
+              "n_regret_above_floor_plus_5pp": 28,
+              "mean_excess_over_floor_pp": 2.3299663609329646,
+              "mean_excess_over_floor_ci95_pp": [
+                1.3164128886196815,
+                3.383370602369416
+              ]
+            }
+          }
+        },
+        "scoring": {
+          "cross_round": {
+            "definition": "every selector scored on each held-out round against that round's oracle; retuned table chosen on the other two rounds; mean over the three rounds",
+            "pooled": {
+              "cost_model": {
+                "mean_regret_pct": 3.0786613234092783,
+                "ci95_shape_bootstrap": [
+                  2.2140200710457356,
+                  4.018564260702793
+                ],
+                "p95_regret_pct": 13.755012994723264,
+                "max_regret_pct": 20.47413860379875
+              },
+              "nearest_key": {
+                "mean_regret_pct": 3.832945520180349,
+                "ci95_shape_bootstrap": [
+                  2.7764782148850986,
+                  5.031040473712421
+                ],
+                "p95_regret_pct": 17.54181942577995,
+                "max_regret_pct": 36.08294703500543
+              },
+              "calibration_width_table": {
+                "mean_regret_pct": 2.366578416512956,
+                "ci95_shape_bootstrap": [
+                  1.6184354269924148,
+                  3.196935059880261
+                ],
+                "p95_regret_pct": 14.515118300294327,
+                "max_regret_pct": 17.68334186198052
+              },
+              "best_static": {
+                "mean_regret_pct": 24.539544097535444,
+                "ci95_shape_bootstrap": [
+                  17.913684568203948,
+                  31.988586570746982
+                ],
+                "p95_regret_pct": 130.25775432977446,
+                "max_regret_pct": 217.1638343871138
+              },
+              "unsharded_table": {
+                "mean_regret_pct": 22.268433482245563,
+                "ci95_shape_bootstrap": [
+                  12.81306363335589,
+                  33.17624661695793
+                ],
+                "p95_regret_pct": 97.11469605394771,
+                "max_regret_pct": 398.0310638117682
+              },
+              "retuned_at_shard_width": {
+                "mean_regret_pct": 0.7486949624763141,
+                "ci95_shape_bootstrap": [
+                  0.32897184425660336,
+                  1.3200702317778026
+                ],
+                "p95_regret_pct": 1.84705670006353,
+                "max_regret_pct": 22.999890843690356
+              }
+            },
+            "paired_cost_model_minus": {
+              "cost_model - nearest_key": {
+                "diff_pp": -0.7542841967710708,
+                "ci95_pp": [
+                  -2.1430017385497053,
+                  0.6665348672677487
+                ],
+                "ci_excludes_zero": false
+              },
+              "cost_model - calibration_width_table": {
+                "diff_pp": 0.7120829068963225,
+                "ci95_pp": [
+                  -0.39207669480109236,
+                  1.8611264966743466
+                ],
+                "ci_excludes_zero": false
+              },
+              "cost_model - best_static": {
+                "diff_pp": -21.46088277412617,
+                "ci95_pp": [
+                  -29.000514428685516,
+                  -14.693109540156714
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - unsharded_table": {
+                "diff_pp": -19.18977215883629,
+                "ci95_pp": [
+                  -30.275331089651463,
+                  -9.889439214320042
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - retuned_at_shard_width": {
+                "diff_pp": 2.329966360932964,
+                "ci95_pp": [
+                  1.3164128886196818,
+                  3.3833706023694154
+                ],
+                "ci_excludes_zero": true
+              }
+            },
+            "paired_unsharded_minus_retuned": {
+              "diff_pp": 21.519738519769245,
+              "ci95_pp": [
+                12.236289630361904,
+                32.474068536263665
+              ]
+            },
+            "paired_calibration_width_minus_retuned": {
+              "diff_pp": 1.617883454036642,
+              "ci95_pp": [
+                0.6932600824110974,
+                2.58491142689724
+              ]
+            }
+          },
+          "mean_oracle_loro": {
+            "definition": "every selector scored against the three-round-mean oracle; retuned table chosen on two rounds (leave one round out), mean over the three choices (optimistic for the retuned table)",
+            "pooled": {
+              "cost_model": {
+                "mean_regret_pct": 2.911520201854125,
+                "ci95_shape_bootstrap": [
+                  2.0459412318507764,
+                  3.86196243582461
+                ],
+                "p95_regret_pct": 13.088521039765578,
+                "max_regret_pct": 20.38802031493916
+              },
+              "nearest_key": {
+                "mean_regret_pct": 3.6586653379102754,
+                "ci95_shape_bootstrap": [
+                  2.605888013233346,
+                  4.844843930173565
+                ],
+                "p95_regret_pct": 17.54948630546237,
+                "max_regret_pct": 35.7457245590153
+              },
+              "calibration_width_table": {
+                "mean_regret_pct": 2.2009561695763318,
+                "ci95_shape_bootstrap": [
+                  1.4506326453513756,
+                  3.025851239535115
+                ],
+                "p95_regret_pct": 14.2863024199196,
+                "max_regret_pct": 17.694092704724262
+              },
+              "best_static": {
+                "mean_regret_pct": 24.32973647510768,
+                "ci95_shape_bootstrap": [
+                  17.729122655410716,
+                  31.77079543089187
+                ],
+                "p95_regret_pct": 129.10491141251165,
+                "max_regret_pct": 217.17058185364442
+              },
+              "unsharded_table": {
+                "mean_regret_pct": 22.096517403197563,
+                "ci95_shape_bootstrap": [
+                  12.643128458959046,
+                  33.0211182009759
+                ],
+                "p95_regret_pct": 97.06825831443868,
+                "max_regret_pct": 398.0425630301652
+              },
+              "retuned_at_shard_width": {
+                "mean_regret_pct": 0.16113842298653847,
+                "ci95_shape_bootstrap": [
+                  0.03512873584896522,
+                  0.3251842531822804
+                ],
+                "p95_regret_pct": 0.25535107889034236,
+                "max_regret_pct": 7.1696577285305985
+              }
+            },
+            "paired_cost_model_minus": {
+              "cost_model - nearest_key": {
+                "diff_pp": -0.7471451360561503,
+                "ci95_pp": [
+                  -2.1357180236728346,
+                  0.6721879077638017
+                ],
+                "ci_excludes_zero": false
+              },
+              "cost_model - calibration_width_table": {
+                "diff_pp": 0.7105640322777934,
+                "ci95_pp": [
+                  -0.390953707231335,
+                  1.8578838461294735
+                ],
+                "ci_excludes_zero": false
+              },
+              "cost_model - best_static": {
+                "diff_pp": -21.418216273253556,
+                "ci95_pp": [
+                  -28.901920385252847,
+                  -14.66299724259842
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - unsharded_table": {
+                "diff_pp": -19.18499720134344,
+                "ci95_pp": [
+                  -30.271037328972085,
+                  -9.887707336462688
+                ],
+                "ci_excludes_zero": true
+              },
+              "cost_model - retuned_at_shard_width": {
+                "diff_pp": 2.750381778867587,
+                "ci95_pp": [
+                  1.8754594690139423,
+                  3.704988926411239
+                ],
+                "ci_excludes_zero": true
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "checks": [
+    {
+      "check": "vgpu3090.ref.cost_model.mean",
+      "computed": 1.783570860944482,
+      "stored": 1.783570860944482,
+      "match": true
+    },
+    {
+      "check": "vgpu3090.ref.calibration_width_table.mean",
+      "computed": 4.115999758237619,
+      "stored": 4.115999758237619,
+      "match": true
+    },
+    {
+      "check": "vgpu3090.ref.best_static.mean",
+      "computed": 23.1034803918517,
+      "stored": 23.1034803918517,
+      "match": true
+    },
+    {
+      "check": "vgpu3090.ref.unsharded_table.mean",
+      "computed": 2.2202623754455675,
+      "stored": 2.2202623754455675,
+      "match": true
+    },
+    {
+      "check": "vgpu3090.ref.retuned.mean",
+      "computed": 6.129965219184082,
+      "stored": 6.129965219184082,
+      "match": true
+    },
+    {
+      "check": "vgpu3090.ref.retuned.ci",
+      "computed": [
+        3.7459983116860136,
+        8.680774770651894
+      ],
+      "stored": [
+        3.7459983116860136,
+        8.680774770651894
+      ],
+      "match": true
+    },
+    {
+      "check": "vgpu3090.ref.paired_cm_minus_retuned",
+      "computed": [
+        -4.346394358239599,
+        -7.062715363300575,
+        -1.855344120135566
+      ],
+      "stored": [
+        -4.346394358239599,
+        -7.062715363300575,
+        -1.855344120135566
+      ],
+      "match": true
+    },
+    {
+      "check": "vgpu3090.triton.cost_model.mean",
+      "computed": 6.514821559183645,
+      "stored": 6.514821559183645,
+      "match": true
+    },
+    {
+      "check": "vgpu3090.triton.nearest_key.mean",
+      "computed": 22.191536654696538,
+      "stored": 22.191536654696538,
+      "match": true
+    },
+    {
+      "check": "vgpu3090.triton.calibration_width_table.mean",
+      "computed": 16.462339698876818,
+      "stored": 16.462339698876818,
+      "match": true
+    },
+    {
+      "check": "vgpu3090.triton.best_static.mean",
+      "computed": 21.937408425377825,
+      "stored": 21.937408425377825,
+      "match": true
+    },
+    {
+      "check": "vgpu3090.triton.unsharded_table.mean",
+      "computed": 36.819284350652325,
+      "stored": 36.819284350652325,
+      "match": true
+    },
+    {
+      "check": "vgpu3090.triton.retuned.mean",
+      "computed": 14.865962183890419,
+      "stored": 14.865962183890419,
+      "match": true
+    },
+    {
+      "check": "vgpu3090.triton.retuned.ci",
+      "computed": [
+        11.134604508952101,
+        19.053338002178045
+      ],
+      "stored": [
+        11.134604508952101,
+        19.053338002178045
+      ],
+      "match": true
+    },
+    {
+      "check": "vgpu3090.triton.paired_cm_minus_retuned",
+      "computed": [
+        -8.351140624706773,
+        -12.384090373764032,
+        -4.589076027731677
+      ],
+      "stored": [
+        -8.351140624706773,
+        -12.384090373764032,
+        -4.589076027731677
+      ],
+      "match": true
+    },
+    {
+      "check": "h800.ref.calibration_width_table.mean",
+      "computed": 6.285707643424325,
+      "stored": 6.285707643424325,
+      "match": true
+    },
+    {
+      "check": "h800.ref.best_static.mean",
+      "computed": 27.65099837710246,
+      "stored": 27.65099837710246,
+      "match": true
+    },
+    {
+      "check": "h800.ref.unsharded_table.mean",
+      "computed": 6.647065884967973,
+      "stored": 6.647065884967973,
+      "match": true
+    },
+    {
+      "check": "h800.ref.retuned.mean",
+      "computed": 0.6724777411207009,
+      "stored": 0.6724777411207009,
+      "match": true
+    },
+    {
+      "check": "h800.ref.retuned.ci",
+      "computed": [
+        0.04511487240106255,
+        1.862127330789311
+      ],
+      "stored": [
+        0.04511487240106255,
+        1.862127330789311
+      ],
+      "match": true
+    },
+    {
+      "check": "h800.triton.cost_model.mean",
+      "computed": 2.911520201854125,
+      "stored": 2.911520201854125,
+      "match": true
+    },
+    {
+      "check": "h800.triton.nearest_key.mean",
+      "computed": 3.6586653379102754,
+      "stored": 3.6586653379102754,
+      "match": true
+    },
+    {
+      "check": "h800.triton.calibration_width_table.mean",
+      "computed": 2.2009561695763318,
+      "stored": 2.2009561695763318,
+      "match": true
+    },
+    {
+      "check": "h800.triton.best_static.mean",
+      "computed": 24.32973647510768,
+      "stored": 24.32973647510768,
+      "match": true
+    },
+    {
+      "check": "h800.triton.unsharded_table.mean",
+      "computed": 22.096517403197563,
+      "stored": 22.096517403197563,
+      "match": true
+    },
+    {
+      "check": "h800.triton.retuned.mean",
+      "computed": 0.7486949624763141,
+      "stored": 0.7486949624763141,
+      "match": true
+    },
+    {
+      "check": "h800.triton.retuned.ci",
+      "computed": [
+        0.306535983942115,
+        1.3337743417768573
+      ],
+      "stored": [
+        0.306535983942115,
+        1.3337743417768573
+      ],
+      "match": true
+    },
+    {
+      "check": "h800.triton.paired_cm_minus_retuned",
+      "computed": [
+        2.162825239377811,
+        1.1606069485422306,
+        3.2162663919327326
+      ],
+      "stored": [
+        2.162825239377811,
+        1.1606069485422306,
+        3.2162663919327326
+      ],
+      "match": true
+    }
+  ],
+  "checks_summary": {
+    "n": 28,
+    "n_match": 28
+  }
+}

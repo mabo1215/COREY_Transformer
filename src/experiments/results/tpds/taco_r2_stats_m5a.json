@@ -1,0 +1,4468 @@
+{
+  "item": "M5a",
+  "meta": {
+    "script": "__main__",
+    "created_utc": "2026-10-16T05:21:40Z",
+    "seed": 20261015,
+    "args": {
+      "in_dir": "/mnt/c/source/COREY_Transformer/src/experiments/results/tpds",
+      "draws": 100
+    }
+  },
+  "definitions": "taco-r2 item M5a: noise floors next to every regret, and the sensitivity of the ad hoc floors and thresholds.\n\nCPU only, deterministic; reads stored result files and times nothing.\n\nWhy a noise floor\n-----------------\nEvery regret of the manuscript is measured against the per-call oracle, the fastest of the timed chunks. With noisy\ntimings that minimum is biased low, so even a selector that always picks the truly fastest chunk shows a positive\nregret. The noise floor of a data set estimates that regret from the data set's own repeated timings:\n\nper-call floor     the chunk that is fastest on one set of timings is scored on an independent set of timings of\n                   the same calls (regret against that set's own per-call oracle); this is the regret of a perfect\n                   per-call selector caused by noise alone\nper-shape floor    the exact-shape (L, batch) table chosen on one set of timings, scored on the other set: the regret\n                   of a perfect shape-keyed table, i.e. noise plus the call-to-call variation within a shape that no\n                   shape key can follow\n\nIndependent sets of timings, by availability:\ncross-round        three-round sweeps: choose on the median (= mean) of two rounds, score on the third; each round\n                   held out once, averaged per call (the \"cross-round\" estimate of the headroom table, S37)\ncross-session      two sessions of the same calls and convention (RTX 3090 device time: single block vs three\n                   rounds; launch-inclusive RTX PRO 6000 and RTX 3090: first session vs three-round session; 1.4B and\n                   2.8B launch-inclusive: two sessions; CUDA graphs on the RTX 3090: single round vs three rounds);\n                   choose on one, score on the other, both directions averaged\nsplit-half         single-block tables: each 50-repeat mean m with standard deviation s is split into two half-means\n                   m +- D, D ~ N(0, s^2 / n) (the exact conditional law used in S37), choose on one half, score on the\n                   other, both ways; 100 draws. This captures within-block noise only and is therefore a LOWER bound\n                   of the floor wherever block-level noise exists (it is the only estimate for the H800, the 1.4B and\n                   2.8B device-time sweeps, the reference scan and the Mamba-2 / Gated DeltaNet single-block tables)\n\nEvery floor is reported as the mean per-call regret (%), the latency-weighted share of the oracle time (%) and\nmicroseconds per call, next to the paper-view regrets of the data set's default / best static chunk and its held-out\nexact-shape table (whose own regret bounds the oracle bias of the paper view from above). The cross-round floor is\nscored against a single round, i.e. against a noisier oracle than the round medians used in the paper; the default's\nregret scored the same way (single round) is given next to it so the two are on one scale.\n\nInformation tests above the floor (M5a, last sentence)\n-------------------------------------------------------\nFor the 19 data sets of the information analysis the chunk effect (held-out best single chunk, mean per-call regret)\nis compared with the per-shape floor of the same data set; a data set \"resolves the chunk\" when the effect exceeds\ntwice the floor and the floor-to-effect ratio is given for all.\n\nFloor sensitivity\n-----------------\nlaunch floor       \"twice the median batch-1 oracle latency at L <= 256\" with the factor 1, 1.5, 2 (published) and 3:\n                   for the device-time SSD 2.7B and Gated DeltaNet 1.4B calls (calls above the floor, how often chunk\n                   256 / 64 is their oracle, its largest per-batch mean regret, held-out headroom above the floor,\n                   Table 8 rows) and the eight CUDA-graph tables (floor, share above, default regret and LW above)\n100 us threshold   factor 0.5, 1, 1.5, 2, 3: share of the captured 370M Mamba-1 calls whose launch-inclusive oracle\n                   latency is below the threshold, and the median / 95th percentile of the relative difference between\n                   launch-inclusive and device-time latency above it (per call at the oracle, and per (call, chunk))\n\nOutput: ``taco_r2_stats_m5a.json``.\nUsage:  PYTHONPATH=. python3 -m src.experiments.tpds.taco_r2_stats_m5a_noise_floors [--draws 100]\n",
+  "table_map": {
+    "m1_pro6000_device": {
+      "tables": "Tables 4, 5, 8",
+      "gpu": "RTX PRO 6000",
+      "convention": "device time, 3 rounds",
+      "floor": {
+        "method": "cross_round",
+        "per_call_pct": 0.07,
+        "per_shape_pct": 0.054,
+        "per_shape_lw_pct": 0.052,
+        "per_shape_us": 0.14,
+        "split_half_per_call_pct (lower bound)": null,
+        "cross_round_per_call_pct": 0.07
+      },
+      "default": {
+        "mean_regret_pct": 48.594,
+        "lw_share_of_oracle_pct": 33.839,
+        "us_per_call": 92.09
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 19.99,
+        "lw_share_of_oracle_pct": 26.991,
+        "us_per_call": 73.45
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.138,
+        "lw_share_of_oracle_pct": 0.134,
+        "us_per_call": 0.37
+      }
+    },
+    "m1_vgpu3090_device": {
+      "tables": "Tables 5, 8",
+      "gpu": "RTX 3090",
+      "convention": "device time, 3 rounds",
+      "floor": {
+        "method": "cross_session",
+        "per_call_pct": 0.041,
+        "per_shape_pct": 0.018,
+        "per_shape_lw_pct": 0.007,
+        "per_shape_us": 0.04,
+        "split_half_per_call_pct (lower bound)": null,
+        "cross_round_per_call_pct": 0.102
+      },
+      "default": {
+        "mean_regret_pct": 96.352,
+        "lw_share_of_oracle_pct": 21.471,
+        "us_per_call": 133.29
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 17.401,
+        "lw_share_of_oracle_pct": 2.665,
+        "us_per_call": 16.54
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.35,
+        "lw_share_of_oracle_pct": 2.35,
+        "us_per_call": 14.59
+      }
+    },
+    "m1_h800_device": {
+      "tables": "Tables 5, 8",
+      "gpu": "H800",
+      "convention": "device time, one block",
+      "floor": {
+        "method": "split_half",
+        "per_call_pct": 0.004,
+        "per_shape_pct": 0.173,
+        "per_shape_lw_pct": 0.059,
+        "per_shape_us": 0.3,
+        "split_half_per_call_pct (lower bound)": 0.004,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 50.887,
+        "lw_share_of_oracle_pct": 18.322,
+        "us_per_call": 92.18
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 24.7,
+        "lw_share_of_oracle_pct": 20.81,
+        "us_per_call": 104.7
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.2,
+        "lw_share_of_oracle_pct": 0.067,
+        "us_per_call": 0.34
+      }
+    },
+    "m1_vgpu3090_device_one_block": {
+      "tables": "Table 5 (a-priori row)",
+      "gpu": "RTX 3090",
+      "convention": "device time, one block (session of the a-priori row)",
+      "floor": {
+        "method": "cross_session",
+        "per_call_pct": 0.041,
+        "per_shape_pct": 0.018,
+        "per_shape_lw_pct": 0.007,
+        "per_shape_us": 0.04,
+        "split_half_per_call_pct (lower bound)": 0.002,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 96.078,
+        "lw_share_of_oracle_pct": 21.525,
+        "us_per_call": 134.41
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 17.373,
+        "lw_share_of_oracle_pct": 2.706,
+        "us_per_call": 16.9
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.331,
+        "lw_share_of_oracle_pct": 2.366,
+        "us_per_call": 14.77
+      }
+    },
+    "m1_pro6000_launch": {
+      "tables": "Supplement (launch-inclusive tables)",
+      "gpu": "RTX PRO 6000",
+      "convention": "launch-inclusive, one block",
+      "floor": {
+        "method": "cross_session",
+        "per_call_pct": 3.452,
+        "per_shape_pct": 2.549,
+        "per_shape_lw_pct": 0.69,
+        "per_shape_us": 2.02,
+        "split_half_per_call_pct (lower bound)": 0.569,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 23.404,
+        "lw_share_of_oracle_pct": 31.163,
+        "us_per_call": 89.56
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 7.194,
+        "lw_share_of_oracle_pct": 21.425,
+        "us_per_call": 61.57
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.615,
+        "lw_share_of_oracle_pct": 0.228,
+        "us_per_call": 0.65
+      }
+    },
+    "m1_vgpu3090_launch": {
+      "tables": "Supplement",
+      "gpu": "RTX 3090",
+      "convention": "launch-inclusive, one block",
+      "floor": {
+        "method": "cross_session",
+        "per_call_pct": 1.732,
+        "per_shape_pct": 1.339,
+        "per_shape_lw_pct": 0.226,
+        "per_shape_us": 1.49,
+        "split_half_per_call_pct (lower bound)": 0.359,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 33.922,
+        "lw_share_of_oracle_pct": 17.908,
+        "us_per_call": 118.96
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 4.008,
+        "lw_share_of_oracle_pct": 2.599,
+        "us_per_call": 17.26
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 1.938,
+        "lw_share_of_oracle_pct": 0.737,
+        "us_per_call": 4.89
+      }
+    },
+    "m1_h800_launch": {
+      "tables": "Supplement",
+      "gpu": "H800",
+      "convention": "launch-inclusive, one block",
+      "floor": {
+        "method": "split_half",
+        "per_call_pct": 0.605,
+        "per_shape_pct": 0.934,
+        "per_shape_lw_pct": 0.188,
+        "per_shape_us": 0.99,
+        "split_half_per_call_pct (lower bound)": 0.605,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 20.146,
+        "lw_share_of_oracle_pct": 16.304,
+        "us_per_call": 86.03
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 6.668,
+        "lw_share_of_oracle_pct": 13.477,
+        "us_per_call": 71.11
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.978,
+        "lw_share_of_oracle_pct": 0.199,
+        "us_per_call": 1.05
+      }
+    },
+    "m1_1p4b_device": {
+      "tables": "Tables 6, 8",
+      "gpu": "RTX 3090",
+      "convention": "device time, one block",
+      "floor": {
+        "method": "split_half",
+        "per_call_pct": 0.008,
+        "per_shape_pct": 0.073,
+        "per_shape_lw_pct": 0.016,
+        "per_shape_us": 0.19,
+        "split_half_per_call_pct (lower bound)": 0.008,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 122.991,
+        "lw_share_of_oracle_pct": 25.298,
+        "us_per_call": 301.55
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 15.372,
+        "lw_share_of_oracle_pct": 6.738,
+        "us_per_call": 80.32
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.238,
+        "lw_share_of_oracle_pct": 0.516,
+        "us_per_call": 6.15
+      }
+    },
+    "m1_2p8b_device": {
+      "tables": "Tables 6, 8",
+      "gpu": "RTX 3090",
+      "convention": "device time, one block",
+      "floor": {
+        "method": "split_half",
+        "per_call_pct": 0.01,
+        "per_shape_pct": 0.052,
+        "per_shape_lw_pct": 0.023,
+        "per_shape_us": 0.33,
+        "split_half_per_call_pct (lower bound)": 0.01,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 130.562,
+        "lw_share_of_oracle_pct": 27.787,
+        "us_per_call": 393.06
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 13.867,
+        "lw_share_of_oracle_pct": 7.119,
+        "us_per_call": 100.7
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.203,
+        "lw_share_of_oracle_pct": 0.588,
+        "us_per_call": 8.31
+      }
+    },
+    "m1_1p4b_launch": {
+      "tables": "Supplement",
+      "gpu": "RTX 3090",
+      "convention": "launch-inclusive, one block (session of the conventions table)",
+      "floor": {
+        "method": "cross_session",
+        "per_call_pct": 3.736,
+        "per_shape_pct": 3.12,
+        "per_shape_lw_pct": 1.821,
+        "per_shape_us": 8.75,
+        "split_half_per_call_pct (lower bound)": 0.418,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 52.214,
+        "lw_share_of_oracle_pct": 23.375,
+        "us_per_call": 285.24
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 7.266,
+        "lw_share_of_oracle_pct": 8.234,
+        "us_per_call": 100.47
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 2.181,
+        "lw_share_of_oracle_pct": 2.589,
+        "us_per_call": 31.59
+      }
+    },
+    "m1_2p8b_launch": {
+      "tables": "Supplement",
+      "gpu": "RTX 3090",
+      "convention": "launch-inclusive, one block (session of the conventions table)",
+      "floor": {
+        "method": "cross_session",
+        "per_call_pct": 14.897,
+        "per_shape_pct": 12.499,
+        "per_shape_lw_pct": 11.537,
+        "per_shape_us": 65.18,
+        "split_half_per_call_pct (lower bound)": 0.28,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 60.143,
+        "lw_share_of_oracle_pct": 26.257,
+        "us_per_call": 378.73
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 8.376,
+        "lw_share_of_oracle_pct": 7.144,
+        "us_per_call": 103.05
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 3.97,
+        "lw_share_of_oracle_pct": 2.896,
+        "us_per_call": 41.77
+      }
+    },
+    "ref_vgpu3090_launch": {
+      "tables": "Tables 6, 8",
+      "gpu": "RTX 3090",
+      "convention": "launch-inclusive, one block",
+      "floor": {
+        "method": "split_half",
+        "per_call_pct": 0.089,
+        "per_shape_pct": 2.482,
+        "per_shape_lw_pct": 0.461,
+        "per_shape_us": 2.1,
+        "split_half_per_call_pct (lower bound)": 0.089,
+        "cross_round_per_call_pct": null
+      },
+      "default": null,
+      "best_static_per_batch": {
+        "mean_regret_pct": 30.204,
+        "lw_share_of_oracle_pct": 18.848,
+        "us_per_call": 85.99
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 3.012,
+        "lw_share_of_oracle_pct": 1.361,
+        "us_per_call": 6.21
+      }
+    },
+    "m2_pro6000_launch": {
+      "tables": "Tables 4, 8",
+      "gpu": "RTX PRO 6000",
+      "convention": "launch-inclusive, one block",
+      "floor": {
+        "method": "split_half",
+        "per_call_pct": 0.441,
+        "per_shape_pct": 1.194,
+        "per_shape_lw_pct": 1.035,
+        "per_shape_us": 5.43,
+        "split_half_per_call_pct (lower bound)": 0.441,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 1.693,
+        "lw_share_of_oracle_pct": 1.466,
+        "us_per_call": 7.7
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 1.43,
+        "lw_share_of_oracle_pct": 1.239,
+        "us_per_call": 6.51
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 1.295,
+        "lw_share_of_oracle_pct": 1.123,
+        "us_per_call": 5.89
+      }
+    },
+    "m2_vgpu3090_launch": {
+      "tables": "Table 8",
+      "gpu": "RTX 3090",
+      "convention": "launch-inclusive, one block",
+      "floor": {
+        "method": "split_half",
+        "per_call_pct": 0.479,
+        "per_shape_pct": 2.033,
+        "per_shape_lw_pct": 1.645,
+        "per_shape_us": 16.5,
+        "split_half_per_call_pct (lower bound)": 0.479,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 2.532,
+        "lw_share_of_oracle_pct": 2.037,
+        "us_per_call": 20.45
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 2.413,
+        "lw_share_of_oracle_pct": 1.948,
+        "us_per_call": 19.55
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 2.28,
+        "lw_share_of_oracle_pct": 1.848,
+        "us_per_call": 18.55
+      }
+    },
+    "m2_2p7b_device": {
+      "tables": "Table 8 (above the floor)",
+      "gpu": "RTX 3090",
+      "convention": "device time, one block",
+      "floor": {
+        "method": "split_half",
+        "per_call_pct": 15.197,
+        "per_shape_pct": 16.331,
+        "per_shape_lw_pct": 4.879,
+        "per_shape_us": 58.28,
+        "split_half_per_call_pct (lower bound)": 15.197,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 13.653,
+        "lw_share_of_oracle_pct": 4.503,
+        "us_per_call": 54.53
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 12.111,
+        "lw_share_of_oracle_pct": 4.787,
+        "us_per_call": 57.96
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 11.352,
+        "lw_share_of_oracle_pct": 3.724,
+        "us_per_call": 45.09
+      },
+      "floor_above_launch_floor_split_half": {
+        "per_call_pct": 0.44,
+        "per_shape_pct": 0.439
+      }
+    },
+    "gdn_1p4b_device": {
+      "tables": "Table 8 (above the floor)",
+      "gpu": "RTX 3090",
+      "convention": "device time, one block",
+      "floor": {
+        "method": "split_half",
+        "per_call_pct": 8.023,
+        "per_shape_pct": 5.387,
+        "per_shape_lw_pct": 3.157,
+        "per_shape_us": 40.02,
+        "split_half_per_call_pct (lower bound)": 8.023,
+        "cross_round_per_call_pct": null
+      },
+      "default": {
+        "mean_regret_pct": 3.174,
+        "lw_share_of_oracle_pct": 2.005,
+        "us_per_call": 25.7
+      },
+      "best_static_per_batch": {
+        "mean_regret_pct": 3.174,
+        "lw_share_of_oracle_pct": 2.005,
+        "us_per_call": 25.7
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 3.174,
+        "lw_share_of_oracle_pct": 2.005,
+        "us_per_call": 25.7
+      },
+      "floor_above_launch_floor_split_half": {
+        "per_call_pct": 0.132,
+        "per_shape_pct": 0.132
+      }
+    },
+    "ssd370m_graph": {
+      "tables": "Table 7",
+      "gpu": "RTX 3090",
+      "kernel": "SSD 370M",
+      "floor": {
+        "method": "cross_session",
+        "per_call_pct": 0.364,
+        "per_shape_pct": 0.299,
+        "per_shape_lw_pct": 0.043,
+        "per_shape_us": 0.18,
+        "split_half_per_call_pct (lower bound)": null,
+        "cross_round_per_call_pct": 0.262
+      },
+      "floor_above_launch_floor_cross_round": {
+        "per_call_pct": 0.021,
+        "per_shape_pct": 0.014
+      },
+      "default_single_round_scoring": {
+        "mean_regret_pct": 19.245228643691735,
+        "lw_share_of_oracle_pct": 2.8262393213073493,
+        "us_per_call": 11.836911076271186
+      },
+      "default": {
+        "mean_regret_pct": 19.094,
+        "lw_share_of_oracle_pct": 2.802,
+        "us_per_call": 11.73
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.061,
+        "lw_share_of_oracle_pct": 0.011,
+        "us_per_call": 0.05
+      }
+    },
+    "ssd370m_graph_pro6000": {
+      "tables": "Table 7",
+      "gpu": "RTX PRO 6000",
+      "kernel": "SSD 370M",
+      "floor": {
+        "method": "cross_round",
+        "per_call_pct": 0.388,
+        "per_shape_pct": 0.314,
+        "per_shape_lw_pct": 0.04,
+        "per_shape_us": 0.06,
+        "split_half_per_call_pct (lower bound)": null,
+        "cross_round_per_call_pct": 0.388
+      },
+      "floor_above_launch_floor_cross_round": {
+        "per_call_pct": 0.035,
+        "per_shape_pct": 0.022
+      },
+      "default_single_round_scoring": {
+        "mean_regret_pct": 10.381926956945872,
+        "lw_share_of_oracle_pct": 1.7820415513069319,
+        "us_per_call": 2.626641822033898
+      },
+      "default": {
+        "mean_regret_pct": 10.112,
+        "lw_share_of_oracle_pct": 1.746,
+        "us_per_call": 2.57
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.103,
+        "lw_share_of_oracle_pct": 0.027,
+        "us_per_call": 0.04
+      }
+    },
+    "ssd2p7b_graph": {
+      "tables": "Table 7",
+      "gpu": "RTX 3090",
+      "kernel": "SSD 2.7B",
+      "floor": {
+        "method": "cross_session",
+        "per_call_pct": 0.205,
+        "per_shape_pct": 0.133,
+        "per_shape_lw_pct": 0.042,
+        "per_shape_us": 0.43,
+        "split_half_per_call_pct (lower bound)": null,
+        "cross_round_per_call_pct": 0.199
+      },
+      "floor_above_launch_floor_cross_round": {
+        "per_call_pct": 0.155,
+        "per_shape_pct": 0.1
+      },
+      "default_single_round_scoring": {
+        "mean_regret_pct": 22.397296867499726,
+        "lw_share_of_oracle_pct": 2.226565867862967,
+        "us_per_call": 22.753404615819214
+      },
+      "default": {
+        "mean_regret_pct": 22.313,
+        "lw_share_of_oracle_pct": 2.197,
+        "us_per_call": 22.44
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.068,
+        "lw_share_of_oracle_pct": 0.032,
+        "us_per_call": 0.33
+      }
+    },
+    "ssd2p7b_graph_pro6000": {
+      "tables": "Table 7",
+      "gpu": "RTX PRO 6000",
+      "kernel": "SSD 2.7B",
+      "floor": {
+        "method": "cross_round",
+        "per_call_pct": 0.338,
+        "per_shape_pct": 0.251,
+        "per_shape_lw_pct": 0.014,
+        "per_shape_us": 0.05,
+        "split_half_per_call_pct (lower bound)": null,
+        "cross_round_per_call_pct": 0.338
+      },
+      "floor_above_launch_floor_cross_round": {
+        "per_call_pct": 0.019,
+        "per_shape_pct": 0.008
+      },
+      "default_single_round_scoring": {
+        "mean_regret_pct": 19.355032780676353,
+        "lw_share_of_oracle_pct": 5.840456632361072,
+        "us_per_call": 20.125714056497173
+      },
+      "default": {
+        "mean_regret_pct": 19.211,
+        "lw_share_of_oracle_pct": 5.853,
+        "us_per_call": 20.17
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.168,
+        "lw_share_of_oracle_pct": 0.462,
+        "us_per_call": 1.59
+      }
+    },
+    "gdn1p4b_graph": {
+      "tables": "Table 7",
+      "gpu": "RTX 3090",
+      "kernel": "GDN 1.4B",
+      "floor": {
+        "method": "cross_session",
+        "per_call_pct": 0.143,
+        "per_shape_pct": 0.1,
+        "per_shape_lw_pct": 0.005,
+        "per_shape_us": 0.04,
+        "split_half_per_call_pct (lower bound)": null,
+        "cross_round_per_call_pct": 0.066
+      },
+      "floor_above_launch_floor_cross_round": {
+        "per_call_pct": 0.001,
+        "per_shape_pct": 0.001
+      },
+      "default_single_round_scoring": {
+        "mean_regret_pct": 16.17150111044897,
+        "lw_share_of_oracle_pct": 1.0188004104243134,
+        "us_per_call": 8.508517717514124
+      },
+      "default": {
+        "mean_regret_pct": 16.174,
+        "lw_share_of_oracle_pct": 1.015,
+        "us_per_call": 8.47
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.134,
+        "lw_share_of_oracle_pct": 0.569,
+        "us_per_call": 4.75
+      }
+    },
+    "gdn1p4b_graph_pro6000": {
+      "tables": "Table 7",
+      "gpu": "RTX PRO 6000",
+      "kernel": "GDN 1.4B",
+      "floor": {
+        "method": "cross_round",
+        "per_call_pct": 0.073,
+        "per_shape_pct": 0.059,
+        "per_shape_lw_pct": 0.004,
+        "per_shape_us": 0.02,
+        "split_half_per_call_pct (lower bound)": null,
+        "cross_round_per_call_pct": 0.073
+      },
+      "floor_above_launch_floor_cross_round": {
+        "per_call_pct": 0.0,
+        "per_shape_pct": 0.0
+      },
+      "default_single_round_scoring": {
+        "mean_regret_pct": 23.91396369220174,
+        "lw_share_of_oracle_pct": 3.196431398403392,
+        "us_per_call": 15.859253559322033
+      },
+      "default": {
+        "mean_regret_pct": 23.914,
+        "lw_share_of_oracle_pct": 3.189,
+        "us_per_call": 15.82
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.056,
+        "lw_share_of_oracle_pct": 0.245,
+        "us_per_call": 1.22
+      }
+    },
+    "m1_370m_graph": {
+      "tables": "Table 7",
+      "gpu": "RTX 3090",
+      "kernel": "Triton Mamba-1 370M",
+      "floor": {
+        "method": "cross_session",
+        "per_call_pct": 0.646,
+        "per_shape_pct": 0.392,
+        "per_shape_lw_pct": 0.274,
+        "per_shape_us": 1.71,
+        "split_half_per_call_pct (lower bound)": null,
+        "cross_round_per_call_pct": 0.378
+      },
+      "floor_above_launch_floor_cross_round": {
+        "per_call_pct": 0.338,
+        "per_shape_pct": 0.227
+      },
+      "default_single_round_scoring": {
+        "mean_regret_pct": 31.88234567046263,
+        "lw_share_of_oracle_pct": 18.139866159290612,
+        "us_per_call": 112.13055400564971
+      },
+      "default": {
+        "mean_regret_pct": 31.796,
+        "lw_share_of_oracle_pct": 17.935,
+        "us_per_call": 110.72
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.353,
+        "lw_share_of_oracle_pct": 2.296,
+        "us_per_call": 14.17
+      }
+    },
+    "m1_370m_graph_pro6000": {
+      "tables": "Table 7",
+      "gpu": "RTX PRO 6000",
+      "kernel": "Triton Mamba-1 370M",
+      "floor": {
+        "method": "cross_round",
+        "per_call_pct": 0.159,
+        "per_shape_pct": 0.117,
+        "per_shape_lw_pct": 0.042,
+        "per_shape_us": 0.11,
+        "split_half_per_call_pct (lower bound)": null,
+        "cross_round_per_call_pct": 0.159
+      },
+      "floor_above_launch_floor_cross_round": {
+        "per_call_pct": 0.023,
+        "per_shape_pct": 0.04
+      },
+      "default_single_round_scoring": {
+        "mean_regret_pct": 46.03952800636698,
+        "lw_share_of_oracle_pct": 32.2206516306551,
+        "us_per_call": 87.3483280480226
+      },
+      "default": {
+        "mean_regret_pct": 46.01,
+        "lw_share_of_oracle_pct": 32.252,
+        "us_per_call": 87.42
+      },
+      "exact_table_held_out": {
+        "mean_regret_pct": 0.13,
+        "lw_share_of_oracle_pct": 0.118,
+        "us_per_call": 0.32
+      }
+    }
+  },
+  "datasets": {
+    "m1_pro6000_device": {
+      "source": "e2_mamba1_pro6000_r4spin.csv",
+      "view": "round medians",
+      "kind": "mamba1",
+      "gpu": "RTX PRO 6000",
+      "convention": "device time, 3 rounds",
+      "tables": "Tables 4, 5, 8",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024
+      ],
+      "median_cv_pct": 0.1419579250336823,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 48.59444076453128,
+          "p95_regret_pct": 308.63564003315116,
+          "lw_share_of_oracle_pct": 33.83876413291923,
+          "us_per_call": 92.09149279644302,
+          "ms_per_forward_pass": 4.420391654229265,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 48.59444076453128,
+          "p95_regret_pct": 308.63564003315116,
+          "lw_share_of_oracle_pct": 33.83876413291923,
+          "us_per_call": 92.09149279644302,
+          "ms_per_forward_pass": 4.420391654229265,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 19.98979649590417,
+          "p95_regret_pct": 54.162560181301934,
+          "lw_share_of_oracle_pct": 26.990509984465078,
+          "us_per_call": 73.45411156398102,
+          "ms_per_forward_pass": 3.525797355071089,
+          "chunk": {
+            "64": 824,
+            "256": 1536
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.13764197148969534,
+          "p95_regret_pct": 0.0,
+          "lw_share_of_oracle_pct": 0.13436512409403453,
+          "us_per_call": 0.365671890645714,
+          "ms_per_forward_pass": 0.017552250750994272,
+          "chunk": {
+            "32": 248,
+            "64": 520,
+            "128": 168,
+            "256": 204,
+            "512": 1068,
+            "1024": 152
+          }
+        }
+      },
+      "floors": {
+        "cross_round": {
+          "per_call": {
+            "mean_regret_pct": 0.06966384760834055,
+            "lw_share_of_oracle_pct": 0.059657226309217506,
+            "us_per_call": 0.16236257909604518
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.05391227122339681,
+            "lw_share_of_oracle_pct": 0.05222142054118223,
+            "us_per_call": 0.1421253559322032
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 48.60339704403041,
+            "lw_share_of_oracle_pct": 33.836855039018694,
+            "us_per_call": 92.09008518361581
+          }
+        }
+      }
+    },
+    "m1_vgpu3090_device": {
+      "source": "e2_mamba1_vgpu3090_r4spin.csv",
+      "view": "round medians",
+      "kind": "mamba1",
+      "gpu": "RTX 3090",
+      "convention": "device time, 3 rounds",
+      "tables": "Tables 5, 8",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024
+      ],
+      "median_cv_pct": 0.14329090159793473,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 96.35245653597019,
+          "p95_regret_pct": 373.9696342406879,
+          "lw_share_of_oracle_pct": 21.471011856896823,
+          "us_per_call": 133.28880335284015,
+          "ms_per_forward_pass": 6.3978625609363275,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 33.218768704729484,
+          "p95_regret_pct": 92.60106006814112,
+          "lw_share_of_oracle_pct": 18.00535090385042,
+          "us_per_call": 111.77450284679121,
+          "ms_per_forward_pass": 5.365176136645978,
+          "chunk": {
+            "64": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 17.400836083207462,
+          "p95_regret_pct": 170.23808937446984,
+          "lw_share_of_oracle_pct": 2.6649159179220323,
+          "us_per_call": 16.5433960962425,
+          "ms_per_forward_pass": 0.7940830126196399,
+          "chunk": {
+            "32": 824,
+            "128": 1536
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.34973297946274856,
+          "p95_regret_pct": 0.515527765934549,
+          "lw_share_of_oracle_pct": 2.3502999028676226,
+          "us_per_call": 14.59030732512474,
+          "ms_per_forward_pass": 0.7003347516059875,
+          "chunk": {
+            "32": 828,
+            "64": 369,
+            "128": 336,
+            "256": 64,
+            "512": 531,
+            "1024": 232
+          }
+        }
+      },
+      "floors": {
+        "cross_round": {
+          "per_call": {
+            "mean_regret_pct": 0.1020047495785676,
+            "lw_share_of_oracle_pct": 0.11509379886191608,
+            "us_per_call": 0.7148999124293784
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.0840896086017911,
+            "lw_share_of_oracle_pct": 0.09699355170656927,
+            "us_per_call": 0.6024710480225988
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 96.41575530676523,
+            "lw_share_of_oracle_pct": 21.558456277449594,
+            "us_per_call": 133.90937354802256
+          }
+        },
+        "cross_session": {
+          "per_call": {
+            "mean_regret_pct": 0.04059685877276392,
+            "lw_share_of_oracle_pct": 0.019561414253083262,
+            "us_per_call": 0.12179088980843471
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.018365956596898794,
+            "lw_share_of_oracle_pct": 0.006856844661889976,
+            "us_per_call": 0.04269124930566652
+          },
+          "n_calls_matched": 2360,
+          "chunks": [
+            32,
+            64,
+            128,
+            256,
+            512,
+            1024
+          ],
+          "method": "cross-session: chosen on one session, scored on the other, both directions averaged",
+          "same_chunk_latency_ratio_p10_p50_p90": [
+            0.979740870756474,
+            0.9890192125082731,
+            0.9995940500254101
+          ],
+          "oracle_chunk_agreement": 0.9580508474576271,
+          "other_session": "e2_mamba1_vgpu3090_r3spin.csv",
+          "note": "single-block device-time session"
+        }
+      }
+    },
+    "m1_h800_device": {
+      "source": "e2_mamba1_h800_r3spin.csv",
+      "view": "one block",
+      "kind": "mamba1",
+      "gpu": "H800",
+      "convention": "device time, one block",
+      "tables": "Tables 5, 8",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024
+      ],
+      "median_cv_pct": 0.38846972804026225,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 50.887462824169496,
+          "p95_regret_pct": 258.75939572503034,
+          "lw_share_of_oracle_pct": 18.321821874898156,
+          "us_per_call": 92.17840052748066,
+          "ms_per_forward_pass": 4.424563225319072,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 50.887462824169496,
+          "p95_regret_pct": 258.75939572503034,
+          "lw_share_of_oracle_pct": 18.321821874898156,
+          "us_per_call": 92.17840052748066,
+          "ms_per_forward_pass": 4.424563225319072,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 24.70039986992975,
+          "p95_regret_pct": 114.6213086489254,
+          "lw_share_of_oracle_pct": 20.809937710198525,
+          "us_per_call": 104.69628982861542,
+          "ms_per_forward_pass": 5.02542191177354,
+          "chunk": {
+            "32": 824,
+            "256": 1536
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.20005957456552273,
+          "p95_regret_pct": 0.05987469534454085,
+          "lw_share_of_oracle_pct": 0.06721819159526794,
+          "us_per_call": 0.33817954512975984,
+          "ms_per_forward_pass": 0.016232618166228473,
+          "chunk": {
+            "32": 480,
+            "64": 240,
+            "128": 384,
+            "256": 628,
+            "1024": 628
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 0.004243746899943103,
+            "lw_share_of_oracle_pct": 0.0010374715653101597,
+            "us_per_call": 0.005219579131686944,
+            "mean_regret_pct_draw_range95": [
+              0.0034507837690226795,
+              0.005268590760128527
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.17304239104149766,
+            "lw_share_of_oracle_pct": 0.058985371642320844,
+            "us_per_call": 0.2967587982105458,
+            "mean_regret_pct_draw_range95": [
+              0.17252800497396178,
+              0.17513803504082287
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        }
+      }
+    },
+    "m1_vgpu3090_device_one_block": {
+      "source": "e2_mamba1_vgpu3090_r3spin.csv",
+      "view": "one block",
+      "kind": "mamba1",
+      "gpu": "RTX 3090",
+      "convention": "device time, one block (session of the a-priori row)",
+      "tables": "Table 5 (a-priori row)",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024
+      ],
+      "median_cv_pct": 0.6174809575529511,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 96.07771619048377,
+          "p95_regret_pct": 373.03975231540545,
+          "lw_share_of_oracle_pct": 21.52486553972414,
+          "us_per_call": 134.4078622177417,
+          "ms_per_forward_pass": 6.451577386451602,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 32.92865530851964,
+          "p95_regret_pct": 91.82840473250423,
+          "lw_share_of_oracle_pct": 18.05045708427869,
+          "us_per_call": 112.71259020287857,
+          "ms_per_forward_pass": 5.410204329738171,
+          "chunk": {
+            "64": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 17.373442494054743,
+          "p95_regret_pct": 168.4378335657095,
+          "lw_share_of_oracle_pct": 2.706493319567388,
+          "us_per_call": 16.900174382892516,
+          "ms_per_forward_pass": 0.8112083703788409,
+          "chunk": {
+            "32": 824,
+            "128": 1536
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.33058527397298776,
+          "p95_regret_pct": 0.5022203996830341,
+          "lw_share_of_oracle_pct": 2.3660582119750107,
+          "us_per_call": 14.77439315787564,
+          "ms_per_forward_pass": 0.7091708715780307,
+          "chunk": {
+            "32": 828,
+            "64": 369,
+            "128": 400,
+            "256": 64,
+            "512": 467,
+            "1024": 232
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 0.0022146756996101417,
+            "lw_share_of_oracle_pct": 0.0017399304281853697,
+            "us_per_call": 0.01086462170972332,
+            "mean_regret_pct_draw_range95": [
+              0.0011981046190171838,
+              0.00393351592112192
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.007223477101433037,
+            "lw_share_of_oracle_pct": 0.005303107139079296,
+            "us_per_call": 0.033114113081130214,
+            "mean_regret_pct_draw_range95": [
+              0.007007199002388661,
+              0.007716496350582939
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        },
+        "cross_session": {
+          "per_call": {
+            "mean_regret_pct": 0.04059685877276392,
+            "lw_share_of_oracle_pct": 0.019561414253083262,
+            "us_per_call": 0.12179088980843471
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.018365956596898794,
+            "lw_share_of_oracle_pct": 0.006856844661889976,
+            "us_per_call": 0.04269124930566652
+          },
+          "n_calls_matched": 2360,
+          "chunks": [
+            32,
+            64,
+            128,
+            256,
+            512,
+            1024
+          ],
+          "method": "cross-session: chosen on one session, scored on the other, both directions averaged",
+          "same_chunk_latency_ratio_p10_p50_p90": [
+            1.0004061148377443,
+            1.011102703924389,
+            1.0206780485012494
+          ],
+          "oracle_chunk_agreement": 0.9580508474576271,
+          "other_session": "e2_mamba1_vgpu3090_r4spin.csv",
+          "note": "three-round device-time session"
+        }
+      }
+    },
+    "m1_pro6000_launch": {
+      "source": "e2_mamba1_pro6000.csv",
+      "view": "one block",
+      "kind": "mamba1",
+      "gpu": "RTX PRO 6000",
+      "convention": "launch-inclusive, one block",
+      "tables": "Supplement (launch-inclusive tables)",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024
+      ],
+      "median_cv_pct": 4.08960735501642,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 23.404076530606638,
+          "p95_regret_pct": 135.5404263888965,
+          "lw_share_of_oracle_pct": 31.162819689914137,
+          "us_per_call": 89.56170316716118,
+          "ms_per_forward_pass": 4.298961752023737,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 23.404076530606638,
+          "p95_regret_pct": 135.5404263888965,
+          "lw_share_of_oracle_pct": 31.162819689914137,
+          "us_per_call": 89.56170316716118,
+          "ms_per_forward_pass": 4.298961752023737,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 7.194321044476077,
+          "p95_regret_pct": 47.41254491458941,
+          "lw_share_of_oracle_pct": 21.424641982307687,
+          "us_per_call": 61.574255628195615,
+          "ms_per_forward_pass": 2.9555642701533893,
+          "chunk": {
+            "64": 824,
+            "512": 1536
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.6147200109768497,
+          "p95_regret_pct": 1.7290688564647914,
+          "lw_share_of_oracle_pct": 0.22763616200123934,
+          "us_per_call": 0.6542245719139861,
+          "ms_per_forward_pass": 0.03140277945187134,
+          "chunk": {
+            "32": 184,
+            "64": 584,
+            "128": 104,
+            "256": 436,
+            "512": 924,
+            "1024": 128
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 0.568893336564624,
+            "lw_share_of_oracle_pct": 0.13441474935436534,
+            "us_per_call": 0.38616403300472213,
+            "mean_regret_pct_draw_range95": [
+              0.531505367806785,
+              0.6312200737360099
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.5223979404608016,
+            "lw_share_of_oracle_pct": 0.15592015770239295,
+            "us_per_call": 0.4479475445536953,
+            "mean_regret_pct_draw_range95": [
+              0.506790928980345,
+              0.5461658264382854
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        },
+        "cross_session": {
+          "per_call": {
+            "mean_regret_pct": 3.4522170947632045,
+            "lw_share_of_oracle_pct": 0.9514431460011186,
+            "us_per_call": 2.7846367525536633
+          },
+          "per_shape": {
+            "mean_regret_pct": 2.5494743255400536,
+            "lw_share_of_oracle_pct": 0.6895553027648442,
+            "us_per_call": 2.018156362855334
+          },
+          "n_calls_matched": 2360,
+          "chunks": [
+            32,
+            64,
+            128,
+            256,
+            512,
+            1024
+          ],
+          "method": "cross-session: chosen on one session, scored on the other, both directions averaged",
+          "same_chunk_latency_ratio_p10_p50_p90": [
+            0.584178441186005,
+            0.9701293859904316,
+            1.0008505769935048
+          ],
+          "oracle_chunk_agreement": 0.6495762711864407,
+          "other_session": "e2_mamba1_pro6000_r4plain.csv",
+          "note": "second launch-inclusive session, three rounds"
+        }
+      }
+    },
+    "m1_vgpu3090_launch": {
+      "source": "e2_mamba1_vgpu3090.csv",
+      "view": "one block",
+      "kind": "mamba1",
+      "gpu": "RTX 3090",
+      "convention": "launch-inclusive, one block",
+      "tables": "Supplement",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024
+      ],
+      "median_cv_pct": 4.725067122116437,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 33.92160605276803,
+          "p95_regret_pct": 184.3914253879009,
+          "lw_share_of_oracle_pct": 17.908057881670565,
+          "us_per_call": 118.96050082488078,
+          "ms_per_forward_pass": 5.7101040395942775,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 17.69649748010075,
+          "p95_regret_pct": 70.06686358337114,
+          "lw_share_of_oracle_pct": 14.772265949108451,
+          "us_per_call": 98.12991264803429,
+          "ms_per_forward_pass": 4.710235807105646,
+          "chunk": {
+            "128": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 4.007818218495158,
+          "p95_regret_pct": 16.033685946392215,
+          "lw_share_of_oracle_pct": 2.598966436915516,
+          "us_per_call": 17.26453817635775,
+          "ms_per_forward_pass": 0.828697832465172,
+          "chunk": {
+            "32": 824,
+            "128": 1536
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 1.9383328130912598,
+          "p95_regret_pct": 13.919212823128618,
+          "lw_share_of_oracle_pct": 0.7368046835599886,
+          "us_per_call": 4.894481285775111,
+          "ms_per_forward_pass": 0.23493510171720533,
+          "chunk": {
+            "32": 783,
+            "64": 357,
+            "128": 537,
+            "256": 120,
+            "512": 331,
+            "1024": 232
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 0.35875523131796927,
+            "lw_share_of_oracle_pct": 0.07512401028642289,
+            "us_per_call": 0.4989402281698204,
+            "mean_regret_pct_draw_range95": [
+              0.32415797343276875,
+              0.39647604564722333
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 1.7317165847005669,
+            "lw_share_of_oracle_pct": 0.30158385943364496,
+            "us_per_call": 2.0029857174085475,
+            "mean_regret_pct_draw_range95": [
+              1.716386640062608,
+              1.758417607430609
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        },
+        "cross_session": {
+          "per_call": {
+            "mean_regret_pct": 1.7321796862800913,
+            "lw_share_of_oracle_pct": 0.33525537839047115,
+            "us_per_call": 2.2164166493941164
+          },
+          "per_shape": {
+            "mean_regret_pct": 1.3392802141678861,
+            "lw_share_of_oracle_pct": 0.22561510928417636,
+            "us_per_call": 1.4915706556984933
+          },
+          "n_calls_matched": 2360,
+          "chunks": [
+            32,
+            64,
+            128,
+            256,
+            512,
+            1024
+          ],
+          "method": "cross-session: chosen on one session, scored on the other, both directions averaged",
+          "same_chunk_latency_ratio_p10_p50_p90": [
+            0.9419701488770699,
+            1.0035503697282642,
+            1.0282820737151428
+          ],
+          "oracle_chunk_agreement": 0.6961864406779661,
+          "other_session": "e2_mamba1_vgpu3090_r4plain.csv",
+          "note": "second launch-inclusive session, three rounds"
+        }
+      }
+    },
+    "m1_h800_launch": {
+      "source": "e2_mamba1_h800.csv",
+      "view": "one block",
+      "kind": "mamba1",
+      "gpu": "H800",
+      "convention": "launch-inclusive, one block",
+      "tables": "Supplement",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024
+      ],
+      "median_cv_pct": 3.3623317830701915,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 20.145609302570783,
+          "p95_regret_pct": 113.04506150480549,
+          "lw_share_of_oracle_pct": 16.30363282281055,
+          "us_per_call": 86.02959998229802,
+          "ms_per_forward_pass": 4.129420799150305,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 20.145609302570783,
+          "p95_regret_pct": 113.04506150480549,
+          "lw_share_of_oracle_pct": 16.30363282281055,
+          "us_per_call": 86.02959998229802,
+          "ms_per_forward_pass": 4.129420799150305,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 6.668430510467192,
+          "p95_regret_pct": 19.431705284978776,
+          "lw_share_of_oracle_pct": 13.476623902284903,
+          "us_per_call": 71.11228374840091,
+          "ms_per_forward_pass": 3.413389619923244,
+          "chunk": {
+            "32": 336,
+            "256": 2024
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.977676059790129,
+          "p95_regret_pct": 2.2085212710829425,
+          "lw_share_of_oracle_pct": 0.19886220191505058,
+          "us_per_call": 1.0493388724024,
+          "ms_per_forward_pass": 0.050368265875315205,
+          "chunk": {
+            "32": 384,
+            "64": 416,
+            "128": 328,
+            "256": 716,
+            "1024": 516
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 0.6045543135434628,
+            "lw_share_of_oracle_pct": 0.1084837109553314,
+            "us_per_call": 0.5722473451715883,
+            "mean_regret_pct_draw_range95": [
+              0.5604819548585647,
+              0.6570545779196464
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.9341249439081587,
+            "lw_share_of_oracle_pct": 0.18842168631656578,
+            "us_per_call": 0.993917048171457,
+            "mean_regret_pct_draw_range95": [
+              0.906553827038196,
+              0.966139860267981
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        }
+      }
+    },
+    "m1_1p4b_device": {
+      "source": "e2_mamba1_vgpu3090_1p4b_r3.csv",
+      "view": "one block",
+      "kind": "mamba1",
+      "gpu": "RTX 3090",
+      "convention": "device time, one block",
+      "tables": "Tables 6, 8",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024
+      ],
+      "median_cv_pct": 0.5396737006042972,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 122.99087462116967,
+          "p95_regret_pct": 468.7513708997541,
+          "lw_share_of_oracle_pct": 25.29813776768343,
+          "us_per_call": 301.55189458782775,
+          "ms_per_forward_pass": 14.474490940215734,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 15.371603718994509,
+          "p95_regret_pct": 40.20396055683285,
+          "lw_share_of_oracle_pct": 6.738256010902655,
+          "us_per_call": 80.31950355259606,
+          "ms_per_forward_pass": 3.855336170524611,
+          "chunk": {
+            "32": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 15.371603718994509,
+          "p95_regret_pct": 40.20396055683285,
+          "lw_share_of_oracle_pct": 6.738256010902655,
+          "us_per_call": 80.31950355259606,
+          "ms_per_forward_pass": 3.855336170524611,
+          "chunk": {
+            "32": 2360
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.23807827917268956,
+          "p95_regret_pct": 1.552571501655728,
+          "lw_share_of_oracle_pct": 0.5161806048092863,
+          "us_per_call": 6.15283388679184,
+          "ms_per_forward_pass": 0.2953360265660083,
+          "chunk": {
+            "32": 637,
+            "64": 1264,
+            "256": 40,
+            "512": 187,
+            "1024": 232
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 0.008351841685818326,
+            "lw_share_of_oracle_pct": 0.006595755440428792,
+            "us_per_call": 0.07861966595019598,
+            "mean_regret_pct_draw_range95": [
+              0.005424363978123057,
+              0.011602564358156611
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.07312242029275075,
+            "lw_share_of_oracle_pct": 0.015587271861324725,
+            "us_per_call": 0.18579617117104197,
+            "mean_regret_pct_draw_range95": [
+              0.07244966475030475,
+              0.0740860651150434
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        }
+      }
+    },
+    "m1_2p8b_device": {
+      "source": "e2_mamba1_vgpu3090_2p8b_r3.csv",
+      "view": "one block",
+      "kind": "mamba1",
+      "gpu": "RTX 3090",
+      "convention": "device time, one block",
+      "tables": "Tables 6, 8",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024
+      ],
+      "median_cv_pct": 0.5737040661069595,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 130.56161400484575,
+          "p95_regret_pct": 506.90963778290137,
+          "lw_share_of_oracle_pct": 27.786780309809423,
+          "us_per_call": 393.06198284607694,
+          "ms_per_forward_pass": 25.155966902148926,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 15.541359278511498,
+          "p95_regret_pct": 42.146950662590754,
+          "lw_share_of_oracle_pct": 6.990115413643152,
+          "us_per_call": 98.879704455703,
+          "ms_per_forward_pass": 6.328301085164992,
+          "chunk": {
+            "32": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 13.866651911273465,
+          "p95_regret_pct": 132.46321981241053,
+          "lw_share_of_oracle_pct": 7.118975287280628,
+          "us_per_call": 100.70251072820086,
+          "ms_per_forward_pass": 6.444960686604856,
+          "chunk": {
+            "32": 824,
+            "64": 1536
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.20272656505544934,
+          "p95_regret_pct": 1.0045945150586246,
+          "lw_share_of_oracle_pct": 0.5876704862902263,
+          "us_per_call": 8.312979194635556,
+          "ms_per_forward_pass": 0.5320306684566756,
+          "chunk": {
+            "32": 480,
+            "64": 1653,
+            "128": 16,
+            "256": 8,
+            "512": 203
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 0.009510387935225182,
+            "lw_share_of_oracle_pct": 0.009132379378489146,
+            "us_per_call": 0.129180399966249,
+            "mean_regret_pct_draw_range95": [
+              0.006655620362578046,
+              0.012356455619297926
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.05215091266311672,
+            "lw_share_of_oracle_pct": 0.023216965118499123,
+            "us_per_call": 0.3284113280570206,
+            "mean_regret_pct_draw_range95": [
+              0.05130827352550958,
+              0.05303227973674407
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        }
+      }
+    },
+    "m1_1p4b_launch": {
+      "source": "e2_mamba1_vgpu3090_1p4b_r3plain.csv",
+      "view": "one block",
+      "kind": "mamba1",
+      "gpu": "RTX 3090",
+      "convention": "launch-inclusive, one block (session of the conventions table)",
+      "tables": "Supplement",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024
+      ],
+      "median_cv_pct": 3.9129147640053636,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 52.21398182876492,
+          "p95_regret_pct": 387.8728007404209,
+          "lw_share_of_oracle_pct": 23.37528849987336,
+          "us_per_call": 285.2408831649286,
+          "ms_per_forward_pass": 13.691562391916573,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 12.784514422349691,
+          "p95_regret_pct": 66.58416616092507,
+          "lw_share_of_oracle_pct": 12.801909057140643,
+          "us_per_call": 156.21744500290035,
+          "ms_per_forward_pass": 7.498437360139217,
+          "chunk": {
+            "64": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 7.266122252183667,
+          "p95_regret_pct": 60.16202499026685,
+          "lw_share_of_oracle_pct": 8.233728455644643,
+          "us_per_call": 100.47345411120834,
+          "ms_per_forward_pass": 4.822725797338,
+          "chunk": {
+            "32": 824,
+            "64": 1536
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 2.1814858775943127,
+          "p95_regret_pct": 14.699645623379014,
+          "lw_share_of_oracle_pct": 2.5891072372737374,
+          "us_per_call": 31.594015833116682,
+          "ms_per_forward_pass": 1.5165127599896007,
+          "chunk": {
+            "32": 676,
+            "64": 1193,
+            "128": 32,
+            "256": 40,
+            "512": 187,
+            "1024": 232
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 0.4177950861083652,
+            "lw_share_of_oracle_pct": 0.0478356825242362,
+            "us_per_call": 0.5836446838674366,
+            "mean_regret_pct_draw_range95": [
+              0.38873883053421415,
+              0.4670022498935758
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 1.8512188542449983,
+            "lw_share_of_oracle_pct": 0.19102835320305148,
+            "us_per_call": 2.330743012988759,
+            "mean_regret_pct_draw_range95": [
+              1.8287798708835696,
+              1.88514272378591
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        },
+        "cross_session": {
+          "per_call": {
+            "mean_regret_pct": 3.7362708016448956,
+            "lw_share_of_oracle_pct": 1.9352111712423978,
+            "us_per_call": 9.29340368648506
+          },
+          "per_shape": {
+            "mean_regret_pct": 3.120362264967608,
+            "lw_share_of_oracle_pct": 1.8214355611412154,
+            "us_per_call": 8.747022655794963
+          },
+          "n_calls_matched": 1536,
+          "chunks": [
+            32,
+            64,
+            128,
+            256,
+            512,
+            1024
+          ],
+          "method": "cross-session: chosen on one session, scored on the other, both directions averaged",
+          "same_chunk_latency_ratio_p10_p50_p90": [
+            0.8294224400487699,
+            1.0035634335127295,
+            1.0421087668339464
+          ],
+          "oracle_chunk_agreement": 0.6484375,
+          "other_session": "e2_mamba1_vgpu3090_1p4b.csv",
+          "note": "earlier launch-inclusive session (median within-block CV 5.9%, 90th percentile 94%)"
+        }
+      }
+    },
+    "m1_2p8b_launch": {
+      "source": "e2_mamba1_vgpu3090_2p8b_r3plain.csv",
+      "view": "one block",
+      "kind": "mamba1",
+      "gpu": "RTX 3090",
+      "convention": "launch-inclusive, one block (session of the conventions table)",
+      "tables": "Supplement",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512,
+        1024
+      ],
+      "median_cv_pct": 3.6605341535076494,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 60.14293990777293,
+          "p95_regret_pct": 399.81771601262074,
+          "lw_share_of_oracle_pct": 26.257372881578608,
+          "us_per_call": 378.7341181370035,
+          "ms_per_forward_pass": 24.238983560768226,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 13.577128463563556,
+          "p95_regret_pct": 73.29989039775636,
+          "lw_share_of_oracle_pct": 10.477136845484933,
+          "us_per_call": 151.12133272705694,
+          "ms_per_forward_pass": 9.671765294531644,
+          "chunk": {
+            "64": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 8.37641400330569,
+          "p95_regret_pct": 50.15842810672616,
+          "lw_share_of_oracle_pct": 7.144064117774421,
+          "us_per_call": 103.04537456059606,
+          "ms_per_forward_pass": 6.594903971878148,
+          "chunk": {
+            "32": 824,
+            "64": 1536
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 3.970388086330708,
+          "p95_regret_pct": 24.8915315774387,
+          "lw_share_of_oracle_pct": 2.895822781785876,
+          "us_per_call": 41.76910205324322,
+          "ms_per_forward_pass": 2.6732225314075664,
+          "chunk": {
+            "32": 592,
+            "64": 1541,
+            "128": 16,
+            "256": 8,
+            "512": 203
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 0.27989624255878376,
+            "lw_share_of_oracle_pct": 0.02788681180710573,
+            "us_per_call": 0.40220676384370113,
+            "mean_regret_pct_draw_range95": [
+              0.2507690332803395,
+              0.31946115709192735
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 3.5304583283830433,
+            "lw_share_of_oracle_pct": 0.2960726260482491,
+            "us_per_call": 4.270205343273757,
+            "mean_regret_pct_draw_range95": [
+              3.506977291493892,
+              3.565500422543876
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        },
+        "cross_session": {
+          "per_call": {
+            "mean_regret_pct": 14.896605427487183,
+            "lw_share_of_oracle_pct": 12.812845519730434,
+            "us_per_call": 72.38398801438356
+          },
+          "per_shape": {
+            "mean_regret_pct": 12.499380649029622,
+            "lw_share_of_oracle_pct": 11.537202783279392,
+            "us_per_call": 65.17746168861777
+          },
+          "n_calls_matched": 1536,
+          "chunks": [
+            32,
+            64,
+            128,
+            256,
+            512,
+            1024
+          ],
+          "method": "cross-session: chosen on one session, scored on the other, both directions averaged",
+          "same_chunk_latency_ratio_p10_p50_p90": [
+            0.4591227273699249,
+            0.8243678089096229,
+            1.1415136065660427
+          ],
+          "oracle_chunk_agreement": 0.4446614583333333,
+          "other_session": "e2_mamba1_vgpu3090_2p8b.csv",
+          "note": "earlier launch-inclusive session"
+        }
+      }
+    },
+    "ref_vgpu3090_launch": {
+      "source": "e8_refscan_vgpu3090.csv",
+      "view": "one block",
+      "kind": "ref",
+      "gpu": "RTX 3090",
+      "convention": "launch-inclusive, one block",
+      "tables": "Tables 6, 8",
+      "n_calls": 2360,
+      "chunks": [
+        128,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "median_cv_pct": 1.512867969504486,
+      "policies_paper_view": {
+        "stock_dispatch_separate_binary": {
+          "n": 2360,
+          "mean_regret_pct": 6.584930712412312,
+          "lw_share_of_oracle_pct": 7.976587880011424,
+          "us_per_call": 36.39182166412662,
+          "note": "stock binary timed separately; its oracle comes from the runtime-chunk build"
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 30.203717917644475,
+          "p95_regret_pct": 93.3947233141185,
+          "lw_share_of_oracle_pct": 18.84837568304933,
+          "us_per_call": 85.99249915303506,
+          "ms_per_forward_pass": 4.127639959345682,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 30.203717917644475,
+          "p95_regret_pct": 93.3947233141185,
+          "lw_share_of_oracle_pct": 18.84837568304933,
+          "us_per_call": 85.99249915303506,
+          "ms_per_forward_pass": 4.127639959345682,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 3.011908958022638,
+          "p95_regret_pct": 15.863307392706563,
+          "lw_share_of_oracle_pct": 1.361465475098608,
+          "us_per_call": 6.211454009779305,
+          "ms_per_forward_pass": 0.29814979246940665,
+          "chunk": {
+            "128": 840,
+            "256": 273,
+            "512": 571,
+            "1024": 543,
+            "2048": 133
+          }
+        },
+        "stock_chunk_runtime_build": {
+          "n": 2360,
+          "mean_regret_pct": 5.349691108828803,
+          "p95_regret_pct": 38.332302978779865,
+          "lw_share_of_oracle_pct": 7.9945571876921555,
+          "us_per_call": 36.47380356545861,
+          "ms_per_forward_pass": 1.7507425711420133,
+          "chunk": {
+            "128": 840,
+            "256": 264,
+            "512": 264,
+            "1024": 367,
+            "2048": 625
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 0.08894326566380686,
+            "lw_share_of_oracle_pct": 0.027930241830885164,
+            "us_per_call": 0.12741934142785702,
+            "mean_regret_pct_draw_range95": [
+              0.006527131694136488,
+              0.40091459130947216
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 2.482174010720974,
+            "lw_share_of_oracle_pct": 0.46076566619596604,
+            "us_per_call": 2.1020390047012047,
+            "mean_regret_pct_draw_range95": [
+              2.4694163286843915,
+              2.5241792402086505
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        }
+      }
+    },
+    "m2_pro6000_launch": {
+      "source": "e2_mamba2_pro6000.csv",
+      "view": "one block",
+      "kind": "mamba2",
+      "gpu": "RTX PRO 6000",
+      "convention": "launch-inclusive, one block",
+      "tables": "Tables 4, 8",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "median_cv_pct": 2.866232906590085,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 1.6931730063964503,
+          "p95_regret_pct": 5.842891616782394,
+          "lw_share_of_oracle_pct": 1.4664108902012465,
+          "us_per_call": 7.696295314421088,
+          "ms_per_forward_pass": 0.36942217509221226,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 1.6931730063964503,
+          "p95_regret_pct": 5.842891616782394,
+          "lw_share_of_oracle_pct": 1.4664108902012465,
+          "us_per_call": 7.696295314421088,
+          "ms_per_forward_pass": 0.36942217509221226,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 1.43011665236541,
+          "p95_regret_pct": 5.529433169696038,
+          "lw_share_of_oracle_pct": 1.2394566703500987,
+          "us_per_call": 6.505151201607817,
+          "ms_per_forward_pass": 0.3122472576771752,
+          "chunk": {
+            "64": 1536,
+            "256": 824
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 1.2946345643501578,
+          "p95_regret_pct": 5.202280689272024,
+          "lw_share_of_oracle_pct": 1.1228935349824445,
+          "us_per_call": 5.893382482104382,
+          "ms_per_forward_pass": 0.28288235914101034,
+          "chunk": {
+            "32": 607,
+            "64": 899,
+            "128": 517,
+            "256": 337
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 0.4407861378187857,
+            "lw_share_of_oracle_pct": 0.38368103588475555,
+            "us_per_call": 2.011834813260847,
+            "mean_regret_pct_draw_range95": [
+              0.406175084560471,
+              0.47634333374809895
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 1.1944853464548482,
+            "lw_share_of_oracle_pct": 1.0349221868703922,
+            "us_per_call": 5.4266233924245615,
+            "mean_regret_pct_draw_range95": [
+              1.1712573231985945,
+              1.2260846111163979
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        }
+      }
+    },
+    "m2_vgpu3090_launch": {
+      "source": "e2_mamba2_vgpu3090.csv",
+      "view": "one block",
+      "kind": "mamba2",
+      "gpu": "RTX 3090",
+      "convention": "launch-inclusive, one block",
+      "tables": "Table 8",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "median_cv_pct": 4.460139810670604,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 2.5323912448898187,
+          "p95_regret_pct": 8.976343246722667,
+          "lw_share_of_oracle_pct": 2.0372816802785185,
+          "us_per_call": 20.452390294458905,
+          "ms_per_forward_pass": 0.9817147341340275,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 2.473859259794457,
+          "p95_regret_pct": 8.364785088432084,
+          "lw_share_of_oracle_pct": 2.2474928845717717,
+          "us_per_call": 22.56271290526552,
+          "ms_per_forward_pass": 1.0830102194527451,
+          "chunk": {
+            "128": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 2.4132201266607045,
+          "p95_regret_pct": 8.651600921463373,
+          "lw_share_of_oracle_pct": 1.9478168283013897,
+          "us_per_call": 19.554247397487448,
+          "ms_per_forward_pass": 0.9386038750793975,
+          "chunk": {
+            "128": 1536,
+            "256": 824
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 2.2802788851054174,
+          "p95_regret_pct": 8.567120147049517,
+          "lw_share_of_oracle_pct": 1.8478412271130757,
+          "us_per_call": 18.55058647262848,
+          "ms_per_forward_pass": 0.8904281506861671,
+          "chunk": {
+            "32": 543,
+            "64": 752,
+            "128": 449,
+            "256": 616
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 0.4786885362587311,
+            "lw_share_of_oracle_pct": 0.37075986539994094,
+            "us_per_call": 3.718885507818112,
+            "mean_regret_pct_draw_range95": [
+              0.44483089959327327,
+              0.5109612555412472
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 2.0332830294223494,
+            "lw_share_of_oracle_pct": 1.644553234531843,
+            "us_per_call": 16.49559664215167,
+            "mean_regret_pct_draw_range95": [
+              2.0116298849312844,
+              2.0682488635454948
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        }
+      }
+    },
+    "m2_2p7b_device": {
+      "source": "e2_mamba2_vgpu3090_2p7b_r3.csv",
+      "view": "one block",
+      "kind": "mamba2",
+      "gpu": "RTX 3090",
+      "convention": "device time, one block",
+      "tables": "Table 8 (above the floor)",
+      "n_calls": 2360,
+      "chunks": [
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "median_cv_pct": 64.78569683141191,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 13.652753944062576,
+          "p95_regret_pct": 51.00247658685711,
+          "lw_share_of_oracle_pct": 4.503243116469255,
+          "us_per_call": 54.5268629613664,
+          "ms_per_forward_pass": 3.4897192295274495,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 12.165238434151817,
+          "p95_regret_pct": 44.23203921961969,
+          "lw_share_of_oracle_pct": 5.118325566380618,
+          "us_per_call": 61.974499162397024,
+          "ms_per_forward_pass": 3.9663679463934094,
+          "chunk": {
+            "128": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 12.111127171268928,
+          "p95_regret_pct": 45.83804147829037,
+          "lw_share_of_oracle_pct": 4.78652718793702,
+          "us_per_call": 57.95696685417412,
+          "ms_per_forward_pass": 3.7092458786671436,
+          "chunk": {
+            "128": 1872,
+            "256": 488
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 11.352396521934306,
+          "p95_regret_pct": 44.38705680643164,
+          "lw_share_of_oracle_pct": 3.7238544046428315,
+          "us_per_call": 45.08974833436058,
+          "ms_per_forward_pass": 2.885743893399077,
+          "chunk": {
+            "32": 664,
+            "64": 488,
+            "128": 545,
+            "256": 663
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 15.19672606150793,
+            "lw_share_of_oracle_pct": 4.332451670873026,
+            "us_per_call": 51.746709462446915,
+            "mean_regret_pct_draw_range95": [
+              14.630792150071484,
+              15.78122464398413
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 16.331275878659966,
+            "lw_share_of_oracle_pct": 4.879037549881359,
+            "us_per_call": 58.275119431212005,
+            "mean_regret_pct_draw_range95": [
+              15.875677309663152,
+              16.7668173527669
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        },
+        "split_half_above_floor": {
+          "per_call": {
+            "mean_regret_pct": 0.4396734748527887,
+            "lw_share_of_oracle_pct": 0.07777198199424067,
+            "us_per_call": 3.9520658964048674,
+            "mean_regret_pct_draw_range95": [
+              0.318818947185898,
+              0.5849963147067061
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.43877328916830355,
+            "lw_share_of_oracle_pct": 0.08480915199261643,
+            "us_per_call": 4.309667166742094,
+            "mean_regret_pct_draw_range95": [
+              0.31745133506709183,
+              0.577346377973326
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        }
+      },
+      "above_floor_n": 397,
+      "policies_paper_view_above_floor": {
+        "default": {
+          "n": 397,
+          "mean_regret_pct": 0.14564956089702302,
+          "p95_regret_pct": 0.2221636972375035,
+          "lw_share_of_oracle_pct": 0.07256041005611723,
+          "us_per_call": 3.688103943706611,
+          "ms_per_forward_pass": 0.2360386523972231,
+          "chunk": {
+            "256": 397
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 397,
+          "mean_regret_pct": 2.8875668910326007,
+          "p95_regret_pct": 5.727221791817606,
+          "lw_share_of_oracle_pct": 1.7640820899849723,
+          "us_per_call": 89.6648476498966,
+          "ms_per_forward_pass": 5.7385502495933824,
+          "chunk": {
+            "128": 397
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 397,
+          "mean_regret_pct": 1.9615297380519627,
+          "p95_regret_pct": 5.224944926591193,
+          "lw_share_of_oracle_pct": 1.2836975764623113,
+          "us_per_call": 65.24784094543762,
+          "ms_per_forward_pass": 4.175861820508008,
+          "chunk": {
+            "128": 280,
+            "256": 117
+          }
+        },
+        "exact_table_held_out": {
+          "n": 397,
+          "mean_regret_pct": 0.20973217193210023,
+          "p95_regret_pct": 0.0,
+          "lw_share_of_oracle_pct": 0.04696683640962567,
+          "us_per_call": 2.3872325756124977,
+          "ms_per_forward_pass": 0.15278288483919986,
+          "chunk": {
+            "32": 2,
+            "64": 3,
+            "128": 12,
+            "256": 380
+          }
+        }
+      }
+    },
+    "gdn_1p4b_device": {
+      "source": "e2_gdn_vgpu3090_1p4b_r3.csv",
+      "view": "one block",
+      "kind": "gdn",
+      "gpu": "RTX 3090",
+      "convention": "device time, one block",
+      "tables": "Table 8 (above the floor)",
+      "n_calls": 1770,
+      "chunks": [
+        16,
+        32,
+        64
+      ],
+      "median_cv_pct": 60.504924403097284,
+      "policies_paper_view": {
+        "default": {
+          "n": 1770,
+          "mean_regret_pct": 3.1744046470497853,
+          "p95_regret_pct": 18.484868750280683,
+          "lw_share_of_oracle_pct": 2.004697881404467,
+          "us_per_call": 25.699894524016287,
+          "ms_per_forward_pass": 0.3083987342881954,
+          "chunk": {
+            "64": 1770
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 1770,
+          "mean_regret_pct": 3.1744046470497853,
+          "p95_regret_pct": 18.484868750280683,
+          "lw_share_of_oracle_pct": 2.004697881404467,
+          "us_per_call": 25.699894524016287,
+          "ms_per_forward_pass": 0.3083987342881954,
+          "chunk": {
+            "64": 1770
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 1770,
+          "mean_regret_pct": 3.1744046470497853,
+          "p95_regret_pct": 18.484868750280683,
+          "lw_share_of_oracle_pct": 2.004697881404467,
+          "us_per_call": 25.699894524016287,
+          "ms_per_forward_pass": 0.3083987342881954,
+          "chunk": {
+            "64": 1770
+          }
+        },
+        "exact_table_held_out": {
+          "n": 1770,
+          "mean_regret_pct": 3.1744046470497853,
+          "p95_regret_pct": 18.484868750280683,
+          "lw_share_of_oracle_pct": 2.004697881404467,
+          "us_per_call": 25.699894524016287,
+          "ms_per_forward_pass": 0.3083987342881954,
+          "chunk": {
+            "64": 1770
+          }
+        }
+      },
+      "floors": {
+        "split_half": {
+          "per_call": {
+            "mean_regret_pct": 8.023462589814788,
+            "lw_share_of_oracle_pct": 4.255925915081384,
+            "us_per_call": 53.93561687918189,
+            "mean_regret_pct_draw_range95": [
+              7.553157322519433,
+              8.465668029993846
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 5.387292118382094,
+            "lw_share_of_oracle_pct": 3.1574883627819528,
+            "us_per_call": 40.015048671782644,
+            "mean_regret_pct_draw_range95": [
+              5.254256598788302,
+              5.54986388865356
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        },
+        "split_half_above_floor": {
+          "per_call": {
+            "mean_regret_pct": 0.13203583173307723,
+            "lw_share_of_oracle_pct": 0.03237480137935232,
+            "us_per_call": 2.082681360911331,
+            "mean_regret_pct_draw_range95": [
+              0.0,
+              0.3099028488973506
+            ]
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.13203583173307723,
+            "lw_share_of_oracle_pct": 0.03237480137935232,
+            "us_per_call": 2.082681360911331,
+            "mean_regret_pct_draw_range95": [
+              0.0,
+              0.3099028488973506
+            ]
+          },
+          "method": "split-half of each block (within-block noise only; lower bound), 100 draws"
+        }
+      },
+      "above_floor_n": 155,
+      "policies_paper_view_above_floor": {
+        "default": {
+          "n": 155,
+          "mean_regret_pct": 0.032485757991287036,
+          "p95_regret_pct": 0.0,
+          "lw_share_of_oracle_pct": 0.007354561669183478,
+          "us_per_call": 0.47315397570210116,
+          "ms_per_forward_pass": 0.005677847708425214,
+          "chunk": {
+            "64": 155
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 155,
+          "mean_regret_pct": 0.032485757991287036,
+          "p95_regret_pct": 0.0,
+          "lw_share_of_oracle_pct": 0.007354561669183478,
+          "us_per_call": 0.47315397570210116,
+          "ms_per_forward_pass": 0.005677847708425214,
+          "chunk": {
+            "64": 155
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 155,
+          "mean_regret_pct": 0.032485757991287036,
+          "p95_regret_pct": 0.0,
+          "lw_share_of_oracle_pct": 0.007354561669183478,
+          "us_per_call": 0.47315397570210116,
+          "ms_per_forward_pass": 0.005677847708425214,
+          "chunk": {
+            "64": 155
+          }
+        },
+        "exact_table_held_out": {
+          "n": 155,
+          "mean_regret_pct": 0.032485757991287036,
+          "p95_regret_pct": 0.0,
+          "lw_share_of_oracle_pct": 0.007354561669183478,
+          "us_per_call": 0.47315397570210116,
+          "ms_per_forward_pass": 0.005677847708425214,
+          "chunk": {
+            "64": 155
+          }
+        }
+      }
+    }
+  },
+  "graph_tables": {
+    "ssd370m_graph": {
+      "source": "e2_mamba2_vgpu3090_r4graph3.csv",
+      "gpu": "RTX 3090",
+      "kernel": "SSD 370M",
+      "tables": "Table 7",
+      "view": "round medians of three rounds",
+      "n_calls": 2360,
+      "floor_us": 45.34272015094739,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 19.094290409653084,
+          "p95_regret_pct": 72.5072325616961,
+          "lw_share_of_oracle_pct": 2.8023359759357014,
+          "us_per_call": 11.72781108739644,
+          "ms_per_forward_pass": 0.5629349321950291,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 4.329664461257403,
+          "p95_regret_pct": 25.81879759064614,
+          "lw_share_of_oracle_pct": 2.963305918332585,
+          "us_per_call": 12.40147230838883,
+          "ms_per_forward_pass": 0.5952706708026638,
+          "chunk": {
+            "128": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 4.329664461257403,
+          "p95_regret_pct": 25.81879759064614,
+          "lw_share_of_oracle_pct": 2.963305918332585,
+          "us_per_call": 12.40147230838883,
+          "ms_per_forward_pass": 0.5952706708026638,
+          "chunk": {
+            "128": 2360
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.06107627977199609,
+          "p95_regret_pct": 0.0,
+          "lw_share_of_oracle_pct": 0.011224186012636023,
+          "us_per_call": 0.046973358760824445,
+          "ms_per_forward_pass": 0.0022547212205195734,
+          "chunk": {
+            "32": 472,
+            "64": 280,
+            "128": 1256,
+            "256": 352
+          }
+        }
+      },
+      "floors": {
+        "cross_round": {
+          "per_call": {
+            "mean_regret_pct": 0.26162637978501313,
+            "lw_share_of_oracle_pct": 0.027155377654304445,
+            "us_per_call": 0.11373268644067798
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.18631758466735088,
+            "lw_share_of_oracle_pct": 0.019965535455008714,
+            "us_per_call": 0.08362004802259884
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 19.245228643691735,
+            "lw_share_of_oracle_pct": 2.8262393213073493,
+            "us_per_call": 11.836911076271186
+          }
+        },
+        "cross_round_above_floor": {
+          "per_call": {
+            "mean_regret_pct": 0.02074232025457969,
+            "lw_share_of_oracle_pct": 0.013135242951207363,
+            "us_per_call": 0.08341485526315788
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.01429490238896141,
+            "lw_share_of_oracle_pct": 0.009820483192024628,
+            "us_per_call": 0.06236460087719295
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 10.430637743741052,
+            "lw_share_of_oracle_pct": 2.0132875601575,
+            "us_per_call": 12.785305232456139
+          }
+        },
+        "cross_session": {
+          "per_call": {
+            "mean_regret_pct": 0.3635011594179839,
+            "lw_share_of_oracle_pct": 0.24494827174865139,
+            "us_per_call": 1.0338972422325885
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.29891870812271093,
+            "lw_share_of_oracle_pct": 0.04303121070984364,
+            "us_per_call": 0.18162957331860305
+          },
+          "n_calls_matched": 2360,
+          "chunks": [
+            32,
+            64,
+            128,
+            256,
+            512
+          ],
+          "method": "cross-session: chosen on one session, scored on the other, both directions averaged",
+          "same_chunk_latency_ratio_p10_p50_p90": [
+            0.9741448170370524,
+            0.9997324979650435,
+            1.0193409818657675
+          ],
+          "oracle_chunk_agreement": 0.8771186440677966,
+          "other_session": "e2_mamba2_vgpu3090_r4graph.csv",
+          "note": "single-round graph session of the same calls"
+        }
+      }
+    },
+    "ssd370m_graph_pro6000": {
+      "source": "e2_mamba2_pro6000_taco_graph3.csv",
+      "gpu": "RTX PRO 6000",
+      "kernel": "SSD 370M",
+      "tables": "Table 7",
+      "view": "round medians of three rounds",
+      "n_calls": 2360,
+      "floor_us": 33.065600153058696,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 10.112199314408155,
+          "p95_regret_pct": 41.102587148181854,
+          "lw_share_of_oracle_pct": 1.7456094521961927,
+          "us_per_call": 2.5725752195438094,
+          "ms_per_forward_pass": 0.12348361053810286,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 10.112199314408155,
+          "p95_regret_pct": 41.102587148181854,
+          "lw_share_of_oracle_pct": 1.7456094521961927,
+          "us_per_call": 2.5725752195438094,
+          "ms_per_forward_pass": 0.12348361053810286,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 8.990371750844115,
+          "p95_regret_pct": 29.702554704910757,
+          "lw_share_of_oracle_pct": 20.031716817440355,
+          "us_per_call": 29.52155089709845,
+          "ms_per_forward_pass": 1.4170344430607256,
+          "chunk": {
+            "128": 824,
+            "256": 1536
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.10273079276788587,
+          "p95_regret_pct": 0.11290663896755689,
+          "lw_share_of_oracle_pct": 0.026575256504889153,
+          "us_per_call": 0.039165029870504145,
+          "ms_per_forward_pass": 0.0018799214337841988,
+          "chunk": {
+            "32": 712,
+            "64": 208,
+            "128": 408,
+            "256": 1032
+          }
+        }
+      },
+      "floors": {
+        "cross_round": {
+          "per_call": {
+            "mean_regret_pct": 0.3877498147010537,
+            "lw_share_of_oracle_pct": 0.050200967099497486,
+            "us_per_call": 0.0739937627118644
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.31363823785646217,
+            "lw_share_of_oracle_pct": 0.04017716070554244,
+            "us_per_call": 0.0592191638418079
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 10.381926956945872,
+            "lw_share_of_oracle_pct": 1.7820415513069319,
+            "us_per_call": 2.626641822033898
+          }
+        },
+        "cross_round_above_floor": {
+          "per_call": {
+            "mean_regret_pct": 0.03511202761184025,
+            "lw_share_of_oracle_pct": 0.005912935382766118,
+            "us_per_call": 0.015307004219409281
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.022308017799957582,
+            "lw_share_of_oracle_pct": 0.0038760649478048292,
+            "us_per_call": 0.010034092827004215
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 3.1687091876465465,
+            "lw_share_of_oracle_pct": 0.5844135527401816,
+            "us_per_call": 1.5128899841772152
+          }
+        }
+      }
+    },
+    "ssd2p7b_graph": {
+      "source": "e2_mamba2_vgpu3090_2p7b_r4graph3.csv",
+      "gpu": "RTX 3090",
+      "kernel": "SSD 2.7B",
+      "tables": "Table 7",
+      "view": "round medians of three rounds",
+      "n_calls": 2360,
+      "floor_us": 56.770560368895396,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 22.31276188279833,
+          "p95_regret_pct": 74.35864252000981,
+          "lw_share_of_oracle_pct": 2.1972233058044823,
+          "us_per_call": 22.43776606125915,
+          "ms_per_forward_pass": 1.4360170279205857,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 6.9496945644639405,
+          "p95_regret_pct": 28.90835588439893,
+          "lw_share_of_oracle_pct": 2.588413935907328,
+          "us_per_call": 26.43255522102117,
+          "ms_per_forward_pass": 1.6916835341453549,
+          "chunk": {
+            "128": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 6.9496945644639405,
+          "p95_regret_pct": 28.90835588439893,
+          "lw_share_of_oracle_pct": 2.588413935907328,
+          "us_per_call": 26.43255522102117,
+          "ms_per_forward_pass": 1.6916835341453549,
+          "chunk": {
+            "128": 2360
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.06760507600764522,
+          "p95_regret_pct": 0.0,
+          "lw_share_of_oracle_pct": 0.0318306360462504,
+          "us_per_call": 0.3250504230954132,
+          "ms_per_forward_pass": 0.020803227078106445,
+          "chunk": {
+            "32": 248,
+            "64": 336,
+            "128": 1185,
+            "256": 591
+          }
+        }
+      },
+      "floors": {
+        "cross_round": {
+          "per_call": {
+            "mean_regret_pct": 0.19863249537924146,
+            "lw_share_of_oracle_pct": 0.07208386391958352,
+            "us_per_call": 0.7366291497175138
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.1317453894107851,
+            "lw_share_of_oracle_pct": 0.04380485653993004,
+            "us_per_call": 0.44764434745762693
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 22.397296867499726,
+            "lw_share_of_oracle_pct": 2.226565867862967,
+            "us_per_call": 22.753404615819214
+          }
+        },
+        "cross_round_above_floor": {
+          "per_call": {
+            "mean_regret_pct": 0.15521552638396705,
+            "lw_share_of_oracle_pct": 0.07023459073617318,
+            "us_per_call": 0.9301786393805307
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.099688658509895,
+            "lw_share_of_oracle_pct": 0.04249737003892246,
+            "us_per_call": 0.562830158554572
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 13.144849341961592,
+            "lw_share_of_oracle_pct": 1.8820282709655616,
+            "us_per_call": 24.92536053834808
+          }
+        },
+        "cross_session": {
+          "per_call": {
+            "mean_regret_pct": 0.20477424871165498,
+            "lw_share_of_oracle_pct": 0.06631972259611105,
+            "us_per_call": 0.6829036395065493
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.1332230627160873,
+            "lw_share_of_oracle_pct": 0.042225368272005674,
+            "us_per_call": 0.4348006376333661
+          },
+          "n_calls_matched": 2360,
+          "chunks": [
+            32,
+            64,
+            128,
+            256,
+            512
+          ],
+          "method": "cross-session: chosen on one session, scored on the other, both directions averaged",
+          "same_chunk_latency_ratio_p10_p50_p90": [
+            0.9806598617076067,
+            0.9988852076539123,
+            1.007706260622939
+          ],
+          "oracle_chunk_agreement": 0.9389830508474576,
+          "other_session": "e2_mamba2_vgpu3090_2p7b_r4graph.csv",
+          "note": "single-round graph session of the same calls"
+        }
+      }
+    },
+    "ssd2p7b_graph_pro6000": {
+      "source": "e2_mamba2_pro6000_2p7b_taco_graph3.csv",
+      "gpu": "RTX PRO 6000",
+      "kernel": "SSD 2.7B",
+      "tables": "Table 7",
+      "view": "round medians of three rounds",
+      "n_calls": 2360,
+      "floor_us": 33.687039837241095,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 19.211328178375137,
+          "p95_regret_pct": 69.05225060231153,
+          "lw_share_of_oracle_pct": 5.852516859665144,
+          "us_per_call": 20.165091219516,
+          "ms_per_forward_pass": 1.290565838049024,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 9.290747728776763,
+          "p95_regret_pct": 33.35970831965771,
+          "lw_share_of_oracle_pct": 13.026600565761587,
+          "us_per_call": 44.88369619217306,
+          "ms_per_forward_pass": 2.872556556299076,
+          "chunk": {
+            "128": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 9.290747728776763,
+          "p95_regret_pct": 33.35970831965771,
+          "lw_share_of_oracle_pct": 13.026600565761587,
+          "us_per_call": 44.88369619217306,
+          "ms_per_forward_pass": 2.872556556299076,
+          "chunk": {
+            "128": 2360
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.1676344634149896,
+          "p95_regret_pct": 0.4109513523892519,
+          "lw_share_of_oracle_pct": 0.46188379648891187,
+          "us_per_call": 1.5914399073680197,
+          "ms_per_forward_pass": 0.10185215407155326,
+          "chunk": {
+            "32": 400,
+            "64": 520,
+            "128": 873,
+            "256": 567
+          }
+        }
+      },
+      "floors": {
+        "cross_round": {
+          "per_call": {
+            "mean_regret_pct": 0.33821558904298654,
+            "lw_share_of_oracle_pct": 0.019091075865495178,
+            "us_per_call": 0.06578621468926553
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.25070780027929035,
+            "lw_share_of_oracle_pct": 0.013769414858600306,
+            "us_per_call": 0.04744822598870058
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 19.355032780676353,
+            "lw_share_of_oracle_pct": 5.840456632361072,
+            "us_per_call": 20.125714056497173
+          }
+        },
+        "cross_round_above_floor": {
+          "per_call": {
+            "mean_regret_pct": 0.01932043449511745,
+            "lw_share_of_oracle_pct": 0.0020100247512341157,
+            "us_per_call": 0.010534315789473687
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.008327916266047607,
+            "lw_share_of_oracle_pct": 0.0008803649715825349,
+            "us_per_call": 0.004613894736842107
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 14.785265764801391,
+            "lw_share_of_oracle_pct": 5.353304266584274,
+            "us_per_call": 28.056071263157897
+          }
+        }
+      }
+    },
+    "gdn1p4b_graph": {
+      "source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gpu": "RTX 3090",
+      "kernel": "GDN 1.4B",
+      "tables": "Table 7",
+      "view": "round medians of three rounds",
+      "n_calls": 1770,
+      "floor_us": 82.636798173189,
+      "policies_paper_view": {
+        "default": {
+          "n": 1770,
+          "mean_regret_pct": 16.17436669022128,
+          "p95_regret_pct": 61.31270396855222,
+          "lw_share_of_oracle_pct": 1.0152981021266416,
+          "us_per_call": 8.470445952509754,
+          "ms_per_forward_pass": 0.10164535143011706,
+          "chunk": {
+            "64": 1770
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 1770,
+          "mean_regret_pct": 11.33546388660281,
+          "p95_regret_pct": 30.34742216973839,
+          "lw_share_of_oracle_pct": 29.554393620554944,
+          "us_per_call": 246.5668883825847,
+          "ms_per_forward_pass": 2.9588026605910165,
+          "chunk": {
+            "32": 1770
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 1770,
+          "mean_regret_pct": 9.342298193673654,
+          "p95_regret_pct": 29.980575543860343,
+          "lw_share_of_oracle_pct": 4.067530939312571,
+          "us_per_call": 33.9346650106422,
+          "ms_per_forward_pass": 0.4072159801277064,
+          "chunk": {
+            "32": 1152,
+            "64": 618
+          }
+        },
+        "exact_table_held_out": {
+          "n": 1770,
+          "mean_regret_pct": 0.13430179527019978,
+          "p95_regret_pct": 0.0,
+          "lw_share_of_oracle_pct": 0.5694152318265969,
+          "us_per_call": 4.750526900050668,
+          "ms_per_forward_pass": 0.05700632280060801,
+          "chunk": {
+            "16": 288,
+            "32": 613,
+            "64": 869
+          }
+        }
+      },
+      "floors": {
+        "cross_round": {
+          "per_call": {
+            "mean_regret_pct": 0.06598469503839743,
+            "lw_share_of_oracle_pct": 0.0033869714868179504,
+            "us_per_call": 0.028286312617702446
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.03664608472773584,
+            "lw_share_of_oracle_pct": 0.001916543723792541,
+            "us_per_call": 0.0160060263653484
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 16.17150111044897,
+            "lw_share_of_oracle_pct": 1.0188004104243134,
+            "us_per_call": 8.508517717514124
+          }
+        },
+        "cross_round_above_floor": {
+          "per_call": {
+            "mean_regret_pct": 0.0008368849170706774,
+            "lw_share_of_oracle_pct": 0.00013940938701389972,
+            "us_per_call": 0.0017665497076023336
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.0008368849170706774,
+            "lw_share_of_oracle_pct": 0.00013940938701389972,
+            "us_per_call": 0.0017665497076023336
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 2.013872296280654,
+            "lw_share_of_oracle_pct": 0.20179532306672066,
+            "us_per_call": 2.5570836842105265
+          }
+        },
+        "cross_session": {
+          "per_call": {
+            "mean_regret_pct": 0.14273507394415316,
+            "lw_share_of_oracle_pct": 0.009176602732016774,
+            "us_per_call": 0.07714133137195127
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.10020483081348709,
+            "lw_share_of_oracle_pct": 0.0049227718136250626,
+            "us_per_call": 0.04138232664452432
+          },
+          "n_calls_matched": 1770,
+          "chunks": [
+            16,
+            32,
+            64
+          ],
+          "method": "cross-session: chosen on one session, scored on the other, both directions averaged",
+          "same_chunk_latency_ratio_p10_p50_p90": [
+            0.9826797982168904,
+            0.9986244846614373,
+            1.0063382368406972
+          ],
+          "oracle_chunk_agreement": 0.9858757062146892,
+          "other_session": "e2_gdn_vgpu3090_1p4b_r4graph.csv",
+          "note": "single-round graph session of the same calls"
+        }
+      }
+    },
+    "gdn1p4b_graph_pro6000": {
+      "source": "e2_gdn_pro6000_1p4b_taco_graph3.csv",
+      "gpu": "RTX PRO 6000",
+      "kernel": "GDN 1.4B",
+      "tables": "Table 7",
+      "view": "round medians of three rounds",
+      "n_calls": 1770,
+      "floor_us": 57.0662404596805,
+      "policies_paper_view": {
+        "default": {
+          "n": 1770,
+          "mean_regret_pct": 23.913858743048415,
+          "p95_regret_pct": 50.860662372454314,
+          "lw_share_of_oracle_pct": 3.188670342254195,
+          "us_per_call": 15.820459085206195,
+          "ms_per_forward_pass": 0.18984550902247432,
+          "chunk": {
+            "64": 1770
+          }
+        },
+        "best_single_chunk_in_sample": {
+          "n": 1770,
+          "mean_regret_pct": 2.1198403690534047,
+          "p95_regret_pct": 9.304682552618475,
+          "lw_share_of_oracle_pct": 9.11991243869121,
+          "us_per_call": 45.24807713267072,
+          "ms_per_forward_pass": 0.5429769255920487,
+          "chunk": {
+            "32": 1770
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 1770,
+          "mean_regret_pct": 2.1198403690534047,
+          "p95_regret_pct": 9.304682552618475,
+          "lw_share_of_oracle_pct": 9.11991243869121,
+          "us_per_call": 45.24807713267072,
+          "ms_per_forward_pass": 0.5429769255920487,
+          "chunk": {
+            "32": 1770
+          }
+        },
+        "exact_table_held_out": {
+          "n": 1770,
+          "mean_regret_pct": 0.056496191318157786,
+          "p95_regret_pct": 0.0,
+          "lw_share_of_oracle_pct": 0.24537723492260743,
+          "us_per_call": 1.217429238166344,
+          "ms_per_forward_pass": 0.014609150857996127,
+          "chunk": {
+            "16": 294,
+            "32": 1254,
+            "64": 222
+          }
+        }
+      },
+      "floors": {
+        "cross_round": {
+          "per_call": {
+            "mean_regret_pct": 0.07303797007772506,
+            "lw_share_of_oracle_pct": 0.00427318108577769,
+            "us_per_call": 0.021201600753295708
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.05892963463508218,
+            "lw_share_of_oracle_pct": 0.0044421695024149995,
+            "us_per_call": 0.02204004519774026
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 23.91396369220174,
+            "lw_share_of_oracle_pct": 3.196431398403392,
+            "us_per_call": 15.859253559322033
+          }
+        },
+        "cross_round_above_floor": {
+          "per_call": {
+            "mean_regret_pct": 0.00016913945482870227,
+            "lw_share_of_oracle_pct": 0.00024781316163471694,
+            "us_per_call": 0.0019718497827437083
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.000406412123230995,
+            "lw_share_of_oracle_pct": 0.0011666054316182696,
+            "us_per_call": 0.009282681564246055
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 11.432785282281351,
+            "lw_share_of_oracle_pct": 2.1128980016352177,
+            "us_per_call": 16.812333283674736
+          }
+        }
+      }
+    },
+    "m1_370m_graph": {
+      "source": "e2_mamba1_vgpu3090_r4graph3.csv",
+      "gpu": "RTX 3090",
+      "kernel": "Triton Mamba-1 370M",
+      "tables": "Table 7",
+      "view": "round medians of three rounds",
+      "n_calls": 2360,
+      "floor_us": 43.6838397756217,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 31.796060850325986,
+          "p95_regret_pct": 89.3976736327172,
+          "lw_share_of_oracle_pct": 17.935268012919227,
+          "us_per_call": 110.72263409397802,
+          "ms_per_forward_pass": 5.314686436510945,
+          "note": "best single chunk in sample (Table 7)"
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 31.796060850325986,
+          "p95_regret_pct": 89.3976736327172,
+          "lw_share_of_oracle_pct": 17.935268012919227,
+          "us_per_call": 110.72263409397802,
+          "ms_per_forward_pass": 5.314686436510945,
+          "chunk": {
+            "64": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 15.942460127496647,
+          "p95_regret_pct": 163.4963044317387,
+          "lw_share_of_oracle_pct": 2.6162516952592667,
+          "us_per_call": 16.151321460224562,
+          "ms_per_forward_pass": 0.775263430090779,
+          "chunk": {
+            "32": 824,
+            "128": 1536
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.35328810920556075,
+          "p95_regret_pct": 0.7449240447549252,
+          "lw_share_of_oracle_pct": 2.2956285340681024,
+          "us_per_call": 14.171967656698897,
+          "ms_per_forward_pass": 0.6802544475215471,
+          "chunk": {
+            "32": 828,
+            "64": 369,
+            "128": 568,
+            "256": 64,
+            "512": 299,
+            "1024": 232
+          }
+        }
+      },
+      "floors": {
+        "cross_round": {
+          "per_call": {
+            "mean_regret_pct": 0.37782094036109637,
+            "lw_share_of_oracle_pct": 0.2806848490182606,
+            "us_per_call": 1.7350374774011297
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.2568652427507611,
+            "lw_share_of_oracle_pct": 0.1881489202819919,
+            "us_per_call": 1.1630318813559324
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 31.88234567046263,
+            "lw_share_of_oracle_pct": 18.139866159290612,
+            "us_per_call": 112.13055400564971
+          }
+        },
+        "cross_round_above_floor": {
+          "per_call": {
+            "mean_regret_pct": 0.3375644412993382,
+            "lw_share_of_oracle_pct": 0.27903896540791095,
+            "us_per_call": 2.5616191964285715
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.226629550825755,
+            "lw_share_of_oracle_pct": 0.18669599891313238,
+            "us_per_call": 1.7138970323129252
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 35.54906559965642,
+            "lw_share_of_oracle_pct": 18.046677385601882,
+            "us_per_call": 165.67118199829935
+          }
+        },
+        "cross_session": {
+          "per_call": {
+            "mean_regret_pct": 0.6464867689804941,
+            "lw_share_of_oracle_pct": 0.3645209087136949,
+            "us_per_call": 2.2732891117112115
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.3921993890476476,
+            "lw_share_of_oracle_pct": 0.27353158564766383,
+            "us_per_call": 1.7058455646787851
+          },
+          "n_calls_matched": 2360,
+          "chunks": [
+            32,
+            64,
+            128,
+            256,
+            512,
+            1024
+          ],
+          "method": "cross-session: chosen on one session, scored on the other, both directions averaged",
+          "same_chunk_latency_ratio_p10_p50_p90": [
+            0.934906213788569,
+            0.9921418157234877,
+            1.006905287725756
+          ],
+          "oracle_chunk_agreement": 0.9152542372881356,
+          "other_session": "e2_mamba1_vgpu3090_r4graph.csv",
+          "note": "single-round graph session of the same calls"
+        }
+      }
+    },
+    "m1_370m_graph_pro6000": {
+      "source": "e2_mamba1_pro6000_taco_graph3.csv",
+      "gpu": "RTX PRO 6000",
+      "kernel": "Triton Mamba-1 370M",
+      "tables": "Table 7",
+      "view": "round medians of three rounds",
+      "n_calls": 2360,
+      "floor_us": 38.873599767684894,
+      "policies_paper_view": {
+        "default": {
+          "n": 2360,
+          "mean_regret_pct": 46.009699550486275,
+          "p95_regret_pct": 308.1319136073524,
+          "lw_share_of_oracle_pct": 32.25209205182664,
+          "us_per_call": 87.42170280473053,
+          "ms_per_forward_pass": 4.1962417346270655,
+          "note": "best single chunk in sample (Table 7)"
+        },
+        "best_single_chunk_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 46.009699550486275,
+          "p95_regret_pct": 308.1319136073524,
+          "lw_share_of_oracle_pct": 32.25209205182664,
+          "us_per_call": 87.42170280473053,
+          "ms_per_forward_pass": 4.1962417346270655,
+          "chunk": {
+            "256": 2360
+          }
+        },
+        "best_static_per_batch_in_sample": {
+          "n": 2360,
+          "mean_regret_pct": 17.636974562939706,
+          "p95_regret_pct": 51.94571648315217,
+          "lw_share_of_oracle_pct": 25.577301287692578,
+          "us_per_call": 69.32918423172717,
+          "ms_per_forward_pass": 3.327800843122904,
+          "chunk": {
+            "64": 824,
+            "256": 1536
+          }
+        },
+        "exact_table_held_out": {
+          "n": 2360,
+          "mean_regret_pct": 0.1304402644352681,
+          "p95_regret_pct": 0.008919402601779983,
+          "lw_share_of_oracle_pct": 0.11776726789503683,
+          "us_per_call": 0.3192169697860545,
+          "ms_per_forward_pass": 0.015322414549730616,
+          "chunk": {
+            "32": 248,
+            "64": 520,
+            "128": 168,
+            "256": 204,
+            "512": 941,
+            "1024": 279
+          }
+        }
+      },
+      "floors": {
+        "cross_round": {
+          "per_call": {
+            "mean_regret_pct": 0.15904801879436964,
+            "lw_share_of_oracle_pct": 0.03740466207969375,
+            "us_per_call": 0.10140188135593248
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.11699976516426559,
+            "lw_share_of_oracle_pct": 0.04195092039802091,
+            "us_per_call": 0.11372652542372902
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 46.03952800636698,
+            "lw_share_of_oracle_pct": 32.2206516306551,
+            "us_per_call": 87.3483280480226
+          }
+        },
+        "cross_round_above_floor": {
+          "per_call": {
+            "mean_regret_pct": 0.02256237938590215,
+            "lw_share_of_oracle_pct": 0.02704909325465444,
+            "us_per_call": 0.1279125255623727
+          },
+          "per_shape": {
+            "mean_regret_pct": 0.0396759402232459,
+            "lw_share_of_oracle_pct": 0.035646768125879,
+            "us_per_call": 0.16857009202454024
+          },
+          "method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+          "default_scored_on_single_rounds": {
+            "mean_regret_pct": 43.790753429589316,
+            "lw_share_of_oracle_pct": 31.582331865701082,
+            "us_per_call": 149.349769105317
+          }
+        }
+      }
+    }
+  },
+  "information_datasets": {
+    "criterion": "chunk effect (held-out best single chunk) > 2.0 x per-shape noise floor",
+    "checks_against_stored_e3b": [
+      {
+        "tag": "gdn_vgpu3090_1p4b_r3",
+        "global_static_recomputed": 3.1744046470497853,
+        "stored": 3.1744046470497853,
+        "shape_recomputed": 3.2656453902425433,
+        "shape_stored": 3.2656453902425433,
+        "match": true
+      },
+      {
+        "tag": "mamba1_h800",
+        "global_static_recomputed": 20.145609302570783,
+        "stored": 20.145609302570783,
+        "shape_recomputed": 2.558662427593856,
+        "shape_stored": 2.558662427593856,
+        "match": true
+      },
+      {
+        "tag": "mamba1_h800_r3spin",
+        "global_static_recomputed": 50.887462824169496,
+        "stored": 50.887462824169496,
+        "shape_recomputed": 1.6260753146170925,
+        "shape_stored": 1.6260753146170925,
+        "match": true
+      },
+      {
+        "tag": "mamba1_pro6000",
+        "global_static_recomputed": 23.404076530606638,
+        "stored": 23.404076530606638,
+        "shape_recomputed": 0.7331745348582027,
+        "shape_stored": 0.7331745348582027,
+        "match": true
+      },
+      {
+        "tag": "mamba1_pro6000_r4spin_rmed",
+        "global_static_recomputed": 48.59444076453128,
+        "stored": 48.59444076453128,
+        "shape_recomputed": 0.4646438644010337,
+        "shape_stored": 0.4646438644010337,
+        "match": true
+      },
+      {
+        "tag": "mamba1_vgpu3090",
+        "global_static_recomputed": 17.69649748010075,
+        "stored": 17.69649748010075,
+        "shape_recomputed": 1.932595861253767,
+        "shape_stored": 1.932595861253767,
+        "match": true
+      },
+      {
+        "tag": "mamba1_vgpu3090_1p4b",
+        "global_static_recomputed": 13.118416382347723,
+        "stored": 13.118416382347723,
+        "shape_recomputed": 7.115681813660554,
+        "shape_stored": 7.115681813660554,
+        "match": true
+      },
+      {
+        "tag": "mamba1_vgpu3090_1p4b_r3",
+        "global_static_recomputed": 15.371603718994509,
+        "stored": 15.371603718994509,
+        "shape_recomputed": 2.1119095807746904,
+        "shape_stored": 2.1119095807746904,
+        "match": true
+      },
+      {
+        "tag": "mamba1_vgpu3090_1p4b_r3plain",
+        "global_static_recomputed": 13.559868377094658,
+        "stored": 13.559868377094658,
+        "shape_recomputed": 3.868517411764604,
+        "shape_stored": 3.868517411764604,
+        "match": true
+      },
+      {
+        "tag": "mamba1_vgpu3090_2p8b",
+        "global_static_recomputed": 25.060044721607238,
+        "stored": 25.060044721607238,
+        "shape_recomputed": 16.88295583228744,
+        "shape_stored": 16.88295583228744,
+        "match": true
+      },
+      {
+        "tag": "mamba1_vgpu3090_2p8b_r3",
+        "global_static_recomputed": 15.541359278511498,
+        "stored": 15.541359278511498,
+        "shape_recomputed": 2.89602140580775,
+        "shape_stored": 2.89602140580775,
+        "match": true
+      },
+      {
+        "tag": "mamba1_vgpu3090_2p8b_r3plain",
+        "global_static_recomputed": 13.577128463563556,
+        "stored": 13.577128463563556,
+        "shape_recomputed": 6.479476982412182,
+        "shape_stored": 6.479476982412182,
+        "match": true
+      },
+      {
+        "tag": "mamba1_vgpu3090_r3spin",
+        "global_static_recomputed": 32.92865530851964,
+        "stored": 32.92865530851964,
+        "shape_recomputed": 0.3750069054942694,
+        "shape_stored": 0.3750069054942694,
+        "match": true
+      },
+      {
+        "tag": "mamba1_vgpu3090_r4spin_rmed",
+        "global_static_recomputed": 33.218768704729484,
+        "stored": 33.218768704729484,
+        "shape_recomputed": 0.3834695014764745,
+        "shape_stored": 0.3834695014764745,
+        "match": true
+      },
+      {
+        "tag": "mamba2_pro6000",
+        "global_static_recomputed": 1.6931730063964503,
+        "stored": 1.6931730063964503,
+        "shape_recomputed": 2.2134712029051036,
+        "shape_stored": 2.2134712029051036,
+        "match": true
+      },
+      {
+        "tag": "mamba2_vgpu3090",
+        "global_static_recomputed": 2.5421824251500698,
+        "stored": 2.5421824251500698,
+        "shape_recomputed": 2.4394780592011402,
+        "shape_stored": 2.4394780592011402,
+        "match": true
+      },
+      {
+        "tag": "mamba2_vgpu3090_2p7b_r3",
+        "global_static_recomputed": 12.165238434151817,
+        "stored": 12.165238434151817,
+        "shape_recomputed": 11.430639655693122,
+        "shape_stored": 11.430639655693122,
+        "match": true
+      },
+      {
+        "tag": "mamba2_vgpu3090_r3spin",
+        "global_static_recomputed": 5.717818258588543,
+        "stored": 5.717818258588543,
+        "shape_recomputed": 6.0242451467619125,
+        "shape_stored": 6.0242451467619125,
+        "match": true
+      },
+      {
+        "tag": "refscan_vgpu3090",
+        "global_static_recomputed": 30.203717917644475,
+        "stored": 30.203717917644475,
+        "shape_recomputed": 2.9975852323933814,
+        "shape_stored": 2.9975852323933814,
+        "match": true
+      }
+    ],
+    "n_datasets": 19,
+    "n_resolving": 12,
+    "resolving": [
+      "mamba1_h800",
+      "mamba1_h800_r3spin",
+      "mamba1_pro6000",
+      "mamba1_pro6000_r4spin_rmed",
+      "mamba1_vgpu3090",
+      "mamba1_vgpu3090_1p4b_r3",
+      "mamba1_vgpu3090_1p4b_r3plain",
+      "mamba1_vgpu3090_2p8b_r3",
+      "mamba1_vgpu3090_2p8b_r3plain",
+      "mamba1_vgpu3090_r3spin",
+      "mamba1_vgpu3090_r4spin_rmed",
+      "refscan_vgpu3090"
+    ],
+    "not_resolving": [
+      "gdn_vgpu3090_1p4b_r3",
+      "mamba1_vgpu3090_1p4b",
+      "mamba1_vgpu3090_2p8b",
+      "mamba2_pro6000",
+      "mamba2_vgpu3090",
+      "mamba2_vgpu3090_2p7b_r3",
+      "mamba2_vgpu3090_r3spin"
+    ],
+    "above_floor_subsets_resolving": [
+      "mamba2_vgpu3090_r3spin|above_floor"
+    ],
+    "datasets": {
+      "gdn_vgpu3090_1p4b_r3": {
+        "source": "e2_gdn_vgpu3090_1p4b_r3.csv",
+        "n_calls": 1770,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 8.026772277532348,
+        "floor_per_shape_pct": 5.39807646859672,
+        "chunk_effect_best_single_chunk_held_out_pct": 3.1744046470497853,
+        "shape_tree_pct": 3.2656453902425433,
+        "paired_shape_entropy_minus_shape": "0.01 [-0.16, 0.16]",
+        "effect_over_floor_ratio": 0.5880621857650344,
+        "resolves_chunk_effect": false,
+        "shape_tree_minus_floor_pp": -2.132431078354177
+      },
+      "mamba1_h800": {
+        "source": "e2_mamba1_h800.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.6071816629244993,
+        "floor_per_shape_pct": 0.9337306078161828,
+        "chunk_effect_best_single_chunk_held_out_pct": 20.145609302570783,
+        "shape_tree_pct": 2.558662427593856,
+        "paired_shape_entropy_minus_shape": "0.03 [-0.01, 0.10]",
+        "effect_over_floor_ratio": 21.575397800964787,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 1.624931819777673
+      },
+      "mamba1_h800_r3spin": {
+        "source": "e2_mamba1_h800_r3spin.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.00416096899716295,
+        "floor_per_shape_pct": 0.17299592328028987,
+        "chunk_effect_best_single_chunk_held_out_pct": 50.887462824169496,
+        "shape_tree_pct": 1.6260753146170925,
+        "paired_shape_entropy_minus_shape": "0.00 [0.00, 0.00]",
+        "effect_over_floor_ratio": 294.15411565347165,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 1.4530793913368028
+      },
+      "mamba1_pro6000": {
+        "source": "e2_mamba1_pro6000.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.5688919542216351,
+        "floor_per_shape_pct": 0.5206343290883167,
+        "chunk_effect_best_single_chunk_held_out_pct": 23.404076530606638,
+        "shape_tree_pct": 0.7331745348582027,
+        "paired_shape_entropy_minus_shape": "0.00 [-0.01, 0.02]",
+        "effect_over_floor_ratio": 44.9530029485177,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 0.21254020576988597
+      },
+      "mamba1_pro6000_r4spin_rmed": {
+        "source": "e2_mamba1_pro6000_r4spin.csv",
+        "n_calls": 2360,
+        "floor_method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+        "floor_per_call_pct": 0.06966384760834055,
+        "floor_per_shape_pct": 0.05391227122339681,
+        "chunk_effect_best_single_chunk_held_out_pct": 48.59444076453128,
+        "shape_tree_pct": 0.4646438644010337,
+        "paired_shape_entropy_minus_shape": null,
+        "effect_over_floor_ratio": 901.3614092266678,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 0.4107315931776369
+      },
+      "mamba1_vgpu3090": {
+        "source": "e2_mamba1_vgpu3090.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.35497892342099546,
+        "floor_per_shape_pct": 1.7309501534824623,
+        "chunk_effect_best_single_chunk_held_out_pct": 17.69649748010075,
+        "shape_tree_pct": 1.932595861253767,
+        "paired_shape_entropy_minus_shape": "-0.00 [-0.03, 0.02]",
+        "effect_over_floor_ratio": 10.223574286352232,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 0.20164570777130475
+      },
+      "mamba1_vgpu3090_1p4b": {
+        "source": "e2_mamba1_vgpu3090_1p4b.csv",
+        "n_calls": 1536,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 12.955319953599922,
+        "floor_per_shape_pct": 8.655114701897688,
+        "chunk_effect_best_single_chunk_held_out_pct": 13.118416382347723,
+        "shape_tree_pct": 7.115681813660554,
+        "paired_shape_entropy_minus_shape": "0.02 [-0.09, 0.16]",
+        "effect_over_floor_ratio": 1.5156837123685292,
+        "resolves_chunk_effect": false,
+        "shape_tree_minus_floor_pp": -1.5394328882371333
+      },
+      "mamba1_vgpu3090_1p4b_r3": {
+        "source": "e2_mamba1_vgpu3090_1p4b_r3.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.008719158201463453,
+        "floor_per_shape_pct": 0.07314489600854238,
+        "chunk_effect_best_single_chunk_held_out_pct": 15.371603718994509,
+        "shape_tree_pct": 2.1119095807746904,
+        "paired_shape_entropy_minus_shape": "0.00 [0.00, 0.00]",
+        "effect_over_floor_ratio": 210.1527865621588,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 2.038764684766148
+      },
+      "mamba1_vgpu3090_1p4b_r3plain": {
+        "source": "e2_mamba1_vgpu3090_1p4b_r3plain.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.41822387607551215,
+        "floor_per_shape_pct": 1.8519173033501468,
+        "chunk_effect_best_single_chunk_held_out_pct": 13.559868377094658,
+        "shape_tree_pct": 3.868517411764604,
+        "paired_shape_entropy_minus_shape": "0.01 [-0.01, 0.03]",
+        "effect_over_floor_ratio": 7.322070133782241,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 2.0166001084144574
+      },
+      "mamba1_vgpu3090_2p8b": {
+        "source": "e2_mamba1_vgpu3090_2p8b.csv",
+        "n_calls": 1536,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 55.31837887075831,
+        "floor_per_shape_pct": 22.59481018879407,
+        "chunk_effect_best_single_chunk_held_out_pct": 25.060044721607238,
+        "shape_tree_pct": 16.88295583228744,
+        "paired_shape_entropy_minus_shape": "0.03 [0.00, 0.08]",
+        "effect_over_floor_ratio": 1.109106228917816,
+        "resolves_chunk_effect": false,
+        "shape_tree_minus_floor_pp": -5.711854356506631
+      },
+      "mamba1_vgpu3090_2p8b_r3": {
+        "source": "e2_mamba1_vgpu3090_2p8b_r3.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.009581770623427417,
+        "floor_per_shape_pct": 0.052105256391463635,
+        "chunk_effect_best_single_chunk_held_out_pct": 15.541359278511498,
+        "shape_tree_pct": 2.89602140580775,
+        "paired_shape_entropy_minus_shape": "0.00 [0.00, 0.00]",
+        "effect_over_floor_ratio": 298.26855013916844,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 2.843916149416286
+      },
+      "mamba1_vgpu3090_2p8b_r3plain": {
+        "source": "e2_mamba1_vgpu3090_2p8b_r3plain.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.2827605489363465,
+        "floor_per_shape_pct": 3.5304124183309096,
+        "chunk_effect_best_single_chunk_held_out_pct": 13.577128463563556,
+        "shape_tree_pct": 6.479476982412182,
+        "paired_shape_entropy_minus_shape": "-0.05 [-0.20, 0.03]",
+        "effect_over_floor_ratio": 3.8457627196945112,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 2.9490645640812723
+      },
+      "mamba1_vgpu3090_r3spin": {
+        "source": "e2_mamba1_vgpu3090_r3spin.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.002325158225429679,
+        "floor_per_shape_pct": 0.007254838599175529,
+        "chunk_effect_best_single_chunk_held_out_pct": 32.92865530851964,
+        "shape_tree_pct": 0.3750069054942694,
+        "paired_shape_entropy_minus_shape": "-0.04 [-0.22, 0.08]",
+        "effect_over_floor_ratio": 4538.854291294887,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 0.3677520668950939
+      },
+      "mamba1_vgpu3090_r4spin_rmed": {
+        "source": "e2_mamba1_vgpu3090_r4spin.csv",
+        "n_calls": 2360,
+        "floor_method": "cross-round: chosen on the median of the other rounds, scored on the held-out round (single-round oracle)",
+        "floor_per_call_pct": 0.1020047495785676,
+        "floor_per_shape_pct": 0.0840896086017911,
+        "chunk_effect_best_single_chunk_held_out_pct": 33.218768704729484,
+        "shape_tree_pct": 0.3834695014764745,
+        "paired_shape_entropy_minus_shape": null,
+        "effect_over_floor_ratio": 395.04011562282295,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 0.2993798928746834
+      },
+      "mamba2_pro6000": {
+        "source": "e2_mamba2_pro6000.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.4419365719326283,
+        "floor_per_shape_pct": 1.1956232515719665,
+        "chunk_effect_best_single_chunk_held_out_pct": 1.6931730063964503,
+        "shape_tree_pct": 2.2134712029051036,
+        "paired_shape_entropy_minus_shape": "-0.00 [-0.01, 0.01]",
+        "effect_over_floor_ratio": 1.4161425885372516,
+        "resolves_chunk_effect": false,
+        "shape_tree_minus_floor_pp": 1.017847951333137
+      },
+      "mamba2_vgpu3090": {
+        "source": "e2_mamba2_vgpu3090.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.47700926017437606,
+        "floor_per_shape_pct": 2.0323694943152377,
+        "chunk_effect_best_single_chunk_held_out_pct": 2.5421824251500698,
+        "shape_tree_pct": 2.4394780592011402,
+        "paired_shape_entropy_minus_shape": "0.01 [-0.08, 0.10]",
+        "effect_over_floor_ratio": 1.2508465769934234,
+        "resolves_chunk_effect": false,
+        "shape_tree_minus_floor_pp": 0.4071085648859025
+      },
+      "mamba2_vgpu3090_2p7b_r3": {
+        "source": "e2_mamba2_vgpu3090_2p7b_r3.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 15.172796148161542,
+        "floor_per_shape_pct": 16.369881140601354,
+        "chunk_effect_best_single_chunk_held_out_pct": 12.165238434151817,
+        "shape_tree_pct": 11.430639655693122,
+        "paired_shape_entropy_minus_shape": "0.15 [-0.46, 0.71]",
+        "effect_over_floor_ratio": 0.7431476337344329,
+        "resolves_chunk_effect": false,
+        "shape_tree_minus_floor_pp": -4.939241484908232
+      },
+      "mamba2_vgpu3090_r3spin": {
+        "source": "e2_mamba2_vgpu3090_r3spin.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 25.11896028687204,
+        "floor_per_shape_pct": 16.135204120182564,
+        "chunk_effect_best_single_chunk_held_out_pct": 5.717818258588543,
+        "shape_tree_pct": 6.0242451467619125,
+        "paired_shape_entropy_minus_shape": "-0.47 [-0.92, -0.07]",
+        "effect_over_floor_ratio": 0.35436913075282794,
+        "resolves_chunk_effect": false,
+        "shape_tree_minus_floor_pp": -10.11095897342065
+      },
+      "refscan_vgpu3090": {
+        "source": "e8_refscan_vgpu3090.csv",
+        "n_calls": 2360,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.06912078041096126,
+        "floor_per_shape_pct": 2.481602125212612,
+        "chunk_effect_best_single_chunk_held_out_pct": 30.203717917644475,
+        "shape_tree_pct": 2.9975852323933814,
+        "paired_shape_entropy_minus_shape": "0.13 [0.03, 0.25]",
+        "effect_over_floor_ratio": 12.171055791248875,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 0.5159831071807695
+      },
+      "gdn_vgpu3090_1p4b_r3|above_floor": {
+        "source": "e2_gdn_vgpu3090_1p4b_r3.csv",
+        "n_calls": 155,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.13887551150497937,
+        "floor_per_shape_pct": 0.13887551150497937,
+        "chunk_effect_best_single_chunk_held_out_pct": 0.032485757991287036,
+        "shape_tree_pct": 0.032485757991287036,
+        "paired_shape_entropy_minus_shape": null,
+        "effect_over_floor_ratio": 0.23391998804715303,
+        "resolves_chunk_effect": false,
+        "shape_tree_minus_floor_pp": -0.10638975351369234
+      },
+      "mamba2_vgpu3090_2p7b_r3|above_floor": {
+        "source": "e2_mamba2_vgpu3090_2p7b_r3.csv",
+        "n_calls": 397,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.45409307585833725,
+        "floor_per_shape_pct": 0.45217354696376166,
+        "chunk_effect_best_single_chunk_held_out_pct": 0.14564956089702302,
+        "shape_tree_pct": 0.14564956089702302,
+        "paired_shape_entropy_minus_shape": null,
+        "effect_over_floor_ratio": 0.3221098666099009,
+        "resolves_chunk_effect": false,
+        "shape_tree_minus_floor_pp": -0.30652398606673864
+      },
+      "mamba2_vgpu3090_r3spin|above_floor": {
+        "source": "e2_mamba2_vgpu3090_r3spin.csv",
+        "n_calls": 208,
+        "floor_method": "split-half of each block (within-block noise only; lower bound), 100 draws",
+        "floor_per_call_pct": 0.0010099050108237086,
+        "floor_per_shape_pct": 0.004348875965155042,
+        "chunk_effect_best_single_chunk_held_out_pct": 0.03305904958781166,
+        "shape_tree_pct": 0.03305904958781166,
+        "paired_shape_entropy_minus_shape": null,
+        "effect_over_floor_ratio": 7.60174579654471,
+        "resolves_chunk_effect": true,
+        "shape_tree_minus_floor_pp": 0.02871017362265662
+      }
+    }
+  },
+  "launch_floor_sensitivity": {
+    "definition": "floor = factor x median oracle latency of the batch-1 calls with L <= 256 (published factor 2)",
+    "ssd2p7b_device": {
+      "source": "e2_mamba2_vgpu3090_2p7b_r3.csv",
+      "median_b1_L_le_256_us": 378.77792030572886,
+      "by_factor": {
+        "1.0": {
+          "floor_us": 378.77792030572886,
+          "n_above": 1750,
+          "share_above": 0.7415254237288136,
+          "chunk_256_is_oracle": 786,
+          "chunk_256_max_per_batch_mean_regret_pct": 13.572866562896177,
+          "heldout_headroom_covered_us": 38.49620221250545,
+          "heldout_headroom_covered_keys_above_sync": 15,
+          "table8_default_ms_per_forward_pass": 3.114709394769669,
+          "table8_heldout_table_ms_per_forward_pass": 2.523831754687173
+        },
+        "1.5": {
+          "floor_us": 568.1668804585934,
+          "n_above": 624,
+          "share_above": 0.26440677966101694,
+          "chunk_256_is_oracle": 556,
+          "chunk_256_max_per_batch_mean_regret_pct": 1.9477810668609048,
+          "heldout_headroom_covered_us": 7.071449549403042,
+          "heldout_headroom_covered_keys_above_sync": 6,
+          "table8_default_ms_per_forward_pass": 0.4950254417420963,
+          "table8_heldout_table_ms_per_forward_pass": 0.4668030329468924
+        },
+        "2.0": {
+          "floor_us": 757.5558406114577,
+          "n_above": 397,
+          "share_above": 0.16822033898305086,
+          "chunk_256_is_oracle": 375,
+          "chunk_256_max_per_batch_mean_regret_pct": 0.24071178973211527,
+          "heldout_headroom_covered_us": 0.8974070513042914,
+          "heldout_headroom_covered_keys_above_sync": 1,
+          "table8_default_ms_per_forward_pass": 0.2360386523972231,
+          "table8_heldout_table_ms_per_forward_pass": 0.15278288483919986
+        },
+        "3.0": {
+          "floor_us": 1136.3337609171867,
+          "n_above": 368,
+          "share_above": 0.15593220338983052,
+          "chunk_256_is_oracle": 356,
+          "chunk_256_max_per_batch_mean_regret_pct": 0.07851421314631586,
+          "heldout_headroom_covered_us": 0.2606546843855957,
+          "heldout_headroom_covered_keys_above_sync": 0,
+          "table8_default_ms_per_forward_pass": 0.19038919987885863,
+          "table8_heldout_table_ms_per_forward_pass": 0.04989642557890526
+        }
+      }
+    },
+    "gdn1p4b_device": {
+      "source": "e2_gdn_vgpu3090_1p4b_r3.csv",
+      "median_b1_L_le_256_us": 719.5958429574966,
+      "by_factor": {
+        "1.0": {
+          "floor_us": 719.5958429574966,
+          "n_above": 1043,
+          "share_above": 0.5892655367231638,
+          "chunk_64_is_oracle": 733,
+          "chunk_64_max_per_batch_mean_regret_pct": 5.494331814675356,
+          "heldout_headroom_covered_us": 40.822485240602525,
+          "heldout_headroom_covered_keys_above_sync": 20,
+          "table8_default_ms_per_forward_pass": 0.44170343152600083,
+          "table8_heldout_table_ms_per_forward_pass": 0.44170343152600083
+        },
+        "1.5": {
+          "floor_us": 1079.393764436245,
+          "n_above": 311,
+          "share_above": 0.17570621468926553,
+          "chunk_64_is_oracle": 299,
+          "chunk_64_max_per_batch_mean_regret_pct": 0.9753583941322373,
+          "heldout_headroom_covered_us": 6.839736959900296,
+          "heldout_headroom_covered_keys_above_sync": 4,
+          "table8_default_ms_per_forward_pass": 0.04588999954738035,
+          "table8_heldout_table_ms_per_forward_pass": 0.04588999954738035
+        },
+        "2.0": {
+          "floor_us": 1439.1916859149933,
+          "n_above": 155,
+          "share_above": 0.08757062146892655,
+          "chunk_64_is_oracle": 154,
+          "chunk_64_max_per_batch_mean_regret_pct": 0.048886334841257185,
+          "heldout_headroom_covered_us": 0.0,
+          "heldout_headroom_covered_keys_above_sync": 0,
+          "table8_default_ms_per_forward_pass": 0.005677847708425214,
+          "table8_heldout_table_ms_per_forward_pass": 0.005677847708425214
+        },
+        "3.0": {
+          "floor_us": 2158.78752887249,
+          "n_above": 150,
+          "share_above": 0.0847457627118644,
+          "chunk_64_is_oracle": 150,
+          "chunk_64_max_per_batch_mean_regret_pct": 0.0,
+          "heldout_headroom_covered_us": 0.0,
+          "heldout_headroom_covered_keys_above_sync": 0,
+          "table8_default_ms_per_forward_pass": 0.0,
+          "table8_heldout_table_ms_per_forward_pass": 0.0
+        }
+      }
+    },
+    "graph_tables": {
+      "ssd370m_graph": {
+        "gpu": "RTX 3090",
+        "kernel": "SSD 370M",
+        "by_factor": {
+          "1.0": {
+            "floor_us": 22.671360075473697,
+            "share_above": 0.847457627118644,
+            "default_mean_regret_above_pct": 17.547978872063112,
+            "default_lw_above_pct": 2.6034596077055507
+          },
+          "1.5": {
+            "floor_us": 34.00704011321055,
+            "share_above": 0.7538135593220339,
+            "default_mean_regret_above_pct": 14.307427869555212,
+            "default_lw_above_pct": 2.3566693496942435
+          },
+          "2.0": {
+            "floor_us": 45.34272015094739,
+            "share_above": 0.6440677966101694,
+            "default_mean_regret_above_pct": 10.350325915727078,
+            "default_lw_above_pct": 1.9950423679224982
+          },
+          "3.0": {
+            "floor_us": 68.0140802264211,
+            "share_above": 0.5525423728813559,
+            "default_mean_regret_above_pct": 9.113116472303942,
+            "default_lw_above_pct": 1.7988711911048025
+          }
+        }
+      },
+      "ssd370m_graph_pro6000": {
+        "gpu": "RTX PRO 6000",
+        "kernel": "SSD 370M",
+        "by_factor": {
+          "1.0": {
+            "floor_us": 16.532800076529348,
+            "share_above": 0.8444915254237289,
+            "default_mean_regret_above_pct": 10.905276617888363,
+            "default_lw_above_pct": 1.6758540062522984
+          },
+          "1.5": {
+            "floor_us": 24.799200114794022,
+            "share_above": 0.5745762711864407,
+            "default_mean_regret_above_pct": 6.243077210147915,
+            "default_lw_above_pct": 0.9760258041763678
+          },
+          "2.0": {
+            "floor_us": 33.065600153058696,
+            "share_above": 0.535593220338983,
+            "default_mean_regret_above_pct": 3.1344929873877367,
+            "default_lw_above_pct": 0.5779730802428059
+          },
+          "3.0": {
+            "floor_us": 49.598400229588044,
+            "share_above": 0.37584745762711863,
+            "default_mean_regret_above_pct": 1.8081269455497897,
+            "default_lw_above_pct": 0.29628127214424427
+          }
+        }
+      },
+      "ssd2p7b_graph": {
+        "gpu": "RTX 3090",
+        "kernel": "SSD 2.7B",
+        "by_factor": {
+          "1.0": {
+            "floor_us": 28.385280184447698,
+            "share_above": 0.847457627118644,
+            "default_mean_regret_above_pct": 15.234645415033516,
+            "default_lw_above_pct": 1.958764709694589
+          },
+          "1.5": {
+            "floor_us": 42.57792027667155,
+            "share_above": 0.7661016949152543,
+            "default_mean_regret_above_pct": 13.010577726953493,
+            "default_lw_above_pct": 1.8523621866619568
+          },
+          "2.0": {
+            "floor_us": 56.770560368895396,
+            "share_above": 0.7661016949152543,
+            "default_mean_regret_above_pct": 13.010577726953493,
+            "default_lw_above_pct": 1.8523621866619568
+          },
+          "3.0": {
+            "floor_us": 85.1558405533431,
+            "share_above": 0.6745762711864407,
+            "default_mean_regret_above_pct": 12.130609351574773,
+            "default_lw_above_pct": 1.7373584676794906
+          }
+        }
+      },
+      "ssd2p7b_graph_pro6000": {
+        "gpu": "RTX PRO 6000",
+        "kernel": "SSD 2.7B",
+        "by_factor": {
+          "1.0": {
+            "floor_us": 16.843519918620547,
+            "share_above": 0.847457627118644,
+            "default_mean_regret_above_pct": 20.137296475223028,
+            "default_lw_above_pct": 5.791504532926982
+          },
+          "1.5": {
+            "floor_us": 25.265279877930823,
+            "share_above": 0.7415254237288136,
+            "default_mean_regret_above_pct": 17.151527859308395,
+            "default_lw_above_pct": 5.581313011500205
+          },
+          "2.0": {
+            "floor_us": 33.687039837241095,
+            "share_above": 0.6440677966101694,
+            "default_mean_regret_above_pct": 14.774017760753285,
+            "default_lw_above_pct": 5.372773602667337
+          },
+          "3.0": {
+            "floor_us": 50.530559755861645,
+            "share_above": 0.5525423728813559,
+            "default_mean_regret_above_pct": 13.59896292483931,
+            "default_lw_above_pct": 5.203743584552136
+          }
+        }
+      },
+      "gdn1p4b_graph": {
+        "gpu": "RTX 3090",
+        "kernel": "GDN 1.4B",
+        "by_factor": {
+          "1.0": {
+            "floor_us": 41.3183990865945,
+            "share_above": 0.847457627118644,
+            "default_mean_regret_above_pct": 8.246765075100425,
+            "default_lw_above_pct": 0.6185062542780541
+          },
+          "1.5": {
+            "floor_us": 61.97759862989175,
+            "share_above": 0.7457627118644068,
+            "default_mean_regret_above_pct": 4.408426019457296,
+            "default_lw_above_pct": 0.38800926730575536
+          },
+          "2.0": {
+            "floor_us": 82.636798173189,
+            "share_above": 0.6440677966101694,
+            "default_mean_regret_above_pct": 2.0117203146246236,
+            "default_lw_above_pct": 0.20123396593965778
+          },
+          "3.0": {
+            "floor_us": 123.9551972597835,
+            "share_above": 0.6067796610169491,
+            "default_mean_regret_above_pct": 0.6585037911091957,
+            "default_lw_above_pct": 0.08146749928295093
+          }
+        }
+      },
+      "gdn1p4b_graph_pro6000": {
+        "gpu": "RTX PRO 6000",
+        "kernel": "GDN 1.4B",
+        "by_factor": {
+          "1.0": {
+            "floor_us": 28.53312022984025,
+            "share_above": 0.8271186440677966,
+            "default_mean_regret_above_pct": 19.400715738721537,
+            "default_lw_above_pct": 2.7868561986486777
+          },
+          "1.5": {
+            "floor_us": 42.799680344760375,
+            "share_above": 0.6983050847457627,
+            "default_mean_regret_above_pct": 14.263487756191404,
+            "default_lw_above_pct": 2.3717523020144653
+          },
+          "2.0": {
+            "floor_us": 57.0662404596805,
+            "share_above": 0.6067796610169491,
+            "default_mean_regret_above_pct": 11.431515848524192,
+            "default_lw_above_pct": 2.1053884221172057
+          },
+          "3.0": {
+            "floor_us": 85.59936068952075,
+            "share_above": 0.49491525423728816,
+            "default_mean_regret_above_pct": 7.11074543940985,
+            "default_lw_above_pct": 1.6525374787118832
+          }
+        }
+      },
+      "m1_370m_graph": {
+        "gpu": "RTX 3090",
+        "kernel": "Triton Mamba-1 370M",
+        "by_factor": {
+          "1.0": {
+            "floor_us": 21.84191988781085,
+            "share_above": 0.847457627118644,
+            "default_mean_regret_above_pct": 32.665059635939784,
+            "default_lw_above_pct": 17.869487549832748
+          },
+          "1.5": {
+            "floor_us": 32.762879831716276,
+            "share_above": 0.735593220338983,
+            "default_mean_regret_above_pct": 33.839849216042836,
+            "default_lw_above_pct": 17.84670225243927
+          },
+          "2.0": {
+            "floor_us": 43.6838397756217,
+            "share_above": 0.6644067796610169,
+            "default_mean_regret_above_pct": 35.32805798422321,
+            "default_lw_above_pct": 17.837177533472584
+          },
+          "3.0": {
+            "floor_us": 65.52575966343255,
+            "share_above": 0.6237288135593221,
+            "default_mean_regret_above_pct": 32.646689697695635,
+            "default_lw_above_pct": 17.66604842504538
+          }
+        }
+      },
+      "m1_370m_graph_pro6000": {
+        "gpu": "RTX PRO 6000",
+        "kernel": "Triton Mamba-1 370M",
+        "by_factor": {
+          "1.0": {
+            "floor_us": 19.436799883842447,
+            "share_above": 0.8169491525423729,
+            "default_mean_regret_above_pct": 45.483764221405515,
+            "default_lw_above_pct": 32.078375432025865
+          },
+          "1.5": {
+            "floor_us": 29.155199825763674,
+            "share_above": 0.6237288135593221,
+            "default_mean_regret_above_pct": 40.715716231288944,
+            "default_lw_above_pct": 31.491088601376067
+          },
+          "2.0": {
+            "floor_us": 38.873599767684894,
+            "share_above": 0.5525423728813559,
+            "default_mean_regret_above_pct": 43.81992658763389,
+            "default_lw_above_pct": 31.617837307362112
+          },
+          "3.0": {
+            "floor_us": 58.31039965152735,
+            "share_above": 0.511864406779661,
+            "default_mean_regret_above_pct": 34.91319959419557,
+            "default_lw_above_pct": 30.850411632950998
+          }
+        }
+      }
+    }
+  },
+  "threshold_100us_sensitivity": {
+    "definition": "threshold = factor x 100 us on the launch-inclusive oracle latency; relative difference = launch-inclusive / device time - 1, per call at each convention's own oracle and per (call, chunk) cell; oracle change = the two conventions' per-call oracles differ",
+    "RTX 3090 (device: single block)": {
+      "n_calls": 2360,
+      "by_threshold": {
+        "50us": {
+          "share_calls_li_oracle_below": 0.0,
+          "above_median_abs_rel_diff_at_oracle_pct": 4.781285551102943,
+          "above_p95_abs_rel_diff_at_oracle_pct": 524.5677247619943,
+          "above_median_abs_rel_diff_cells_pct": 1.5723346644863523,
+          "above_p95_abs_rel_diff_cells_pct": 354.0145697597476,
+          "below_max_ratio_at_oracle": null,
+          "oracle_change_share_below": null,
+          "oracle_change_share_above": 0.26864406779661015
+        },
+        "100us": {
+          "share_calls_li_oracle_below": 0.45677966101694917,
+          "above_median_abs_rel_diff_at_oracle_pct": 1.1857290555266964,
+          "above_p95_abs_rel_diff_at_oracle_pct": 5.826825164062767,
+          "above_median_abs_rel_diff_cells_pct": 0.8806741145376662,
+          "above_p95_abs_rel_diff_cells_pct": 5.018900116218541,
+          "below_max_ratio_at_oracle": 6.936984673585237,
+          "oracle_change_share_below": 0.4684601113172542,
+          "oracle_change_share_above": 0.10062402496099844
+        },
+        "150us": {
+          "share_calls_li_oracle_below": 0.5877118644067797,
+          "above_median_abs_rel_diff_at_oracle_pct": 1.3477281260613871,
+          "above_p95_abs_rel_diff_at_oracle_pct": 5.670407780707802,
+          "above_median_abs_rel_diff_cells_pct": 1.0775021434831,
+          "above_p95_abs_rel_diff_cells_pct": 5.239010297034971,
+          "below_max_ratio_at_oracle": 6.936984673585237,
+          "oracle_change_share_below": 0.37707281903388606,
+          "oracle_change_share_above": 0.11408016443987667
+        },
+        "200us": {
+          "share_calls_li_oracle_below": 0.6203389830508474,
+          "above_median_abs_rel_diff_at_oracle_pct": 1.31709487177617,
+          "above_p95_abs_rel_diff_at_oracle_pct": 5.727317624968564,
+          "above_median_abs_rel_diff_cells_pct": 1.0724001974699915,
+          "above_p95_abs_rel_diff_cells_pct": 5.240682225281396,
+          "below_max_ratio_at_oracle": 6.936984673585237,
+          "oracle_change_share_below": 0.3592896174863388,
+          "oracle_change_share_above": 0.12053571428571429
+        },
+        "300us": {
+          "share_calls_li_oracle_below": 0.6711864406779661,
+          "above_median_abs_rel_diff_at_oracle_pct": 1.353448142760172,
+          "above_p95_abs_rel_diff_at_oracle_pct": 5.814271350405031,
+          "above_median_abs_rel_diff_cells_pct": 1.094784517055325,
+          "above_p95_abs_rel_diff_cells_pct": 5.004012230149513,
+          "below_max_ratio_at_oracle": 6.936984673585237,
+          "oracle_change_share_below": 0.3434343434343434,
+          "oracle_change_share_above": 0.11597938144329897
+        }
+      },
+      "oracle_change_share_all": 0.26864406779661015
+    },
+    "RTX 3090 (device: three-round medians)": {
+      "n_calls": 2360,
+      "by_threshold": {
+        "50us": {
+          "share_calls_li_oracle_below": 0.0,
+          "above_median_abs_rel_diff_at_oracle_pct": 5.84465805696508,
+          "above_p95_abs_rel_diff_at_oracle_pct": 534.5533316615905,
+          "above_median_abs_rel_diff_cells_pct": 2.6361794910692016,
+          "above_p95_abs_rel_diff_cells_pct": 362.0421877955967,
+          "below_max_ratio_at_oracle": null,
+          "oracle_change_share_below": null,
+          "oracle_change_share_above": 0.2864406779661017
+        },
+        "100us": {
+          "share_calls_li_oracle_below": 0.45677966101694917,
+          "above_median_abs_rel_diff_at_oracle_pct": 2.2554595996523874,
+          "above_p95_abs_rel_diff_at_oracle_pct": 7.136290455507726,
+          "above_median_abs_rel_diff_cells_pct": 1.776972333687482,
+          "above_p95_abs_rel_diff_cells_pct": 6.920548635494176,
+          "below_max_ratio_at_oracle": 7.010558778803284,
+          "oracle_change_share_below": 0.46938775510204084,
+          "oracle_change_share_above": 0.13260530421216848
+        },
+        "150us": {
+          "share_calls_li_oracle_below": 0.5877118644067797,
+          "above_median_abs_rel_diff_at_oracle_pct": 2.3997118419209817,
+          "above_p95_abs_rel_diff_at_oracle_pct": 6.951402195184862,
+          "above_median_abs_rel_diff_cells_pct": 1.911170738739587,
+          "above_p95_abs_rel_diff_cells_pct": 7.018103084197752,
+          "below_max_ratio_at_oracle": 7.010558778803284,
+          "oracle_change_share_below": 0.3828406633020908,
+          "oracle_change_share_above": 0.14902363823227133
+        },
+        "200us": {
+          "share_calls_li_oracle_below": 0.6203389830508474,
+          "above_median_abs_rel_diff_at_oracle_pct": 2.3411034822101495,
+          "above_p95_abs_rel_diff_at_oracle_pct": 6.9914686249135105,
+          "above_median_abs_rel_diff_cells_pct": 1.8981080565294572,
+          "above_p95_abs_rel_diff_cells_pct": 7.023433515492927,
+          "below_max_ratio_at_oracle": 7.010558778803284,
+          "oracle_change_share_below": 0.36475409836065575,
+          "oracle_change_share_above": 0.15848214285714285
+        },
+        "300us": {
+          "share_calls_li_oracle_below": 0.6711864406779661,
+          "above_median_abs_rel_diff_at_oracle_pct": 2.4035633474550844,
+          "above_p95_abs_rel_diff_at_oracle_pct": 7.084719492763824,
+          "above_median_abs_rel_diff_cells_pct": 1.8797904845133995,
+          "above_p95_abs_rel_diff_cells_pct": 6.665626455390178,
+          "below_max_ratio_at_oracle": 7.010558778803284,
+          "oracle_change_share_below": 0.35669191919191917,
+          "oracle_change_share_above": 0.14304123711340205
+        }
+      },
+      "oracle_change_share_all": 0.2864406779661017
+    },
+    "RTX PRO 6000 (device: three-round medians)": {
+      "n_calls": 2360,
+      "by_threshold": {
+        "50us": {
+          "share_calls_li_oracle_below": 0.0,
+          "above_median_abs_rel_diff_at_oracle_pct": 5.785626912628122,
+          "above_p95_abs_rel_diff_at_oracle_pct": 292.0676704157911,
+          "above_median_abs_rel_diff_cells_pct": 3.46677535129622,
+          "above_p95_abs_rel_diff_cells_pct": 199.20305084085305,
+          "below_max_ratio_at_oracle": null,
+          "oracle_change_share_below": null,
+          "oracle_change_share_above": 0.2559322033898305
+        },
+        "100us": {
+          "share_calls_li_oracle_below": 0.6415254237288136,
+          "above_median_abs_rel_diff_at_oracle_pct": 0.5962812665633033,
+          "above_p95_abs_rel_diff_at_oracle_pct": 5.349309011109119,
+          "above_median_abs_rel_diff_cells_pct": 1.1968406221801564,
+          "above_p95_abs_rel_diff_cells_pct": 7.25930043313859,
+          "below_max_ratio_at_oracle": 5.650293200333813,
+          "oracle_change_share_below": 0.33157199471598414,
+          "oracle_change_share_above": 0.12056737588652482
+        },
+        "150us": {
+          "share_calls_li_oracle_below": 0.6877118644067797,
+          "above_median_abs_rel_diff_at_oracle_pct": 0.7181830634002129,
+          "above_p95_abs_rel_diff_at_oracle_pct": 5.346860182981579,
+          "above_median_abs_rel_diff_cells_pct": 1.5331189188486694,
+          "above_p95_abs_rel_diff_cells_pct": 8.021184098884007,
+          "below_max_ratio_at_oracle": 7.311541359835057,
+          "oracle_change_share_below": 0.31176833025261863,
+          "oracle_change_share_above": 0.13297150610583447
+        },
+        "200us": {
+          "share_calls_li_oracle_below": 0.7453389830508474,
+          "above_median_abs_rel_diff_at_oracle_pct": 0.7660954691953825,
+          "above_p95_abs_rel_diff_at_oracle_pct": 5.433609065285805,
+          "above_median_abs_rel_diff_cells_pct": 1.2088138287523253,
+          "above_p95_abs_rel_diff_cells_pct": 15.792086086442684,
+          "below_max_ratio_at_oracle": 7.311541359835057,
+          "oracle_change_share_below": 0.31040363843092666,
+          "oracle_change_share_above": 0.09650582362728785
+        },
+        "300us": {
+          "share_calls_li_oracle_below": 0.8148305084745763,
+          "above_median_abs_rel_diff_at_oracle_pct": 0.5239808129230417,
+          "above_p95_abs_rel_diff_at_oracle_pct": 5.512411114950404,
+          "above_median_abs_rel_diff_cells_pct": 0.8734454503388722,
+          "above_p95_abs_rel_diff_cells_pct": 20.61441845429472,
+          "below_max_ratio_at_oracle": 7.311541359835057,
+          "oracle_change_share_below": 0.2870514820592824,
+          "oracle_change_share_above": 0.11899313501144165
+        }
+      },
+      "oracle_change_share_all": 0.2559322033898305
+    },
+    "H800 (device: single block)": {
+      "n_calls": 2360,
+      "by_threshold": {
+        "50us": {
+          "share_calls_li_oracle_below": 0.0,
+          "above_median_abs_rel_diff_at_oracle_pct": 1.0287166162365802,
+          "above_p95_abs_rel_diff_at_oracle_pct": 376.49973221168744,
+          "above_median_abs_rel_diff_cells_pct": 0.6013936027873368,
+          "above_p95_abs_rel_diff_cells_pct": 234.62693275715915,
+          "below_max_ratio_at_oracle": null,
+          "oracle_change_share_below": null,
+          "oracle_change_share_above": 0.18940677966101696
+        },
+        "100us": {
+          "share_calls_li_oracle_below": 0.4847457627118644,
+          "above_median_abs_rel_diff_at_oracle_pct": 0.2519294719111054,
+          "above_p95_abs_rel_diff_at_oracle_pct": 0.9636557711947991,
+          "above_median_abs_rel_diff_cells_pct": 0.2177480566584511,
+          "above_p95_abs_rel_diff_cells_pct": 1.2391349143373143,
+          "below_max_ratio_at_oracle": 5.070644279905242,
+          "oracle_change_share_below": 0.32342657342657344,
+          "oracle_change_share_above": 0.06332236842105263
+        },
+        "150us": {
+          "share_calls_li_oracle_below": 0.6038135593220338,
+          "above_median_abs_rel_diff_at_oracle_pct": 0.17585201649157334,
+          "above_p95_abs_rel_diff_at_oracle_pct": 0.9502110532301008,
+          "above_median_abs_rel_diff_cells_pct": 0.14390701628623215,
+          "above_p95_abs_rel_diff_cells_pct": 1.307983222769373,
+          "below_max_ratio_at_oracle": 6.693999775609187,
+          "oracle_change_share_below": 0.29964912280701755,
+          "oracle_change_share_above": 0.0213903743315508
+        },
+        "200us": {
+          "share_calls_li_oracle_below": 0.6436440677966102,
+          "above_median_abs_rel_diff_at_oracle_pct": 0.1532677249330261,
+          "above_p95_abs_rel_diff_at_oracle_pct": 0.670858119818174,
+          "above_median_abs_rel_diff_cells_pct": 0.12852483727923136,
+          "above_p95_abs_rel_diff_cells_pct": 1.0389462370325009,
+          "below_max_ratio_at_oracle": 6.693999775609187,
+          "oracle_change_share_below": 0.28703094140882157,
+          "oracle_change_share_above": 0.013079667063020214
+        },
+        "300us": {
+          "share_calls_li_oracle_below": 0.688135593220339,
+          "above_median_abs_rel_diff_at_oracle_pct": 0.13252473755806515,
+          "above_p95_abs_rel_diff_at_oracle_pct": 0.46879346880219774,
+          "above_median_abs_rel_diff_cells_pct": 0.11269065151466862,
+          "above_p95_abs_rel_diff_cells_pct": 0.6140335168376782,
+          "below_max_ratio_at_oracle": 6.693999775609187,
+          "oracle_change_share_below": 0.2752463054187192,
+          "oracle_change_share_above": 0.0
+        }
+      },
+      "oracle_change_share_all": 0.18940677966101696
+    }
+  },
+  "runtime_s": 60.2
+}
