@@ -155,6 +155,11 @@ case "$LANE" in
     $RUN E38 -- bash "$SELF" step e38
     $RUN E30s2 -- bash "$SELF" step e30s2
     ;;
+  G1d)  # after G1c: resume E37 (resumable; chunks that do not fit in memory are skipped and recorded)
+    wait_marker E30s2 || lanelog "continuing without E30s2"
+    rm -f "$MARK_DIR/E37.FAIL"
+    $RUN E37 -- bash "$SELF" step e37
+    ;;
   *) echo "unknown lane $LANE"; exit 2 ;;
 esac
 lanelog "taco-r2 4c lane $LANE done"

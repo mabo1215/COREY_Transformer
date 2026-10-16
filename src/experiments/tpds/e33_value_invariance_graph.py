@@ -379,7 +379,15 @@ def design_a(args, log, w, F: Family, chunks: list[int], inputs: list[str]) -> N
     for c in chunks:
         for k, v in vals[inputs[0]].items():
             bufs[k].copy_(v)
-        graphs[c] = capture(F.call(bufs, c))
+        try:
+            graphs[c] = capture(F.call(bufs, c))
+        except torch.cuda.OutOfMemoryError as exc:  # e.g. Gated DeltaNet chunk 16 at 8192 x 16 (17 GB of chunk states)
+            log(f"A {F.name} L={F.L} B={F.B} c{c}: out of memory, chunk skipped ({str(exc)[:80]})")
+            w.write({"kind": "oom", "key": f"e33oom|{F.name}|L{F.L}|B{F.B}|c{c}", "family": F.name, "L": F.L,
+                     "batch": F.B, "chunk": c, "utc": utc_now()}, track=False)
+            gc.collect()
+            torch.cuda.empty_cache()
+    chunks = [c for c in chunks if c in graphs]
     for rnd in range(args.rounds):
         corder = list(chunks)
         random.Random(f"A|{F.name}|{F.L}|{F.B}|{rnd}").shuffle(corder)

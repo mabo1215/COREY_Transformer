@@ -1,0 +1,7913 @@
+{
+  "meta": {
+    "host": "4c",
+    "hostname": "ubuntu-4card",
+    "utc": "2026-10-16T07:22:20Z",
+    "python": "3.10.12",
+    "platform": "Linux-5.15.0-198-generic-x86_64-with-glibc2.35",
+    "argv": [
+      "/home1/mabo1215/COREY_Transformer_taco/src/experiments/tpds/e35_mechanism.py",
+      "--part",
+      "breakdown",
+      "--gdn-trace-dir",
+      "/data/mabo1215_taco/e30_inputs/autodl-fs/data/corey_r4_traces_vgpu3090/tpds_traces_gdn_1p4b",
+      "--tag",
+      "4c_e35"
+    ],
+    "torch": "2.8.0+cu128",
+    "cuda_runtime": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "gpu_mem_gb": 23.56,
+    "gpu_sm_count": 82,
+    "gpu_cc": "8.6",
+    "pkg_triton": "3.4.0",
+    "pkg_transformers": "5.6.2",
+    "pkg_mamba_ssm": "2.3.2.post1",
+    "pkg_fla-core": "0.5.2",
+    "pkg_flash-linear-attention": "0.5.2",
+    "pkg_numpy": "2.2.6",
+    "pkg_scikit-learn": "1.7.2",
+    "nvidia_smi": "NVIDIA GeForce RTX 3090, 595.99.02, 24576 MiB, 2100 MHz\nNVIDIA GeForce RTX 3090, 595.99.02, 24576 MiB, 2100 MHz\nNVIDIA GeForce RTX 3090, 595.99.02, 24576 MiB, 2100 MHz\nNVIDIA GeForce RTX 3090, 595.99.02, 24576 MiB, 2100 MHz",
+    "git_commit": null,
+    "experiment": "E35-breakdown",
+    "repeats": 20,
+    "warmup": 5,
+    "gdn_dims": {
+      "Hq": 8,
+      "K": 256,
+      "Hv": 8,
+      "V": 256
+    }
+  },
+  "cells": [
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 1,
+      "chunk": 32,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 0,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 31.889,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 0,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 31.889
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 1,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 1,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 23.859,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 23.859
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 1,
+      "chunk": 128,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 2,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 20.085,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 256,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 20.085
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 1,
+      "chunk": 256,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 3,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 39.622,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 39.622
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 1,
+      "chunk": 512,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 4,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 71.062,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 64,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 71.062
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 1,
+      "chunk": 1024,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 5,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 132.759,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 128,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 132.759
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 1,
+      "chunk": 128,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 6,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 17.705,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 121,
+          "shared_memory": 256,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        }
+      ],
+      "total_us_per_call": 17.705
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 1,
+      "chunk": 256,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 7,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 39.624,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 39.624
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 4,
+      "chunk": 32,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 8,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 60.506,
+          "grid": [
+            256,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 0,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 52
+        }
+      ],
+      "total_us_per_call": 60.506
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 4,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 9,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 63.719,
+          "grid": [
+            256,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 63.719
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 4,
+      "chunk": 128,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 10,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 73.022,
+          "grid": [
+            256,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 256,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 73.022
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 4,
+      "chunk": 256,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 11,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 131.265,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 131.265
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 4,
+      "chunk": 512,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 12,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 235.82,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 64,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 235.82
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 4,
+      "chunk": 1024,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 13,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 452.712,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 128,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 452.712
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 4,
+      "chunk": 128,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 14,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 57.422,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 121,
+          "shared_memory": 256,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 57.422
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 4,
+      "chunk": 256,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 15,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 131.18,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 131.18
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 16,
+      "chunk": 32,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 16,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 188.695,
+          "grid": [
+            256,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 0,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 67
+        }
+      ],
+      "total_us_per_call": 188.695
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 16,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 17,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 192.76,
+          "grid": [
+            256,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 192.76
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 16,
+      "chunk": 128,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 18,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 238.055,
+          "grid": [
+            256,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 256,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 238.055
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 16,
+      "chunk": 256,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 19,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 476.469,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 476.469
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 16,
+      "chunk": 512,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 20,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 866.893,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 64,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 866.893
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 16,
+      "chunk": 1024,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 21,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1764.743,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 128,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 399.609741,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 1764.743
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 16,
+      "chunk": 128,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 22,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 190.373,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 121,
+          "shared_memory": 256,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 190.373
+    },
+    {
+      "family": "m1",
+      "L": 128,
+      "batch": 16,
+      "chunk": 256,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 23,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 439.149,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 439.149
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 1,
+      "chunk": 32,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 24,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 140.94,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 0,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 140.94
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 1,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 25,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 102.543,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 102.543
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 1,
+      "chunk": 128,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 26,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 71.171,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 256,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 71.171
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 1,
+      "chunk": 256,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 27,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 70.73,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 70.73
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 1,
+      "chunk": 512,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 28,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 68.595,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 64,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 68.595
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 1,
+      "chunk": 1024,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 29,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 123.167,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 128,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 123.167
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 1,
+      "chunk": 128,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 30,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 63.351,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 121,
+          "shared_memory": 256,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        }
+      ],
+      "total_us_per_call": 63.351
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 1,
+      "chunk": 256,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 31,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 70.791,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 70.791
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 4,
+      "chunk": 32,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 32,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 199.543,
+          "grid": [
+            256,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 0,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 52
+        }
+      ],
+      "total_us_per_call": 199.543
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 4,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 33,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 217.313,
+          "grid": [
+            256,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 217.313
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 4,
+      "chunk": 128,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 34,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 249.487,
+          "grid": [
+            256,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 256,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 249.487
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 4,
+      "chunk": 256,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 35,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 236.045,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 236.045
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 4,
+      "chunk": 512,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 36,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 220.259,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 64,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 220.259
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 4,
+      "chunk": 1024,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 37,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 408.706,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 128,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 408.706
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 4,
+      "chunk": 128,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 38,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 198.353,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 121,
+          "shared_memory": 256,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 198.353
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 4,
+      "chunk": 256,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 39,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 235.302,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 235.302
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 16,
+      "chunk": 32,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 40,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 692.978,
+          "grid": [
+            256,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 0,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 67
+        }
+      ],
+      "total_us_per_call": 692.978
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 16,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 41,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 775.056,
+          "grid": [
+            256,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 775.056
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 16,
+      "chunk": 128,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 42,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 889.631,
+          "grid": [
+            256,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 256,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 889.631
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 16,
+      "chunk": 256,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 43,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 891.882,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 891.882
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 16,
+      "chunk": 512,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 44,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 825.734,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 64,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 825.734
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 16,
+      "chunk": 1024,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 45,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1661.849,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 128,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 399.609741,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 1661.849
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 16,
+      "chunk": 128,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 46,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 696.911,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 121,
+          "shared_memory": 256,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 696.911
+    },
+    {
+      "family": "m1",
+      "L": 512,
+      "batch": 16,
+      "chunk": 256,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 47,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 944.506,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 944.506
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 1,
+      "chunk": 32,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 48,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 569.213,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 0,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 569.213
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 1,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 49,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 405.356,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 405.356
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 1,
+      "chunk": 128,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 50,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 271.382,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 256,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 271.382
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 1,
+      "chunk": 256,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 51,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 290.525,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 290.525
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 1,
+      "chunk": 512,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 52,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 270.918,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 64,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 270.918
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 1,
+      "chunk": 1024,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 53,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 285.347,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 128,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 285.347
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 1,
+      "chunk": 128,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 54,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 248.099,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 121,
+          "shared_memory": 256,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        }
+      ],
+      "total_us_per_call": 248.099
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 1,
+      "chunk": 256,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 55,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 289.876,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 289.876
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 32,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 56,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 844.005,
+          "grid": [
+            256,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 0,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 52
+        }
+      ],
+      "total_us_per_call": 844.005
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 57,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 912.57,
+          "grid": [
+            256,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 912.57
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 128,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 58,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1122.436,
+          "grid": [
+            256,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 256,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 1122.436
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 256,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 59,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1041.461,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 1041.461
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 512,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 60,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 982.208,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 64,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 982.208
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 1024,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 61,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 929.817,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 128,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 929.817
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 128,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 62,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 934.453,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 121,
+          "shared_memory": 256,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 934.453
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 256,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 63,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1050.836,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 1050.836
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 16,
+      "chunk": 32,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 64,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3206.859,
+          "grid": [
+            256,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 0,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 67
+        }
+      ],
+      "total_us_per_call": 3206.859
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 16,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 65,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3315.079,
+          "grid": [
+            256,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 3315.079
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 16,
+      "chunk": 128,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 66,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3748.658,
+          "grid": [
+            256,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 256,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 3748.658
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 16,
+      "chunk": 256,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 67,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3838.73,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 3838.73
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 16,
+      "chunk": 512,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 68,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3659.584,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 64,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 3659.584
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 16,
+      "chunk": 1024,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 69,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3722.352,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 128,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 399.609741,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 3722.352
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 16,
+      "chunk": 128,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 70,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3313.523,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 121,
+          "shared_memory": 256,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 3313.523
+    },
+    {
+      "family": "m1",
+      "L": 2048,
+      "batch": 16,
+      "chunk": 256,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 71,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3840.669,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 3840.669
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 1,
+      "chunk": 32,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 72,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2266.74,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 0,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 2266.74
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 1,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 73,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1590.765,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 1590.765
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 1,
+      "chunk": 128,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 74,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1067.371,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 256,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 1067.371
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 1,
+      "chunk": 256,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 75,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1149.898,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 1149.898
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 1,
+      "chunk": 512,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 76,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1071.436,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 64,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 1071.436
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 1,
+      "chunk": 1024,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 77,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1144.603,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 128,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 1144.603
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 1,
+      "chunk": 128,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 78,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 977.887,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 121,
+          "shared_memory": 256,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        }
+      ],
+      "total_us_per_call": 977.887
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 1,
+      "chunk": 256,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 79,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1166.123,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 1166.123
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 4,
+      "chunk": 32,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 80,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3845.664,
+          "grid": [
+            256,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 0,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 52
+        }
+      ],
+      "total_us_per_call": 3845.664
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 4,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 81,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3653.879,
+          "grid": [
+            256,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 3653.879
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 4,
+      "chunk": 128,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 82,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 4474.724,
+          "grid": [
+            256,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 256,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 4474.724
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 4,
+      "chunk": 256,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 83,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 4212.91,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 4212.91
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 4,
+      "chunk": 512,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 84,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3977.573,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 64,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 3977.573
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 4,
+      "chunk": 1024,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 85,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3897.832,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 128,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 3897.832
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 4,
+      "chunk": 128,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 86,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3903.022,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 121,
+          "shared_memory": 256,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 3903.022
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 4,
+      "chunk": 256,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 87,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 4224.195,
+          "grid": [
+            512,
+            4,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 4224.195
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 16,
+      "chunk": 32,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 88,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 13295.418,
+          "grid": [
+            256,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 0,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 67
+        }
+      ],
+      "total_us_per_call": 13295.418
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 16,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 89,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 13456.204,
+          "grid": [
+            256,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 13456.204
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 16,
+      "chunk": 128,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 90,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 15137.682,
+          "grid": [
+            256,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 256,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 15137.682
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 16,
+      "chunk": 256,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 91,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 15480.034,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 15480.034
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 16,
+      "chunk": 512,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 92,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 14807.018,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 64,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 14807.018
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 16,
+      "chunk": 1024,
+      "launch": "default",
+      "placement": "fresh",
+      "cell": 93,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 15400.735,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 255,
+          "shared_memory": 128,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 399.609741,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 15400.735
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 16,
+      "chunk": 128,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 94,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 13639.381,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 121,
+          "shared_memory": 256,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 33
+        }
+      ],
+      "total_us_per_call": 13639.381
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 16,
+      "chunk": 256,
+      "launch": "d4_w2",
+      "placement": "fresh",
+      "cell": 95,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 15498.585,
+          "grid": [
+            512,
+            16,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 194,
+          "shared_memory": 512,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        }
+      ],
+      "total_us_per_call": 15498.585
+    },
+    {
+      "family": "m1",
+      "L": 8192,
+      "batch": 1,
+      "chunk": 64,
+      "launch": "default",
+      "placement": "offset",
+      "cell": 96,
+      "kernels": [
+        {
+          "kernel": "_mamba1_chunked_scan_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1638.351,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 120,
+          "shared_memory": 128,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 1638.351
+    },
+    {
+      "family": "ssd",
+      "L": 256,
+      "batch": 1,
+      "chunk": 32,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 97,
+      "kernels": [
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 16.318,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 13.338,
+          "grid": [
+            1,
+            8,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 12.227,
+          "grid": [
+            2,
+            8,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 197,
+          "shared_memory": 29440,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.742,
+          "grid": [
+            1,
+            1,
+            8
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 30720,
+          "blocks_per_sm": 0.097561,
+          "warps_per_sm": 0.390244,
+          "est_achieved_occupancy_pct": 1
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.176,
+          "grid": [
+            1,
+            8,
+            8
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 264,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        }
+      ],
+      "total_us_per_call": 47.801
+    },
+    {
+      "family": "ssd",
+      "L": 256,
+      "batch": 1,
+      "chunk": 64,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 98,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 12.686,
+          "grid": [
+            2,
+            4,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 8.325,
+          "grid": [
+            1,
+            4,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 168,
+          "shared_memory": 45824,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 5.629,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.922,
+          "grid": [
+            2,
+            1,
+            4
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 30720,
+          "blocks_per_sm": 0.097561,
+          "warps_per_sm": 0.390244,
+          "est_achieved_occupancy_pct": 1
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.04,
+          "grid": [
+            1,
+            4,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 8,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 32.602
+    },
+    {
+      "family": "ssd",
+      "L": 256,
+      "batch": 1,
+      "chunk": 128,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 99,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 14.944,
+          "grid": [
+            4,
+            2,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 7.216,
+          "grid": [
+            2,
+            2,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 197,
+          "shared_memory": 29440,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.499,
+          "grid": [
+            8,
+            1,
+            2
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 24576,
+          "blocks_per_sm": 0.195122,
+          "warps_per_sm": 0.390244,
+          "est_achieved_occupancy_pct": 1
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.965,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.928,
+          "grid": [
+            1,
+            2,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 22,
+          "shared_memory": 16,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        }
+      ],
+      "total_us_per_call": 30.552
+    },
+    {
+      "family": "ssd",
+      "L": 256,
+      "batch": 1,
+      "chunk": 256,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 100,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 19.592,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 6.397,
+          "grid": [
+            4,
+            1,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 124,
+          "shared_memory": 27648,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.458,
+          "grid": [
+            32,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 24576,
+          "blocks_per_sm": 0.390244,
+          "warps_per_sm": 0.780488,
+          "est_achieved_occupancy_pct": 2
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.381,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 26,
+          "shared_memory": 4096,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.979,
+          "grid": [
+            1,
+            1,
+            16
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 34,
+          "shared_memory": 1040,
+          "blocks_per_sm": 0.195122,
+          "warps_per_sm": 0.780488,
+          "est_achieved_occupancy_pct": 2
+        }
+      ],
+      "total_us_per_call": 33.807
+    },
+    {
+      "family": "ssd",
+      "L": 256,
+      "batch": 1,
+      "chunk": 512,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 101,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 34.179,
+          "grid": [
+            16,
+            1,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 6.576,
+          "grid": [
+            4,
+            1,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 124,
+          "shared_memory": 27648,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.79,
+          "grid": [
+            64,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 30720,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.408,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 26,
+          "shared_memory": 4096,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.133,
+          "grid": [
+            1,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 30,
+          "shared_memory": 1024,
+          "blocks_per_sm": 0.390244,
+          "warps_per_sm": 1.560976,
+          "est_achieved_occupancy_pct": 3
+        }
+      ],
+      "total_us_per_call": 49.086
+    },
+    {
+      "family": "ssd",
+      "L": 512,
+      "batch": 1,
+      "chunk": 32,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 102,
+      "kernels": [
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 32.413,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 24.395,
+          "grid": [
+            2,
+            16,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 197,
+          "shared_memory": 29440,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 23.194,
+          "grid": [
+            1,
+            16,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.912,
+          "grid": [
+            1,
+            1,
+            16
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 30720,
+          "blocks_per_sm": 0.195122,
+          "warps_per_sm": 0.780488,
+          "est_achieved_occupancy_pct": 2
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.462,
+          "grid": [
+            1,
+            16,
+            8
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 264,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 86.376
+    },
+    {
+      "family": "ssd",
+      "L": 512,
+      "batch": 1,
+      "chunk": 64,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 103,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 21.427,
+          "grid": [
+            2,
+            8,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 16.486,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 14.226,
+          "grid": [
+            1,
+            8,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 168,
+          "shared_memory": 45824,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.883,
+          "grid": [
+            2,
+            1,
+            8
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 30720,
+          "blocks_per_sm": 0.195122,
+          "warps_per_sm": 0.780488,
+          "est_achieved_occupancy_pct": 2
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.365,
+          "grid": [
+            1,
+            8,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 8,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        }
+      ],
+      "total_us_per_call": 58.387
+    },
+    {
+      "family": "ssd",
+      "L": 512,
+      "batch": 1,
+      "chunk": 128,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 104,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 23.846,
+          "grid": [
+            4,
+            4,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 11.373,
+          "grid": [
+            2,
+            4,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 197,
+          "shared_memory": 29440,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 5.629,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 4.23,
+          "grid": [
+            8,
+            1,
+            4
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 24576,
+          "blocks_per_sm": 0.390244,
+          "warps_per_sm": 0.780488,
+          "est_achieved_occupancy_pct": 2
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.301,
+          "grid": [
+            1,
+            4,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 22,
+          "shared_memory": 16,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 47.379
+    },
+    {
+      "family": "ssd",
+      "L": 512,
+      "batch": 1,
+      "chunk": 256,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 105,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 31.037,
+          "grid": [
+            8,
+            2,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 11.072,
+          "grid": [
+            4,
+            2,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 124,
+          "shared_memory": 27648,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.894,
+          "grid": [
+            32,
+            1,
+            2
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 24576,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 1.560976,
+          "est_achieved_occupancy_pct": 3
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.973,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.474,
+          "grid": [
+            1,
+            2,
+            16
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 34,
+          "shared_memory": 1040,
+          "blocks_per_sm": 0.390244,
+          "warps_per_sm": 1.560976,
+          "est_achieved_occupancy_pct": 3
+        }
+      ],
+      "total_us_per_call": 51.45
+    },
+    {
+      "family": "ssd",
+      "L": 512,
+      "batch": 1,
+      "chunk": 512,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 106,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 45.822,
+          "grid": [
+            16,
+            1,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 10.083,
+          "grid": [
+            4,
+            1,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 124,
+          "shared_memory": 27648,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 4.326,
+          "grid": [
+            64,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 30720,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.854,
+          "grid": [
+            1,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 30,
+          "shared_memory": 1024,
+          "blocks_per_sm": 0.390244,
+          "warps_per_sm": 1.560976,
+          "est_achieved_occupancy_pct": 3
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.411,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 26,
+          "shared_memory": 4096,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        }
+      ],
+      "total_us_per_call": 65.496
+    },
+    {
+      "family": "ssd",
+      "L": 4096,
+      "batch": 1,
+      "chunk": 32,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 107,
+      "kernels": [
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 245.851,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 201.42,
+          "grid": [
+            2,
+            128,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 197,
+          "shared_memory": 29440,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 139.361,
+          "grid": [
+            1,
+            128,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 6.318,
+          "grid": [
+            1,
+            1,
+            128
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 30720,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.426,
+          "grid": [
+            1,
+            128,
+            8
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 264,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 100
+        }
+      ],
+      "total_us_per_call": 596.376
+    },
+    {
+      "family": "ssd",
+      "L": 4096,
+      "batch": 1,
+      "chunk": 64,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 108,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 127.61,
+          "grid": [
+            2,
+            64,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 124.369,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 109.87,
+          "grid": [
+            1,
+            64,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 168,
+          "shared_memory": 45824,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 6.435,
+          "grid": [
+            2,
+            1,
+            64
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 30720,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 5.154,
+          "grid": [
+            1,
+            64,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 8,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 100
+        }
+      ],
+      "total_us_per_call": 373.438
+    },
+    {
+      "family": "ssd",
+      "L": 4096,
+      "batch": 1,
+      "chunk": 128,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 109,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 146.879,
+          "grid": [
+            4,
+            32,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 69.153,
+          "grid": [
+            2,
+            32,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 197,
+          "shared_memory": 29440,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 63.579,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 7.067,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 24576,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 4.283,
+          "grid": [
+            1,
+            32,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 22,
+          "shared_memory": 16,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 100
+        }
+      ],
+      "total_us_per_call": 290.961
+    },
+    {
+      "family": "ssd",
+      "L": 4096,
+      "batch": 1,
+      "chunk": 256,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 110,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 190.314,
+          "grid": [
+            8,
+            16,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 55.257,
+          "grid": [
+            4,
+            16,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 124,
+          "shared_memory": 27648,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 32.139,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 11.549,
+          "grid": [
+            32,
+            1,
+            16
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 24576,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.65,
+          "grid": [
+            1,
+            16,
+            16
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 34,
+          "shared_memory": 1040,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        }
+      ],
+      "total_us_per_call": 292.909
+    },
+    {
+      "family": "ssd",
+      "L": 4096,
+      "batch": 1,
+      "chunk": 512,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 111,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 279.966,
+          "grid": [
+            16,
+            8,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 210,
+          "shared_memory": 35840,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 52.369,
+          "grid": [
+            4,
+            8,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 124,
+          "shared_memory": 27648,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 16.902,
+          "grid": [
+            64,
+            1,
+            8
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 30720,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 25
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 15.859,
+          "grid": [
+            8,
+            1,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 4.538,
+          "grid": [
+            1,
+            8,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 30,
+          "shared_memory": 1024,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        }
+      ],
+      "total_us_per_call": 369.634
+    },
+    {
+      "family": "ssd",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 32,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 112,
+      "kernels": [
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 496.242,
+          "grid": [
+            8,
+            4,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 447.113,
+          "grid": [
+            2,
+            256,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 200,
+          "shared_memory": 29440,
+          "blocks_per_sm": 199.804871,
+          "warps_per_sm": 399.609741,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 361.475,
+          "grid": [
+            1,
+            256,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 207,
+          "shared_memory": 35840,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 10.298,
+          "grid": [
+            1,
+            4,
+            64
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 30720,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 25
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 5.177,
+          "grid": [
+            4,
+            64,
+            8
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 264,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 100
+        }
+      ],
+      "total_us_per_call": 1320.305
+    },
+    {
+      "family": "ssd",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 64,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 113,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 301.928,
+          "grid": [
+            2,
+            128,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 207,
+          "shared_memory": 35840,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 276.841,
+          "grid": [
+            1,
+            128,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 168,
+          "shared_memory": 45824,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 252.577,
+          "grid": [
+            8,
+            4,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 10.969,
+          "grid": [
+            2,
+            4,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 30720,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 25
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 8.195,
+          "grid": [
+            4,
+            32,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 8,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 100
+        }
+      ],
+      "total_us_per_call": 850.51
+    },
+    {
+      "family": "ssd",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 128,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 114,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 314.974,
+          "grid": [
+            4,
+            64,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 207,
+          "shared_memory": 35840,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 175.164,
+          "grid": [
+            2,
+            64,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 200,
+          "shared_memory": 29440,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 129.62,
+          "grid": [
+            8,
+            4,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 13.109,
+          "grid": [
+            8,
+            4,
+            16
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 24576,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 6.786,
+          "grid": [
+            4,
+            16,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 22,
+          "shared_memory": 16,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 100
+        }
+      ],
+      "total_us_per_call": 639.653
+    },
+    {
+      "family": "ssd",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 256,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 115,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 394.827,
+          "grid": [
+            8,
+            32,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 207,
+          "shared_memory": 35840,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 109.926,
+          "grid": [
+            4,
+            32,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 124,
+          "shared_memory": 27648,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 67.875,
+          "grid": [
+            8,
+            4,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 19.069,
+          "grid": [
+            32,
+            4,
+            8
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 24576,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 4.864,
+          "grid": [
+            4,
+            8,
+            16
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 34,
+          "shared_memory": 1040,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 52
+        }
+      ],
+      "total_us_per_call": 596.561
+    },
+    {
+      "family": "ssd",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 512,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 116,
+      "kernels": [
+        {
+          "kernel": "_chunk_scan_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 564.72,
+          "grid": [
+            16,
+            16,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 207,
+          "shared_memory": 35840,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 8
+        },
+        {
+          "kernel": "_chunk_state_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 95.651,
+          "grid": [
+            4,
+            16,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 124,
+          "shared_memory": 27648,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "_state_passing_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 36.537,
+          "grid": [
+            8,
+            4,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 39,
+          "shared_memory": 2048,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "_bmm_chunk_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 30.985,
+          "grid": [
+            64,
+            4,
+            4
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 30720,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 25
+        },
+        {
+          "kernel": "_chunk_cumsum_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 6.536,
+          "grid": [
+            4,
+            4,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 30,
+          "shared_memory": 1024,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 52
+        }
+      ],
+      "total_us_per_call": 734.429
+    },
+    {
+      "family": "gdn",
+      "L": 256,
+      "batch": 1,
+      "chunk": 16,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 117,
+      "kernels": [
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 48.571,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 202,
+          "shared_memory": 21568,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "chunk_fwd_kernel_o",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 32.152,
+          "grid": [
+            8,
+            16,
+            8
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 8192,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 46
+        },
+        {
+          "kernel": "l2norm_fwd_kernel",
+          "n_launches": 39,
+          "launches_per_call": 1.95,
+          "dur_us_per_call": 7.843,
+          "grid": [
+            128,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 72,
+          "shared_memory": 64,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "recompute_w_u_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 7.255,
+          "grid": [
+            16,
+            8,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 56,
+          "shared_memory": 3712,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "solve_tril_16x16_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.829,
+          "grid": [
+            16,
+            8,
+            1
+          ],
+          "block": [
+            32,
+            1,
+            1
+          ],
+          "registers_per_thread": 53,
+          "shared_memory": 0,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 1.560976,
+          "est_achieved_occupancy_pct": 3
+        },
+        {
+          "kernel": "chunk_scaled_dot_kkt_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.624,
+          "grid": [
+            16,
+            8,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 63,
+          "shared_memory": 4096,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "fused_beta_sigmoid_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.827,
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 21,
+          "shared_memory": 4096,
+          "blocks_per_sm": 0.012195,
+          "warps_per_sm": 0.097561,
+          "est_achieved_occupancy_pct": 0
+        },
+        {
+          "kernel": "gdn_gate_chunk_cumsum_scalar_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.707,
+          "grid": [
+            16,
+            8,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 20,
+          "shared_memory": 0,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::B",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.179,
+          "grid": [
+            32,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 16,
+          "shared_memory": 0,
+          "blocks_per_sm": 0.390244,
+          "warps_per_sm": 1.560976,
+          "est_achieved_occupancy_pct": 3
+        }
+      ],
+      "total_us_per_call": 106.987
+    },
+    {
+      "family": "gdn",
+      "L": 256,
+      "batch": 1,
+      "chunk": 32,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 118,
+      "kernels": [
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 29.425,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 230,
+          "shared_memory": 39040,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "chunk_fwd_kernel_o",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 19.688,
+          "grid": [
+            8,
+            8,
+            8
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 108,
+          "shared_memory": 12288,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "l2norm_fwd_kernel",
+          "n_launches": 39,
+          "launches_per_call": 1.95,
+          "dur_us_per_call": 7.843,
+          "grid": [
+            128,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 72,
+          "shared_memory": 64,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "merge_16x16_to_32x32_inverse_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 6.846,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            32,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 3072,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 0.780488,
+          "est_achieved_occupancy_pct": 2
+        },
+        {
+          "kernel": "recompute_w_u_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 6.23,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 78,
+          "shared_memory": 16640,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "chunk_scaled_dot_kkt_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.602,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 56,
+          "shared_memory": 4608,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "fused_beta_sigmoid_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.839,
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 21,
+          "shared_memory": 4096,
+          "blocks_per_sm": 0.012195,
+          "warps_per_sm": 0.097561,
+          "est_achieved_occupancy_pct": 0
+        },
+        {
+          "kernel": "gdn_gate_chunk_cumsum_scalar_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.723,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 0,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::B",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.213,
+          "grid": [
+            64,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 16,
+          "shared_memory": 0,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        }
+      ],
+      "total_us_per_call": 78.409
+    },
+    {
+      "family": "gdn",
+      "L": 256,
+      "batch": 1,
+      "chunk": 64,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 119,
+      "kernels": [
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kkt_solve_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 29.089,
+          "grid": [
+            4,
+            8,
+            1
+          ],
+          "block": [
+            32,
+            1,
+            1
+          ],
+          "registers_per_thread": 232,
+          "shared_memory": 7296,
+          "blocks_per_sm": 0.390244,
+          "warps_per_sm": 0.390244,
+          "est_achieved_occupancy_pct": 1
+        },
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 23.053,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 248,
+          "shared_memory": 75008,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 0
+        },
+        {
+          "kernel": "chunk_fwd_kernel_o",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 18.345,
+          "grid": [
+            4,
+            4,
+            8
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 198,
+          "shared_memory": 49152,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "recompute_w_u_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 11.557,
+          "grid": [
+            4,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 214,
+          "shared_memory": 29184,
+          "blocks_per_sm": 0.390244,
+          "warps_per_sm": 1.560976,
+          "est_achieved_occupancy_pct": 3
+        },
+        {
+          "kernel": "l2norm_fwd_kernel",
+          "n_launches": 39,
+          "launches_per_call": 1.95,
+          "dur_us_per_call": 8.437,
+          "grid": [
+            128,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 72,
+          "shared_memory": 64,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "fused_beta_sigmoid_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.845,
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 21,
+          "shared_memory": 4096,
+          "blocks_per_sm": 0.012195,
+          "warps_per_sm": 0.097561,
+          "est_achieved_occupancy_pct": 0
+        },
+        {
+          "kernel": "gdn_gate_chunk_cumsum_scalar_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.714,
+          "grid": [
+            4,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 8,
+          "blocks_per_sm": 0.390244,
+          "warps_per_sm": 1.560976,
+          "est_achieved_occupancy_pct": 3
+        },
+        {
+          "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::B",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.301,
+          "grid": [
+            128,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 16,
+          "shared_memory": 0,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 95.341
+    },
+    {
+      "family": "gdn",
+      "L": 512,
+      "batch": 1,
+      "chunk": 16,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 120,
+      "kernels": [
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 93.784,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 202,
+          "shared_memory": 21568,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "chunk_fwd_kernel_o",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 55.681,
+          "grid": [
+            8,
+            32,
+            8
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 8192,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 46
+        },
+        {
+          "kernel": "recompute_w_u_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 11.977,
+          "grid": [
+            32,
+            8,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 56,
+          "shared_memory": 3712,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "l2norm_fwd_kernel",
+          "n_launches": 39,
+          "launches_per_call": 1.95,
+          "dur_us_per_call": 11.766,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 72,
+          "shared_memory": 64,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "solve_tril_16x16_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 4.453,
+          "grid": [
+            32,
+            8,
+            1
+          ],
+          "block": [
+            32,
+            1,
+            1
+          ],
+          "registers_per_thread": 53,
+          "shared_memory": 0,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "chunk_scaled_dot_kkt_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.325,
+          "grid": [
+            32,
+            8,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 63,
+          "shared_memory": 4096,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "fused_beta_sigmoid_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.064,
+          "grid": [
+            2,
+            1,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 21,
+          "shared_memory": 4096,
+          "blocks_per_sm": 0.02439,
+          "warps_per_sm": 0.195122,
+          "est_achieved_occupancy_pct": 0
+        },
+        {
+          "kernel": "gdn_gate_chunk_cumsum_scalar_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.846,
+          "grid": [
+            32,
+            8,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 20,
+          "shared_memory": 0,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::B",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.216,
+          "grid": [
+            64,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 16,
+          "shared_memory": 0,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        }
+      ],
+      "total_us_per_call": 186.112
+    },
+    {
+      "family": "gdn",
+      "L": 512,
+      "batch": 1,
+      "chunk": 32,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 121,
+      "kernels": [
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 55.966,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 230,
+          "shared_memory": 39040,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "chunk_fwd_kernel_o",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 35.469,
+          "grid": [
+            8,
+            16,
+            8
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 108,
+          "shared_memory": 12288,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 29
+        },
+        {
+          "kernel": "l2norm_fwd_kernel",
+          "n_launches": 39,
+          "launches_per_call": 1.95,
+          "dur_us_per_call": 11.685,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 72,
+          "shared_memory": 64,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "recompute_w_u_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 10.289,
+          "grid": [
+            16,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 78,
+          "shared_memory": 16640,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "merge_16x16_to_32x32_inverse_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 7.085,
+          "grid": [
+            16,
+            8,
+            1
+          ],
+          "block": [
+            32,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 3072,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 1.560976,
+          "est_achieved_occupancy_pct": 3
+        },
+        {
+          "kernel": "chunk_scaled_dot_kkt_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 4.29,
+          "grid": [
+            16,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 56,
+          "shared_memory": 4608,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "fused_beta_sigmoid_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.086,
+          "grid": [
+            2,
+            1,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 21,
+          "shared_memory": 4096,
+          "blocks_per_sm": 0.02439,
+          "warps_per_sm": 0.195122,
+          "est_achieved_occupancy_pct": 0
+        },
+        {
+          "kernel": "gdn_gate_chunk_cumsum_scalar_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.845,
+          "grid": [
+            16,
+            8,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 0,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::B",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.306,
+          "grid": [
+            128,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 16,
+          "shared_memory": 0,
+          "blocks_per_sm": 1.560976,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        }
+      ],
+      "total_us_per_call": 130.021
+    },
+    {
+      "family": "gdn",
+      "L": 512,
+      "batch": 1,
+      "chunk": 64,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 122,
+      "kernels": [
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 43.784,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 248,
+          "shared_memory": 75008,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 0
+        },
+        {
+          "kernel": "chunk_fwd_kernel_o",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 32.478,
+          "grid": [
+            4,
+            8,
+            8
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 198,
+          "shared_memory": 49152,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kkt_solve_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 29.3,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            32,
+            1,
+            1
+          ],
+          "registers_per_thread": 232,
+          "shared_memory": 7296,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 0.780488,
+          "est_achieved_occupancy_pct": 2
+        },
+        {
+          "kernel": "recompute_w_u_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 13.619,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 214,
+          "shared_memory": 29184,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "l2norm_fwd_kernel",
+          "n_launches": 39,
+          "launches_per_call": 1.95,
+          "dur_us_per_call": 12.097,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 72,
+          "shared_memory": 64,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "fused_beta_sigmoid_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.021,
+          "grid": [
+            2,
+            1,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 21,
+          "shared_memory": 4096,
+          "blocks_per_sm": 0.02439,
+          "warps_per_sm": 0.195122,
+          "est_achieved_occupancy_pct": 0
+        },
+        {
+          "kernel": "gdn_gate_chunk_cumsum_scalar_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.784,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 8,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::B",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1.409,
+          "grid": [
+            256,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 16,
+          "shared_memory": 0,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        }
+      ],
+      "total_us_per_call": 136.492
+    },
+    {
+      "family": "gdn",
+      "L": 4096,
+      "batch": 1,
+      "chunk": 16,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 123,
+      "kernels": [
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 714.527,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 202,
+          "shared_memory": 21568,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "chunk_fwd_kernel_o",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 400.327,
+          "grid": [
+            8,
+            256,
+            8
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 8192,
+          "blocks_per_sm": 199.804871,
+          "warps_per_sm": 399.609741,
+          "est_achieved_occupancy_pct": 46
+        },
+        {
+          "kernel": "recompute_w_u_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 86.036,
+          "grid": [
+            256,
+            8,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 56,
+          "shared_memory": 3712,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 67
+        },
+        {
+          "kernel": "l2norm_fwd_kernel",
+          "n_launches": 39,
+          "launches_per_call": 1.95,
+          "dur_us_per_call": 77.9,
+          "grid": [
+            2048,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 72,
+          "shared_memory": 64,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 58
+        },
+        {
+          "kernel": "chunk_scaled_dot_kkt_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 24.314,
+          "grid": [
+            256,
+            8,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 63,
+          "shared_memory": 4096,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 67
+        },
+        {
+          "kernel": "solve_tril_16x16_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 19.262,
+          "grid": [
+            256,
+            8,
+            1
+          ],
+          "block": [
+            32,
+            1,
+            1
+          ],
+          "registers_per_thread": 53,
+          "shared_memory": 0,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 33
+        },
+        {
+          "kernel": "gdn_gate_chunk_cumsum_scalar_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.479,
+          "grid": [
+            256,
+            8,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 20,
+          "shared_memory": 0,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 67
+        },
+        {
+          "kernel": "fused_beta_sigmoid_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.453,
+          "grid": [
+            16,
+            1,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 21,
+          "shared_memory": 4096,
+          "blocks_per_sm": 0.195122,
+          "warps_per_sm": 1.560976,
+          "est_achieved_occupancy_pct": 3
+        },
+        {
+          "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::B",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.08,
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 16,
+          "shared_memory": 0,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 52
+        }
+      ],
+      "total_us_per_call": 1330.378
+    },
+    {
+      "family": "gdn",
+      "L": 4096,
+      "batch": 1,
+      "chunk": 32,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 124,
+      "kernels": [
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 412.325,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 230,
+          "shared_memory": 39040,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        },
+        {
+          "kernel": "chunk_fwd_kernel_o",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 243.33,
+          "grid": [
+            8,
+            128,
+            8
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 108,
+          "shared_memory": 12288,
+          "blocks_per_sm": 99.902435,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 29
+        },
+        {
+          "kernel": "recompute_w_u_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 86.892,
+          "grid": [
+            128,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 78,
+          "shared_memory": 16640,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 42
+        },
+        {
+          "kernel": "l2norm_fwd_kernel",
+          "n_launches": 39,
+          "launches_per_call": 1.95,
+          "dur_us_per_call": 78.555,
+          "grid": [
+            2048,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 72,
+          "shared_memory": 64,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 58
+        },
+        {
+          "kernel": "merge_16x16_to_32x32_inverse_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 25.981,
+          "grid": [
+            128,
+            8,
+            1
+          ],
+          "block": [
+            32,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 3072,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 26
+        },
+        {
+          "kernel": "chunk_scaled_dot_kkt_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 25.789,
+          "grid": [
+            128,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 56,
+          "shared_memory": 4608,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 75
+        },
+        {
+          "kernel": "gdn_gate_chunk_cumsum_scalar_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.877,
+          "grid": [
+            128,
+            8,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 0,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::B",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.658,
+          "grid": [
+            1024,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 16,
+          "shared_memory": 0,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "fused_beta_sigmoid_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.309,
+          "grid": [
+            16,
+            1,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 21,
+          "shared_memory": 4096,
+          "blocks_per_sm": 0.195122,
+          "warps_per_sm": 1.560976,
+          "est_achieved_occupancy_pct": 3
+        }
+      ],
+      "total_us_per_call": 881.716
+    },
+    {
+      "family": "gdn",
+      "L": 4096,
+      "batch": 1,
+      "chunk": 64,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 125,
+      "kernels": [
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 300.222,
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 248,
+          "shared_memory": 75008,
+          "blocks_per_sm": 0.780488,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 0
+        },
+        {
+          "kernel": "chunk_fwd_kernel_o",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 177.245,
+          "grid": [
+            4,
+            64,
+            8
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 198,
+          "shared_memory": 49152,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "recompute_w_u_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 94.161,
+          "grid": [
+            64,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 214,
+          "shared_memory": 29184,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "l2norm_fwd_kernel",
+          "n_launches": 39,
+          "launches_per_call": 1.95,
+          "dur_us_per_call": 78.607,
+          "grid": [
+            2048,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 72,
+          "shared_memory": 64,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 58
+        },
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kkt_solve_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 49.112,
+          "grid": [
+            64,
+            8,
+            1
+          ],
+          "block": [
+            32,
+            1,
+            1
+          ],
+          "registers_per_thread": 232,
+          "shared_memory": 7296,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 6.243902,
+          "est_achieved_occupancy_pct": 13
+        },
+        {
+          "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::B",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 5.536,
+          "grid": [
+            2048,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 16,
+          "shared_memory": 0,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "gdn_gate_chunk_cumsum_scalar_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.914,
+          "grid": [
+            64,
+            8,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 8,
+          "blocks_per_sm": 6.243902,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 52
+        },
+        {
+          "kernel": "fused_beta_sigmoid_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.291,
+          "grid": [
+            16,
+            1,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 21,
+          "shared_memory": 4096,
+          "blocks_per_sm": 0.195122,
+          "warps_per_sm": 1.560976,
+          "est_achieved_occupancy_pct": 3
+        }
+      ],
+      "total_us_per_call": 710.088
+    },
+    {
+      "family": "gdn",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 16,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 126,
+      "kernels": [
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 1119.506,
+          "grid": [
+            8,
+            32,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 202,
+          "shared_memory": 21568,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "chunk_fwd_kernel_o",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 792.649,
+          "grid": [
+            8,
+            128,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 64,
+          "shared_memory": 8192,
+          "blocks_per_sm": 399.609741,
+          "warps_per_sm": 799.219482,
+          "est_achieved_occupancy_pct": 46
+        },
+        {
+          "kernel": "recompute_w_u_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 171.3,
+          "grid": [
+            128,
+            32,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 56,
+          "shared_memory": 3712,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 67
+        },
+        {
+          "kernel": "l2norm_fwd_kernel",
+          "n_launches": 39,
+          "launches_per_call": 1.95,
+          "dur_us_per_call": 155.503,
+          "grid": [
+            4096,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 72,
+          "shared_memory": 64,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 58
+        },
+        {
+          "kernel": "chunk_scaled_dot_kkt_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 47.533,
+          "grid": [
+            128,
+            32,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 63,
+          "shared_memory": 4096,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 67
+        },
+        {
+          "kernel": "solve_tril_16x16_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 35.053,
+          "grid": [
+            128,
+            32,
+            1
+          ],
+          "block": [
+            32,
+            1,
+            1
+          ],
+          "registers_per_thread": 53,
+          "shared_memory": 0,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 33
+        },
+        {
+          "kernel": "gdn_gate_chunk_cumsum_scalar_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 4.971,
+          "grid": [
+            128,
+            32,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 20,
+          "shared_memory": 0,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 67
+        },
+        {
+          "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::B",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.749,
+          "grid": [
+            1024,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 16,
+          "shared_memory": 0,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "fused_beta_sigmoid_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.544,
+          "grid": [
+            32,
+            1,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 21,
+          "shared_memory": 4096,
+          "blocks_per_sm": 0.390244,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        }
+      ],
+      "total_us_per_call": 2331.808
+    },
+    {
+      "family": "gdn",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 32,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 127,
+      "kernels": [
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 715.335,
+          "grid": [
+            8,
+            32,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 230,
+          "shared_memory": 39040,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "chunk_fwd_kernel_o",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 475.433,
+          "grid": [
+            8,
+            64,
+            32
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 108,
+          "shared_memory": 12288,
+          "blocks_per_sm": 199.804871,
+          "warps_per_sm": 399.609741,
+          "est_achieved_occupancy_pct": 29
+        },
+        {
+          "kernel": "recompute_w_u_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 170.349,
+          "grid": [
+            64,
+            32,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 78,
+          "shared_memory": 16640,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 42
+        },
+        {
+          "kernel": "l2norm_fwd_kernel",
+          "n_launches": 39,
+          "launches_per_call": 1.95,
+          "dur_us_per_call": 156.02,
+          "grid": [
+            4096,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 72,
+          "shared_memory": 64,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 58
+        },
+        {
+          "kernel": "chunk_scaled_dot_kkt_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 50.885,
+          "grid": [
+            64,
+            32,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 56,
+          "shared_memory": 4608,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 75
+        },
+        {
+          "kernel": "merge_16x16_to_32x32_inverse_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 45.622,
+          "grid": [
+            64,
+            32,
+            1
+          ],
+          "block": [
+            32,
+            1,
+            1
+          ],
+          "registers_per_thread": 80,
+          "shared_memory": 3072,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 24.975609,
+          "est_achieved_occupancy_pct": 33
+        },
+        {
+          "kernel": "gdn_gate_chunk_cumsum_scalar_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 5.848,
+          "grid": [
+            64,
+            32,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 0,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::B",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 5.485,
+          "grid": [
+            2048,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 16,
+          "shared_memory": 0,
+          "blocks_per_sm": 24.975609,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "fused_beta_sigmoid_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.528,
+          "grid": [
+            32,
+            1,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 21,
+          "shared_memory": 4096,
+          "blocks_per_sm": 0.390244,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        }
+      ],
+      "total_us_per_call": 1627.505
+    },
+    {
+      "family": "gdn",
+      "L": 2048,
+      "batch": 4,
+      "chunk": 64,
+      "launch": "library",
+      "placement": "fresh",
+      "cell": 128,
+      "kernels": [
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 526.829,
+          "grid": [
+            8,
+            32,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 248,
+          "shared_memory": 75008,
+          "blocks_per_sm": 3.121951,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 0
+        },
+        {
+          "kernel": "chunk_fwd_kernel_o",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 326.253,
+          "grid": [
+            4,
+            32,
+            32
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 198,
+          "shared_memory": 49152,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "recompute_w_u_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 177.687,
+          "grid": [
+            32,
+            32,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 214,
+          "shared_memory": 29184,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "l2norm_fwd_kernel",
+          "n_launches": 39,
+          "launches_per_call": 1.95,
+          "dur_us_per_call": 156.095,
+          "grid": [
+            4096,
+            1,
+            1
+          ],
+          "block": [
+            64,
+            1,
+            1
+          ],
+          "registers_per_thread": 72,
+          "shared_memory": 64,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 99.902435,
+          "est_achieved_occupancy_pct": 58
+        },
+        {
+          "kernel": "chunk_gated_delta_rule_fwd_kkt_solve_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 93.996,
+          "grid": [
+            32,
+            32,
+            1
+          ],
+          "block": [
+            32,
+            1,
+            1
+          ],
+          "registers_per_thread": 232,
+          "shared_memory": 7296,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 12.487804,
+          "est_achieved_occupancy_pct": 17
+        },
+        {
+          "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::B",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 10.128,
+          "grid": [
+            4096,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 16,
+          "shared_memory": 0,
+          "blocks_per_sm": 49.951218,
+          "warps_per_sm": 199.804871,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "gdn_gate_chunk_cumsum_scalar_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 3.451,
+          "grid": [
+            32,
+            32,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "registers_per_thread": 18,
+          "shared_memory": 8,
+          "blocks_per_sm": 12.487804,
+          "warps_per_sm": 49.951218,
+          "est_achieved_occupancy_pct": 100
+        },
+        {
+          "kernel": "fused_beta_sigmoid_fwd_kernel",
+          "n_launches": 20,
+          "launches_per_call": 1.0,
+          "dur_us_per_call": 2.422,
+          "grid": [
+            32,
+            1,
+            1
+          ],
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "registers_per_thread": 21,
+          "shared_memory": 4096,
+          "blocks_per_sm": 0.390244,
+          "warps_per_sm": 3.121951,
+          "est_achieved_occupancy_pct": 7
+        }
+      ],
+      "total_us_per_call": 1296.861
+    }
+  ]
+}
