@@ -34,8 +34,8 @@ every cell; the exclusive-GPU guard (``--guard-gpu``: physical index) pauses whi
 the GPU and a cell is re-timed once if one appeared during it.
 
 Resumable: one fsynced JSONL row per (family, L, B, design, round, chunk, input/placement).
-``--analyze`` (CPU) writes ``e33_value_graph_<tag>.json``: per (family, L, B, chunk) the round-median
-latency per input, the spread across distributions and between draws of one distribution, a Friedman
+``--analyze`` (CPU) writes ``e33_value_graph_<tag>.json``: per (family, L, B, chunk) the round-median of the
+per-cell 10 % trimmed mean latency (CUDA events resolve about 0.5 us, which quantizes per-replay medians) per input, the spread across distributions and between draws of one distribution, a Friedman
 test across inputs with rounds as blocks, TOST equivalence of every input against the first Gaussian
 draw at +-1 % and +-2 %, whether the best chunk changes with the input, and the spread across placements.
 """
@@ -273,6 +273,10 @@ def timed(args, fn_replay) -> dict[str, Any]:
     ts = cuda_time(fn_replay, warmup=args.warmup, repeats=args.repeats, pre_spin_ms=args.pre_spin_ms)
     out["median_ms"] = _g(statistics.median(ts))
     out["mean_ms"] = _g(statistics.fmean(ts))
+    # CUDA events resolve about 0.5 us, so the median of short replays is quantized; the 10 % trimmed mean is not
+    srt = sorted(ts)
+    cut = len(srt) // 10
+    out["tmean_ms"] = _g(statistics.fmean(srt[cut: len(srt) - cut] or srt))
     out["std_ms"] = _g(statistics.pstdev(ts))
     out["min_ms"] = _g(min(ts))
     if args.record_gpu_state:
@@ -431,10 +435,11 @@ def analyze(args) -> dict[str, Any]:
     C = defaultdict(lambda: defaultdict(dict))   # (fam, L, B, chunk) -> placement -> round -> median
     for r in rows:
         k = (r["family"], r["L"], r["batch"], r["chunk"])
+        t = r.get("tmean_ms", r["median_ms"])
         if r["design"] == "A":
-            A[k][r["input"]][r["round"]] = r["median_ms"]
+            A[k][r["input"]][r["round"]] = t
         else:
-            C[k][r["placement"]][r["round"]] = r["median_ms"]
+            C[k][r["placement"]][r["round"]] = t
     best_by_input = defaultdict(dict)
     for (fam, L, B, c), per in sorted(A.items()):
         rounds = sorted(set.intersection(*[set(v) for v in per.values()]))

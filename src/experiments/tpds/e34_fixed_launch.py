@@ -15,7 +15,8 @@ not depend on the input values at fixed placement; one buffer set per key). Excl
 state as in the other experiments.
 
 Resumable: one fsynced JSONL row per (key, round, configuration). ``--analyze`` writes
-``e34_fixed_launch_<tag>.json``: per key the round-median latency of every configuration; per fixed
+``e34_fixed_launch_<tag>.json``: per key the round-median of the per-cell 10 % trimmed mean latency (CUDA
+events resolve about 0.5 us) of every configuration; per fixed
 (BLOCK_D, num_warps, num_stages) the best chunk, the spread over chunks and the regret of each single
 chunk across the keys; the same along the default table; the full-search optimum against the best
 default-table entry; and a two-factor Shapley split of the default (chunk 256, default launch) to
@@ -116,6 +117,7 @@ def run(args, log) -> None:
                 row.update({"key": key, "kind": "timing", "L": L, "batch": b, "round": rnd, "block_t": c[0],
                             "block_d": c[1], "num_warps": c[2], "num_stages": c[3],
                             "median_ms": _g(statistics.median(ts)), "mean_ms": _g(statistics.fmean(ts)),
+                            "tmean_ms": _g(statistics.fmean(sorted(ts)[len(ts) // 10: len(ts) - len(ts) // 10])),
                             "min_ms": _g(min(ts)), "std_ms": _g(statistics.pstdev(ts)), "utc": utc_now()})
                 w.write(row)
                 n_new += 1
@@ -142,7 +144,8 @@ def analyze(args) -> dict[str, Any]:
                           if r.get("kind") == "timing"])
     per: dict[tuple, dict[tuple, list[float]]] = defaultdict(lambda: defaultdict(list))
     for r in rows:
-        per[(r["L"], r["batch"])][(r["block_t"], r["block_d"], r["num_warps"], r["num_stages"])].append(r["median_ms"])
+        per[(r["L"], r["batch"])][(r["block_t"], r["block_d"], r["num_warps"], r["num_stages"])].append(
+            r.get("tmean_ms", r["median_ms"]))
     T: dict[tuple, dict[tuple, float]] = {k: {c: statistics.median(v) for c, v in d.items()} for k, d in per.items()}
     keys = sorted(T)
     chunks = sorted({c[0] for k in keys for c in T[k]})
