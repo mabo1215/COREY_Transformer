@@ -227,6 +227,7 @@
 - E31（M8b，GPU 1）：192 个 prompt、32 个贪心 token；按长度表切换 chunk 相对默认 chunk，半精度下改变 4.7%（Mamba-2）、0%（Mamba-1）、2.1%（GDN）的贪心输出，fp32 下无变化；同一 chunk 重跑逐位一致。
 - 论文：补充材料新增 "Autotuner state of the production kernels"（Table supp_autotune_state）与 "Output Divergence of Chunk Switching"（Table supp_divergence）；正文 Limitations 写明重调结果，recipe 指向发散一节；正文仍在 20 页内，0 未定义引用、0 溢出；补充材料 29 → 31 页。M6c、M8b 完成。
 - 注意：4c 为 24 GB 标准版 RTX 3090（与 vGPU 的 48 GB 板同一 GA102 芯片），已在补充材料注明。
+- 更正（2026-10-16）：巡检时曾说 E31 "无 token 分叉"，那只是日志最后两条 prompt；全量结果是半精度下换成另一个 chunk 会改变 2.6–9.4% 的 prompt 的贪心输出（Mamba-2 3.6–6.8%、Mamba-1 2.6–4.7%、GDN 7.3–9.4%），按长度表切换最多 4.7%，fp32 几乎为 0，同一 chunk 重跑逐位一致。正文 Deployment recipe 段已按这组数字写明（为保持 20 页，压缩了 recipe 引言、Limitations 两处括注、Discussion 一段和 Conclusion 的重复句）。
 
 ## 2026-10-16 10:45 交接（本地机器 bobsteam1215 重启前）
 
