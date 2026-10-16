@@ -15,6 +15,8 @@
 #   TACO_LANE=G0 CUDA_VISIBLE_DEVICES=0 bash src/experiments/remote/taco_lane_4c_r2.sh
 #   TACO_LANE=G1 CUDA_VISIBLE_DEVICES=1 bash src/experiments/remote/taco_lane_4c_r2.sh
 #   TACO_LANE=G1b CUDA_VISIBLE_DEVICES=1 bash src/experiments/remote/taco_lane_4c_r2.sh   (after G1: E35)
+#   G0b (after G0): E36 packed steps under CUDA graphs at padded capture sizes (review M3d);
+#   G1c (after G1b): E37 graph-timed calibration keys of the work-term model (M4f), E30s2 second E30 session (M5f).
 # Update this file on the host by rename (scp to a temporary name, then mv), never in place: running lanes read it.
 # Smoke tests only:  bash src/experiments/remote/taco_lane_4c_r2.sh step e32_smoke | e33_smoke
 # Markers: src/logs/revloop/<ID>.{START,OK,FAIL}; results come back by rsync (remote.sh fetch 4c <IDs>).
@@ -74,6 +76,20 @@ if [ "${1:-}" = "step" ]; then
                  --gdn-trace-dir "$T/tpds_traces_gdn_1p4b" --repeats 2 --out-dir "$SMOKE_DIR" --tag ${H}_e35smoke ;;
     e35) flock "$LOCK" $PY -m src.experiments.tpds.e35_mechanism --part breakdown \
            --gdn-trace-dir "$T/tpds_traces_gdn_1p4b" --tag ${H}_e35 ;;
+    e36_smoke) flock "$LOCK" $PY -m src.experiments.tpds.e36_packed_graph --max-steps 3 --rounds 2 --repeats 5 \
+                 --ssd370m-traces "$T" --ssd2p7b-traces "$T/tpds_traces_m2_2p7b" --gdn-traces "$T/tpds_traces_gdn_1p4b" \
+                 --out-dir "$SMOKE_DIR" --tag ${H}_e36smoke ;;
+    e36) flock "$LOCK" $PY -m src.experiments.tpds.e36_packed_graph --ssd370m-traces "$T" \
+           --ssd2p7b-traces "$T/tpds_traces_m2_2p7b" --gdn-traces "$T/tpds_traces_gdn_1p4b" $GUARD --tag ${H}_e36 ;;
+    e37) flock "$LOCK" $E33 --trace-dirs "$TRACES" --designs A --inputs 'gaussian#0' --rounds 3 \
+           --shapes 128x1,512x1,2048x1,8192x1,128x4,512x4,2048x4,8192x4,128x16,512x16,2048x16,8192x16 \
+           $GUARD --tag ${H}_e37calib ;;
+    e30s2)  # second session of E30 on this board: cross-session and cross-board reproducibility (review M5f)
+      E30="$PY -m src.experiments.tpds.e30_autotune_state"
+      G30="--exclusive-guard --guard-until $(( $(date +%s) + ${TACO_GUARD_H:-48} * 3600 ))"
+      flock "$LOCK" $E30 --model mamba2 --trace-dir "$T" --label "SSD 370M" $G30 --tag ${H}_e30s2_ssd370m &&
+      flock "$LOCK" $E30 --model mamba2 --trace-dir "$T/tpds_traces_m2_2p7b" --label "SSD 2.7B" $G30 --tag ${H}_e30s2_ssd2p7b &&
+      flock "$LOCK" $E30 --model gdn --trace-dir "$T/tpds_traces_gdn_1p4b" --label "GDN 1.4B" $G30 --tag ${H}_e30s2_gdn1p4b ;;
     *) echo "unknown step $2"; exit 2 ;;
   esac
   exit $?
@@ -113,6 +129,15 @@ case "$LANE" in
   G1b)  # follow-up work on GPU 1 (started separately while G1 runs; waits for E34)
     wait_marker E34 || lanelog "continuing without E34"
     $RUN E35-smoke -- bash "$SELF" step e35_smoke && $RUN E35 -- bash "$SELF" step e35
+    ;;
+  G0b)  # after the G0 lane (E32 sessions): packed steps under CUDA graphs (E36)
+    until [ -f "$MARK_DIR/E32f.OK" ] || [ -f "$MARK_DIR/E32f.FAIL" ] || [ -f "$MARK_DIR/E32c.FAIL" ]; do sleep 120; done
+    $RUN E36-smoke -- bash "$SELF" step e36_smoke && $RUN E36 -- bash "$SELF" step e36
+    ;;
+  G1c)  # after E35 on GPU 1: graph-timed calibration keys (E37), then the second E30 session (E30s2)
+    wait_marker E35 || lanelog "continuing without E35"
+    $RUN E37 -- bash "$SELF" step e37
+    $RUN E30s2 -- bash "$SELF" step e30s2
     ;;
   *) echo "unknown lane $LANE"; exit 2 ;;
 esac

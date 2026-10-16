@@ -34,6 +34,9 @@ every cell; the exclusive-GPU guard (``--guard-gpu``: physical index) pauses whi
 the GPU and a cell is re-timed once if one appeared during it.
 
 Resumable: one fsynced JSONL row per (family, L, B, design, round, chunk, input/placement).
+With ``--inputs gaussian#0 --designs A`` the script is a plain CUDA-graph timing grid of the production
+scans over shapes and chunks (used for the graph-timed calibration keys of the work-term model, E37).
+
 ``--analyze`` (CPU) writes ``e33_value_graph_<tag>.json``: per (family, L, B, chunk) the round-median of the
 per-cell 10 % trimmed mean latency (CUDA events resolve about 0.5 us, which quantizes per-replay medians) per input, the spread across distributions and between draws of one distribution, a Friedman
 test across inputs with rounds as blocks, TOST equivalence of every input against the first Gaussian
@@ -302,6 +305,8 @@ def run(args, log) -> None:
                      "guard_gpu": args.guard_gpu, "args": {k: str(v) for k, v in vars(args).items()}})
         w = JsonlWriter(jsonl, meta=meta)
         inputs = [f"{d}#{k}" for d in SYNTH for k in range(args.draws if d != "constant" else 1)] + ["real"]
+        if args.inputs:
+            inputs = [i for i in inputs if i in set(args.inputs.split(","))]
         for fam in fams:
             kind = FAMILIES[fam]["kind"]
             td = trace_dirs.get(fam)
@@ -537,6 +542,7 @@ def parse_args(argv=None):
     p.add_argument("--trace-dirs", default="", help="family=trace_dir,... (captured calls for the real input)")
     p.add_argument("--designs", default="AC")
     p.add_argument("--draws", type=int, default=2)
+    p.add_argument("--inputs", default=None, help="restrict to these inputs (e.g. gaussian#0: a plain timing grid)")
     p.add_argument("--placements", type=int, default=6)
     p.add_argument("--rounds", type=int, default=5)
     p.add_argument("--warmup", type=int, default=5)
