@@ -29,11 +29,11 @@ from src.experiments.tpds.common import RESULTS_DIR, utc_now, write_json
 
 # panel -> list of (series label, table name); series labels keep one colour across panels
 PANELS = {
-    "Mamba-2 SSD 370M": [("host-bound (RTX 3090)", "ssd370m_eager"), ("CUDA graph (RTX 3090)", "ssd370m_graph"),
+    "Mamba-2 SSD 370M": [("launch-bound (RTX 3090)", "ssd370m_eager"), ("CUDA graph (RTX 3090)", "ssd370m_graph"),
                          ("CUDA graph (RTX PRO 6000)", "ssd370m_graph_pro6000")],
     "Mamba-2 SSD 2.7B": [("CUDA graph (RTX 3090)", "ssd2p7b_graph"), ("CUDA graph (RTX PRO 6000)", "ssd2p7b_graph_pro6000")],
     "Gated DeltaNet 1.4B": [("CUDA graph (RTX 3090)", "gdn1p4b_graph"), ("CUDA graph (RTX PRO 6000)", "gdn1p4b_graph_pro6000")],
-    "Triton Mamba-1 370M": [("host-bound (RTX 3090)", "m1_370m_eager"), ("device time (RTX 3090)", "m1_370m_device_r4"),
+    "Triton Mamba-1 370M": [("launch-bound (RTX 3090)", "m1_370m_eager"), ("device time (RTX 3090)", "m1_370m_device_r4"),
                             ("CUDA graph (RTX 3090)", "m1_370m_graph"), ("CUDA graph (RTX PRO 6000)", "m1_370m_graph_pro6000")],
 }
 # recorded in the JSON for the practitioner summary but not plotted (device time of the multi-kernel pipelines
@@ -43,7 +43,7 @@ EXTRA = {"Mamba-2 SSD 370M": [("device time (RTX 3090)", "ssd370m_device")],
          "Gated DeltaNet 1.4B": [("device time (RTX 3090)", "gdn1p4b_device")]}
 TITLES = {"Mamba-2 SSD 370M": "SSD 370M", "Mamba-2 SSD 2.7B": "SSD 2.7B", "Gated DeltaNet 1.4B": "Gated DeltaNet 1.4B",
           "Triton Mamba-1 370M": "Triton scan (ours), 370M"}
-SERIES = ["host-bound (RTX 3090)", "device time (RTX 3090)", "CUDA graph (RTX 3090)", "CUDA graph (RTX PRO 6000)"]
+SERIES = ["launch-bound (RTX 3090)", "device time (RTX 3090)", "CUDA graph (RTX 3090)", "CUDA graph (RTX PRO 6000)"]
 MIN_BIN = 10
 
 

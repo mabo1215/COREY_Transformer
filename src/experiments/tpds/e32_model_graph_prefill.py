@@ -466,7 +466,8 @@ def analyze(args) -> dict[str, Any]:
     metas: dict[str, dict[str, Any]] = {}
     for t in tags:
         rows = read_jsonl(args.out_dir / f"e32_model_graph_{t}.jsonl")
-        metas[t] = next((r for r in reversed(rows) if r.get("kind") == "meta"), {})
+        mrows = read_jsonl(args.out_dir / f"e32_model_graph_{t}.jsonl", kind="meta")
+        metas[t] = mrows[-1] if mrows else {}
         sessions[t] = dedupe_by_key([r for r in rows if r.get("kind") == "timing"])
     res: dict[str, Any] = {"experiment": "E32", "sessions": tags, "created_utc": utc_now(),
                            "meta": {t: {k: m.get(k) for k in ("gpu", "label", "model_id", "dtype", "default_chunk",

@@ -91,7 +91,7 @@ def main(argv=None):
     ax.set_xlabel("chunk (registers per thread below)")
     ax.set_ylabel("latency / best")
     ax.set_title("(a) Triton scan, batch 1", loc="left")
-    ax.legend(frameon=False, loc="center right", bbox_to_anchor=(1.0, 0.6), handlelength=1.6)
+    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.55, 0.9), handlelength=1.6)
     for ax, fam, groups, title in ((axes[1], "ssd", SSD_GROUPS, "(b) SSD 370M, $L$=4096"),
                                    (axes[2], "gdn", GDN_GROUPS, "(c) Gated DeltaNet 1.4B, $L$=4096")):
         data = res[fam]
