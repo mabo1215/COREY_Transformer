@@ -816,6 +816,12 @@ AAAI-27 Submission #3464（COREY）已收到最终决定：Phase 1 拒稿，未�
    1. 哪几项可以打包后删除原目录？（例如回复 "a b c"，或 "全部"，或 "都不动"）
    2. b 项：如果核对确认 jpg 和 parquet 里的图片一致，是直接删掉 jpg（以后用 parquet 重新生成），还是也打成 tar？
    A:
+8. 【taco-r2 新一轮修订（Stage 9 门控）】2026-10-16 独立 TACO 评估（5 位评审 + taco-r1 复核，报告见 `docs/review_reports/taco_r2_*.md`，汇总 `taco_r2_editorial_decision.md`）：4 位 Major Revision、1 位（Devil's Advocate）Reject；平均分 创新 43 / 方法 66 / 实验 62 / 清晰度 40 / 意义 42。是否据此开启 taco-r2 修订周期（用新评审意见重写 `docs/revision_suggestions.tex`）？范围选哪一档？
+   - A：只做文字 + 离线分析（重构叙事、公平基线、可恢复收益的置信区间、固定一种先验选形协议、修正 recipe、精简表述、清理 artifact 匿名），不需要 GPU，约 2–3 天；预计仍是 Major/Minor 之间。
+   - B（推荐）：A + 在 4c 上补关键 GPU 测量：整模型 prefill 作为一个 CUDA graph（默认 vs 形状表，两次会话）、SSD/GDN 在 launch floor 以上的数值无关性、若 4c 允许则加硬件计数器；约 1–2 天 GPU。
+   - C：B + 在数据中心 GPU（H100/H800）上用 vLLM 或 SGLang 做引擎级测量（TTFT、吞吐、切换开销）——这是评审认为区分 Major 与 Minor 的关键，但需要租卡。
+   A:
+
 需要你操作：
 - 【E28 停止】你已决定 E28（4c 双卡张量并行）不进投稿版。本机无法连到 4c（实验室内网 10.126.126.3，连接超时）。请在实验室网络（或 VPN）下登录 4c 执行：`screen -S taco-4c -X quit`（该 lane 只在等空闲 GPU，没有需要删除的数据）。账本已把 E28 标为 cancelled，M7b 标为不处理；论文已写明未运行多 GPU 实验。
 - 【Code Ocean capsule】已推送的 capsule（`0f4554b`，2026-10-10）还是 TPDS 版，README 里手写的补充材料编号（Table S1–S46、Fig. S1–S7）和现在的论文对不上。请先运行 `python src/revloop/capsule_build.py --push` 推送重建的 capsule（2026-10-16 试构建已核对：README 按 LaTeX 标签生成，覆盖 Table S1–S37、Fig. S1–S6，与当前 PDF 一致，无警告），再在 Code Ocean 网页上发布新版本；发布前可以先点一次 Reproducible Run 确认能跑通。
