@@ -16,7 +16,8 @@
 #   TACO_LANE=G1 CUDA_VISIBLE_DEVICES=1 bash src/experiments/remote/taco_lane_4c_r2.sh
 #   TACO_LANE=G1b CUDA_VISIBLE_DEVICES=1 bash src/experiments/remote/taco_lane_4c_r2.sh   (after G1: E35)
 #   G0b (after G0): E36 packed steps under CUDA graphs at padded capture sizes (review M3d);
-#   G1c (after G1b): E37 graph-timed calibration keys of the work-term model (M4f), E30s2 second E30 session (M5f).
+#   G1c (after G1b): E37 graph-timed calibration keys of the work-term model (M4f), E33c the Triton scan's value
+#       invariance in graph replay with captured Mamba-1 activations (M5c), E30s2 second E30 session (M5f).
 # Update this file on the host by rename (scp to a temporary name, then mv), never in place: running lanes read it.
 # Smoke tests only:  bash src/experiments/remote/taco_lane_4c_r2.sh step e32_smoke | e33_smoke
 # Markers: src/logs/revloop/<ID>.{START,OK,FAIL}; results come back by rsync (remote.sh fetch 4c <IDs>).
@@ -37,6 +38,7 @@ M2_ID=${TACO_M2_ID:-AntonV/mamba2-370m-hf}
 M27_ID=${TACO_M27_ID:-benchang1110/mamba2-2.7b-hf}
 GDN_ID=${TACO_GDN_ID:-Idiap/gated-deltanet-swa-1.4B-30B}
 TRACES="ssd370m=$T,ssd2p7b=$T/tpds_traces_m2_2p7b,gdn1p4b=$T/tpds_traces_gdn_1p4b"
+M1T=${TACO_M1_TRACES:-/data/mabo1215_taco/m1_traces}
 GUARD="--exclusive-guard --guard-until $(( $(date +%s) + ${TACO_GUARD_H:-48} * 3600 )) --record-gpu-state"
 
 e32() {  # e32 <session> <model> <model-id> <label> [extra args]
@@ -84,6 +86,12 @@ if [ "${1:-}" = "step" ]; then
     e37) flock "$LOCK" $E33 --trace-dirs "$TRACES" --designs A --inputs 'gaussian#0' --rounds 3 \
            --shapes 128x1,512x1,2048x1,8192x1,128x4,512x4,2048x4,8192x4,128x16,512x16,2048x16,8192x16 \
            $GUARD --tag ${H}_e37calib ;;
+    m1capture)  # a few Mamba-1 370M prefill calls on this host for the captured-activation input of E33c
+      flock "$LOCK" $PY -m src.experiments.tpds.capture_traces --model mamba1 --layers 24 --samples-per-regime 1 \
+        --longbench-per-task 1 --longbench-lengths 8192 --max-tokens 8192 --limit-prompts 9 --max-gb 5 \
+        --trace-dir "$M1T" ;;
+    e33c) flock "$LOCK" $E33 --families m1triton --shapes 2048x1,8192x1,2048x4 --trace-dirs "m1triton=$M1T" \
+            $GUARD --tag ${H}_e33m1 ;;
     e30s2)  # second session of E30 on this board: cross-session and cross-board reproducibility (review M5f)
       E30="$PY -m src.experiments.tpds.e30_autotune_state"
       G30="--exclusive-guard --guard-until $(( $(date +%s) + ${TACO_GUARD_H:-48} * 3600 ))"
@@ -137,6 +145,7 @@ case "$LANE" in
   G1c)  # after E35 on GPU 1: graph-timed calibration keys (E37), then the second E30 session (E30s2)
     wait_marker E35 || lanelog "continuing without E35"
     $RUN E37 -- bash "$SELF" step e37
+    $RUN E33c-capture -- bash "$SELF" step m1capture && $RUN E33c -- bash "$SELF" step e33c
     $RUN E30s2 -- bash "$SELF" step e30s2
     ;;
   *) echo "unknown lane $LANE"; exit 2 ;;

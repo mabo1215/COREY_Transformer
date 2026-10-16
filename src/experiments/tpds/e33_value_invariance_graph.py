@@ -19,6 +19,8 @@ Families (production kernels, shapes of the checkpoints):
   ssd2p7b  Mamba-2 2.7B SSD: 80 heads x 64, 1 group, state 128, fp16
   gdn1p4b  Gated DeltaNet 1.4B on the production path (in-kernel L2 norm, gate and beta), bf16; head
            counts and widths are read from the captured call.
+  m1triton the Triton Mamba-1 scan of the study (370M width 2048, state 16, fp16, default launch table per
+           chunk); captured Mamba-1 activations (u, delta, B, C, z) and the layer's A and D for ``real``.
 
 Inputs: the E1 distributions (uniform, Gaussian, Laplace, sparse 50/10/2 %, constant) in ``--draws``
 independent draws each (draw-to-draw spread = null baseline), applied to every data input (``all`` mode,
@@ -55,7 +57,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from src.experiments.tpds.common import (GDN_CHUNKS, LOG_DIR, MAMBA2_CHUNKS, RESULTS_DIR, JsonlWriter, Logger,
+from src.experiments.tpds.common import (GDN_CHUNKS, LOG_DIR, MAMBA1_CHUNKS, MAMBA2_CHUNKS, RESULTS_DIR, JsonlWriter, Logger,
                                          check_disk, cuda_time, dedupe_by_key, env_metadata, foreign_gpu_pids,
                                          gpu_state, host_name, read_jsonl, utc_now, wait_for_exclusive_gpu,
                                          write_json)
@@ -65,6 +67,7 @@ FAMILIES = {
     "ssd370m": {"kind": "mamba2", "H": 32, "P": 64, "G": 1, "N": 128, "chunks": MAMBA2_CHUNKS},
     "ssd2p7b": {"kind": "mamba2", "H": 80, "P": 64, "G": 1, "N": 128, "chunks": MAMBA2_CHUNKS},
     "gdn1p4b": {"kind": "gdn", "chunks": GDN_CHUNKS},
+    "m1triton": {"kind": "mamba1", "d": 2048, "n": 16, "chunks": MAMBA1_CHUNKS},
 }
 
 
@@ -148,6 +151,23 @@ class Family:
                     self.real_src = src
                 else:
                     log(f"{name}: captured call shape {tuple(call['x'].shape)} does not match; no real input")
+        elif self.kind == "mamba1":
+            d, n = spec["d"], spec["n"]
+            self.shapes = {"u": (B, d, L), "delta": (B, d, L), "B": (B, n, L), "C": (B, n, L), "z": (B, d, L)}
+            self.dtypes = {k: torch.float16 for k in self.shapes}
+            self.params = {"A": -torch.exp(torch.rand(d, n, device="cuda") * math.log(16.0)),
+                           "D": torch.randn(d, device="cuda")}
+            self.real = None
+            if real is not None:
+                call, prm, src = real
+                if tuple(call["u"].shape[1:2]) == (d,) and "z" in call:
+                    self.real = {k: _fit_time(call[k], L, 2) for k in self.shapes}
+                    self.real = {k: v.expand(B, *v.shape[1:]).contiguous().to(self.dtypes[k])
+                                 for k, v in self.real.items()}
+                    self.params = {"A": prm["A"].float().contiguous(), "D": prm["D"].float()}
+                    self.real_src = src
+                else:
+                    log(f"{name}: captured call shape {tuple(call['u'].shape)} does not match; no real input")
         else:
             if real is None:
                 raise SystemExit("gdn1p4b needs a captured call (head counts and widths are read from it)")
@@ -173,7 +193,13 @@ class Family:
         dist, draw = inp.split("#")
         gen = torch.Generator(device="cuda").manual_seed(seed * 1000 + 17 * int(draw) + 7 * SYNTH.index(dist) + 1)
         out = {}
-        if self.kind == "mamba2":
+        if self.kind == "mamba1":
+            out["u"] = sample(dist, self.shapes["u"], gen)
+            out["delta"] = -3.5 + 0.5 * sample(dist, self.shapes["delta"], gen)
+            out["B"] = sample(dist, self.shapes["B"], gen)
+            out["C"] = sample(dist, self.shapes["C"], gen)
+            out["z"] = sample(dist, self.shapes["z"], gen)
+        elif self.kind == "mamba2":
             out["x"] = sample(dist, self.shapes["x"], gen)
             out["dt"] = -3.5 + 0.5 * sample(dist, self.shapes["dt"], gen)
             out["B"] = sample(dist, self.shapes["B"], gen)
@@ -207,8 +233,15 @@ class Family:
         return bufs, owners
 
     def call(self, bufs: dict[str, Any], chunk: int):
+        import torch
+
         from src.experiments.tpds import kernels as K
 
+        if self.kind == "mamba1":
+            p = self.params
+            out = torch.empty_like(bufs["u"])
+            return lambda: K.mamba1_scan(bufs["u"], bufs["delta"], p["A"], bufs["B"], bufs["C"], p["D"], bufs["z"],
+                                         None, True, chunk=chunk, out=out)
         if self.kind == "mamba2":
             p = self.params
             return lambda: K.mamba2_ssd(bufs["x"], bufs["dt"], p["A"], bufs["B"], bufs["C"], chunk, D=p["D"],
