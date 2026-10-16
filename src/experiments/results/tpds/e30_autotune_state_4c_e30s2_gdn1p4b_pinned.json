@@ -1,0 +1,1127 @@
+{
+  "signature": "f32d95351f82ba71",
+  "kind": "gdn",
+  "chunks": [
+    16,
+    32,
+    64
+  ],
+  "n_walk_shapes": 59,
+  "walk_max_shapes": null,
+  "origin": {
+    "fla.modules.l2norm.l2norm_fwd_kernel": {
+      "(256, 1, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 16
+      },
+      "(256, 2, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "call": "gdn|b4|242677b36f00|layer0",
+        "plan_index": 1162,
+        "batch": 4,
+        "L": 2210,
+        "chunk": 16
+      },
+      "(256, 4, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "call": "gdn|b4|31fe00cfc9af|layer0",
+        "plan_index": 1189,
+        "batch": 4,
+        "L": 8192,
+        "chunk": 64
+      },
+      "(256, 5, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "call": "gdn|b16|411ff5f0fef9|layer0",
+        "plan_index": 1524,
+        "batch": 16,
+        "L": 2210,
+        "chunk": 64
+      },
+      "(256, 8, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "call": "gdn|b16|2fc20485cafe|layer0",
+        "plan_index": 1525,
+        "batch": 16,
+        "L": 4096,
+        "chunk": 16
+      },
+      "(256, 16, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "call": "gdn|b16|8869346c3b48|layer0",
+        "plan_index": 1542,
+        "batch": 16,
+        "L": 8192,
+        "chunk": 64
+      }
+    },
+    "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": {
+      "(8, 8, 256, 256, 16, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 16
+      },
+      "(8, 8, 256, 256, 32, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 32
+      },
+      "(8, 8, 256, 256, 64, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 64
+      }
+    },
+    "fla.ops.common.chunk_o.chunk_fwd_kernel_o": {
+      "(8, 8, 256, 256, 16, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 16
+      },
+      "(8, 8, 256, 256, 32, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 32
+      },
+      "(8, 8, 256, 256, 64, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 64
+      }
+    },
+    "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": {
+      "(8, 8, 256, 16, False, 'torch.bfloat16', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 16
+      },
+      "(8, 8, 256, 32, False, 'torch.bfloat16', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 32
+      }
+    },
+    "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": {
+      "(8, 16, False, False, 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.float32')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 16
+      },
+      "(8, 32, False, False, 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.float32')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 32
+      },
+      "(8, 64, False, False, 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.float32')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 64
+      }
+    },
+    "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": {
+      "(8, 8, 256, 256, 16, 64, 64, False, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 16
+      },
+      "(8, 8, 256, 256, 32, 64, 64, False, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 32
+      },
+      "(8, 8, 256, 256, 64, 64, 64, False, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 64
+      }
+    },
+    "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": {
+      "(16, 'torch.float32', 'torch.bfloat16')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 16
+      }
+    },
+    "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": {
+      "(8, 32, False, 'torch.float32', 'torch.bfloat16')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 32
+      }
+    },
+    "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": {
+      "(8, 8, 256, 16, 'torch.bfloat16', 'torch.float32', 'torch.float32', 'torch.bfloat16')": {
+        "call": "gdn|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 64
+      }
+    }
+  },
+  "disk": {
+    "fla.modules.l2norm.l2norm_fwd_kernel": {
+      "(256, 1, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "status": "hit",
+        "config": "BT=16|warps=2|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "BT=16|warps=2|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": true
+      },
+      "(256, 2, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "status": "hit",
+        "config": "BT=16|warps=2|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "BT=16|warps=2|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": true
+      },
+      "(256, 4, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "status": "hit",
+        "config": "BT=8|warps=2|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "BT=8|warps=2|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": true
+      },
+      "(256, 5, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "status": "miss",
+        "config": null,
+        "walk_config": "BT=16|warps=2|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": null
+      },
+      "(256, 8, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "status": "miss",
+        "config": null,
+        "walk_config": "BT=8|warps=2|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": null
+      },
+      "(256, 16, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "status": "hit",
+        "config": "BT=8|warps=2|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "BT=8|warps=2|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": true
+      }
+    },
+    "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": {
+      "(8, 8, 256, 256, 16, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')": {
+        "status": "hit",
+        "config": "BV=32|warps=4|stages=2|ctas=1|maxnreg=None",
+        "walk_config": "BV=32|warps=4|stages=2|ctas=1|maxnreg=None",
+        "equals_walk": true
+      },
+      "(8, 8, 256, 256, 32, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')": {
+        "status": "hit",
+        "config": "BV=32|warps=4|stages=2|ctas=1|maxnreg=None",
+        "walk_config": "BV=32|warps=4|stages=2|ctas=1|maxnreg=None",
+        "equals_walk": true
+      },
+      "(8, 8, 256, 256, 64, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')": {
+        "status": "hit",
+        "config": "BV=32|warps=4|stages=2|ctas=1|maxnreg=None",
+        "walk_config": "BV=32|warps=4|stages=2|ctas=1|maxnreg=None",
+        "equals_walk": true
+      }
+    },
+    "fla.ops.common.chunk_o.chunk_fwd_kernel_o": {
+      "(8, 8, 256, 256, 16, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')": {
+        "status": "hit",
+        "config": "BK=32,BV=32|warps=2|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "BK=32,BV=32|warps=2|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": true
+      },
+      "(8, 8, 256, 256, 32, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')": {
+        "status": "hit",
+        "config": "BK=32,BV=32|warps=2|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "BK=32,BV=32|warps=2|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": true
+      },
+      "(8, 8, 256, 256, 64, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')": {
+        "status": "hit",
+        "config": "BK=64,BV=64|warps=4|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "BK=64,BV=64|warps=4|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": true
+      }
+    },
+    "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": {
+      "(8, 8, 256, 16, False, 'torch.bfloat16', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "status": "hit",
+        "config": "BK=64|warps=2|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "BK=64|warps=2|stages=2|ctas=1|maxnreg=None",
+        "equals_walk": false
+      },
+      "(8, 8, 256, 32, False, 'torch.bfloat16', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "status": "hit",
+        "config": "BK=64|warps=4|stages=2|ctas=1|maxnreg=None",
+        "walk_config": "BK=64|warps=4|stages=2|ctas=1|maxnreg=None",
+        "equals_walk": true
+      }
+    },
+    "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": {
+      "(8, 8, 256, 16, 'torch.bfloat16', 'torch.float32', 'torch.float32', 'torch.bfloat16')": {
+        "status": "hit",
+        "config": "BK=64|warps=1|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "BK=64|warps=1|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": true
+      }
+    },
+    "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": {
+      "(8, 16, False, False, 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.float32')": {
+        "status": "hit",
+        "config": "|warps=1|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "|warps=1|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": true
+      },
+      "(8, 32, False, False, 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.float32')": {
+        "status": "hit",
+        "config": "|warps=1|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "|warps=1|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": true
+      },
+      "(8, 64, False, False, 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.float32')": {
+        "status": "hit",
+        "config": "|warps=1|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "|warps=2|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": false
+      }
+    },
+    "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": {
+      "(8, 8, 256, 256, 16, 64, 64, False, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "status": "hit",
+        "config": "|warps=2|stages=2|ctas=1|maxnreg=None",
+        "walk_config": "|warps=4|stages=2|ctas=1|maxnreg=None",
+        "equals_walk": false
+      },
+      "(8, 8, 256, 256, 32, 64, 64, False, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "status": "hit",
+        "config": "|warps=4|stages=4|ctas=1|maxnreg=None",
+        "walk_config": "|warps=2|stages=2|ctas=1|maxnreg=None",
+        "equals_walk": false
+      },
+      "(8, 8, 256, 256, 64, 64, 64, False, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')": {
+        "status": "hit",
+        "config": "|warps=4|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "|warps=2|stages=3|ctas=1|maxnreg=None",
+        "equals_walk": false
+      }
+    },
+    "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": {
+      "(8, 32, False, 'torch.float32', 'torch.bfloat16')": {
+        "status": "hit",
+        "config": "DOT_PRECISION=ieee|warps=1|stages=2|ctas=1|maxnreg=None",
+        "walk_config": "DOT_PRECISION=ieee|warps=1|stages=5|ctas=1|maxnreg=None",
+        "equals_walk": false
+      }
+    },
+    "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": {
+      "(16, 'torch.float32', 'torch.bfloat16')": {
+        "status": "hit",
+        "config": "DOT_PRECISION=ieee|warps=1|stages=3|ctas=1|maxnreg=None",
+        "walk_config": "DOT_PRECISION=ieee|warps=1|stages=2|ctas=1|maxnreg=None",
+        "equals_walk": false
+      }
+    }
+  },
+  "pinned_disk": true,
+  "walk_s": 37.6,
+  "built_utc": "2026-10-16T10:14:18Z",
+  "snapshot": {
+    "fla.modules.l2norm.l2norm_fwd_kernel": [
+      [
+        "(256, 1, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BT": 16
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(256, 2, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BT": 16
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(256, 4, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BT": 8
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(256, 5, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BT": 16
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(256, 8, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BT": 8
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(256, 16, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BT": 8
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": [
+      [
+        "(8, 8, 256, 256, 16, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BV": 32
+          },
+          "num_warps": 4,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 256, 32, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BV": 32
+          },
+          "num_warps": 4,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 256, 64, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BV": 32
+          },
+          "num_warps": 4,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.common.chunk_o.chunk_fwd_kernel_o": [
+      [
+        "(8, 8, 256, 256, 16, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BK": 32,
+            "BV": 32
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 256, 32, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BK": 32,
+            "BV": 32
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 256, 64, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BK": 64,
+            "BV": 64
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": [
+      [
+        "(8, 8, 256, 16, False, 'torch.bfloat16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BK": 64
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 32, False, 'torch.bfloat16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BK": 64
+          },
+          "num_warps": 4,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": [
+      [
+        "(8, 8, 256, 16, 'torch.bfloat16', 'torch.float32', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BK": 64
+          },
+          "num_warps": 1,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": [
+      [
+        "(8, 16, False, False, 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {},
+          "num_warps": 1,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 32, False, False, 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {},
+          "num_warps": 1,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 64, False, False, 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {},
+          "num_warps": 1,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": [
+      [
+        "(8, 8, 256, 256, 16, 64, 64, False, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {},
+          "num_warps": 2,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 256, 32, 64, 64, False, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {},
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 256, 64, 64, 64, False, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {},
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": [
+      [
+        "(8, 32, False, 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "DOT_PRECISION": "ieee"
+          },
+          "num_warps": 1,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": [
+      [
+        "(16, 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "DOT_PRECISION": "ieee"
+          },
+          "num_warps": 1,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ]
+  },
+  "walk_snapshot": {
+    "fla.modules.l2norm.l2norm_fwd_kernel": [
+      [
+        "(256, 1, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BT": 16
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(256, 2, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BT": 16
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(256, 4, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BT": 8
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(256, 5, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BT": 16
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(256, 8, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BT": 8
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(256, 16, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BT": 8
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": [
+      [
+        "(8, 8, 256, 256, 16, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BV": 32
+          },
+          "num_warps": 4,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 256, 32, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BV": 32
+          },
+          "num_warps": 4,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 256, 64, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BV": 32
+          },
+          "num_warps": 4,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.common.chunk_o.chunk_fwd_kernel_o": [
+      [
+        "(8, 8, 256, 256, 16, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BK": 32,
+            "BV": 32
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 256, 32, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BK": 32,
+            "BV": 32
+          },
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 256, 64, True, 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BK": 64,
+            "BV": 64
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": [
+      [
+        "(8, 8, 256, 16, False, 'torch.bfloat16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BK": 64
+          },
+          "num_warps": 2,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 32, False, 'torch.bfloat16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BK": 64
+          },
+          "num_warps": 4,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": [
+      [
+        "(8, 8, 256, 16, 'torch.bfloat16', 'torch.float32', 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "BK": 64
+          },
+          "num_warps": 1,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": [
+      [
+        "(8, 16, False, False, 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {},
+          "num_warps": 1,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 32, False, False, 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {},
+          "num_warps": 1,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 64, False, False, 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {},
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": [
+      [
+        "(8, 8, 256, 256, 16, 64, 64, False, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {},
+          "num_warps": 4,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 256, 32, 64, 64, False, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {},
+          "num_warps": 2,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(8, 8, 256, 256, 64, 64, 64, False, 'torch.bfloat16', 'torch.bfloat16', 'torch.float32', 'torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16', 'torch.float32')",
+        {
+          "kwargs": {},
+          "num_warps": 2,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": [
+      [
+        "(8, 32, False, 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "DOT_PRECISION": "ieee"
+          },
+          "num_warps": 1,
+          "num_stages": 5,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": [
+      [
+        "(16, 'torch.float32', 'torch.bfloat16')",
+        {
+          "kwargs": {
+            "DOT_PRECISION": "ieee"
+          },
+          "num_warps": 1,
+          "num_stages": 2,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ]
+  },
+  "documentation": {
+    "n_autotuners_scanned": 190,
+    "library_prefixes": [
+      "fla."
+    ],
+    "fla_cache_mode_original": "disabled",
+    "used": {
+      "fla.modules.l2norm.l2norm_fwd_kernel": {
+        "class": "fla.ops.utils.cache.CachedAutotuner",
+        "keys": [
+          "D",
+          "NB"
+        ],
+        "n_configs": 25,
+        "wrappers": [],
+        "cache_results_library": true,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "fla.modules.l2norm.l2norm_fwd_kernel"
+        ]
+      },
+      "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64": {
+        "class": "fla.ops.utils.cache.CachedAutotuner",
+        "keys": [
+          "H",
+          "HV",
+          "K",
+          "V",
+          "BT",
+          "STATE_V_FIRST"
+        ],
+        "n_configs": 8,
+        "wrappers": [
+          "Heuristics"
+        ],
+        "cache_results_library": true,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "fla.ops.common.chunk_delta_h.chunk_gated_delta_rule_fwd_kernel_h_blockdim64"
+        ]
+      },
+      "fla.ops.common.chunk_o.chunk_fwd_kernel_o": {
+        "class": "fla.ops.utils.cache.CachedAutotuner",
+        "keys": [
+          "H",
+          "HV",
+          "K",
+          "V",
+          "BT",
+          "STATE_V_FIRST"
+        ],
+        "n_configs": 3,
+        "wrappers": [
+          "Heuristics"
+        ],
+        "cache_results_library": true,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "fla.ops.common.chunk_o.chunk_fwd_kernel_o"
+        ]
+      },
+      "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel": {
+        "class": "triton.runtime.autotuner.Autotuner",
+        "keys": [
+          "H",
+          "HV",
+          "K",
+          "BT",
+          "IS_VARLEN"
+        ],
+        "n_configs": 27,
+        "wrappers": [
+          "Heuristics"
+        ],
+        "cache_results_library": true,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "fla.ops.common.chunk_scaled_dot_kkt.chunk_scaled_dot_kkt_fwd_kernel"
+        ]
+      },
+      "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel": {
+        "class": "fla.ops.utils.cache.CachedAutotuner",
+        "keys": [
+          "H",
+          "HV",
+          "K",
+          "BC"
+        ],
+        "n_configs": 6,
+        "wrappers": [
+          "Heuristics"
+        ],
+        "cache_results_library": true,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "fla.ops.gated_delta_rule.chunk_fwd.chunk_gated_delta_rule_fwd_kkt_solve_kernel"
+        ]
+      },
+      "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel": {
+        "class": "fla.ops.utils.cache.CachedAutotuner",
+        "keys": [
+          "H",
+          "BT",
+          "IS_VARLEN",
+          "REVERSE"
+        ],
+        "n_configs": 4,
+        "wrappers": [
+          "Heuristics"
+        ],
+        "cache_results_library": true,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "fla.ops.gated_delta_rule.gate.gdn_gate_chunk_cumsum_scalar_kernel"
+        ]
+      },
+      "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel": {
+        "class": "fla.ops.utils.cache.CachedAutotuner",
+        "keys": [
+          "H",
+          "HV",
+          "K",
+          "V",
+          "BT",
+          "BK",
+          "BV",
+          "IS_VARLEN"
+        ],
+        "n_configs": 9,
+        "wrappers": [
+          "Heuristics"
+        ],
+        "cache_results_library": true,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "fla.ops.gated_delta_rule.wy_fast.recompute_w_u_fwd_kernel"
+        ]
+      },
+      "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel": {
+        "class": "triton.runtime.autotuner.Autotuner",
+        "keys": [
+          "H",
+          "BT",
+          "IS_VARLEN"
+        ],
+        "n_configs": 16,
+        "wrappers": [
+          "Heuristics"
+        ],
+        "cache_results_library": true,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "fla.ops.utils.solve_tril.merge_16x16_to_32x32_inverse_kernel"
+        ]
+      },
+      "fla.ops.utils.solve_tril.solve_tril_16x16_kernel": {
+        "class": "triton.runtime.autotuner.Autotuner",
+        "keys": [
+          "BT"
+        ],
+        "n_configs": 16,
+        "wrappers": [
+          "Heuristics"
+        ],
+        "cache_results_library": true,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "fla.ops.utils.solve_tril.solve_tril_16x16_kernel"
+        ]
+      }
+    },
+    "note": "autotuners with one configuration never tune and are not listed as used"
+  }
+}

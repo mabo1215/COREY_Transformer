@@ -1,0 +1,862 @@
+{
+  "signature": "04a2e64566227f45",
+  "kind": "mamba2",
+  "chunks": [
+    32,
+    64,
+    128,
+    256,
+    512
+  ],
+  "n_walk_shapes": 57,
+  "walk_max_shapes": null,
+  "origin": {
+    "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+      "(256, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 256
+      },
+      "(512, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 512
+      },
+      "(128, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 128
+      },
+      "(64, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 64
+      },
+      "(32, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 32
+      }
+    },
+    "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+      "(256, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 256
+      },
+      "(512, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 512
+      },
+      "(128, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 128
+      },
+      "(64, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 64
+      },
+      "(32, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 32
+      }
+    },
+    "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+      "(256, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 256
+      },
+      "(512, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 512
+      },
+      "(128, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 128
+      },
+      "(64, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 64
+      },
+      "(32, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 32
+      }
+    },
+    "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+      "(64, 128, 256, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 256
+      },
+      "(64, 128, 512, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 512
+      },
+      "(64, 128, 128, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 128
+      },
+      "(64, 128, 64, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 64
+      },
+      "(64, 128, 32, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 32
+      }
+    },
+    "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+      "(8192, 'torch.float32', 'torch.float16', 'torch.float32', 'torch.float32')": {
+        "call": "mamba2|b1|3edc70c17a55|layer0",
+        "plan_index": 0,
+        "batch": 1,
+        "L": 1024,
+        "chunk": 256
+      }
+    }
+  },
+  "disk": {},
+  "pinned_disk": false,
+  "walk_s": 20.0,
+  "built_utc": "2026-10-16T08:43:32Z",
+  "snapshot": {
+    "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": [
+      [
+        "(256, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(512, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(128, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(32, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": [
+      [
+        "(256, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 5,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(512, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 5,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(128, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 5,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 5,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(32, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 5,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": [
+      [
+        "(256, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_H": 2
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(512, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_H": 2
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(128, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_H": 1
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_H": 16
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(32, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_H": 2
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": [
+      [
+        "(64, 128, 256, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 128, 512, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 128, 128, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 128, 64, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 128, 32, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": [
+      [
+        "(8192, 'torch.float32', 'torch.float16', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE": 512
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ]
+  },
+  "walk_snapshot": {
+    "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": [
+      [
+        "(256, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(512, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(128, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(32, 128, False, 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": [
+      [
+        "(256, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 5,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(512, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 5,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(128, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 5,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 5,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(32, 64, 128, True, 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float16', 'torch.float16', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 5,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": [
+      [
+        "(256, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_H": 2
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(512, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_H": 2
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(128, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_H": 1
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_H": 16
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(32, 32, 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_H": 2
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": [
+      [
+        "(64, 128, 256, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 4,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 128, 512, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 128, 128, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 128, 64, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ],
+      [
+        "(64, 128, 32, 'torch.float16', 'torch.float16', 'torch.float32', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32
+          },
+          "num_warps": 2,
+          "num_stages": 4,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ],
+    "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": [
+      [
+        "(8192, 'torch.float32', 'torch.float16', 'torch.float32', 'torch.float32')",
+        {
+          "kwargs": {
+            "BLOCK_SIZE": 512
+          },
+          "num_warps": 4,
+          "num_stages": 3,
+          "num_ctas": 1,
+          "maxnreg": null
+        }
+      ]
+    ]
+  },
+  "documentation": {
+    "n_autotuners_scanned": 42,
+    "library_prefixes": [
+      "mamba_ssm.ops.triton"
+    ],
+    "fla_cache_mode_original": null,
+    "used": {
+      "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel": {
+        "class": "triton.runtime.autotuner.Autotuner",
+        "keys": [
+          "chunk_size",
+          "K",
+          "IS_CAUSAL"
+        ],
+        "n_configs": 9,
+        "wrappers": [],
+        "cache_results_library": false,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "mamba_ssm.ops.triton.ssd_bmm._bmm_chunk_fwd_kernel"
+        ]
+      },
+      "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel": {
+        "class": "triton.runtime.autotuner.Autotuner",
+        "keys": [
+          "chunk_size",
+          "hdim",
+          "dstate",
+          "IS_CAUSAL"
+        ],
+        "n_configs": 11,
+        "wrappers": [],
+        "cache_results_library": false,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "mamba_ssm.ops.triton.ssd_chunk_scan._chunk_scan_fwd_kernel"
+        ]
+      },
+      "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel": {
+        "class": "triton.runtime.autotuner.Autotuner",
+        "keys": [
+          "chunk_size",
+          "nheads"
+        ],
+        "n_configs": 7,
+        "wrappers": [],
+        "cache_results_library": false,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_cumsum_fwd_kernel"
+        ]
+      },
+      "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel": {
+        "class": "triton.runtime.autotuner.Autotuner",
+        "keys": [
+          "hdim",
+          "dstate",
+          "chunk_size"
+        ],
+        "n_configs": 9,
+        "wrappers": [],
+        "cache_results_library": false,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "mamba_ssm.ops.triton.ssd_chunk_state._chunk_state_fwd_kernel"
+        ]
+      },
+      "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel": {
+        "class": "triton.runtime.autotuner.Autotuner",
+        "keys": [
+          "dim"
+        ],
+        "n_configs": 6,
+        "wrappers": [],
+        "cache_results_library": false,
+        "early_config_prune": false,
+        "perf_model": false,
+        "reset_to_zero": [],
+        "restore_value": [],
+        "aliases": [
+          "mamba_ssm.ops.triton.ssd_state_passing._state_passing_fwd_kernel"
+        ]
+      }
+    },
+    "note": "autotuners with one configuration never tune and are not listed as used"
+  }
+}
