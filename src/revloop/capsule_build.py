@@ -573,6 +573,15 @@ PAPER_MAP = [
      "chunk tuned on another GPU)",
      "`cost_model.py`, `e5b_key_churn.py`, `e33_value_invariance_graph.py --analyze`, `taco_report_numbers.py`, "
      "`make_tables.py` (chunk_transfer)", "partly"),
+    ("tab:signature", "sec:res_key",
+     "unaligned lengths of the Triton scan: `cost_model_curves_{pro6000,vgpu3090}.csv`; headroom of a "
+     "length-bucket key: `e5b_{pro6000,vgpu3090}.json` (`by_key_mode`); production pipelines at lengths around "
+     "2048: `e33_value_graph_4c_e33align.json`; data type: `e33_value_graph_4c_e38_{float16,bfloat16}.json`; "
+     "share of CUDA-scan calls whose length the chunk divides: the lengths in `e8_refscan_vgpu3090.csv`; best "
+     "single chunk per batch and GPU: `taco_report_numbers.json` (device time), "
+     "`e2_mamba1_{pro6000,vgpu3090,h800}.csv` (launch-inclusive, chunk tuned on another GPU)",
+     "`cost_model.py`, `e5b_key_churn.py`, `e33_value_invariance_graph.py --analyze`, `taco_report_numbers.py`, "
+     "`make_tables.py` (chunk_transfer)", "partly"),
     ("fig:mechanism", "sec:res_regime",
      "`e35_breakdown_4c_e35.json` (profiler time, grid and registers of every kernel; plotted values: "
      "`taco_r2_mechanism.json`)",
@@ -624,6 +633,11 @@ PAPER_MAP = [
      "`taco_r2_stats_m5a.json` (`table_map`)",
      "`taco_r2_untuned_baselines.py` (reads the per-call choices of `taco_r2_baselines_m4.json`), "
      "`taco_r2_stats_m5a_noise_floors.py`", "no"),
+    ("tab:tp", "sec:res_stress",
+     "pooled regrets over the shard shapes with shape-bootstrap intervals: `taco_report_numbers.json` "
+     "(`M7a_tensor_parallel`); per-shard values and the CUDA-scan rows: `e12_analysis_{vgpu3090,h800}.json` "
+     "(from `e12_tp_widths_{vgpu3090,h800}.jsonl`); round-to-round noise: `taco_r2_stats_m5b.json`",
+     "`taco_report_numbers.py`, `e12_analysis.py`, `taco_r2_stats_m5b_tp_noise.py`", "partly"),
     ("tab:reference", "sec:res_stress",
      "`e8_analysis_vgpu3090.json`, `cost_model_refscan_vgpu3090.json`, `e3_mamba1_vgpu3090_{1p4b,2p8b}_r3.json`, "
      "`cost_model_transfer_e2_mamba1_vgpu3090_{1p4b,2p8b}_r3.json`, "
@@ -665,6 +679,10 @@ PAPER_MAP = [
      "`kernel_stats.py` (compiler), `cost_model.py`, `taco_r2_latency_form.py`, "
      "`taco_r2_cost_model_protocols.py`, `taco_model_baselines.py`, `e5b_key_churn.py`, `serving_key_churn.py`",
      "partly"),
+    ("S-sec:supp_engines", None,
+     "capture time and graph-pool memory of the whole-step captures: "
+     "`e32_model_graph_4c_e32s{1,2}_{ssd370m,gdn1p4b}.jsonl` (`capture_s`, `graph_reserved_gb`); otherwise none "
+     "(discussion of engine documentation)", "`e32_model_graph_prefill.py` (logged at capture, GPU)", "-"),
     ("tab:recipe", "sec:discussion", "none (recipe derived from the results above)", "-", "-"),
     ("sec:discussion", None,
      "capture time and graph-pool memory of the whole-step captures: "
@@ -718,7 +736,7 @@ PAPER_MAP = [
      "`kernel_stats.py` (compiler), `make_tables.py` (model_compile)", "yes (table)"),
     ("S-tab:supp_model_ablation", "S-sec:supp_cost_model", "`cost_model_{pro6000,vgpu3090}.json`",
      "`cost_model.py --ablation`, `make_tables.py` (model_ablation)", "yes"),
-    ("S-fig:cost_model", "S-sec:supp_cost_model", "`cost_model_curves_{pro6000,vgpu3090}.csv`",
+    ("fig:cost_model", "sec:res_model", "`cost_model_curves_{pro6000,vgpu3090}.csv`",
      "`cost_model.py`, `make_figures.py`", "yes"),
     ("S-tab:supp_params_ci", "S-sec:supp_cost_model",
      "`taco_model_baselines.json` (`M3c`: bootstrap over the calibration shapes) of the fits "
@@ -737,7 +755,10 @@ PAPER_MAP = [
      "`refscan_facts.py` (cuobjdump, nvcc)", "partly"),
     ("S-sec:supp_cost_model", None,
      "*Fit and validation*: multi-start, least-squares and full-protocol fits `taco_model_baselines.json` "
-     "(`M3c`), `taco_r2_baselines_m4.json` (`M4c`); rank correlation, top-k, left-out calibration keys, "
+     "(`M3c`, also the fit-sensitivity paragraph), `taco_r2_baselines_m4.json` (`M4c`, `M4d`); calibration on the 72 "
+     "static re-measurements alone: `taco_model_baselines.json` (`M5b`); device-time left-out calibration keys: "
+     "`cost_model_{pro6000_r4spin,vgpu3090_r3spin,h800_r3spin}.json` (`V2_leave_one_key_out`); rank correlation, "
+     "top-k, left-out calibration keys, "
      "auto-tuning of the launch space and unaligned calls: `cost_model_{pro6000,vgpu3090}.json`; three-parameter "
      "restriction: `cost_model_baselines_r4_summary.json`. *Calibration-only selectors*: "
      "`taco_r2_baselines_m4.json` (`M4b`). *TFLA's runtime expression*: `cost_model_baselines_r4_summary.json`. "
@@ -788,7 +809,10 @@ PAPER_MAP = [
      "timing*: `e22_graph_analysis_vgpu3090_rounds3.json`; work-term model on the RTX PRO 6000 replays: "
      "`taco_e26_analysis_pro6000.json`. *Autotuner state of the production kernels*: "
      "`e30_autotune_state_4c_e30.json` (from `e30_autotune_state_4c_e30_<model>.jsonl` and `_pinned.json`); "
-     "second session: `taco_r2_sessions.json`, `e30_autotune_state_4c_e30s2_<model>{.jsonl,_pinned.json}`",
+     "second session: `taco_r2_sessions.json`, `e30_autotune_state_4c_e30s2_<model>{.jsonl,_pinned.json}`. "
+     "*Cross-board check*: `e30_autotune_state_4c_e30.json` (stratified subset against the 48 GB board), second "
+     "session `taco_r2_sessions.json`. *Per-batch transfer to 1.4B and 2.8B*: "
+     "`cost_model_transfer_e2_mamba1_vgpu3090_{1p4b,2p8b}_r3.json` (`by_batch`)",
      "`r4_rounds_analysis.py`, `e20_cold_analysis.py`, `e22_graph_analysis.py --rounds3`, `taco_e26_analysis.py`, "
      "`e30_autotune_state.py --analyze`, `taco_r2_sessions.py`", "partly"),
     ("S-tab:supp_alignment", "S-sec:supp_graph_values",
