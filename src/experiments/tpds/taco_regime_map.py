@@ -103,6 +103,13 @@ def figure(res: dict, out: Path) -> None:
             axes[0, j].plot(x, y, **kw)
             axes[1, j].plot(x, z, **kw)
         axes[0, j].set_title(TITLES.get(panel, panel), loc="left")
+        # calls per bin (the series of a panel time the same captured calls; take the first plotted one)
+        first = next((res["panels"][panel].get(lb) for lb, _ in series if res["panels"][panel].get(lb)), None)
+        if first:
+            trans = matplotlib.transforms.blended_transform_factory(axes[0, j].transData, axes[0, j].transAxes)
+            for q, bn in enumerate(first["bins"]):        # staggered on two rows so that neighbours do not overlap
+                axes[0, j].text(np.sqrt(bn["tokens_lo"] * bn["tokens_hi"]), 0.98 - 0.075 * (q % 2), str(bn["n"]),
+                                transform=trans, ha="center", va="top", fontsize=5, color="0.35")
         for ax in axes[:, j]:
             ax.set_xscale("log", base=2)
             ax.set_xticks(ticks)
@@ -110,6 +117,8 @@ def figure(res: dict, out: Path) -> None:
             ax.minorticks_off()
             ax.grid(True, which="major", axis="y", lw=0.4, alpha=0.5)
         axes[1, j].set_xlabel("tokens per call")
+    lo, hi = axes[0, 0].get_ylim()
+    axes[0, 0].set_ylim(lo, hi + 0.2 * (hi - lo))      # room above the curves for the call counts
     axes[0, 0].set_ylabel("default regret\nper call (%)")
     axes[1, 0].set_ylabel("share of scan\ntime lost (%)")
     h, lab = [], []
