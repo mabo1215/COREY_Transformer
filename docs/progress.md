@@ -197,7 +197,7 @@
   - 每项核对：tar 内文件数、目录数与原目录一致；逐文件"大小 + 路径"清单的摘要一致；均匀抽样 262 个文件的 md5 全部一致。核对全部通过后才删除原目录。
   - 结果：inode 使用 176,914（89%）→ 61,030（31%），空出约 11.6 万个；容量仍为 440/1000 GB。恢复方法：在原父目录执行 `tar -xf <名>.tar`。BodhiNet 的脚本引用这些路径，运行前需先恢复。
 - 按作者指示关闭 vGPU 3090（`shutdown -h now`，ssh 已拒绝连接），台账主机状态 off。
-- 推送新版 capsule 到 Code Ocean：本地已重建、扫描通过并以匿名身份提交（capsule 提交 `65f9aa0`，只改了 README 对照表和 regime map 脚本），但推送被拒（`unauthorized`），见下方遗留问题 15。主仓库里的 capsule 指针仍指向已推送的 `086b212`。
+- 推送新版 capsule 到 Code Ocean：本地已重建、扫描通过并以匿名身份提交（capsule 提交 `65f9aa0`，只改了 README 对照表和 regime map 脚本），但推送被拒（`unauthorized`；凭据有效、读取正常，只有写入被拒，最可能是发布处理期间 capsule 被锁定），见下方遗留问题 15。主仓库里的 capsule 指针仍指向已推送的 `086b212`。
 
 ## 2026-10-18 taco-r2：M8d、N34 完成（正文移出部分内容到补充材料腾出篇幅）
 
@@ -992,9 +992,9 @@ AAAI-27 Submission #3464（COREY）已收到最终决定：Phase 1 拒稿，未�
    1. 这个本地构建是否只给 CUDA selective scan 加了运行时 chunk 入口（SSD 的 Triton kernel 未改）？如果是，回复"是"，我写进补充材料表 S2 的标题；如果不是或不确定，回复"不确定"，我写"本地构建，改动未记录"。
    A:  是，只加了运行时 chunk 入口（2026-10-17；已消费：写入补充材料表 S2 标题，M5g 完成）
 
-15. 【Code Ocean 推送凭据】2026-10-18 推送新版 capsule 时 Code Ocean 返回 `unauthorized`（10-17 用同一方式推送成功）。`C:\source\.env` 的 CODE OCEAN 块第 3 行（访问令牌）现在只有 12 个字符，可能被换成了密码，或令牌已被吊销。
+15. 【Code Ocean 推送被拒】2026-10-18 推送新版 capsule（`65f9aa0`）时 Code Ocean 返回 `remote: unauthorized`；VS Code 的 git 日志里也是同一错误。复查结果：`.env` 里的 CODE OCEAN 凭据是有效的——用它读取远端（`git ls-remote`）成功，不带凭据则被拒，所以不是令牌失效，原先"换令牌"的判断是错的。只有写入被拒，最可能的原因是 10-17 在网页上发起发布后，capsule 在发布处理期间被锁定为只读（2026-09-27 发布后也遇到过"发布后不能再提交"）。VS Code 日志里的错误也是服务器拒绝写入，不是本机配置问题。
    需要你提供/决策：
-   1. 在 Code Ocean 网页（Account → Access Tokens）新建一个带 git 写权限的访问令牌，替换 `C:\source\.env` CODE OCEAN 块的第 3 行，然后告诉我"已换令牌"，我再推送并请你发布；或者回复"不推送"，保持已发布的旧版（论文不链接 Code Ocean，投稿用的是 `submit/` 里的匿名代码包，已是最新）。
+   1. 在 Code Ocean 网页上看这个 capsule 是否还处于发布处理/锁定状态。等它恢复可编辑后回复"可以推送"，我再推送，推送后你需要再发布一次；或者回复"不推送"，保持 10-17 已发布的版本（论文不链接 Code Ocean，投稿用的是 `submit/` 里的匿名代码包，已是最新；未推送的提交只改了 README 对照表和 regime map 脚本的标注）。
    A:
 
 需要你操作：
