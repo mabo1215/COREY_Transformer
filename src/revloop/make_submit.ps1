@@ -3,14 +3,14 @@
 #   powershell -ExecutionPolicy Bypass -File src\revloop\make_submit.ps1 [-Build] [-Verify] [-NoArchive] [-OutDir <dir>]
 #
 #   -Build      run paper\build.bat first (otherwise the existing paper\build\ outputs are used)
-#   -Verify     extract the two LaTeX zips into a temporary directory, compile them standalone and
-#               report pages, undefined references and errors
+#   -Verify     extract LaTeX_Source.zip into a temporary directory, compile its two folders standalone
+#               and report pages, undefined references and errors
 #   -NoArchive  replace the package in place instead of moving it to <package>\old\<timestamp>\
 #   -OutDir     assemble the package in this directory instead of submit\ (e.g. for a test build)
 #   -Artifact   folder of the anonymized code to archive (default codeocean\code; e.g. the code\ folder
 #               written by capsule_build.py --out-dir on a machine without the capsule submodule)
 #
-# Layout (one folder per upload file type, plus a zip of each LaTeX folder):
+# Layout (one folder per upload file type; the two LaTeX folders are also zipped together):
 #   main.pdf, appendix.pdf                    compiled main paper and Supplementary Material
 #   MainManuscript\                           main.tex, ref.bib, main.bbl, the document class and
 #                                             bibliography style that main.tex names, figs\,
@@ -18,9 +18,13 @@
 #   LaTeXSupplementaryFile\                   appendix_only.tex (standalone wrapper), appendix.tex,
 #                                             appendix_only.bbl, figs\, build\main.aux (M- references)
 #   Image\                                    every figure file of the main paper and the supplement
-#   SupplementaryMaterialForReview\           Supplementary_Material.pdf and Anonymized_Artifact.zip (the
-#                                             anonymized code and result archive: codeocean\code as last
-#                                             built by capsule_build.py, which scans it for identifying text)
+#   SourceCode\                               the anonymized code and result files (codeocean\code as last
+#                                             built by capsule_build.py, which scans it for identifying
+#                                             text, or the folder given with -Artifact)
+#   SupplementaryMaterialForReview\           Supplementary_Material.pdf and Anonymized_Artifact.zip
+#                                             (an archive of SourceCode\)
+#   LaTeX_Source.zip                          MainManuscript\ and LaTeXSupplementaryFile\ in one archive
+#   Image.zip                                 the figures
 #   cover_letter.txt, Title_Page.docx         from docs\ (they carry author names: editor-only uploads)
 # Figures: only the files named by \includegraphics commands that are not commented out in main.tex
 # and appendix.tex. A figure in paper\figs\profile\ (author photos) or in paper\backup\, legacy\ or
@@ -33,7 +37,7 @@ $Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $paper = Join-Path $Root 'paper'
 if ($OutDir) { $sub = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutDir) }
 else { $sub = Join-Path $Root 'submit' }
-$managed = 'MainManuscript', 'LaTeXSupplementaryFile', 'Image', 'SupplementaryMaterialForReview'
+$managed = 'MainManuscript', 'LaTeXSupplementaryFile', 'Image', 'SupplementaryMaterialForReview', 'SourceCode'
 # folders of paper\ that must never reach an upload (author photos, earlier venues' material)
 $forbidden = 'profile', 'backup', 'legacy', 'template'
 
@@ -53,16 +57,20 @@ if ($stale) { Write-Warning ("sources newer than paper\main.pdf: " + ($stale.Nam
 # zip with forward-slash entry names (Compress-Archive of Windows PowerShell 5.1 writes backslashes,
 # which other systems extract as flat file names)
 Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
-function New-PortableZip($dir, $zip) {
+# -AsFolder keeps each folder's name as the top-level entry, so several folders can share one archive
+function New-PortableZip($dirs, $zip, [switch]$AsFolder) {
   if (Test-Path $zip) { Remove-Item $zip -Force }
-  $base = (Resolve-Path $dir).Path.TrimEnd('\')
   $fs = [IO.File]::Open($zip, [IO.FileMode]::CreateNew)
   $za = New-Object IO.Compression.ZipArchive($fs, [IO.Compression.ZipArchiveMode]::Create)
   try {
-    foreach ($f in Get-ChildItem $dir -Recurse -File) {
-      $name = $f.FullName.Substring($base.Length + 1).Replace('\', '/')
-      [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($za, $f.FullName, $name,
-        [IO.Compression.CompressionLevel]::Optimal)
+    foreach ($dir in @($dirs)) {
+      $base = (Resolve-Path $dir).Path.TrimEnd('\')
+      if ($AsFolder) { $base = (Split-Path $base -Parent).TrimEnd('\') }
+      foreach ($f in Get-ChildItem $dir -Recurse -File) {
+        $name = $f.FullName.Substring($base.Length + 1).Replace('\', '/')
+        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($za, $f.FullName, $name,
+          [IO.Compression.CompressionLevel]::Optimal)
+      }
     }
   } finally { $za.Dispose(); $fs.Dispose() }
 }
@@ -165,8 +173,11 @@ Copy-Item (Join-Path $paper 'appendix.pdf') (Join-Path $r 'Supplementary_Materia
 if ($Artifact) { $artifact = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Artifact) }
 else { $artifact = Join-Path $Root 'codeocean\code' }
 if (Test-Path (Join-Path $artifact 'README.md')) {
-  New-PortableZip $artifact (Join-Path $r 'Anonymized_Artifact.zip')
-} else { Write-Warning 'codeocean\code not built: run python src\revloop\capsule_build.py first; no artifact archive packaged' }
+  $c = Join-Path $sub 'SourceCode'
+  New-Item -ItemType Directory -Force $c | Out-Null
+  Copy-Item (Join-Path $artifact '*') $c -Recurse
+  New-PortableZip $c (Join-Path $r 'Anonymized_Artifact.zip')
+} else { Write-Warning 'codeocean\code not built: run python src\revloop\capsule_build.py first; no source code packaged' }
 
 # 6. top-level PDFs, cover letter, title page
 Copy-Item (Join-Path $paper 'main.pdf'), (Join-Path $paper 'appendix.pdf') $sub
@@ -212,11 +223,14 @@ UPLOAD MAP (ACM TACO, double-anonymous review)
 Main document (reviewers see it)       main.pdf
 Supplementary material for review      SupplementaryMaterialForReview\Supplementary_Material.pdf
                                        SupplementaryMaterialForReview\Anonymized_Artifact.zip
-                                       (code, result files and scripts; anonymized)
+                                       (code, result files and scripts; anonymized; the same
+                                       files as the SourceCode\ folder)
 Cover letter (editor only)             cover_letter.txt  - contains author names and the
                                        confidential note on the related preprint
 Title page (editor only)               Title_Page.docx   - contains author names
-LaTeX sources (only when requested)    MainManuscript.zip, LaTeXSupplementaryFile.zip, Image.zip
+LaTeX sources (only when requested)    LaTeX_Source.zip (MainManuscript\ and
+                                       LaTeXSupplementaryFile\, each compiles on its own),
+                                       Image.zip
 
 Never upload anything from old\ or the whole paper folder.
 "@ | Out-File -Encoding ascii (Join-Path $sub 'UPLOAD.txt')
@@ -233,10 +247,10 @@ foreach ($f in Get-ChildItem $managed.ForEach({ Join-Path $sub $_ }) -Recurse -F
   if ($parts | Where-Object { $forbidden -contains $_.ToLower() }) { throw "packaged file from a forbidden folder: $($f.FullName)" }
 }
 
-# 9. zips for upload
-foreach ($d in 'MainManuscript', 'LaTeXSupplementaryFile', 'Image') {
-  New-PortableZip (Join-Path $sub $d) (Join-Path $sub "$d.zip")
-}
+# 9. zips for upload: both LaTeX folders in one archive (top-level folders kept), the figures in another
+New-PortableZip @((Join-Path $sub 'MainManuscript'), (Join-Path $sub 'LaTeXSupplementaryFile')) `
+  (Join-Path $sub 'LaTeX_Source.zip') -AsFolder
+New-PortableZip (Join-Path $sub 'Image') (Join-Path $sub 'Image.zip')
 
 # 10. checks: freshness, identifying strings, PDF info dictionary
 $pairs = @(('main.tex', 'MainManuscript\main.tex'), ('appendix.tex', 'LaTeXSupplementaryFile\appendix.tex'),
@@ -256,9 +270,8 @@ foreach ($f in 'main.pdf', 'appendix.pdf') {
 # 11. optional standalone compile of the zips
 if ($Verify) {
   $tmp = Join-Path ([IO.Path]::GetTempPath()) ('submit_verify_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
-  Expand-Archive (Join-Path $sub 'MainManuscript.zip') (Join-Path $tmp 'main')
-  Expand-Archive (Join-Path $sub 'LaTeXSupplementaryFile.zip') (Join-Path $tmp 'supp')
-  foreach ($job in @(@('main', 'main'), @('supp', 'appendix_only'))) {
+  Expand-Archive (Join-Path $sub 'LaTeX_Source.zip') $tmp
+  foreach ($job in @(@('MainManuscript', 'main'), @('LaTeXSupplementaryFile', 'appendix_only'))) {
     Push-Location (Join-Path $tmp $job[0])
     pdflatex -interaction=nonstopmode "$($job[1]).tex" | Out-Null
     bibtex $job[1] | Out-Null

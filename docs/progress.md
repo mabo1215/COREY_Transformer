@@ -194,6 +194,7 @@
 - 匿名代码包：本机没有 Code Ocean 子模块，改用 `capsule_build.py --out-dir`（只读，不提交、不推送）在临时目录构建，匿名扫描通过；`make_submit.ps1` 新增 `-Artifact` 参数指定代码目录。
 - 打包与校验（`make_submit.ps1 -Verify`）：两个 LaTeX zip 单独编译各 25/27 页、0 未定义引用、0 错误；PDF 元数据无作者（只有标题）；投稿信不提 TPDS 或拒稿。唯一的"识别文本"警告是第三人称引用的预印本 `corey2026preprint`（作者 10-15 的决定），参考文献列表里会显示作者姓名。
 - 上传清单见 `submit/UPLOAD.txt`：评审可见 `main.pdf`、`SupplementaryMaterialForReview/Supplementary_Material.pdf` 与 `Anonymized_Artifact.zip`（约 53 MB）；只给编辑 `cover_letter.txt`、`Title_Page.docx`；LaTeX 源码 zip 仅在系统要求时上传。
+- 作者追加要求：两个 LaTeX 包合并为一个 `submit/LaTeX_Source.zip`（内含 `MainManuscript/` 与 `LaTeXSupplementaryFile/` 两个文件夹，各自可单独编译，校验 25/27 页、0 未定义引用、0 错误；原来分开的两个 zip 不再生成）；提交用代码放到 `submit/SourceCode/`（匿名代码与结果文件 446 个，与 `Anonymized_Artifact.zip` 内容相同；扫描无身份信息，唯一匹配是 Nsight 的错误码与指标名）。`make_submit.ps1` 已相应修改。
 
 ## 2026-10-18（续）共享网盘 inode 清理（遗留问题 7，作者答复 a b c）与 vGPU 关机
 
