@@ -187,6 +187,14 @@
 （无进行中或未完成的实验）
 <!-- revloop:status:end -->
 
+## 2026-10-20 投稿包 `submit/` 按 ACM TACO 在本机重建（作者指示「把准备投稿的放到 submit/ 下面」）
+
+- 本机的 `submit/` 仍是 10-13 的 TPDS（IEEEtran）旧包（`submit/` 不入 git，10-17 的 TACO 包建在另一台机器上）；旧包整体移到 `submit/old/2026-10-20_115930/`，未删除。
+- 重新编译论文（`paper\build.bat`）：正文 25 页（非参考文献正文在 20 页内，参考文献标题在第 21 页），补充材料 27 页；0 未定义引用、0 错误。补充材料表 S（测量协议表）的脚注行超宽 6.9 pt，拆成两行后 0 溢出（paper `e29501c`）。
+- 匿名代码包：本机没有 Code Ocean 子模块，改用 `capsule_build.py --out-dir`（只读，不提交、不推送）在临时目录构建，匿名扫描通过；`make_submit.ps1` 新增 `-Artifact` 参数指定代码目录。
+- 打包与校验（`make_submit.ps1 -Verify`）：两个 LaTeX zip 单独编译各 25/27 页、0 未定义引用、0 错误；PDF 元数据无作者（只有标题）；投稿信不提 TPDS 或拒稿。唯一的"识别文本"警告是第三人称引用的预印本 `corey2026preprint`（作者 10-15 的决定），参考文献列表里会显示作者姓名。
+- 上传清单见 `submit/UPLOAD.txt`：评审可见 `main.pdf`、`SupplementaryMaterialForReview/Supplementary_Material.pdf` 与 `Anonymized_Artifact.zip`（约 53 MB）；只给编辑 `cover_letter.txt`、`Title_Page.docx`；LaTeX 源码 zip 仅在系统要求时上传。
+
 ## 2026-10-18（续）共享网盘 inode 清理（遗留问题 7，作者答复 a b c）与 vGPU 关机
 
 ### 已全部修改

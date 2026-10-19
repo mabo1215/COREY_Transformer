@@ -7,6 +7,8 @@
 #               report pages, undefined references and errors
 #   -NoArchive  replace the package in place instead of moving it to <package>\old\<timestamp>\
 #   -OutDir     assemble the package in this directory instead of submit\ (e.g. for a test build)
+#   -Artifact   folder of the anonymized code to archive (default codeocean\code; e.g. the code\ folder
+#               written by capsule_build.py --out-dir on a machine without the capsule submodule)
 #
 # Layout (one folder per upload file type, plus a zip of each LaTeX folder):
 #   main.pdf, appendix.pdf                    compiled main paper and Supplementary Material
@@ -25,7 +27,7 @@
 # template\ (material of earlier venues) stops the script, and at the end every packaged figure is
 # checked against the included ones. Nothing else from paper\ is copied.
 # submit\ is git-ignored. Earlier packages are kept under submit\old\.
-param([switch]$Build, [switch]$Verify, [switch]$NoArchive, [string]$OutDir = '')
+param([switch]$Build, [switch]$Verify, [switch]$NoArchive, [string]$OutDir = '', [string]$Artifact = '')
 $ErrorActionPreference = 'Stop'
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $paper = Join-Path $Root 'paper'
@@ -160,7 +162,8 @@ foreach ($f in ($mainFigs + $suppFigs | Sort-Object -Unique)) { Copy-Item (Join-
 $r = Join-Path $sub 'SupplementaryMaterialForReview'
 New-Item -ItemType Directory -Force $r | Out-Null
 Copy-Item (Join-Path $paper 'appendix.pdf') (Join-Path $r 'Supplementary_Material.pdf')
-$artifact = Join-Path $Root 'codeocean\code'
+if ($Artifact) { $artifact = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Artifact) }
+else { $artifact = Join-Path $Root 'codeocean\code' }
 if (Test-Path (Join-Path $artifact 'README.md')) {
   New-PortableZip $artifact (Join-Path $r 'Anonymized_Artifact.zip')
 } else { Write-Warning 'codeocean\code not built: run python src\revloop\capsule_build.py first; no artifact archive packaged' }
