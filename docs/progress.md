@@ -1010,6 +1010,8 @@ AAAI-27 Submission #3464（COREY）已收到最终决定：Phase 1 拒稿，未�
 16. 【TACO 投稿：Cover Letter 框里的冲突清单】TACO 作者指南要求在投稿系统的 Cover Letter 框中逐行列出：(a) 与任一作者有利益冲突的 TACO 副主编（Associate Editors）；(b) 所有作者过去 5 年的合作者及其单位；(c) 各作者毕业和任职的大学、企业，以及导师姓名。现有 `docs/cover_letter.txt` 没有这一部分，这些信息只有作者知道，我不能代填。
    需要你提供/决策：
    1. 请提供 (a)(b)(c) 三份清单（每行一条），或回复"我自己在投稿系统里填"。提供后我把它加到 `docs/cover_letter.txt` 末尾并重建 `submit/`。
+   A: (a) 所有 TACO 副主编都没有冲突；(b) 过去 5 年合作者加 Kun Liu（河北工业大学）；(c) Bo Ma 毕业于 AUT，Weiqi Yan 毕业于中科院，Jinsong Wu 毕业于加拿大皇后大学（2026-10-20；已写入 `docs/cover_letter.txt` 的 "List of conflicts" 一节，`submit/` 已重建）
+   3. 指南还要求列出各作者的导师姓名，(c) 的答复里没有。投稿信里暂留醒目占位 `[ADVISER NAME REQUIRED]`（3 处），请提供 Bo Ma、Weiqi Yan、Jinsong Wu 各自的导师姓名（某位作者没有导师可写"无"），我替换后重建 `submit/`。
    A:
    2. `Title_Page.docx` 含作者姓名；TACO 指南没有要求标题页，作者信息填在投稿系统的元数据里。是否不再上传标题页？（推荐：不上传，除非投稿系统有"仅编辑可见"的标题页文件类型）
    A:
