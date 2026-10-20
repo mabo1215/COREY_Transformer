@@ -1014,8 +1014,8 @@ AAAI-27 Submission #3464（COREY）已收到最终决定：Phase 1 拒稿，未�
    3. 指南还要求列出各作者的导师姓名，(c) 的答复里没有。投稿信里暂留醒目占位 `[ADVISER NAME REQUIRED]`（3 处），请提供 Bo Ma、Weiqi Yan、Jinsong Wu 各自的导师姓名（某位作者没有导师可写"无"），我替换后重建 `submit/`。
    A: Weiqi Yan 博导 Hui Zhang；Bo Ma 博导 Weiqi Yan、Jinsong Wu；Jinsong Wu 博导 Steven D. Blostein 教授（2026-10-20；已消费：占位已替换，`submit/` 已重建）
    2. `Title_Page.docx` 含作者姓名；TACO 指南没有要求标题页，作者信息填在投稿系统的元数据里。是否不再上传标题页？（推荐：不上传，除非投稿系统有"仅编辑可见"的标题页文件类型）
-   A:
-
+   A: "仅编辑可见"的标题页文件类型
+ 
 需要你操作：
 - 【E28 停止】已完成：作者 2026-10-17 在 4c 上执行 `screen -S taco-4c -X quit`，返回 "No screen session found"（该 lane 已自行结束，4c 上无残留任务）。
 - 【Code Ocean capsule】已完成：作者 2026-10-17 已发布新版本，页面无作者名。
