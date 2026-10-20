@@ -177,6 +177,7 @@ if (Test-Path (Join-Path $artifact 'README.md')) {
   New-Item -ItemType Directory -Force $c | Out-Null
   Copy-Item (Join-Path $artifact '*') $c -Recurse
   New-PortableZip $c (Join-Path $r 'Anonymized_Artifact.zip')
+  New-PortableZip $c (Join-Path $sub 'SourceCode.zip') -AsFolder
 } else { Write-Warning 'codeocean\code not built: run python src\revloop\capsule_build.py first; no source code packaged' }
 
 # 6. top-level PDFs, cover letter, title page
@@ -224,7 +225,7 @@ Main document (reviewers see it)       main.pdf
 Supplementary material for review      SupplementaryMaterialForReview\Supplementary_Material.pdf
                                        SupplementaryMaterialForReview\Anonymized_Artifact.zip
                                        (code, result files and scripts; anonymized; the same
-                                       files as the SourceCode\ folder)
+                                       files as the SourceCode\ folder and SourceCode.zip)
 Cover letter (editor only)             cover_letter.txt  - contains author names and the
                                        confidential note on the related preprint
 Title page (editor only)               Title_Page.docx   - contains author names
@@ -260,7 +261,7 @@ foreach ($p in $pairs) {
   if ((Get-FileHash (Join-Path $paper $p[0])).Hash -ne (Get-FileHash (Join-Path $sub $p[1])).Hash) { Write-Warning "$($p[1]) differs from paper\$($p[0])" }
 }
 $hits = Get-ChildItem $managed.ForEach({ Join-Path $sub $_ }) -Recurse -File -Include *.tex, *.bib, *.bbl, *.aux, *.txt |
-  Select-String -Pattern 'corey|mabo|bobsteam|autodl|/root/|C:\\source|\\Users\\|codeocean|tpds|vgpu|nza1|figs[\\/]profile'
+  Select-String -Pattern 'corey|mabo|bobsteam|autodl|/root/|C:\\source|\\Users\\|codeocean|tpds|vgpu|nza1|figs[\\/]profile|taco-r\d'
 foreach ($h in $hits) { Write-Warning ("identifying text: {0}:{1}: {2}" -f $h.Path.Substring($sub.Length + 1), $h.LineNumber, $h.Line.Trim()) }
 foreach ($f in 'main.pdf', 'appendix.pdf') {
   $bytes = [IO.File]::ReadAllText((Join-Path $sub $f), [Text.Encoding]::GetEncoding(28591))

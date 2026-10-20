@@ -195,6 +195,8 @@
 - 打包与校验（`make_submit.ps1 -Verify`）：两个 LaTeX zip 单独编译各 25/27 页、0 未定义引用、0 错误；PDF 元数据无作者（只有标题）；投稿信不提 TPDS 或拒稿。唯一的"识别文本"警告是第三人称引用的预印本 `corey2026preprint`（作者 10-15 的决定），参考文献列表里会显示作者姓名。
 - 上传清单见 `submit/UPLOAD.txt`：评审可见 `main.pdf`、`SupplementaryMaterialForReview/Supplementary_Material.pdf` 与 `Anonymized_Artifact.zip`（约 53 MB）；只给编辑 `cover_letter.txt`、`Title_Page.docx`；LaTeX 源码 zip 仅在系统要求时上传。
 - 作者追加要求：两个 LaTeX 包合并为一个 `submit/LaTeX_Source.zip`（内含 `MainManuscript/` 与 `LaTeXSupplementaryFile/` 两个文件夹，各自可单独编译，校验 25/27 页、0 未定义引用、0 错误；原来分开的两个 zip 不再生成）；提交用代码放到 `submit/SourceCode/`（匿名代码与结果文件 446 个，与 `Anonymized_Artifact.zip` 内容相同；扫描无身份信息，唯一匹配是 Nsight 的错误码与指标名）。`make_submit.ps1` 已相应修改。
+- 匿名性核查（作者要求）：`submit/SourceCode/`（446 个纯文本文件）无姓名、单位、邮箱、用户路径、主机名（只剩占位名 `gpu-host`、`workstation`）、git hash、旧项目名与旧投稿刊物名，已打包为 `submit/SourceCode.zip`（51 MB，与 `Anonymized_Artifact.zip` 内容相同）；`main.pdf`、`appendix.pdf` 的 Info 与 XMP 元数据作者均为 "Anonymous Author(s)"，正文与补充材料文本无作者、单位、资助、致谢或第一人称自引，唯一的作者姓名是第三人称引用的预印本参考文献条目；`LaTeX_Source.zip` 里 `\author`/`\affiliation` 均为 Anonymous，无邮箱、ORCID、致谢、资助。发现 `ref.bib` 里 3 行注释写着 `taco-r2 (M9a…)`（内部评审轮次，不涉及身份，但可能让审稿人误以为是修订稿），已改为中性注释（paper 提交），并把 `taco-r\d` 加入打包脚本的检查；重建后两个 LaTeX 包单独编译仍为 25/27 页、0 未定义引用、0 错误。
+- 对照 TACO 作者指南（作者粘贴）：页数（7x10 ACM 格式，非参考文献正文 20 页内，参考文献从第 21 页开始）、双盲匿名、首页脚注 "New Paper, Not an Extension of a Conference Paper"、acmart 模板、CCS 与关键词、AI 使用声明均符合；arXiv 上已有预印本，指南允许保留。投稿系统里的冲突清单（Cover Letter 框）缺失，见遗留问题 16；ORCID 需在投稿系统中填写。
 
 ## 2026-10-18（续）共享网盘 inode 清理（遗留问题 7，作者答复 a b c）与 vGPU 关机
 
@@ -1005,6 +1007,12 @@ AAAI-27 Submission #3464（COREY）已收到最终决定：Phase 1 拒稿，未�
    需要你提供/决策：
    1. 在 Code Ocean 网页上看这个 capsule 是否还处于发布处理/锁定状态。等它恢复可编辑后回复"可以推送"，我再推送，推送后你需要再发布一次；或者回复"不推送"，保持 10-17 已发布的版本（论文不链接 Code Ocean，投稿用的是 `submit/` 里的匿名代码包，已是最新；未推送的提交只改了 README 对照表和 regime map 脚本的标注）。
    A: 不推送（2026-10-18；已消费：保持 10-17 发布的版本；本地子模块回到 `086b212`，改动存入子模块 `git stash`）
+16. 【TACO 投稿：Cover Letter 框里的冲突清单】TACO 作者指南要求在投稿系统的 Cover Letter 框中逐行列出：(a) 与任一作者有利益冲突的 TACO 副主编（Associate Editors）；(b) 所有作者过去 5 年的合作者及其单位；(c) 各作者毕业和任职的大学、企业，以及导师姓名。现有 `docs/cover_letter.txt` 没有这一部分，这些信息只有作者知道，我不能代填。
+   需要你提供/决策：
+   1. 请提供 (a)(b)(c) 三份清单（每行一条），或回复"我自己在投稿系统里填"。提供后我把它加到 `docs/cover_letter.txt` 末尾并重建 `submit/`。
+   A:
+   2. `Title_Page.docx` 含作者姓名；TACO 指南没有要求标题页，作者信息填在投稿系统的元数据里。是否不再上传标题页？（推荐：不上传，除非投稿系统有"仅编辑可见"的标题页文件类型）
+   A:
 
 需要你操作：
 - 【E28 停止】已完成：作者 2026-10-17 在 4c 上执行 `screen -S taco-4c -X quit`，返回 "No screen session found"（该 lane 已自行结束，4c 上无残留任务）。
