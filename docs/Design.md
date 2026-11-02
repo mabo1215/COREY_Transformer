@@ -38,6 +38,19 @@ Setup: build the runtime-chunk reference scan for sm_86 with `ptxas -v` (nvcc on
 (the GPU on which the reference scan was timed). If the no-GPU container's memory limit kills nvcc (as on the
 RTX PRO 6000), run the same step in the GPU session (~10-20 min).
 
+## E39 - Whole prefill steps below 256 tokens (jpdc-r1 C3)
+
+Purpose: the step-level study starts at 256 tokens, where the table gain is largest (SSD 370M: about +2.3%), and
+6-16% of Azure and 50-83% of BurstGPT prompts are shorter and are represented by the 256-token step. Measure them
+instead. Setup: the whole-step protocol of E32 unchanged (one CUDA graph per forward pass, every chunk plus a
+no-scan variant, five rounds, two sessions, exclusive-GPU guard, GPU state logged; SSD 370M, SSD 2.7B, GDN 1.4B) at
+L in {16,32,64,128}, batch 1 and 4, on the same stock RTX 3090 as E32, so that the new shapes join the existing
+ones. The held-out table has no bucket below the shortest captured call; such a shape uses the nearest bucket and
+the fallback is recorded. Metrics: scan share, gain of the table and of a table tuned in the other session,
+recomputed trace-weighted results and load simulation with these latencies. Host: 4c; at most about 2 GPU-h (E32
+took about 2 h per session for 14 shapes, longer ones included); peak < 4 GB. The experiment's dependencies are not
+installed on the local machine, so its smoke test is the first step of the lane on the host.
+
 ## E30 - SSD and Gated DeltaNet autotuner state: pinned vs re-tuned per shape (M6c)
 
 Purpose: the Triton autotuners of the Mamba-2 SSD and FLA Gated DeltaNet kernels key on chunk and head
