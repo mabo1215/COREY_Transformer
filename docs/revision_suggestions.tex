@@ -1,1242 +1,212 @@
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
 \usepackage{enumitem}
 \usepackage{booktabs}
-\usepackage{hyperref}
-\setlist{itemsep=2pt,topsep=3pt}
+\usepackage{array}
+\setlist[itemize]{leftmargin=1.5em,itemsep=2pt,topsep=2pt}
+\newcommand{\finding}[2]{\paragraph{#1. #2}}
+\newcommand{\evidence}{\textit{Evidence.} }
+\newcommand{\action}{\textit{Action.} }
 
-\title{Independent Review and Revision Plan for ACM TACO\\
-\large Shape Sets the Chunk: Selecting and Keying the Chunk of Chunked
-Linear-Recurrence GPU Kernels}
-\date{Cycle taco-r2, opened 2026-10-16}
+\title{Independent Review for the Journal of Parallel and Distributed Computing\\
+\large ``Shape Sets the Chunk: Selecting and Keying the Chunk of Chunked Linear-Recurrence GPU Kernels''}
+\author{}
+\date{Review cycle jpdc-r1, November 2026}
 
 \begin{document}
 \maketitle
-\sloppy
 
-\section*{Scope and Inputs}
+\section{Verdict}
+\textbf{Major revision before submission.} The measurement work is rigorous and fits
+the JPDC topics of performance analysis of parallel applications and accelerator-based
+applications and platforms; JPDC has also published GPU autotuning and analytical GPU
+performance models. As written, the paper is still framed as a tuning recipe for one
+kernel family. Its null headline is stronger than its design supports, and it leads
+with the favourable end of its model evidence.
 
-This file opens revision cycle taco-r2. It synthesizes a fresh, independent
-five-reviewer panel (Editor-in-Chief, R1 methodology and statistics, R2
-domain, R3 practitioner perspective, devil's advocate) and a fresh re-check of
-every taco-r1 item. The reviewers read the current manuscript (ACM acmsmall,
-main article 25 pages of which 20 precede the references; Supplementary
-Material 31 pages) jointly, from the sources, the compiled PDFs and the result
-files only, without reference to earlier review rounds, against the standard
-of ACM Transactions on Architecture and Code Optimization (new regular paper;
-at most 20 pages excluding references; double-anonymous review). The full
-reports are in \texttt{docs/review\_reports/taco\_r2\_*.md}. Each concern below
-cites the findings it merges: EIC M$n$/m$n$, R1 M$n$/m$n$, R2 M$n$/m$n$, R3
-M$n$/m$n$ (major/minor issue $n$ of that report), DA C$n$ (devil's-advocate
-finding), ED (editorial decision) and RC (re-check verdict on a taco-r1 item).
-Line numbers refer to the current \texttt{paper/main.tex} and
-\texttt{paper/appendix.tex}.
+\textit{Venue requirements confirmed:} single-anonymized review; highlights of 3 to 5
+bullet points, at most 85 characters each, in a separate editable file; a declaration
+of generative AI use at submission.
+\textit{Not confirmed; check on the Guide for Authors before upload:} any length limit
+and the required title-page content. The journal's own page could not be opened from
+the working environment.
 
-Effort classes: (a) text only; (b) offline analysis of existing result files;
-(c) new GPU measurement, with an estimate in GPU-hours. Class (c) is split by
-host in this cycle:
-\begin{itemize}
-  \item \textbf{(c, RTX 3090 lab host)}: runs on the lab host with four stock
-        RTX~3090 GPUs (Ampere, sm\_86). These boards differ from the modified
-        48\,GB RTX~3090 of the existing data, so their results are reported as
-        a separate, stock platform (with driver, library versions, clocks,
-        power limit, host CPU and whether access is exclusive) and, where they
-        repeat an earlier measurement, as a cross-instance check. Hardware
-        counters are collected there only where the profiler is permitted.
-  \item \textbf{(c, optional: needs a rented data-centre GPU)}: needs a
-        serving-engine deployment or a data-centre GPU (H100/H800/H200/B200).
-        The author chose not to rent one in this cycle, so these items are
-        optional; if one is not run, the claim it would support is scoped as
-        the item states, in the abstract, the conclusion and Limitations.
-\end{itemize}
-Items of class (c) are run only after the author approves the host and the
-budget.
+\section{Findings and Actions}
 
-\section*{Editorial Decision}
+\subsection*{Positioning}
 
-\textbf{Major Revision.} Four reviewers recommend Major Revision (EIC, R1, R2,
-R3). The devil's advocate recommends Reject, with resubmission of a refocused
-paper possible, on two CRITICAL findings (DA C1, low significance of a
-confirmatory result; DA C2, the headline chunk sensitivity belongs to the
-in-house kernel), and would move to Major Revision given engine-level evidence
-and a demoted in-house kernel.
+\finding{S1}{The paper presents itself as tuning methodology, not as a performance study}
+\evidence The abstract asks ``how a runtime should key and fill a chunk tuning cache''
+and ends with ``We derive a recipe''. The title names selection and keying.\\
+\action Retitle and rewrite the abstract as a measurement and modeling study. Lead the
+contributions with the measurement, regime and model findings, and state what carries
+over to other GPU kernels. Move the recipe under a subsection titled ``Practical
+Implications''.
 
+\subsection*{Validity of the headline claim}
+
+\finding{C1}{``End to end'' overstates what was measured}
+\evidence Contribution 1 and the Conclusion call the chunk second-order ``end to end'',
+but the evidence is a replayed prefill forward pass. Limitations states that no serving
+engine was run; decode and scheduling are absent.\\
+\action Replace ``end to end'' with ``at the prefill-step level'' in the abstract,
+contributions, claims table, results and conclusion.
+
+\finding{C2}{Service time is not response time}
+\evidence All step-level results are service times. In an M/G/1 queue the elasticity of
+mean wait with respect to service time is $2+\rho/(1-\rho)$: 3 at $\rho=0.5$ and 11 at
+$\rho=0.9$. Continuous batching is not M/G/1, so this shows only that the question is
+open.\\
+\action Run a trace-driven simulation with the measured per-shape step latencies under
+the public trace arrivals. Sweep the load, report waiting and prefill response time
+(mean and tail) with intervals, and state the load range in which ``second-order'' holds.
+
+\finding{C3}{The step-level study stops where the effect is largest}
+\evidence Whole-step shapes begin at $L=256$. The table gain on SSD 370M rises from 0 at
+$L=8192$ to about $+2.3\%$ at $L=256$, and 6--16\% of Azure and 50--83\% of BurstGPT
+prompts are shorter than 256 tokens and are represented by the 256-token step.\\
+\action Add whole-step measurements at $L\in\{16,32,64,128\}$, batch 1 and 4, and
+recompute the trace-weighted results from them.
+
+\finding{C4}{The headline rests on one GPU}
+\evidence The whole-step result comes from one stock RTX~3090.\\
+\action Repeat the whole-step experiment on a data-centre GPU. If that is not possible,
+keep the single-GPU scope in every statement of the headline and treat the data-centre
+case as untested.
+
+\finding{C5}{A null result needs an equivalence test}
+\evidence Table~\texttt{tab:model\_graph} gives ranges without intervals. Per-shape
+session gaps reach 2.5 points (GDN $256\times1$: $-2.39$ vs.\ $+0.15$) and 1.0 point (SSD
+370M $512\times1$: $+1.98$ vs.\ $+0.94$), larger than the 0.3\% headline. The ``best gain''
+column is an in-session minimum and is biased upward.\\
+\action State and justify an equivalence margin. Report intervals on the
+latency-weighted gain across rounds and sessions and the smallest detectable effect.
+
+\finding{C6}{``Carry no information'' is broader than the evidence}
+\evidence The claims table and contributions use unqualified wording. The evidence is
+bounded and conditional: entropy changes the tree regret by at most 0.03 points (paired
+intervals within $\pm0.2$) on captured calls, some inputs have another best chunk (regret
+up to 5.1\%), and the H800 sweep shows a split with regret up to 5.7\%.\\
+\action Report the bound rather than a universal statement, and retitle
+Section~\texttt{sec:res\_values} accordingly.
+
+\subsection*{Performance model}
+
+\finding{M1}{The reported accuracy is the favourable end of the evidence}
+\evidence The main text leads with 0.6--2.1\% from a rule ``fixed only after'' comparing
+six alternatives. The supplement reports that 2208 of the 2298 calibration timings are
+short timings in unrandomized sweep order (without the exclusive-GPU guard on two GPUs),
+that a fit on full-protocol timings alone selects with 0.73, 4.28 and 6.05\%, and that
+leave-one-key-out regret is 0.8, 7.4 and 3.7\%, which it calls the honest uncertainty. The
+tables keep a three-restart fit although 50 starts reach a 16\% lower objective on the
+RTX~3090.\\
+\action Lead the main text with the leave-one-key-out and full-protocol results and label
+the target-calibration rule as exploratory. Optional: freeze the whole procedure and test
+it prospectively on a GPU not used to design it.
+
+\finding{M2}{The model structure is not identified}
+\evidence Eight parameters are fitted on twelve keys. The RTX~3090 full-protocol fit has
+two optima within 0.5\% of the objective (regret 1.6 and 4.3\%). The form
+$\max(A+I,\,I\,W/W_0)$ fits equally well but selects worse. The supplement gives bootstrap
+intervals but no parameter correlations.\\
+\action Report parameter correlations and an identifiability analysis per GPU from the
+existing calibration data, and compare fitted terms with the hardware-counter data so that
+the parameters have a physical reading. Optional: calibration keys that discriminate the
+two forms.
+
+\finding{M3}{The reach of the model is described inconsistently}
+\evidence Limitations says transfer to another kernel is untested, but
+Table~\texttt{tab:reference} reports an instance for the CUDA scan with exchange terms
+(4.9\%, fitted on 60 timings), and the pipelines have a work-term model.\\
+\action State exactly what was transferred: the eight-parameter form belongs to the Triton
+scan; other kernels needed different terms; no form was carried over unchanged.
+
+\finding{M4}{The central claim has no model behind it}
+\evidence The paper explains the second-order result in prose. An explicit bound follows
+from its own data: the step gain cannot exceed the scan share times the scan regret.
+Latency-weighted scan shares times the default's latency-weighted regret on the RTX~3090
+give 0.43, 0.21 and 0.05\%, above the measured best gains of 0.29/0.19, 0.01/0.01 and
+0.03/0.00\%, although the two inputs use different call mixes and boards.\\
+\action Add this compositional bound as a stated result, recomputed on one mix and
+validated per shape, so that a step-level effect can be predicted from single-call data.
+Test a bottleneck model of launch and device time against the heuristic launch floor.
+
+\subsection*{Measurement}
+
+\finding{E1}{The power attribution is observational}
+\evidence Value effects are attributed to switching activity under the power cap from
+throttle readings and one citation; clocks could not be locked.\\
+\action Label the attribution as consistent with the throttle readings, not as
+established, unless an intervention on clocks or power limit can be run.
+
+\finding{E2}{Data sets with weaker protocols feed the results}
+\evidence The cloud instances may be virtualized, and some data sets lack the exclusive-GPU
+guard.\\
+\action Mark the provenance of each headline number and say which headlines depend on an
+unguarded data set.
+
+\finding{E3}{Profiling-cost figures do not reconcile}
+\evidence The Cost paragraph gives 3.9, 7.4 and 6.1\,s for 57 keys, which is 68--130\,ms per
+key, next to ``30 to 50\,ms of timing per key'', which matches supplementary medians over a
+different set of 33 keys. The stated times give a payback of 1888--2480 keys, while the text
+says ``about 1600 to 2500''.\\
+\action Trace these figures to the result files and name the key set and statistic for each.
+
+\subsection*{Presentation}
+
+\finding{P1}{Revision history leaks into the paper}
+\evidence ``of this version'' (Platforms; Timing protocol, twice), ``the earlier
+launch-inclusive sweep'' (Results), ``the earlier data sets'' (Limitations), ``first sweep''
+(supplement).\\
+\action Name each measurement campaign by its protocol and remove every reference to versions.
+
+\finding{P2}{Parts of the Results are too dense to review}
+\evidence The paragraph ``Chunk versus launch configuration'' contains about 60 numeric
+tokens.\\
+\action Move these values to a table and keep one claim per paragraph. Treat the Accuracy
+paragraph the same way.
+
+\finding{P3}{Inconsistent terms}
+\evidence Table~\texttt{tab:baselines} says ``six a priori protocols'' while the leading rule
+was fixed afterwards. ``Headroom'' is both the estimand of Eq.~\texttt{eq:headroom} and a
+held-out regret in the Glossary.\\
+\action Drop ``a priori'' for the post-hoc rule and separate the estimand from its estimator.
+
+\subsection*{JPDC format and submission package}
+
+\finding{J1}{Template and authorship}
+\action Convert the article and supplement to the Elsevier \texttt{elsarticle} class. Review
+is single-anonymized, so list the authors and affiliations, remove the anonymization and the
+TACO footnote, and cite the authors' preprint in the first person. Replace CCS concepts with
+keywords.
+
+\finding{J2}{Highlights}
+\action Provide 3 to 5 highlights of at most 85 characters each in a separate editable file.
+
+\finding{J3}{Declarations}
+\action Provide the declarations of generative AI use, competing interests, author
+contributions, funding and data availability in the journal's form.
+
+\finding{J4}{Cover letter and package}
+\action Write a JPDC cover letter around scope fit and the preprint disclosure, with no
+mention of earlier submissions, and rebuild the submission package with named authors.
+
+\finding{J5}{Connect to the journal's literature}
+\action Discuss the relevant JPDC work on GPU autotuning, analytical performance estimation
+and analytical versus learned prediction in Related Work, after verifying each source.
+
+\section{Priorities}
 \begin{center}
-\small
-\begin{tabular}{lrrrrrl}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.27\textwidth}>{\raggedright\arraybackslash}p{0.33\textwidth}>{\raggedright\arraybackslash}p{0.30\textwidth}}
 \toprule
-Reviewer & Novelty & Method. & Exper. & Clarity & Signif.
-  & Recommendation \\
+Priority & Items & Resources \\
 \midrule
-EIC & 45 & 74 & 68 & 38 & 45 & Major Revision \\
-R1 Methodology & 55 & 60 & 66 & 48 & 52 & Major Revision \\
-R2 Domain & 35 & 65 & 60 & 40 & 40 & Major Revision \\
-R3 Practitioner & 52 & 72 & 63 & 38 & 45 & Major Revision \\
-Devil's advocate & 30 & 60 & 55 & 35 & 28 & Reject (refocus) \\
-\midrule
-\textbf{Mean} & \textbf{43.4} & \textbf{66.2} & \textbf{62.4} & \textbf{39.8}
-  & \textbf{42.0} & 4 $\times$ Major, 1 $\times$ Reject \\
+1. Required, no new timing & S1, C1, C5, C6, M1, M3, E1--E3, P1--P3, J1--J5 & text and existing results \\
+2. Required, offline modeling & C2, M2, M4 & simulation and analysis \\
+3. Required, new measurements & C3, C4 & GPU time \\
 \bottomrule
 \end{tabular}
 \end{center}
-
-Against the taco-r1 panel (means 42.4 / 60.4 / 61.2 / 40.0 / 40.4) methodology
-improved by about 6 points and the other dimensions are flat; no dimension
-regressed by more than 0.2 points.
-
-\paragraph{Re-check of taco-r1.} Of 66 items, 47 are addressed, 11 partial, 8
-declined with scoped claims and 0 not addressed. Acceptance criteria: 5 of 8
-met, 3 partial (A1 artifact anonymity; A5 latency-weighted a-priori headline;
-A8 supplement length and notation). Stage 11 gate: page limit, PDF and source
-anonymity, references and citation keys pass; the artifact archive fails
-anonymity. The partial items are folded into the concerns below.
-
-\paragraph{Consensus strengths (keep).} Recurrence-preserving timing with fp32
-output checks; held-out prompt-cluster evaluation with bootstrap, TOST and
-permutation tests; the placement-versus-values and warm/cold-L2 interventions;
-the compiler-specialization bit in the key; candid reporting of model
-failures; the autotuner-state and output-divergence controls. All of about 70
-recomputed numbers matched the result files, with two definitional
-differences (93.5\% vs.\ 94\% tied cells; 0.40 vs.\ 0.38\% between two tables).
-
-\paragraph{Consensus weaknesses.} (i) Significance and novelty: for
-data-oblivious kernels a shape-only optimum is the null expectation, the lemma
-is elementary, the refuted design is one unreviewed preprint, and the positive
-production-kernel result is small (1.0--5.9\% of scan time in isolated
-CUDA-graph replay) with wide intervals for its recoverable part; (ii) the steep
-chunk effect belongs to the in-house Triton kernel, whose launch table couples
-the chunk with grid size and warps and whose ``default 256'' is borrowed;
-(iii) no engine-level or data-centre evidence for the device-bound claims;
-(iv) the cost model does not pay on the paper's own numbers and its a-priori
-accuracy depends on the selection protocol; (v) clarity (mean 39.8): five or
-more timing conventions, several definitions of ``default'' and ``best
-static'', two figures in 20 pages, about 50 pointers into a 31-page
-supplement; (vi) measurement reliability: a launch-inclusive session that did
-not reproduce, unguarded data sets, a possibly virtualized and power-capped
-RTX~3090, untested SSD/Gated DeltaNet value invariance above the floor, and
-H800 input effects absent from the main text.
-
-\paragraph{What separates Major from Minor Revision.} The text and offline
-items address clarity, fair baselines and most methodological points but are
-unlikely on their own to lift significance above the bar. The decisive lever
-is evidence that the device-bound chunk effect matters end to end, or a clear
-demonstration that it does not, reframed as the finding (M1d, M3b, M3e).
-
-% ======================================================================
-\section*{Venue Compliance (MUST FIX)}
-
-% STAGE: 11 (integrity gate) + 10 (revision)
-% RULES: academic-paper/agents/formatter_agent.md
-\begin{enumerate}[label=V\arabic*.]
-  \item \textbf{Artifact anonymity (Stage 11 gate FAIL).} The availability
-        statement (main.tex:1455--1461) promises an anonymized archive that
-        does not yet exist in a clean, current form. In the raw result-file
-        folder, 122 files contain absolute user paths, 148 git hashes, 146
-        host names, 166 the project name and 6 a user name, and the directory
-        name is the previous venue's; together these name the system of the
-        cited preprint and a previous venue. The latest Code Ocean capsule
-        (built 2026-10-10) has removed user names but still carries
-        previous-venue directory names and a real host name in two files, and
-        it predates the taco-r1 runs, so it does not back Table~7 or the
-        supplementary packed-call, autotuner-state and divergence tables.
-        Rebuild the capsule from the current result files with host names,
-        paths, hashes, project and venue names and package version suffixes
-        stripped, rename the directories, include every file behind a main or
-        supplementary table, and re-run an anonymization scan before upload.
-        (a)+artifact rebuild. (EIC M8; RC V2; ED)
-  \item \textbf{Paper-folder hygiene.} The paper folder holds author-named
-        profile photographs (the \texttt{figs/profile} subfolder), backups for
-        three prior venues and a previous venue's checklist (the
-        \texttt{backup} and \texttt{legacy} subfolders), unused old figures
-        from the earlier framing, and figure PDFs whose creation dates carry a
-        local timezone offset (not propagated into main.pdf). Upload only the
-        two PDFs for review; if sources are ever required, build a clean
-        bundle with main.tex, appendix.tex, ref.bib and the referenced figures
-        only. (a). (RC V2 and Stage 11 gate; ED)
-  \item \textbf{Confidential disclosure of the preprint relationship.} The
-        refuted design is a public preprint (arXiv:2604.10597), cited in the
-        third person, which ACM permits. If it is the authors' own work, say
-        so to the editor in the confidential cover letter; confirm that the
-        footnote ``New Paper, Not an Extension of a Conference Paper''
-        (main.tex:91) remains accurate; and make sure any public code
-        repository linked from the preprint does not expose this manuscript or
-        its result files during review. (a). (EIC M8; R2 M6 and question 5;
-        RC further observations)
-  \item \textbf{Page limit kept.} The limit currently passes: Discussion,
-        Limitations, Conclusion and the availability and AI-use disclosure end
-        on page 20, and ``References'' is the first heading of page 21. Every
-        addition requested below (claims-to-evidence table, mechanism figure,
-        deployment-effect table, promoted supplementary results) must be
-        offset by the cuts of M1b and M8b; keep the AI-use disclosure, the
-        availability statement, CCS concepts, keywords, running head and the
-        new-paper footnote inside the 20 pages. (a). (RC Stage 11 gate)
-  \item \textbf{Supplement length and dependence.} The supplement is 31 pages
-        with more than 40 tables, against the taco-r1 target of about 20; the
-        main text points into it about 50 times. Reduce it to about 20--25
-        pages: merge the convention, launch-inclusive oracle and interval
-        tables (Tables S on conventions, oracle\_li, tables\_ci, ci), drop
-        secondary statistics that no main-text claim needs, and keep what
-        reproduction requires. (a). (RC M9c, A8; EIC M5; R3 M7; ED)
-\end{enumerate}
-
-% ======================================================================
-\section*{Major Concerns}
-
-\subsection*{M1. Significance and framing (CRITICAL, DA C1)}
-Merges EIC M3, DA C1, DA C8, DA C16, R2 M6, R1 m4, EIC m9, EIC m16, ED reason
-1. All five reviewers: the three kernels contain no data-dependent branches,
-early exits or sparse paths (main.tex:386--391), so a shape-only optimum is
-the null expectation; the lemma is one inequality; the only foil is one
-unreviewed preprint whose map selects chunk 256 for essentially every call
-(Fig.~S6); and shape-keyed caches (Triton autotune, Kernel Launcher, FFTW
-wisdom, cuDNN benchmark mode, TensorRT timing caches) already embody the
-recipe. The findings that are new to TACO readers are buried.
-
-% STAGE: 10 (revision)
-% RULES: academic-paper/agents/draft_writer_agent.md
-\begin{enumerate}[label=M1\alph*.]
-  \item (a) \textbf{Contributions = the robust findings.} Make the
-        contributions (i) the key must be the kernel's compiler
-        specialization signature (one divisibility bit changes the compiled
-        kernel and its optimal chunk; a length-bucket key without it leaves
-        22--90\,$\mu$s of headroom); (ii) the execution regime (host-bound
-        vs.\ device-bound) decides whether the chunk matters; (iii) buffer
-        placement and a warm L2 masquerade as data or chunk effects in tuning
-        (median 21\%, up to 43.6\%, against 0.1\% for values); (iv) models
-        calibrated in eager timing fail under CUDA graphs; (v) the economics
-        of profiling versus modelling. Add a short ``what was not known
-        before'' paragraph that positions each finding against TFLA, the
-        Triton autotuner, Kernel Launcher, input-aware autotuning (Nitro, Ding
-        et al., Seer) and the production practice of M9b. \emph{Where:} title
-        and abstract main.tex:39--70; Introduction 112--139; Contributions
-        141--162; Sec.~2 264--280, 322--327. (EIC M3; DA C1; R2 M6; ED)
-  \item (a) \textbf{Condense the refutation to one subsection.} State Lemma
-        3.1 as an observation or remark (main.tex:364--404); keep the
-        placement/L2 finding and one predictor table; move the routed study
-        (1177--1194), the break-even and key-churn derivation (1291--1318) and
-        the information-theoretic detail of Sec.~6.3 (876--902) to the
-        supplement; keep the split-call timing pitfall (523--532) as a
-        two-sentence protocol note that does not read as a correction of the
-        cited preprint. (R2 M6; DA C16; EIC M3; EIC m16)
-  \item (a)+(b) \textbf{Headroom as an information result with a host-side
-        cost corollary.} ``Below one host synchronization at every tuned
-        shape'' holds for the exact-shape table on 29 covered shapes; the
-        recommended bucket key leaves 26\,$\mu$s on one RTX~3090 key, and
-        bucket 2048, batch 4, unaligned leaves 30--32\,$\mu$s, above one
-        synchronization (21.4\,$\mu$s); under real traffic the exact-length
-        key puts 51.5--83.8\% of calls on keys below the break-even (Tables
-        S37, S38). The device-side reduction cost is quoted for the RTX~3090
-        only (7.3\,$\mu$s at $L=2048$, 42\,$\mu$s at $L=8192$); on the RTX
-        PRO~6000 it is $+2.7$ and $-3.7\,\mu$s, zero within noise, so ``$g>o$
-        is out of reach'' cannot be claimed there for device-side policies.
-        Report the RTX PRO~6000 cost; support ``every tuned shape'' with
-        per-shape upper confidence bounds (reference scan: held-out per-shape
-        maximum 14.5 against 21\,$\mu$s); say that an isolated synchronization
-        is a lower bound on its critical-path cost in device-bound pipelines;
-        separate the single-static-chunk baseline of main.tex:1211--1216 from
-        the shape-keyed baseline of the lemma's $h(s)$; restate the abstract
-        and Sec.~6.7 accordingly. (DA C8; R1 m4; EIC m9)
-  \item (a) \textbf{Author decision: the significance claim.} Fix the paper's
-        central claim after M3b. If a shape-keyed chunk table changes a
-        graph-captured prefill by about 1\% or less end to end, make that the
-        finding (for production kernels the chunk is a second-order knob end
-        to end; keying and measurement pitfalls are what matter) and shorten
-        the paper accordingly, as R2 and DA C1 route (b) suggest; if the
-        effect is larger, lead the abstract with it. \emph{Where:} abstract;
-        Conclusion main.tex:1445--1453. \emph{Requires an author decision.}
-        (ED; R2 recommendation; DA C1)
-\end{enumerate}
-
-\subsection*{M2. The in-house kernel and its baselines (CRITICAL, DA C2)}
-Merges EIC M2, R1 M7, R2 M1, R3 M6, DA C2, C3, C11, C19, RC (Shapley
-convention), ED reason 2. The steep chunk curve, the 49\% per-call default
-regret (34\% of scan time), the 8.5$\times$ spread, the 4.4--25\,ms per
-forward pass of Table~8, the tensor-parallel width sensitivity and the whole
-cost model belong to the Triton Mamba-1 scan written for this study. It runs
-at 0.81--1.54$\times$ the reference CUDA scan (geometric mean 1.23, slower at
-10 of 12 keys; Table S9, RTX~3090 only); its launch table was chosen once on a
-fourth GPU (an RTX~3070) and used unchanged (S1.2); the best table entry is
-7--18\% behind full launch tuning (up to 53\% at one key); chunks 512 and 1024
-sit at 255 registers with 12 and 64\,B of spill (Table S13); its ``default
-256'' is borrowed from Mamba-2. Every independently written kernel shows the
-default or a stock length rule within a few percent: reference scan 3.1\%
-(device time, Table S21) and 6.6\% (launch-inclusive, Table~6), TFLA 1.4\%
-(Table S27), SSD and Gated DeltaNet host-bound at most 2.5\%; above the
-device-time floor SSD chunk 256 is the oracle for 375 of 397 calls and Gated
-DeltaNet chunk 64 for 154 of 155.
-
-% STAGE: 10 (revision) + src
-% RULES: academic-paper/agents/argument_builder_agent.md
-\begin{enumerate}[label=M2\alph*.]
-  \item (a) \textbf{Disclose provenance and role.} State in the abstract and
-        Introduction that the Triton scan is the authors' own, 1.23$\times$
-        the reference scan, with a launch table chosen on another GPU; present
-        it in every caption as a steep-curve stress case; rename it (e.g.\
-        ``Triton scan (ours)'' vs.\ ``CUDA scan (mamba\_ssm)'') instead of
-        redefining ``Mamba-1'' for the rest of the paper (main.tex:653--660).
-        Correct ``register-bound'': at batch 1 (65\% of the calls) the kernel
-        launches only $\lceil d/D_b\rceil\times B$ programs and runs 2--6 warps
-        per SM, so it is grid- and latency-bound there. \emph{Where:}
-        abstract; Sec.~4 (406--518); Sec.~5.1 (536--545); Sec.~6 opening.
-        (DA C2; EIC M2; R2 M1.2, M7; R3 M6; R3 m3)
-  \item (b) \textbf{Fair untuned baselines.} Use as untuned references the
-        free length rule $\mathrm{clip}(\mathrm{nextpow2}(L),32,1024)$, which
-        mirrors the stock CUDA dispatch (device time, per call 5.86 / 7.76 /
-        10.66\%, latency-weighted 5.96 / 16.31 / 13.94\% on the RTX PRO~6000 /
-        RTX~3090 / H800), the best chunk per batch (20.0 / 17.4 / 24.7\%) and
-        a length-bucket table (2--20\,$\mu$s per call, Table S23). Restate the
-        Sec.~6 opening, the abstract and Tables 4, 5 and 8 against them and
-        keep chunk 256 (48.6 / 96.4 / 50.9\%) as a secondary row; the best
-        static chunk by latency on the RTX PRO~6000 (512) loses 15.5\% of scan
-        time, not 34\%. Against the free rule the calibrated model buys only
-        1.7 / 1.5 / 7.7 points per call; explain why the calibration-only
-        length tree (16.6 / 20.4 / 38.4\%, Table S19) is far worse than this
-        free rule. For the reference scan, use its stock length rule as the
-        Mamba-1 default. \emph{Where:} main.tex:653--660; Tables 4, 5, 8
-        (785--859, 1242--1269). (DA C3; EIC M2; R2 M1.5; R3 M6; ED)
-  \item (a) \textbf{One definition of ``default'' and ``best static''.}
-        Table~7's ``Default'' is the library default for SSD and Gated
-        DeltaNet but the best single chunk for the Triton scan; Table~8's best
-        static is chosen by total latency per batch, Table~5's held out by
-        per-call regret; the Sec.~6 opening mixes both (``20\% (27\%)'').
-        Define each once per kernel, label every exception, and state up
-        front that the production-kernel tuning gains are those of Table~7.
-        (DA C19, C12; R3 M6.3; EIC M2)
-  \item (b)+(c, RTX 3090 lab host) \textbf{Chunk effect at fixed launch
-        configuration.} The default table maps chunks 32/64/128 to $(D_b,
-        n_w)=(8,2)$, 256/512 to $(4,2)$ and 1024 to $(4,4)$, so from chunk 128
-        to 256 the grid doubles (256 to 512 programs at $d=2048$, batch 1).
-        From the existing 184-configuration sweep at the twelve keys, report
-        per GPU the spread over chunks within each fixed $(D_b, n_w,
-        \mbox{stages})$, the movement of the optimum and the best-chunk
-        regret at fixed configuration. R2's offline check of the short search
-        timings: on the RTX~3090 at fixed $(4,2)$ chunk 128 is fastest at 11
-        of 12 keys and one chunk loses about 0\%, against an optimum over
-        $\{32,64,128,512\}$ and 17\% along the default table; on the H800 at
-        fixed $(8,2)$ chunk 128 wins at 11 of 12 keys (1.2\%) against 21\%;
-        on the RTX PRO~6000 at fixed $(4,2)$ the optimum still moves.
-        Re-time that slice under the full protocol on the lab host (about 2--3
-        GPU-hours). Define the ``29 + 3 points'' decomposition (a Shapley
-        split; 32.7 = 29.3 + 3.4) and give it in device time, the primary
-        convention (RTX PRO~6000: 50.6 points chunk, $-6.2$ launch). State in
-        Table~1 and Sec.~6.2 that chunk results are results for launch-table
-        entries. \emph{Where:} Sec.~4 (421--423); main.tex:968--977; Table~1;
-        Fig.~S1; Tables S7, S13. (R1 M7; R2 M1.1, fix (a); R3 M6.4; RC
-        Shapley convention)
-  \item (a)+(b) \textbf{Chunk-only scope.} The best full configuration differs
-        between warm and cold L2 at 7 of 12 keys, and the cost model used as a
-        full launch-space tuner loses 8.9--23\% on average (53--95\% maximum)
-        when one key is left out (Table S17); production caches tune the full
-        configuration per key. Either justify the chunk-only scope (library
-        APIs such as the SSD and FLA entry points expose only the chunk) and
-        restrict the claims, or report chunk selection jointly with full
-        configuration tuning from the existing sweeps. \emph{Where:}
-        Sec.~6.4 ``Auto-tuning baseline''; Recipe; Limitations main.tex:1425.
-        (DA C11; R2 M1 fix (b))
-  \item (c, optional, RTX 3090 lab host) \textbf{Parity or per-GPU retuning.}
-        Either retune the launch table per GPU before studying the chunk, or
-        bring the kernel closer to the reference (a slice-based carry instead
-        of the masked full-tile reduction
-        \texttt{h\_last = sum(where(t == C-1, hs, 0))} and the per-state
-        masked reduction; more programs per channel block at small $B\cdot d$;
-        an aligned main loop with a masked tail), and show whether the chunk
-        sensitivity persists. About 3--6 GPU-hours plus kernel engineering.
-        If not done, M2a's stress-case framing is mandatory. (R2 M1.3--1.4,
-        fix (c); EIC M2 fix (c); DA C2)
-\end{enumerate}
-
-\subsection*{M3. Production relevance and device-bound evidence}
-Merges EIC M1, R1 M1, R2 M4, R2 M5, R3 M1, R3 M2, R3 M3, DA C5, C6, C10, RC
-M6a, M6e, ED reason 3. The only positive production-kernel result is that
-under isolated CUDA-graph replay the defaults lose 10--24\% per call but
-1.0--5.9\% of scan time (RTX PRO~6000: 1.75 / 5.85 / 3.19\%; RTX~3090: 2.80 /
-2.20 / 1.02\% for SSD 370M / SSD 2.7B / Gated DeltaNet 1.4B), i.e.\
-0.10--1.44\,ms per forward pass, measured with one graph per (call, chunk) on
-two non-data-centre GPUs, without the scan's share of the forward pass and
-without an engine. R3's estimate from projection GEMMs alone puts the
-default's cost at about 0.3\% (2.7B) to 0.7\% (370M) of an average forward
-pass; 99 / 92 / 100\% of the default's absolute regret (SSD 2.7B / SSD 370M /
-Gated DeltaNet 1.4B) comes from calls under 4096 tokens.
-
-% STAGE: 10 (revision) + src
-% RULES: academic-paper/agents/argument_builder_agent.md
-\begin{enumerate}[label=M3\alph*.]
-  \item (b) \textbf{Recoverable gains with intervals.} The 1.0--5.9\% is the
-        default's latency-weighted excess over a noisy per-call oracle. Report
-        instead the recoverable share (default minus held-out shape table)
-        with 42-cluster bootstrap intervals in Table~7, the abstract and the
-        conclusion. R1's recomputation (graph replay, warm L2, three rounds):
-        \begin{center}\small
-        \begin{tabular}{lrrl}
-        \toprule
-        Kernel, GPU & Default LW & Held-out table LW & Recoverable [95\% CI] \\
-        \midrule
-        SSD 370M, RTX 3090 & 2.80\% & 0.01\% & 2.79\% [1.51, 5.30] \\
-        SSD 370M, RTX PRO 6000 & 1.75\% & 0.03\% & 1.72\% [0.89, 3.57] \\
-        SSD 2.7B, RTX 3090 & 2.20\% & 0.03\% & 2.17\% [1.15, 4.61] \\
-        SSD 2.7B, RTX PRO 6000 & 5.85\% & 0.46\% & 5.39\% [2.77, 7.63] \\
-        GDN 1.4B, RTX 3090 & 1.02\% & 0.57\% & 0.45\% [$-0.90$, 1.78] \\
-        GDN 1.4B, RTX PRO 6000 & 3.19\% & 0.25\% & 2.94\% [1.88, 4.93] \\
-        \bottomrule
-        \end{tabular}
-        \end{center}
-        The lower end of the abstract's range (Gated DeltaNet on the RTX~3090)
-        is not a gain a table delivers, and ``recovers to within 0.7\%''
-        refers to per-call means, not scan time. Scope the conclusion to the
-        two GPUs measured (main.tex:1447--1449) and add ``no whole-model graph
-        or serving-engine measurement'' to Limitations if M3b and M3e are not
-        run. \emph{Where:} abstract main.tex:59--62; Contributions; Sec.~6.5,
-        Table~7 and Fig.~2 (1096--1150); Conclusion. (R1 M1; RC M6a, M6e; ED)
-  \item (c, RTX 3090 lab host) \textbf{Full-model prefill as one CUDA graph.}
-        Capture a full-model prefill forward pass at fixed shapes (Mamba-2
-        370M and 2.7B, Gated DeltaNet 1.4B) as one CUDA graph, once with the
-        library default chunk and once with the held-out shape-keyed table;
-        measure prefill latency in at least two sessions; report the measured
-        scan share of the forward pass and a main-text ``deployment effect''
-        table (oracle scan time, default and table regret in ms, share of the
-        full forward pass) at three or four representative tokens-per-call
-        points, next to ``\% of scan time''. About 4--8 GPU-hours. This is the
-        minimum end-to-end evidence; it decides M1d. \emph{Where:} Table~7;
-        Sec.~6.5; Limitations main.tex:1425--1429. (R1 M1 fix (ii); EIC M1 fix
-        (c); R3 M1 fix 1; R2 M4.6; ED)
-  \item (a) \textbf{Engine execution modes and regime names.} Sec.~1 states
-        without citation that ``production engines run prefill both host-bound
-        and as captured CUDA graphs''. In vLLM V1's default
-        \texttt{FULL\_AND\_PIECEWISE} mode, prefill and mixed batches are not
-        captured as full graphs, the Mamba and linear-attention mixers are
-        splitting ops that stay eager, and Mamba backends list full-graph
-        support only for uniform single-token decode. Describe, per engine and
-        mode, which prefill scan calls run device-bound and at which token
-        counts (graph capture, C++ launch paths, host run-ahead under async
-        scheduling), and qualify or drop the general claim. The host-bound
-        regime is defined by the Python launch path (56--90\,$\mu$s per Triton
-        call; an SSD floor of about 0.46--0.5\,ms on the RTX PRO~6000 and
-        0.74--1.5\,ms on the RTX~3090, against 33--57\,$\mu$s under graph
-        replay); rename it, e.g.\ ``eager, launch-bound (Python launch
-        path)'', and report the harness's per-call launch overhead next to
-        it. Mention speculative-decoding verification and chunked-prefill
-        slices as sources of very short calls. \emph{Where:} Sec.~1;
-        Conventions box main.tex:608--642; Sec.~6.5; Recipe. (R2 M4.1--4.2;
-        R3 M2; DA C6; R3 m23)
-  \item (c, RTX 3090 lab host) \textbf{Packed steps as engines run them.} The
-        one serving-like experiment contradicts the recipe: on SSD 370M a
-        held-out packed-token-bucket table is worse than the default (fresh
-        state: 9.75\% per step, 7.46\% latency-weighted, against 14.14\% and
-        10.23\%; adding the number of sequences gives 13.46\%); with carried
-        state 10.68\% (8.11\%) falls only to 9.21\% (6.77\%); SSD 2.7B falls
-        from 9.04 to 2.77\% (fresh) and 7.53 to 4.48\% (carried). The 370M
-        data are noise-dominated: the per-round argmin is identical in all
-        three rounds for 34\% of SSD 370M step variants (70\% for 2.7B, 83\%
-        for Gated DeltaNet), the median round-to-round deviation is 1.4\%
-        (90th percentile 6.3\%), and the steps were timed in device time
-        behind the 20\,ms spin that S1.1 and S8 reject for multi-kernel
-        pipelines. Re-time the packed steps under CUDA-graph replay with at
-        least five rounds and a noise floor (split-half or a null as in S12);
-        capture packed variable-length steps at padded capture sizes (16 to
-        512 tokens and up to the largest prefill budget an engine would
-        capture), replay them with varying composition, and report the regret
-        of a table keyed on capture size alone and of richer keys
-        (per-sequence length structure). Apply the carried state the same way
-        for SSD and Gated DeltaNet (now the first sequence vs.\ every
-        sequence) or justify the difference. Revise Contribution~2 and the
-        recipe's packed-length key to what the data support. About 3--5
-        GPU-hours. \emph{Where:} Sec.~6.5 ``Packed variable-length calls''
-        (1152--1162); Recipe (1320--1344); S10, Table S35. (DA C5; R3 M2 fix
-        2; R3 m20; R2 m8)
-  \item (c, optional: needs a rented data-centre GPU) \textbf{Serving-engine
-        integration.} Integrate a shape-keyed chunk table into vLLM or SGLang
-        with the engine's default CUDA-graph configuration, for one Mamba-2
-        hybrid (e.g.\ Nemotron-H 8B, Falcon-H1 or Granite-4.0-H) and one Gated
-        DeltaNet hybrid (a small Qwen3-Next-style model or the 1.4B
-        checkpoint), with a realistic chunked-prefill token budget on public
-        traces; report time to first token, throughput, the share of mixer
-        calls that are device-bound and below 4096 tokens, and the switching
-        overhead (metadata rebuild, graph count); include one TP~$=2$
-        configuration. About 15--25 GPU-hours. If not run, the abstract and
-        conclusion must say that no engine-level measurement was made and that
-        the device-bound results are isolated-kernel replays. (R2 M4 fix; DA
-        C6; EIC M1 fix (b); ED)
-  \item (c, optional: needs a rented data-centre GPU)
-        \textbf{Data-centre replication.} Repeat Table~7 (graph replay of SSD
-        370M/2.7B and Gated DeltaNet 1.4B), the packed-call study and the
-        autotuner-state control on a stock data-centre GPU, recording the
-        board power limit and locking application clocks where permitted.
-        About 6--10 GPU-hours. If not run: state in Limitations that no
-        data-centre-class (HBM) GPU was replayed under graphs, that Triton
-        code generation on sm\_120 and sm\_86 may differ from sm\_90/sm\_100
-        for these matrix-product-heavy pipelines, and scope every
-        production-kernel claim to ``an Ampere consumer GPU and a Blackwell
-        server GPU''. (EIC M1 fix (a); R2 M5; R3 M3.1; DA C10; RC M6a)
-  \item (c, optional, RTX 3090 lab host) \textbf{Production kernels at shard
-        layouts.} Tensor parallelism is measured only for the Mamba-1
-        kernels. Time SSD at $n_{\mathrm{heads}}/n_{\mathrm{tp}}$ with
-        $\mathrm{ngroups}>1$ (as in Nemotron-H or Falcon-H1) and Gated
-        DeltaNet at Qwen3-Next-like head counts divided by $n_{\mathrm{tp}}$;
-        the four GPUs of the lab host also allow a TP~$=2$--4 run with
-        collectives active. About 2--4 GPU-hours. (R2 M4.5; DA C10)
-\end{enumerate}
-
-\subsection*{M4. The cost model}
-Merges EIC M4, R1 M3, R2 M3, R3 M5, DA C4, RC M3c, M4b, M5a, M2a residuals,
-N8, N9, ED reason 4. On the paper's own numbers the model does not pay:
-calibration costs 130 / 322 / 202\,s with a warm compile cache (493 / 843 /
-664\,s cold) against 3.9 / 7.4 / 6.1\,s to profile every chunk of all 57 exact
-keys; compilation dominates (363 of 493\,s), so the model saves only about
-0.03--0.05\,s of timing per key and pays only beyond 1622--2475 keys; the
-serving replays produce 11--23 bucket keys per trace, and non-enumerable keys
-cover at most about 2\% of calls under bucketed keys (Table S38). Its
-a-priori accuracy depends on the selection protocol, simple rankers and MLPs
-tie or win on some GPU, and transfer to another kernel is untested.
-
-% STAGE: 10 (revision) + src
-% RULES: academic-paper/agents/argument_builder_agent.md
-\begin{enumerate}[label=M4\alph*.]
-  \item (b) \textbf{One pre-specified a-priori protocol; all six reported.}
-        The released analysis evaluates six protocols (candidate sets
-        ablation12 and ablation12+work\_only, times the criteria LOGO on the
-        other GPUs' captured calls, LOGO on calibration LOSO, and
-        target-calibration LOSO). In device time they give: RTX PRO~6000
-        2.24, 0.38, 0.56, 4.16, 0.38, 0.56\%; RTX~3090 6.23, 2.49, 1.74, 6.23,
-        2.49, 0.88\%; H800 2.14--3.01\%; overall 0.38--6.2\%. The paper
-        reports one (ablation12+work\_only, LOGO captured calls), the most
-        pessimistic on the RTX PRO~6000; the target-calibration LOSO
-        criterion, which is the procedure the ``What transfers'' paragraph
-        recommends, gives 0.56 / 0.88 / 2.14\%, and the tie rule alone moves
-        the RTX PRO~6000 between 0.38, 0.56 and 4.16\%. Pre-specify and
-        justify one protocol; report all six in a supplementary table with
-        latency-weighted regret, maxima (53 / 27 / 50\% for the reported
-        forms), per-batch values and cluster intervals; list the candidate
-        forms and their scores per fold. Replace ``3.0 to 6.2\%'' in the
-        abstract and conclusion by the pre-specified protocol with an interval
-        or by the protocol range, each with its latency-weighted companion: on
-        the RTX PRO~6000 the a-priori form (the three-parameter restriction)
-        loses 26.9\% of scan time latency-weighted (CI 23.5--29.3), no better
-        than the best chunk per batch (27.0\%); the frozen form loses 2.3 /
-        9.7 / 5.3\% (RTX~3090: 9.7\% latency-weighted against 3.5\% per call).
-        Report per-batch regrets (RTX~3090: 15.9\% at batch 16 against 1.5\%
-        at batches 1 and 4; H800: 6.3\% at batch 4) and aligned/unaligned
-        regrets (0.22/1.01, 3.89/2.25, 2.69/4.24\%). \emph{Where:} abstract
-        main.tex:64--65; Sec.~6.4 (907--960, 923--930); Table~5; Tables
-        S14--S19; Conclusion 1450--1451. (R1 M3; DA C4; RC M4b, N8 and
-        advisory; R2 m10)
-  \item (b)+(a) \textbf{Fair comparison of calibration-only selectors.}
-        Evaluate every calibration-only selector under the same a-priori
-        protocol in the main table. Under it the eight-parameter model has the
-        worst GPU mean (4.16 / 6.23 / 3.01\%, mean 4.47, worst 6.23) against
-        its three-parameter restriction (4.20 / 0.85 / 3.53, mean 2.86), the
-        MLP over five seeds (1.59 / 1.31 / 7.13, mean 3.34) and the structural
-        MLP (3.75 / 4.90 / 1.11, mean 3.25); ``within 3.5\% on every GPU'' and
-        ``best on the RTX PRO~6000'' use the frozen form selected on two
-        GPUs' calls. State plainly that on the only form-blind GPU (H800) the
-        full form is not better than the restriction (paired $-0.53$ [$-1.35$,
-        $+0.60$], Table S15) and is beaten by the structural MLP (0.57\%; 1.1\%
-        over five seeds); across GPUs it is better only on the RTX PRO~6000
-        ($-3.80$ [$-4.78$, $-2.89$]) and worse on the RTX~3090 ($+2.66$
-        [$+2.12$, $+3.17$]). The H800 nine-parameter variant (add\_l2\_miss)
-        reproduces the frozen form exactly (3.0077\%), so it is not
-        independent evidence. Move the three-parameter top-3 result into
-        Table~5 so that the abstract claim has a main-text anchor. (DA C4; R1
-        M3 fix (iii); RC M9c)
-  \item (b) \textbf{Fit documentation.} Report: the refit on full-protocol
-        timings alone (0.73 / 4.28 / 6.05\%; the H800 doubles from 3.0\%);
-        inverse-variance weighting (fit unchanged); the objective $R^2$ (0.89 /
-        0.93 / 0.94); the largest search-versus-full-protocol discrepancy
-        (226\%, launch-inclusive RTX~3090); that 2208 of 2298 calibration
-        timings are brief 3/10 search timings taken in key order without
-        randomization (drift confounded with key) and, on two GPUs, without
-        the guard; the 12-key bootstrap with the RTX PRO~6000 point estimate at
-        the lower edge of [0.38, 2.26] (RTX~3090 [1.74, 6.09]); the
-        leave-one-key-out regrets (0.8 / 7.4 / 3.7\%) as the more honest
-        uncertainty with 12 clusters; and the recommended optimizer protocol,
-        given that 50 random starts reach a 16\% lower objective and 1.7\%
-        regret on the RTX~3090. Report calibration on the six default-table
-        configurations only (the 72 static re-measurements alone reach 0.56 /
-        1.8 / 6.1\%). \emph{Where:} main.tex:932--935; appendix.tex:846--848,
-        858--880. (RC M3c; R1 M3; R2 M3(d); R3 m22)
-  \item (a)+(b) \textbf{Physical consistency of Eq.~(3).} The latency term
-        $A\cdot\min(1, W_1/W)$ lets the predicted wave time per tile drop below
-        $A$, the serial per-tile latency of the non-unrolled state loop, so
-        the model can predict wave makespans below the critical path; the
-        fitted $W_1$ is 6.6--10.5 warps, exceeded in batched calls with 4-warp
-        configurations. Justify the form or refit a
-        $\max(\mbox{latency},\mbox{throughput})$ form (Hong and Kim; Volkov)
-        and report whether the selected chunks change. Model the last partial
-        wave ($m=\min(r,\lceil n_p/n_{\mathrm{SM}}\rceil)$ assumes an even
-        spread; $n_p/n_{\mathrm{SM}}$ is 1.4--2.7 at batch 1); validate the
-        static spill-size proxy $\omega$ against measured local-memory traffic
-        at the 255-register configurations ($C=512, 1024$; see M5e); and
-        correct appendix.tex:793, which still calls $\sigma$ ``spill-store
-        traffic''. \emph{Where:} Sec.~4, Eq.~(3) (406--518). (R2 M3(b), m5,
-        m6; RC M3b)
-  \item (a)+(b) \textbf{Reposition the model.} Either give a concrete case
-        where keys cannot be enumerated, or shorten Sec.~4, Sec.~6.4 and the
-        abstract to a compact case study whose conclusion is that profiling
-        dominates for enumerable keys. The one use profiling cannot replace is
-        an ahead-of-time table for a GPU that cannot be timed: move the S2
-        cross-device results for all source/target pairs into Sec.~6.4 (RTX
-        PRO~6000 parameters with H800 compile facts select with 3.8\%, 3.3\%
-        in device time). Present the model as a top-$k$ pruner and compare it
-        with Triton's perf\_model/top\_k mechanism and an off-the-shelf
-        occupancy-only ranker. Drop the Gated DeltaNet ``instance'' from
-        Table~2 (five parameters fitted to nine timings, no regret). Soften
-        appendix.tex:742 (``a new GPU needs its compile facts but hardly its
-        own calibration'', one kernel on three GPUs) and main.tex:1449--1451
-        (add ``for this kernel''). (R3 M5; EIC M4 fix (b); R2 M3(c); DA C4; RC
-        M2a residuals)
-  \item (b)+(c, RTX 3090 lab host) \textbf{Work-term model for SSD and Gated
-        DeltaNet.} Add the padding term for $L<C$ ($\max(L,C)$ work, as
-        disclosed at main.tex:1424) and report eager and graph regrets; the
-        eager-calibrated model loses 9--22\% under graphs and the replay-fold
-        refit loses 20\% of scan time on SSD 370M on the RTX PRO~6000 against
-        1.7\% for the default. Calibrate it on graph-timed calibration keys
-        (about 1 GPU-hour on the lab host) instead of replay folds.
-        \emph{Where:} Table~7 work-term columns; S9. (RC N9, M6a; DA C4; R2
-        M2)
-  \item (c, optional, RTX 3090 lab host) \textbf{Transfer to a second
-        kernel.} Apply the unchanged procedure (compile without running, read
-        the resource report, calibrate at about twelve keys, terms fixed
-        before seeing the target calls) to an independently written Triton
-        kernel whose registers and spills vary with the chunk, e.g.\ FLA's
-        \texttt{chunk\_fwd\_o} or the SSD \texttt{chunk\_scan} kernel with the
-        inner tile fixed. About 4--8 GPU-hours. If not run, keep the
-        single-kernel case-study scoping (main.tex:406--414, 501--506).
-        (R2 M3(e); EIC M4 fix (a); DA C4)
-  \item (c, optional: needs a rented data-centre GPU) \textbf{A fourth,
-        unseen GPU.} Freeze all selectors and the protocol and evaluate on a
-        previously unseen GPU (A100, L40S or H100 SXM); this is the only way to
-        support ``a new GPU needs its compile facts but hardly its own
-        calibration''. About 2--4 GPU-hours. If not run, remove that sentence.
-        (R1 M3 fix (iv))
-\end{enumerate}
-
-\subsection*{M5. Measurement reliability and statistics}
-Merges R1 M2, M4, M5, EIC M6, R2 M2, DA C7, C10, RC M4e, M6d, M10c, ED reason
-6, R1 m5--m7, m11, m13, EIC m12, m13, R2 m3.
-
-% STAGE: 10 (revision) + src
-% RULES: academic-paper/agents/argument_builder_agent.md
-\begin{enumerate}[label=M5\alph*.]
-  \item (b) \textbf{Noise floors and floor sensitivity.} Next to every regret,
-        report the noise floor of that data set (cross-round or cross-session
-        regret of the per-shape best chunk, as already computed for the TP
-        sweep and in Table S37) and interpret effects only above it; say in
-        each caption that regrets against the per-call oracle are biased up by
-        the minimum of noisy means, and that the held-out tables' 0.06--0.5\%
-        in device time and graph mode bounds this bias. Give a sensitivity
-        analysis (factors 1.5 / 2 / 3) for the ad hoc launch floor (``twice the
-        median batch-1 latency at $L\le256$'') and the 100\,$\mu$s convention
-        threshold, which drive counts such as 375 of 397 calls and 17\% of
-        calls above the floor. For ``no practically relevant information'',
-        count only data sets whose chunk effect exceeds the noise floor.
-        \emph{Where:} Tables 4, 5, 7, 8; main.tex:1088--1092; Table S37. (R1
-        M2 fix (i), m5, m6; EIC m12; RC N2)
-  \item (a)+(b) \textbf{The RTX~3090 tensor-parallel sweep is
-        noise-dominated.} A table retuned at the exact shard shape and scored
-        on another round loses 14.87\% on the Triton kernel, and the cost
-        model beats it by $-8.35$ points [$-12.38$, $-4.59$] (reference scan
-        $-4.35$ [$-7.06$, $-1.86$]), which only scoring noise can produce; the
-        per-round argmin agrees for 52\% of shapes. On the H800 the retuned
-        table loses 0.75\% and the model is worse by $+2.16$ [1.16, 3.22], as
-        expected. Demote the RTX~3090 TP numbers (including ``a table tuned at
-        the unsharded width loses 36.8\%'') to the supplement as
-        uninformative and rest the shard-width claim on the H800, or re-run
-        the sweep with more rounds and the guard on the lab host (c, optional,
-        RTX 3090 lab host; about 2--3 GPU-hours). \emph{Where:} Sec.~6.5
-        ``Tensor-parallel widths'' (1062--1077); Contribution~2; Tables S19,
-        S24. (R1 M2; DA C10; R3 M3)
-  \item (c, RTX 3090 lab host) \textbf{Value invariance above the floor.}
-        Table~3 (414 cells) is launch-inclusive, unguarded and at
-        $L=512$ launch-dominated (median 62\,$\mu$s at the selected chunk,
-        inside the 56--90\,$\mu$s launch cost); the captured-activation input
-        was timed in a second process 36 minutes after the others, which
-        confounds it with placement; with three rounds only 4 of 18
-        configurations pass TOST at a 2\% margin, the main text reports median
-        bounds (3.6 / 3.2\%) while the maxima reach 14.8\% (Mamba-1) and
-        34.0\% (SSD) on the RTX PRO~6000; at $L=2048$ the values-only ranges
-        reach 22.8\% but are non-significant through noise, and the 0.1\% vs.\
-        21\% headline is made at $L=8192$ only. SSD and Gated DeltaNet
-        invariance above their floor is untested (two of three device-time SSD
-        data sets are inconclusive at the 0.5-point margin), and the Gated
-        DeltaNet synthetic sweep calls a different entry point than the
-        captured calls. Re-run in device time or graph replay with all eight
-        inputs including captured activations interleaved in one process,
-        fixed placement (design A) plus the multi-allocation design C, at
-        least five rounds, Mamba-1 at $L\in\{2048, 8192\}$, and SSD and Gated
-        DeltaNet above their floor through the same entry point for synthetic
-        and captured inputs; report per-configuration and worst-case TOST
-        bounds in the main text. About 3--4 GPU-hours. Until done, qualify the
-        recipe's ``synthetic inputs suffice'' for SSD and Gated DeltaNet
-        (M7c). \emph{Where:} Sec.~6.1, Table~3 (695--744); Tables S1, S5,
-        S10; Limitations. (R1 M5; DA C7; ED; RC recipe-vs-Limitations)
-  \item (a) \textbf{H800 input effects in the main text.} On the H800, 28 of
-        36 fixed-chunk configurations show a significant input effect
-        launch-inclusive and 36 of 36 in device time, with ranges up to 47.6\%
-        and 39.9\% at $L=2048$; the per-input best chunk flips between 256 and
-        1024 there, only 54--71\% of cells are tied, and the regret reaches
-        5.7\%. The replication paragraph (main.tex:1386--1388) cites only the
-        RTX~3090 (``at most 4.3\%''). Add one sentence: on the H800 these
-        effects could not be attributed to placement because no placement or
-        L2 control was run there. A placement and cold-L2 control on the H800
-        is (c, optional: needs a rented data-centre GPU; about 1--2
-        GPU-hours). \emph{Where:} main.tex:742--744, 1386--1395;
-        appendix.tex:710. (DA C7; RC M6d)
-  \item (c, RTX 3090 lab host) \textbf{Hardware counters for the mechanism.}
-        The binding resource per regime (grid parallelism, register-limited
-        occupancy, spill traffic, issue slots, launch floor) is asserted, and
-        the placement explanation rests on an intervention only. With Nsight
-        Compute where permitted (cloud containers return ERR\_NVGPUCTRPERM),
-        collect for the twelve tuning keys at each chunk: achieved occupancy,
-        warps per scheduler, issue-slot utilization, top stall reasons,
-        local-memory load/store sectors and L2 hit rate; the L2 hit rate for
-        two placements of the same input; and a per-kernel time breakdown
-        versus chunk under graph replay at short and long calls for SSD
-        (chunk\_cumsum, chunk\_state, state\_passing, bmm\_chunk, chunk\_scan)
-        and Gated DeltaNet (cumsum, kkt, solve\_tril, recompute\_w\_u, fwd\_h,
-        fwd\_o), including the empty or masked programs when $C>L$. These feed
-        the mechanism figure (M8d) and the spill-proxy check (M4d). About 2--4
-        GPU-hours. \emph{Where:} Sec.~4; Table~1; Sec.~6.1 ``Placement, not
-        values''; Sec.~6.5. (R2 M2; ED; R2 m5)
-  \item (c, RTX 3090 lab host) \textbf{Platform corroboration and session
-        reproducibility.} The 48\,GB RTX~3090 is non-stock, possibly
-        virtualized or time-sliced (main.tex:559--561), with the power cap
-        active in 38--92\% of readings, and it alone carries the routed study,
-        the reference-scan sweep, the larger checkpoints, the production
-        kernels at larger widths and TFLA. Launch-inclusive results did not
-        reproduce between two RTX PRO~6000 sessions (median oracle 60 vs.\
-        98\,$\mu$s; shape tree 0.7 to 4.7\%; model 0.9 to 4.9\%), and the RTX
-        PRO~6000 device-time sweep and graph replays are single sessions.
-        State whether the 48\,GB board is a virtual GPU and which conclusions
-        rest on it alone. On the lab host, re-time the RTX~3090 graph replays
-        of Table~7 and a stratified subset of the captured calls and
-        reference-scan sweep with exclusive access (locked clocks if
-        possible), and report the cross-session stability of a tuned table
-        (tune in session A, serve in session B). About 3--5 GPU-hours. A
-        second RTX PRO~6000 session (device-time captured calls and graph
-        replays) is optional and needs a rented RTX PRO~6000 (about one GPU
-        day). \emph{Where:} Sec.~5.2 (557--606); Sec.~6.8 (1392--1395);
-        S1.1, S8; Tables S1, S2. (EIC M6; R1 M2 fix (ii); R3 M3.2--3.3; DA
-        C10)
-  \item (a) \textbf{Protocol documentation.} Add Table S1 rows for the four
-        taco-r1 runs (RTX PRO~6000 graph replays, packed calls,
-        autotuner-state re-timing, output divergence) and a Table S2 entry for
-        the stock 24\,GB RTX~3090 used for the last two (state they are
-        cross-instance checks); flag every main-table number from an
-        unguarded run (value invariance, launch-inclusive and H800 captured
-        calls, most calibration data) or replace it; evaluate every row of
-        Table~5 on the same data set per GPU (now three-round medians on two
-        GPUs, single blocks on the H800, and the RTX~3090 a-priori row from
-        another session); record host CPU model, governor and load for every
-        launch-inclusive data set; document what the local mamba\_ssm build
-        changes and confirm the SSD kernels are unmodified. On the 20\,ms
-        device-time spin: state whether warm-ups and the enqueue of 50
-        repeats of the multi-kernel pipelines (about 23--40\,ms at their eager
-        floor) fall inside it, size it to the measured enqueue time in new
-        runs, and compare device time with graph replay on the same Triton
-        calls to bound any clock or power bias. State in the Conventions box
-        that both conventions time identical kernels back to back on resident
-        inputs and that cold-L2 controls exist only for Mamba-1 on the RTX
-        PRO~6000 and one flushed graph round on the RTX~3090. \emph{Where:}
-        Conventions box main.tex:608--642; appendix.tex:59--132, 1952--1953,
-        2063. (RC M10c; EIC M6, m13; R1 M2 fix (iv)--(v), m7, m11; R2 m3)
-  \item (b) \textbf{Intervals and per-batch breakdowns.} Add cluster-bootstrap
-        intervals for Table~6 (reference scan, larger checkpoints) and
-        Table~8; give per-batch values for the 1.4B and 2.8B transfer rows
-        (the pooled 1.4B regret of 3.7\% is 1.0 / 13.9 / 0.9\% at batches 1 /
-        4 / 16); report the number and size distribution of the 42 prompt
-        clusters and use BCa or studentized intervals; refit inside the
-        bootstrap (or repeated grouped cross-validation) for paired
-        differences; control multiplicity across the about 19 data sets, 3
-        conditions and 3 statistics, or label the tests descriptive.
-        \emph{Where:} main.tex:1022, 1056--1058; Tables S (tables\_ci, ci)
-        appendix.tex:1719--1796. (RC M4e; R1 M4 fix (iv)--(v), m13)
-  \item (b)+(c, RTX 3090 lab host) \textbf{Information-side power where the
-        headroom exceeds one synchronization.} On Mamba-2 370M,
-        launch-inclusive RTX~3090, the oracle label is tie- and
-        noise-dominated ($H(\mbox{oracle}\mid\mbox{exact key})=1.97$ bits of a
-        possible 2.32; about 3.2 chunks within 2\%), so a CMI excess of
-        $-0.0003$ bits ($p=0.50$) says little; R1's continuous-outcome check
-        (Spearman $\rho$ $-0.06$ to 0.31, all $p\ge0.13$, 24--224 calls per
-        shape) agrees but excludes only large effects; the largest headroom
-        (43\,$\mu$s at $L=8192$, batch 16) is 0.4\% of a 10.7\,ms call, the
-        size of the 0.9\% within-block CV. Add a continuous-outcome test
-        (per-chunk log latency on entropy within the exact key with layer and
-        prompt-cluster random effects, or the top-2 latency ratio) with effect
-        sizes in $\mu$s, intervals and a minimum detectable effect; express
-        the equivalence margin in absolute terms tied to the decision cost
-        (e.g.\ half a synchronization, about 10\,$\mu$s) or relative to the
-        residual regret, since the 0.5-point margin exceeds the shape tree's
-        entire residual (0.38--0.46\%) and cannot fail in the beneficial
-        direction. Re-time the five Mamba-2 shapes whose headroom exceeds one
-        synchronization in graph mode with at least three rounds on the lab
-        host (under 1 GPU-hour; a different board, so report it as
-        cross-instance). \emph{Where:} Sec.~6.3; Sec.~6.7; Tables 5, S6, S37.
-        (R1 M4)
-\end{enumerate}
-
-\subsection*{M6. Workload representativeness and serving economics}
-Merges R1 M6, DA C9, C20, EIC M7, EIC m8, R3 M1, R3 m5, m15, m16, R2 M4.4, R1
-m8, m9, R2 m14.
-
-% STAGE: 10 (revision)
-% RULES: academic-paper/agents/argument_builder_agent.md
-\begin{enumerate}[label=M6\alph*.]
-  \item (b) \textbf{Workload weighting.} The 2360 captured calls span only 57
-        distinct (length, batch) shapes (34 / 13 / 10 lengths at batch 1 / 4 /
-        16); 79.5\% have power-of-two lengths, all aligned, where real traffic
-        would give about one in sixteen; 773 calls (33\%) lie on the twelve
-        calibration keys; twelve shapes hold 65\% of the calls and 160 calls
-        share $L=25$; the batch mix is fixed at 1536 / 488 / 336, a batch-16
-        call holds 2--10 distinct prompts and 177 of 488 batch-4 calls contain
-        fewer than four; batch-1 calls are 65\% of the data and 20\% of calls
-        take under 20\,$\mu$s in device time on the RTX PRO~6000. Every
-        per-call mean and latency-weighted share depends on this mix.
-        Post-stratify the captured-call results to the (length bucket, batch)
-        distributions of the Azure 2023/2024 and BurstGPT replays already
-        computed in S13 and report the headline per-call and latency-weighted
-        numbers under those weights, with cluster intervals, beside the
-        unweighted ones. \emph{Where:} Sec.~5.2 (570--591); Tables 4, 5, 7, 8;
-        abstract. (R1 M6; DA C9; EIC M7; R3 M1 fix 2)
-  \item (c, optional, RTX 3090 lab host) \textbf{Natural-length calls.} Time a
-        set of calls whose lengths and batch compositions are sampled from the
-        public traces (natural, mostly unaligned lengths) and report the
-        selectors on it. About 2--3 GPU-hours. (DA C9)
-  \item (b)+(a) \textbf{Serving replay and units.} The replay costs every call,
-        including packed calls, as the nearest key of the Triton scan (which
-        supports neither variable-length calls nor the production Mamba-1
-        path), uses a step model of 2\,ms plus 10\,$\mu$s per token that is
-        2.3$\times$ faster than measured eager prefill (so the bound's
-        direction depends on the baseline engine), scales $P_k$ from wall
-        clocks and extrapolates beyond $L=8192$ and batch 16; the break-even
-        counts (1900 / 2660 calls) and ``2.1--2.6\% / 5.5--10\% of prefill''
-        are model outputs. Re-run the replay with the production kernels'
-        own graph-replay and packed-step timings (170 packed steps exist on
-        the RTX PRO~6000); label every measured and every modelled conclusion
-        in the main text, with the load-sensitivity ranges. Define ``ms per
-        forward pass'' (mean per-call regret times the number of layers over a
-        non-workload-weighted mix) or switch to ms per prefill at stated
-        $(L,B)$ points, and give the latency-weighted figure wherever a
-        per-call regret appears in the abstract or conclusion. \emph{Where:}
-        Sec.~6.7 ``Deployment units'', ``Key churn'', ``Serving traces''
-        (1284--1372); Table~8 caption; appendix.tex:2206--2220. (EIC M7; R3
-        M1 fix 3; R2 M4.4; R1 m9; R3 m5; R2 m14; DA C6)
-  \item (a) \textbf{Routed end-to-end study.} Lead with stock dispatch against
-        the best chunk ($+0.7\pm1.1$\% of prefill at 4096 tokens, Table S39),
-        not with the deliberately bad chunk 128 (``adds 16.8\,ms''); write
-        ``16.8\,ms (16.7\%)'' to keep units consistent; state that the testbed
-        is eager Hugging Face Transformers on one RTX~3090 with the reference
-        scan, that prefill takes about 46--47\,ms at 256 and 976 tokens
-        whatever the chunk, and that decode at about 39--40\,ms per token
-        (1.24--1.26\,s for 32 tokens) dilutes ``3.1\% of end-to-end time'';
-        report prefill (time to first token) as primary. Present the
-        19--191\% penalties of the statistic as an upper bound for one
-        unoptimized implementation (the full histogram is not
-        bandwidth-optimal, and the guarded and learned-table variants pay for
-        a histogram they do not use), give a fused or device-side cost
-        estimate per statistic, and note that a zero-overhead shape-keyed
-        policy is never measured end to end there. \emph{Where:}
-        main.tex:1177--1194; S15, Table S39. (R3 M1 fix 4, m15, m16; R1 m8;
-        EIC m8; DA C20, C6)
-\end{enumerate}
-
-\subsection*{M7. Recipe correctness}
-Merges R3 M4, R2 M8, R2 m11, m15, m16, DA C18, R3 m19, m21, RC
-recipe-vs-Limitations. Engineers will copy the recipe box (main.tex:1320--1344);
-every item must be correct and point to its evidence.
-
-% STAGE: 10 (revision)
-% RULES: academic-paper/agents/draft_writer_agent.md
-\begin{enumerate}[label=M7\alph*.]
-  \item (a) \textbf{Batch invariance.} ``A batch-invariant or deterministic
-        mode should keep one chunk per key'' is not sufficient: the key
-        contains the batch size and the packed length, so the same request
-        gets a different chunk and summation order depending on what it is
-        batched with, and chunk switching changes the greedy output of
-        2.6--9.4\% of prompts in half precision (per-length table up to
-        4.7\%; Table S36). Batch-invariant serving must fix the chunk or key
-        it only on per-request quantities; replicas must share one frozen,
-        versioned table. Move the divergence result into the recipe and the
-        abstract-level trade-off, with its run-to-run baseline (the default
-        run twice was bitwise identical). \emph{Where:} Recipe; Sec.~7
-        main.tex:1410--1412; S11. (R3 M4.1; DA C18; R2 m11)
-  \item (a) \textbf{Crash hazard.} Small chunks overflow the 32-bit indexing
-        of the chunk-state tensor and fault with an illegal memory access (SSD
-        chunk 32 at width 5120, batch 16, $L>6528$; TFLA chunks 32 and 64 at
-        the largest shapes; S6, S7), which poisons the CUDA context, so a
-        warm-up profiler can take a server down. Add to ``Failure modes'' a
-        candidate-set rule: exclude chunks whose state tensor would exceed
-        $2^{31}$ elements at the largest batch and length the key admits (the
-        tensor grows as $L/C$). (R3 M4.2)
-  \item (a) \textbf{Synthetic warm-up inputs.} Constant and very sparse
-        inputs are systematically faster, by up to 6.7\% on the Triton scan
-        and 3.4\% on the reference scan (S1.3), and placement moves latency by
-        up to 43.6\%. Specify dense random inputs of realistic scale, several
-        allocations or a flushed L2, and timing above the launch floor;
-        qualify the sentence for SSD and Gated DeltaNet until M5c is done
-        (main.tex:1328--1330 conflicts with Limitations). (R3 M4.3; RC
-        recipe-vs-Limitations)
-  \item (a)+(b) \textbf{The key is the specialization signature.} Triton
-        specializes on the divisibility of integer arguments including
-        strides and on pointer alignment, not on ``the length''; the kernel
-        sees stride $=L$ only because the inputs are made contiguous, while in
-        production layouts the stride is $B\cdot L$ or the packed token count,
-        and $x$ comes from \texttt{xz.chunk(2, dim=1)} of a $[B,2d,L]$
-        projection with an offset that may break 16-byte alignment. Define the
-        key as the kernel's actual specialization signature (Triton's
-        compilation cache key and specialization attributes), verify which
-        attributes Triton~3.4 applies to this kernel, and report the
-        aligned/unaligned effect for the SSD and Gated DeltaNet kernels on
-        captured or packed calls. For the reference CUDA scan, discuss
-        $\mathrm{kIsEvenLen} = (L \bmod (\mathrm{kNThreads}\cdot\mathrm{kNItems})
-        = 0)$, which changes with the chunk, in Table~1 and Sec.~6.5, and
-        state which part of its chunk effect is thread count, items per
-        thread and this bit. Make alignment its own action: unaligned lengths
-        are about 2$\times$ slower at batch 1 (Fig.~S3: $L=2382$ against
-        2048), so recommend padding lengths or strides to a multiple of 16 or
-        aligned allocation where the engine allows. A small aligned/unaligned
-        re-timing of the production kernels is (c, RTX 3090 lab host; under 1
-        GPU-hour). \emph{Where:} Sec.~3 key definition; Sec.~4 ``Compiler
-        specialization and parallel shapes'' (main.tex:510--518); Table~1;
-        S12. (R2 M8, m15; R3 M4.4)
-  \item (a)+(c, RTX 3090 lab host) \textbf{Tuning cost under graphs.}
-        ``Seconds per GPU'' holds for eager timing and excludes compilation
-        (27--40\,s for the captured workload). Under graphs, tuning means one
-        captured graph per candidate chunk and capture size: report the
-        capture time and graph-pool memory (measure alongside M3d, under 1
-        GPU-hour), or recommend device-time tuning before capture and say
-        that device-time timings of multi-kernel pipelines are unreliable near
-        the floor (S8). (R3 M4.6, m21)
-  \item (a) \textbf{Label unsupported items as precautions.} Invalidation on a
-        power-limit, driver, compiler or library change (only the GPU-model
-        part is evaluated), broadcasting the chunk across TP ranks, and
-        consistency with prefix-cache checkpoints have no supporting
-        measurement. For the last, be concrete: engines may tie the
-        state-checkpoint granularity of hybrid prefix caching and the
-        per-step chunk metadata to the configured chunk, so a per-shape chunk
-        may be unsupported without engine changes. The key includes the data
-        type, but only fp16 (Mamba-1, SSD) and bf16 (Gated DeltaNet) were
-        measured: add one bf16-versus-fp16 SSD comparison (c, optional, RTX
-        3090 lab host; under 1 GPU-hour) or state that the dtype dependence is
-        untested. (R3 M4.5, m19; R2 m16, M4.3)
-\end{enumerate}
-
-\subsection*{M8. Clarity and self-containedness}
-Merges EIC M5, R1 m12, m14, R2 M7, R3 M7, DA C12, RC M9a, M9c, ED reason 5.
-The paper uses five or more timing conventions, packs 3--10 numbers into most
-sentences, has two figures in 20 pages and depends on the supplement for the
-evidence behind the recipe (Tables S33, S35, S36, Fig.~S3, the S2 transfer).
-
-% STAGE: 10 (revision)
-% RULES: academic-paper/agents/draft_writer_agent.md
-\begin{enumerate}[label=M8\alph*.]
-  \item (a) \textbf{Abstract.} About 180 words, three findings, one number per
-        claim with its convention named (per call, latency-weighted, device
-        time, graph replay); no undefined terms (``recurrence-preserving
-        launch'', ``three-parameter ranker'', ``residual regret''); the
-        in-house kernel disclosed (M2a). \emph{Where:} main.tex:47--70. (RC
-        M9a; EIC M5; R2 M7; R3 M7.5; DA C12; R1 m12)
-  \item (a) \textbf{Restructure Sec.~6 around the findings.} One subsection
-        per question of Sec.~1 (or per finding of M1a), each with one table or
-        figure and a one-sentence takeaway; split Table~5 into ``profiled
-        selectors (information test)'' and ``calibration-only selectors'';
-        move CMI, permutation tests, depth-6 trees and the bootstrap of the
-        fit to the supplement; compress the citation lists of Sec.~2, the
-        information tests of Sec.~6.3 and the key-churn derivation of
-        Sec.~6.7 (its practical conclusion: profile at warm-up, 30--50\,ms per
-        key). \emph{Where:} Sec.~6 (647--1395). (EIC M5; R3 M7.1, M7.4; R2 M7;
-        R1 m14)
-  \item (a) \textbf{One convention per table and a glossary.} State the
-        convention in each column header and footnote exceptions: Table~4
-        mixes device-time Mamba-1 rows with launch-inclusive Mamba-2 rows;
-        Table~8 mixes device time, launch-inclusive and above-floor rows;
-        Table~5 mixes sessions and seeds; Sec.~6.6 quotes launch-inclusive
-        and device-time headroom in one sentence. Replace the Conventions box
-        by a small table mapping each convention to the deployment regime it
-        approximates and the tables that use it, and add a glossary (oracle
-        headroom, headroom, residual regret, floor, covered, tie,
-        latency-weighted share, form-blind, tuned shapes). \emph{Where:}
-        main.tex:608--642; Tables 4, 5, 8. (EIC M5; R2 M7; R3 M7.2, m4; DA
-        C12)
-  \item (a)+(b) \textbf{Figures and main-text anchors.} Add a mechanism figure
-        (latency versus chunk decomposed into the model's terms or the M5e
-        profiler metrics, per regime) and a claims-to-evidence table; bring
-        into the main text the cost-model fit (Fig.~S3) or the
-        profiling-budget curve (Fig.~S4), Table S33 merged with Table~7, the
-        S2 cross-device result, the S11 divergence result and the TP table
-        (now prose only); every abstract and conclusion claim must point to a
-        main-text table or figure, within V4. (R2 M7; R3 M7.3; EIC M5; RC
-        M9c; ED)
-  \item (a) \textbf{Discussion and Limitations.} Expand the Discussion
-        (main.tex:1397--1412, two short paragraphs) to about one page:
-        integration into Triton's autotuner and \texttt{do\_bench\_cudagraph},
-        engine graph capture, generality beyond these kernels, and what to
-        expect on data-centre GPUs; itemize Limitations (1416--1440, one
-        run-on paragraph). (EIC M5)
-\end{enumerate}
-
-\subsection*{M9. Positioning and missing related work}
-Merges R2 Sec.~7, R2 M3(a), R2 m9, DA C17, EIC M3, EIC m17. Verify the
-bibliographic data of every added reference before citing it.
-
-% STAGE: 10 (revision)
-% RULES: academic-paper/agents/draft_writer_agent.md
-\begin{enumerate}[label=M9\alph*.]
-  \item (a) \textbf{Static and predictive pruning of GPU autotuning} (closest
-        prior art for ``compile, read the resource report, rank, profile the
-        top-$k$''): Ryoo et al., Program Optimization Space Pruning for a
-        Multithreaded GPU (CGO 2008); Lim, Norris and Malony, Autotuning GPU
-        Kernels via Static and Predictive Analysis (ICPP 2017); Bergstra,
-        Pinto and Cox (InPar 2012); Falch and Elster (CCPE 2017); the survey
-        of Balaprakash et al.\ (Proc.\ IEEE 2018); Kaufman et al.\ (MLSys
-        2021). Occupancy and latency modelling for Eq.~(3): Volkov, Better
-        Performance at Lower Occupancy (GTC 2010); Hong and Kim (ISCA 2010).
-        \emph{Where:} Sec.~2 ``Performance models''; Sec.~4. (R2 M3(a), Sec.~7)
-  \item (a) \textbf{Shape-keyed tuning in production stacks} (the recipe's
-        closest practice): PyTorch~2 / TorchInductor (ASPLOS 2024;
-        max-autotune, dynamic-shape bucketing and specialization, per-shape
-        CUDA graphs); FlashDecoding++ (MLSys 2024; shape-keyed GEMM selection
-        in serving); MIOpen find-db/perf-db (arXiv:1910.00078); cuDNN
-        benchmark mode; TensorRT's persistent timing cache; the per-device,
-        token-count-bucketed Triton configuration files of the fused-MoE
-        kernels in vLLM and SGLang; SGLang (NeurIPS 2024); recent autotuners
-        BaCO, GPTune and ytopt. Position the recipe against them and say what
-        it adds. (R2 Sec.~7; DA C17)
-  \item (a) \textbf{TFLA.} TFLA is called ``the closest analysis'' but appears
-        only as a failing baseline on a scan it does not model, so its
-        rejection of the quadratic term is foregone; its runtime form is
-        essentially the paper's work-term model $BL(a+bC)+B\lceil
-        L/C\rceil g$ plus a floor. State this, compare TFLA's expression with
-        the work-term model on SSD and Gated DeltaNet, where it applies, move
-        the TFLA-on-scan baseline to the supplement, and expand the two
-        sentences at main.tex:221--231. (R2 M3(a), m9; EIC M3)
-  \item (a) \textbf{Background.} Parallel scans for linear recurrences:
-        Blelloch (1990); Martin and Cundy (ICLR 2018); Merrill and Garland
-        (2016, decoupled look-back, the pattern of a chunked scan with a
-        carried inter-tile state); Smith, Warrington and Linderman (ICLR
-        2023). Measurement variability: Sinha et al., Not All GPUs Are Created
-        Equal (SC 2022), for the per-device tuning and power-cap discussion.
-        (R2 Sec.~7)
-\end{enumerate}
-
-% ======================================================================
-\section*{Minor Issues}
-\begin{enumerate}[label=N\arabic*.]
-  \item Notation: main.tex:516 ``Tensor parallelism over $t$ devices runs the
-        scan at width $d/n_{\mathrm{tp}}$''; use $n_{\mathrm{tp}}$ throughout.
-        (EIC m4; R3 m1; RC M9b)
-  \item Notation: Table S14 / appendix.tex:868 labels the first parameter
-        $t_0$ where Eq.~(3) uses $\tau_0$, and $t_0$ is also the tile start in
-        the pseudo-code. (R3 m2; RC M9b)
-  \item Notation: $k$ denotes both a shape key (Eq.~(5), main.tex:1296--1299)
-        and top-$k$; rename the key index (e.g.\ $\kappa$) or write top-$m$.
-        (RC M9b)
-  \item Notation: in Eq.~(3) waves $w$, resident warps $W$ and thresholds
-        $W_0, W_1$ are easily confused; rename the waves (e.g.\
-        $n_{\mathrm{wave}}$). (EIC m5)
-  \item Caption length: Table~5 (103 words, main.tex:827--837), Table~6 (105
-        words, 996--1005) and Table~3 (82 words); move definitions to the
-        conventions table or text and keep captions under about 50 words.
-        (RC M9e)
-  \item Fig.~1: the caption omits the timing convention (launch-inclusive per
-        Table S1, which explains the 0.5\,ms SSD and Gated DeltaNet floors and
-        the 0.06\,ms Mamba-1 floor at $L=512$); the panel titles sit on the
-        tick labels of the panel above; three stacked narrow panels leave half
-        the width empty (use a $1\times3$ layout with a shared legend); the
-        caption says chunk 512 is fastest at batch 1 while Table~3 has
-        $C^*=256$ at $L=512$ (say ``tied'' or qualify by length). (R3 m6; EIC
-        m7)
-  \item Fig.~2: fonts too small for print, only three x-axis ticks; in the
-        Triton panel ``default'' is a different chunk per curve; the host-bound
-        RTX~3090 series is visible only in the Triton panel (say so if it lies
-        at zero elsewhere) and a host-bound RTX PRO~6000 series is missing;
-        annotate bins with call counts; add the latency-weighted series.
-        (R3 m7; R2 m13)
-  \item Fig.~S5: the rotated labels ``1/8 histogram'' and ``full histogram''
-        overlap the plotted lines. (R3 m8)
-  \item Table~2: the ``Calib.''\ column needs a unit (timings per GPU); split
-        the ``Regret'' cell ``0.4*/3.5*/3.0 (4.2/6.2/3.0)'' into ``terms
-        selected on these calls'' and ``a priori'' columns. (EIC m6; R2 m12;
-        R3 m13)
-  \item Table~4: write ``calls whose oracle differs from the best static
-        chunk'' and ``entropy-rule regret'' instead of ``Oracle $\neq$
-        static'' and ``Rule regret''. (R3 m12)
-  \item Table~5: report MLP rows as five-seed mean $\pm$ s.d.\ (seed 0 gives
-        0.37\% on the RTX PRO~6000, the five-seed mean 1.59\%); footnote the
-        RTX~3090 $\dagger$ row's different session prominently or use the
-        same session; the first row merges the default chunk 256 and the
-        entropy rule, which coincide, and it coincides with ``Best single
-        chunk, held out'' on two of three GPUs: give each selector its own
-        row or explain the coincidence in one footnote; ``Best chunk per
-        batch, held out'' is computed in sample in the stored analysis (the
-        held-out values are identical, 20.0 / 17.4 / 24.7), so fix the label's
-        provenance. (R1 m3, m15; R3 m9; EIC M2 fix (d))
-  \item Table~7: give the oracle scan time (``(20.1)'') its own column; the
-        work-term ``Eager / Refit'' columns use per-call regret, unlike their
-        neighbours: separate them visually or move them to the supplement.
-        (R3 m10; EIC m15)
-  \item Table~8: rows mix conventions (see M8c); add the oracle scan time per
-        forward pass, since the identical 4.42\,ms default regret on the RTX
-        PRO~6000 and the H800 is correct (oracle 13.1 and 24.2\,ms) but looks
-        like a copy error. (R3 m11)
-  \item Reconcile one quantity across tables: RTX PRO~6000 device-time cost
-        model 0.40\% / p95 3.8 in Table~5, Sec.~6.4 and Tables S30, S31
-        (0.405 on round medians) against 0.38\% / 3.6 in Tables S14, S15, S16,
-        S19 (0.383 on round means); MLP 0.37 vs.\ 0.35; top-2/top-3 0.23/0.04
-        vs.\ 0.21/0.02 (RTX~3090 0.72/0.55 vs.\ 0.67/0.51); RTX~3090 cost model
-        3.52 vs.\ 3.55 (two sessions) and three-parameter ranker 0.85 vs.\
-        0.88. Use one oracle definition or state which each table uses. (EIC
-        m3; R1 m1; DA C13)
-  \item The RTX~3090 ordinary least-squares regret is 1.74\%, printed as
-        1.8\% (appendix.tex:847, and main.tex wherever repeated); write 1.7\%.
-        (RC M3c)
-  \item main.tex:714: ``In 94\% of the 414 cells the input-agnostic chunk is
-        tied'' uses the CI-overlap criterion (94.4\%); under the 2\% rule the
-        Conventions box makes default it is 93.5\%. State the criterion or
-        report 93\%. (EIC m1)
-  \item main.tex:814--815 mixes populations: the held-out 0.14\% is over all
-        2360 calls and depends on the fallback rule for the 204 uncovered calls
-        (a plain length-bucket fallback gives 0.22\%); 0.14\,$\mu$s is over
-        covered calls only (0.37\,$\mu$s over all calls). Specify the
-        population and the fallback rule. (EIC m2)
-  \item Reference-scan stock dispatch: 6.6\% (Table~6) compares a separately
-        timed stock binary against an oracle from the runtime-chunk build; the
-        runtime-chunk build at the stock chunk gives 5.35\%, same-chunk
-        re-timings across the two binaries differ by 0.86--1.13 (10th--90th
-        percentile), and the device-time stock pairing is 3.1\% (Table S21).
-        Use the same binary and repeated rounds, and say which number supports
-        ``a shape tree halves that''. (R1 m2; EIC m14)
-  \item Abstract ``three GPU generations'': only the Triton Mamba-1 scan was
-        measured on Hopper; the production-kernel results cover two GPUs. (EIC
-        m11; R3 m14)
-  \item ``Workstation GPUs'': the RTX PRO~6000 is the Blackwell Server
-        Edition (Table S2) and the RTX~3090 a consumer GeForce board; write
-        ``an Ampere consumer GPU and a Blackwell server GPU''. (R2 m2; DA C14;
-        RC M6a)
-  \item Abstract qualifier ``0.4 to 3.5\% when its terms are selected on the
-        same GPUs' calls'' includes the H800 (3.0\%), whose calls did not
-        select the terms. (DA C14)
-  \item Gated DeltaNet is limited by the library's solve\_tril path to chunks
-        $\le64$ (a three-point design space); say in the abstract, Sec.~6.5
-        and the conclusion that its ``fixed optimum at 64'' may be a library
-        ceiling (the work-term model places the optimum at 61--85). (EIC m11;
-        R2 m7)
-  \item The ``compile-facts rule (no parameters)'' of Table S (topk\_all) is
-        never defined; define it. (RC M5a)
-  \item ``Every configuration produced the greedy tokens of the unmodified
-        model'' (main.tex:1194) refers to three prompts, while S11 shows
-        2.6--4.7\% of 192 prompts diverging for fixed alternative Mamba-1
-        chunks in fp16; add ``on these three prompts''. (RC further
-        observations)
-  \item The ``shape'' feature set of Sec.~6.3 includes the layer index, which
-        is not part of the key of Sec.~3; the regrets are identical without it
-        (0.465 / 0.383 / 1.626 / 0.732), so describe the feature set
-        accurately or drop the layer. (DA C15)
-  \item Supplement citations ``Table S33'' and ``Section S11''
-        (main.tex:1409, 1412) lack the ``Supplementary'' prefix used
-        elsewhere. (EIC m10; R3 m17)
-  \item Sec.~1, third question: ``\ldots\ the trade-off between model-driven
-        and empirical optimization [Yotov et al.\ 2003]?'' is ungrammatical;
-        rephrase. (R3 m18)
-  \item Reference-scan dispatch: ``selects its chunk \ldots\ from the length
-        at compile time'' is inaccurate; the stock scan selects among
-        compile-time template instantiations at run time (host-side dispatch
-        on the sequence length). Align with Table~1's caption. (R2 m1)
-  \item Chunk-spread statistics (8.5$\times$; 15.2$\times$ at p95) are
-        dominated by heavily spilling configurations (e.g.\ $D_b=16$ with two
-        warps); demote them behind the regret of the default or best static
-        choice. (R2 m4)
-  \item ``Compile facts'' is idiosyncratic; use ``compiler resource report''
-        or ``static resource usage''. (R2 m17)
-  \item The 2\% tie criterion is below launch-inclusive noise (CV 4--5\%);
-        reference the three-criterion tie table (Table S3) wherever
-        launch-inclusive tie shares appear. (R1 m10)
-  \item Add the latency-weighted share of the batch-1 static chunk per GPU
-        (15.1 / 6.2 / 7.2\%) to the supplementary static/bucket table; Table~4
-        gives only the share of chunk 512. (RC M4b)
-  \item Bibliography: the cited preprint is filed under cs.CV (check the
-        entry); update 2026 arXiv-only references (Mamba-3, log-linear memory,
-        Astra) to archival versions where they exist; fill empty
-        publisher/address fields; add pages for beck2025tfla and
-        dao2024flashattention2; verify the page range 73099--73134 of
-        wang2026tilelang. (EIC m17; RC Stage 11 gate)
-  \item Typography: set the Conventions and Recipe boxes as lightly shaded
-        boxes in normal-size text instead of \texttt{\textbackslash
-        footnotesize} inside a tight \texttt{\textbackslash fbox}; Tables 5
-        and 7 use \texttt{\textbackslash scriptsize} with 2--2.2\,pt column
-        separation. (R3 m24, M7)
-\end{enumerate}
-
-% ======================================================================
-\section*{Acceptance Criteria}
-The paper moves to Minor Revision when A1--A8 hold; to Accept when, in
-addition, M1d is settled by measured end-to-end evidence (M3b at minimum) and
-every remaining claim is scoped to the evidence.
-\begin{enumerate}[label=A\arabic*.]
-  \item \textbf{Compliance (V1--V5).} A clean, current anonymized artifact
-        backs every main and supplementary table (an anonymization scan finds
-        no host names, user paths, hashes, project or venue names); only the
-        two PDFs are uploaded; the preprint relationship is disclosed to the
-        editor; the main text stays within 20 pages excluding references and
-        the supplement is about 20--25 pages.
-  \item \textbf{Framing (M1).} The contributions are the robust findings of
-        M1a; the data-dependence refutation is one subsection with the lemma
-        as an observation; the headroom result is stated as an information
-        result with a host-side cost corollary, including the RTX PRO~6000
-        reduction cost; the significance claim is settled per M1d.
-  \item \textbf{Kernel and baselines (M2).} The in-house kernel is disclosed
-        as a stress case in the abstract and Introduction; the free length
-        rule, the best chunk per batch and a length-bucket table are the
-        untuned references in the abstract, Sec.~6 and Tables 4, 5, 8; one
-        definition of default and best static per kernel; the chunk effect at
-        fixed launch configuration is reported and its slice re-timed under
-        the full protocol.
-  \item \textbf{Device-bound evidence (M3).} Recoverable gains with cluster
-        intervals replace oracle-relative shares; a full-model prefill
-        captured as one CUDA graph (default vs.\ table, two sessions) gives the
-        measured end-to-end effect and scan share; packed steps are re-timed
-        under graph replay with a noise floor and the recipe and
-        Contribution~2 follow the result; engine execution modes are described
-        with sources; the engine-level and data-centre items are either run or
-        their absence is stated and the claims scoped to the GPUs measured.
-  \item \textbf{Cost model (M4).} One pre-specified a-priori protocol with all
-        six reported, latency-weighted regret, maxima, per-batch values and
-        intervals; the abstract and conclusion state the protocol-dependent
-        accuracy with its latency-weighted companion; the form-blind
-        comparison with the three-parameter restriction and the MLPs is stated
-        plainly; the fit is documented; the latency term is justified or
-        refitted; the model is positioned as a cross-device or pruning case
-        study.
-  \item \textbf{Measurement and statistics (M5).} Noise floors next to every
-        regret; the RTX~3090 TP numbers demoted or re-measured; SSD and Gated
-        DeltaNet value invariance measured above the floor (or the recipe
-        qualified); H800 input effects in the main text; counters support the
-        stated mechanism where the profiler is permitted; the stock lab-host
-        corroboration reported; every main-table number from a guarded run or
-        flagged; one value per quantity across all tables.
-  \item \textbf{Workload and recipe (M6, M7).} Workload-weighted headline
-        numbers beside unweighted ones; the serving replay costed with the
-        production kernels' measured timings, with measured and modelled
-        conclusions labelled; the routed study led by stock dispatch and
-        prefill; a recipe that handles batch invariance, excludes chunks that
-        overflow 32-bit indexing, keys on the specialization signature with an
-        alignment/padding action, qualifies synthetic warm-up inputs, and
-        labels untested items as precautions.
-  \item \textbf{Clarity and positioning (M8, M9, N1--N34).} An abstract of
-        about 180 words with one labelled number per claim; Sec.~6 organized
-        by finding with a mechanism figure and a claims-to-evidence table; one
-        convention per table and a glossary; an expanded Discussion and
-        itemized Limitations; the missing prior art cited, verified and
-        positioned against; all minor issues resolved.
-\end{enumerate}
-
-\paragraph{Estimated new GPU time.} Minimum for A3, A4 and A6 on the RTX~3090
-lab host: about 20--30 GPU-hours (M2d re-timing 2--3, M3b 4--8, M3d 3--5, M4f
-1, M5c 3--4, M5e 2--4, M5f 3--5, M5i under 1, M7d/M7e under 1 each), i.e.\
-about 5--8 hours of wall time on its four GPUs. Optional lab-host items (M2f,
-M3g, M4g, M5b re-run, M6b, M7f dtype): about 15--25 GPU-hours more. Optional
-items that need a rented GPU (M3e engine integration 15--25, M3f data-centre
-replication 6--10, M4h fourth GPU 2--4, M5d H800 control 1--2, and a second RTX
-PRO~6000 session of about one GPU day): about 30--60 GPU-hours; not planned in
-this cycle by the author's decision. All other items are text or offline
-re-analysis of existing result files.
 
 \end{document}
