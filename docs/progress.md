@@ -1,5 +1,11 @@
 # 论文进度
 
+## 【jpdc-r1】2026-11-06 改投 JPDC（分支 jpdc-r1）
+- ACM TACO 范围不符退稿（编辑部直接退稿，未送审）。目标改为 JPDC（单盲，Elsevier）。作者须知 PDF 在 submit/。
+- 已完成：论文由 acmart 改为 elsarticle（作者/单位/通讯作者、highlights、7 个关键词、编号参考文献 elsarticle-num）；补充材料包装（build.bat/build.sh）同步改版；预印本改为第一人称；引言加入并行计算视角；文末加入 Data availability、CRediT、竞争利益、资助、生成式 AI 声明；submit/highlights.txt（5 条，均 ≤85 字符）；submit/cover_letter_jpdc.txt。
+- 篇幅：7 张表（时间约定、TP 宽度、参考对照、基线选择器、预测器、oracle regret、claims 总表）移入补充材料新增的 S 节「Tables and Figure Moved from the Main Paper」，正文在 Elsevier 5p 双栏版式下约 12.1 页（原 13.2 页）；参考文献样式改为 elsarticle-num-names。
+- 未完成：Data availability 链接与 CRediT 作者分工为 TODO，需作者提供。
+
 最后更新：2026-10-16（taco-r1：M9c 补充材料压缩、M2b 编译信息（作者选 B）、补充材料编号核对；E30/E31 等待 vGPU 3090 开卡）
 
 <!-- revloop:status:begin -->
