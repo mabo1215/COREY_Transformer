@@ -4,7 +4,12 @@
 - ACM TACO 范围不符退稿（编辑部直接退稿，未送审）。目标改为 JPDC（单盲，Elsevier）。作者须知 PDF 在 submit/。
 - 已完成：论文由 acmart 改为 elsarticle（作者/单位/通讯作者、highlights、7 个关键词、编号参考文献 elsarticle-num）；补充材料包装（build.bat/build.sh）同步改版；预印本改为第一人称；引言加入并行计算视角；文末加入 Data availability、CRediT、竞争利益、资助、生成式 AI 声明；submit/highlights.txt（5 条，均 ≤85 字符）；submit/cover_letter_jpdc.txt。
 - 篇幅：7 张表（时间约定、TP 宽度、参考对照、基线选择器、预测器、oracle regret、claims 总表）移入补充材料新增的 S 节「Tables and Figure Moved from the Main Paper」，正文在 Elsevier 5p 双栏版式下约 12.1 页（原 13.2 页）；参考文献样式改为 elsarticle-num-names。
-- 未完成：Data availability 链接与 CRediT 作者分工为 TODO，需作者提供。
+- 已完成（2026-11-07）：Data availability 填入 Code Ocean 链接；CRediT 按作者答复（Bo Ma 负责除监督外全部角色，Weiqi Yan、Jinsong Wu 为 Supervision；无资助）；资助声明与生成式 AI 声明改为 JPDC 作者须知的标准措辞；文档类改为 `final,5p,times,twocolumn`。
+- 已完成（2026-11-08）：
+  - 移植另一台机器 11-03 的 C5/M4 分析（远端 main 上的 jpdc 线，论文提交 a2a0006，代码提交 71965d0）：等价性检验（TOST，±0.5% 边界；SSD 370M 增益 0.23% [0.13, 0.41]，更严格分析下需 ±1%）、单次调用推出的步级上界（式 bound）、launch/device 瓶颈模型（式 bottleneck）。分析脚本与结果文件已并入；本地重跑脚本，结果与原 JSON 逐项一致（0 处差异）。正文放精简版（新表 equivalence），完整表与细节放补充材料新节「Equivalence, Bound and Bottleneck Analyses」。摘要、贡献、结论、claims 表措辞同步改为“调优超出库默认值的收益是二阶的”。
+  - 修复双栏版式：上一版 5p 双栏中 8 个宽图表溢出到另一栏、与正文重叠；改为跨栏 figure*/table*。稿件内不再排 highlights 页（JPDC 要求 highlights 单独上传）。为压回 16 页，将硬件计数器细节、Gated DeltaNet 单个未见形状的解释、按公开 trace 加权的步级结果原文移到补充材料，三张跨栏图略缩小。补充材料中 3 张原有超宽表缩放到版心宽度。
+  - 结果：正文 16 页（JPDC Regular 上限 12+4=16 页），补充材料 61 页，0 未定义引用；submit/ 投稿包、highlights.txt、cover letter 已同步。
+- 待决：远端 main 与本地 jpdc-r1 分叉（共同祖先 f48c0b2），本地 main 尚未推送；需作者决定 main 的处理方式。
 
 最后更新：2026-10-16（taco-r1：M9c 补充材料压缩、M2b 编译信息（作者选 B）、补充材料编号核对；E30/E31 等待 vGPU 3090 开卡）
 
