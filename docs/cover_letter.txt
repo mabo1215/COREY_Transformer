@@ -1,39 +1,26 @@
-October 2026
+November 2026
 
 Editor-in-Chief
-ACM Transactions on Architecture and Code Optimization
+Journal of Parallel and Distributed Computing
 
 Dear Editor-in-Chief,
 
-We are pleased to submit our manuscript entitled "Shape Sets the Chunk: Selecting and Keying the Chunk of Chunked Linear-Recurrence GPU Kernels" for consideration as a regular paper in the ACM Transactions on Architecture and Code Optimization (TACO). It is a new paper, not an extension of a conference paper.
+We submit our manuscript "Measuring and Modeling the Chunk Size of Linear-Recurrence GPU Kernels: Execution Regimes, Measurement Bias and the Limits of Tuning" for consideration as a Regular Paper in the Journal of Parallel and Distributed Computing.
 
-The chunked linear-recurrence kernels behind Mamba, Mamba-2 and Gated DeltaNet layers expose a chunk size that trades on-chip reuse and occupancy against sequential and per-chunk work. A runtime that tunes it per shape needs a tuning cache, and the manuscript asks three questions about that cache: what its key must contain, where the chunk matters at all, and when a model of the compiled kernel can replace profiling a key. We answer them for three production kernels (the Mamba-1 CUDA scan, the Mamba-2 SSD pipeline and the Gated DeltaNet pipeline) and for a Triton scan that we wrote and use as a stress case. The measurements range from prefill calls captured from 370M to 2.8B parameter checkpoints up to whole prefill steps captured as CUDA graphs, on Ampere, Hopper and Blackwell GPUs.
+The chunked linear-recurrence kernels behind Mamba, Mamba-2 and Gated DeltaNet expose a chunk size that is the granularity of a blocked parallel scan: it trades on-chip reuse, parallel slack and occupancy against sequential and per-chunk work. The manuscript is a measurement and modeling study of this parameter: how large its effect is, which execution regime exposes it, what a timing can mistake for it, and when a model can replace timing. We study three production kernels (the Mamba-1 CUDA scan, the Mamba-2 SSD pipeline and the Gated DeltaNet pipeline) and a Triton scan that we wrote and use as a stress case, from prefill calls captured from 370M to 2.8B parameter checkpoints up to whole prefill steps captured as CUDA graphs, on Ampere, Hopper and Blackwell GPUs.
 
-The main findings of the manuscript are:
+Main findings:
+1. At the prefill-step level, tuning the chunk beyond the library default is second-order on the one GPU we measured: a held-out shape-keyed table is equivalent to the default within +-0.5% over steps of 256 to 8192 tokens (+-1% for one model under stricter analyses), with a largest gain of 0.23% (95% interval 0.13 to 0.41), because the scan is only 5 to 19% of the step. A wrong static chunk, by contrast, costs up to 15%.
+2. The execution regime decides where the chunk is visible: launch-inclusive latency follows the slower of the host's launches and the device, and in single-call CUDA-graph replays the library defaults leave 1.0 to 5.9% of the scan time, mostly on short calls.
+3. Buffer placement, and input values under a power cap, can move a single timing more than the chunk does; a tuning cache that times each key once records these as chunk or data effects.
+4. The best chunk follows the kernel's specialization signature and the device: adding activation entropy to the shape key changes the held-out selection regret by at most 0.03 points, while a single compiler divisibility bit changes the compiled kernel and its best chunk.
+5. A compile-informed model of the stress kernel selects with 0.8 to 7.4% regret with one calibration key left out, yet profiling every key a scheduler can enumerate takes seconds per GPU and costs less than calibrating the model.
 
-1. End to end, the chunk is a second-order knob for the production kernels. In a whole prefill step captured as one CUDA graph on a stock RTX 3090, a held-out shape-keyed table changes the latency of Mamba-2 and Gated DeltaNet models by at most 0.3% over steps of 256 to 8192 tokens, and by at most 1.4% under the prompt lengths of public serving traces, because the scan is only 5 to 19% of the step.
+We believe the manuscript fits the journal's interest in the performance analysis of parallel applications and in accelerator-based platforms. It discusses related work published in the journal on GPU autotuning and performance prediction: Filipovic et al. (2022) on hardware counters in autotuning, Ernst et al. (2023) on analytical performance estimation during code generation, and Amaris et al. (2023) on analytical and machine-learning predictions of GPU kernel execution times.
 
-2. The key is the kernel's specialization signature and the device, not the data. On captured calls the activations carry no information about the optimal chunk beyond the shape key, and a single compiler divisibility bit, which a length-bucket key loses, changes the compiled kernel and its optimal chunk.
+Related preprint: the authors also wrote the preprint "COREY: Entropy-Guided Runtime Chunk Scheduling for Selective Scan Kernels" (arXiv:2604.10597), which has not been peer reviewed or published elsewhere. The present manuscript is a new study whose conclusions differ in part: it uses the entropy scheduler of the preprint as the control for data-dependent dispatch. The kernel-level timing results of the preprint came from a harness that split the sequence into independent kernel calls and so mostly measured the number of launches; this manuscript replaces them with measurements that change the chunk inside a single launch that carries the recurrent state, and states this relation in its text.
 
-3. Buffer placement, and input values under a power cap, can move a single timing more than the chunk does. A tuning cache that times each key once, on one allocation or on synthetic inputs, records these effects as chunk or data effects.
-
-4. The execution regime decides where the chunk is visible: launch-bound calls tie, while in single-call CUDA-graph replays the library defaults leave 1.0 to 5.9% of the scan time, mostly on short calls. On a kernel with a steep chunk curve the chunk is entangled with the launch configuration.
-
-5. Profiling every key a scheduler can enumerate takes seconds per GPU, less than calibrating a compile-informed cost model of the kernel; the model remains useful for keys that cannot be enumerated and for GPUs that cannot be timed. From these results we derive a recipe for keying and filling chunk tuning caches.
-
-We believe the manuscript fits TACO because it concerns code optimization and performance analysis of GPU kernels: the design of auto-tuning caches and their keys from compiler specializations, the trade-off between model-driven and empirical optimization, the measurement methodology that tuning depends on (CUDA graphs, buffer placement, power management), and hardware-counter evidence for the mechanism.
-
-Confidential note for the editor on a related preprint (please do not forward to the reviewers): the authors of this manuscript also wrote the preprint "COREY: Entropy-Guided Runtime Chunk Scheduling for Selective Scan Kernels" (arXiv:2604.10597, April 2026, revised May 2026), which has not been peer reviewed or published in any journal or conference proceedings. The preprint proposed a runtime scheduler that selects the chunk from the entropy of the activations. The present manuscript is a new study whose conclusions are in part opposite: it uses that data-dependent design as the control for data-dependent dispatch and shows that activation statistics carry no information about the optimal chunk beyond the shape key, so that shape-keyed tuning is the appropriate mechanism. The kernel-level chunk results of the preprint were obtained with a split-call timing harness, which cuts the sequence into independent kernel calls and mostly measures the number of launches; this manuscript withdraws all such results and replaces them with measurements that change the chunk inside a single launch that carries the recurrent state. To preserve double-anonymous review, the manuscript cites the preprint in the third person, like any other prior work, and does not state that it is ours.
-
-This manuscript is original; apart from the preprint noted above, it has not been published previously, and it is not under consideration for publication elsewhere. All authors have approved the submission, and there are no conflicts of interest that would affect the review process. In compliance with the double-anonymous review policy of TACO, the manuscript and the Supplementary Material are anonymized, and the code, result files and scripts behind every table and figure are provided as a separate anonymized supplementary archive. The use of Claude (Anthropic) to debug the existing experiment code and to check the experimental results is disclosed in the manuscript, following the ACM Policy on Authorship.
-
-Thank you for considering our submission. We look forward to receiving the reviewers' comments.
+The manuscript is not under consideration elsewhere, all authors approved the submission, and we have no conflicts of interest. The code, result files and scripts behind every table and figure are in a public Code Ocean capsule. The use of Claude (Anthropic) to debug the existing experiment code and to check the results is declared in the manuscript.
 
 Sincerely,
-
-Bo Ma
-on behalf of all authors
-
-Bo Ma and Weiqi Yan, Auckland University of Technology, Auckland 1010, New Zealand
-Jinsong Wu, Guilin University of Electronic Technology, Guilin 541004, China
-Email: amabo1215@gmail.com
+Bo Ma (corresponding author), Weiqi Yan, Jinsong Wu
