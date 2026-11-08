@@ -9,7 +9,19 @@
   - 移植另一台机器 11-03 的 C5/M4 分析（远端 main 上的 jpdc 线，论文提交 a2a0006，代码提交 71965d0）：等价性检验（TOST，±0.5% 边界；SSD 370M 增益 0.23% [0.13, 0.41]，更严格分析下需 ±1%）、单次调用推出的步级上界（式 bound）、launch/device 瓶颈模型（式 bottleneck）。分析脚本与结果文件已并入；本地重跑脚本，结果与原 JSON 逐项一致（0 处差异）。正文放精简版（新表 equivalence），完整表与细节放补充材料新节「Equivalence, Bound and Bottleneck Analyses」。摘要、贡献、结论、claims 表措辞同步改为“调优超出库默认值的收益是二阶的”。
   - 修复双栏版式：上一版 5p 双栏中 8 个宽图表溢出到另一栏、与正文重叠；改为跨栏 figure*/table*。稿件内不再排 highlights 页（JPDC 要求 highlights 单独上传）。为压回 16 页，将硬件计数器细节、Gated DeltaNet 单个未见形状的解释、按公开 trace 加权的步级结果原文移到补充材料，三张跨栏图略缩小。补充材料中 3 张原有超宽表缩放到版心宽度。
   - 结果：正文 16 页（JPDC Regular 上限 12+4=16 页），补充材料 61 页，0 未定义引用；submit/ 投稿包、highlights.txt、cover letter 已同步。
-- 待决：远端 main 与本地 jpdc-r1 分叉（共同祖先 f48c0b2），本地 main 尚未推送；需作者决定 main 的处理方式。
+  - 已提交并推送（子模块 deff706，主仓库 aa79b28）；本地 main 快进到 jpdc-r1。
+- 已完成（2026-11-08，续）：移植远端论文提交 25225e3 的审稿条目文字修改（远端 JPDC 评审 S1、C1、C6、E1、E2、M3、P1、P3、J5），外加 e29501c、76dd89b 两处小修：
+  - S1（作者选「改新标题+重定位」）：标题改为 “Measuring and Modeling the Chunk Size of Linear-Recurrence GPU Kernels: Execution Regimes, Measurement Bias and the Limits of Tuning”；摘要改为测量与建模研究的写法（237 词）；关键词换成 6 个；引言改为四个问题；贡献重排（regime 第二，模型一条改为 “narrow place”，含留一校准键 0.8–7.4% 与仅用完整协议计时 0.7–6.1%，数字来自补充材料已有的拟合敏感性段落）；结果顺序改为 regime → 数值 → key → Triton scan → 模型；Discussion 先写「Beyond these kernels and GPUs」（改为预期语气），再加小节「Practical implications」（含 recipe 表，标题改为 “Recipe for a chunk tuning cache”）。
+  - C1：正文、补充材料 claims 表与时间约定表中的 “end to end” 改为 “at the prefill-step level”（routed end-to-end study 保留，它确实是端到端实验）。
+  - C6：数值一节改名为 “Activation values barely change the chunk ordering; placement can mimic them”；“activations carry no information” 改为“加入激活熵使 held-out regret 最多变化 0.03 个点”。
+  - E1：功耗归因注明是观察性的（时钟与功耗上限都无法改变）。E2：补充材料 claims 表加 Guard 列（是否在独占 GPU 保护下计时），方法与局限性指向该表。M3：局限性写明没有一种模型形式原样迁移。P1：去掉 “of this version”“the earlier data sets”“first sweep”（补充材料改为 multi-GPU sweep）。P3：glossary 中 Headroom 改为 Measured headroom（式 headroom 中 h(s) 的估计量）；基线表去掉 “a priori”。
+  - J5：相关工作加入三篇 JPDC 论文（Filipovič 2022、Ernst 2023、Amaris 2023），ref.bib 新增这三条（来自远端提交，DOI 已在远端核对）；并补一句说明本文取代预印本的 kernel 级计时结果。另统一为美式拼写 Modeling。
+  - 未移植：远端的生成式 AI 声明措辞（保留作者 11-07 指定的措辞）；P2 的 launch-space 表（远端标为进行中）。
+  - 篇幅：改动后正文变 17 页；参考文献改为 \footnotesize（与 Elsevier 正式排版的参考文献字号一致）后回到 16 页，第 16 页尚余约半栏。补充材料又修了 6 处超宽（伪代码分行、3 张表缩放、1 张表改小字号、协议表脚注分两行），剩余超宽均 <10pt。
+  - submit/：highlights.txt 换成与新摘要一致的 5 条（均 ≤85 字符）；cover letter 改新标题与五条发现，提到三篇 JPDC 论文，数据改为指向 Code Ocean，仍不提退稿；投稿包重建，两个源码包单独编译通过（16 页、61 页，0 未定义）。
+- 已完成（2026-11-08，续）：Code Ocean 代码包更新（作者要求投稿前更新）。capsule_build.py 的标题改为新标题、论文对照表改为补充材料中的新位置并加入等价性/上界/瓶颈各表、run 脚本加入 jpdc_step_bound；脚本中含 GPU 标签的 6 个 pair 的随机种子校验值改为存储值（打包改名 GPU 标签后原先有 12 个 bootstrap 区间对不上）。本地与代码包副本重跑，结果与存储文件均逐项一致；已推送到 Code Ocean git（b4d83d0）。公开页面需作者在 Code Ocean 网页上发布新版本才会更新。
+- 待决：远端 main 与本地 jpdc-r1 分叉（共同祖先 f48c0b2），本地 main 尚未推送；需作者决定 main 的处理方式。远端 jpdc 线中尚未移植的只剩 docs/state 账本、E39 设计与 jpdc_lane_4c.sh、make_submit.ps1 改动和 TACO 时期的 cover letter 提交。
+- 待办（作者）：在 Code Ocean 网页上发布新版本；投稿系统中上传 highlights.txt（单独文件）并用 Elsevier declarations tool 生成竞争利益声明。
 
 最后更新：2026-10-16（taco-r1：M9c 补充材料压缩、M2b 编译信息（作者选 B）、补充材料编号核对；E30/E31 等待 vGPU 3090 开卡）
 

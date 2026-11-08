@@ -51,7 +51,8 @@ ROOT = Path(__file__).resolve().parents[2]
 CAPSULE = ROOT / "codeocean"
 CREDENTIAL_HELPER = ROOT / "src" / "revloop" / "codeocean_credential.sh"
 
-TITLE = "Shape Sets the Chunk: Selecting and Keying the Chunk of Chunked Linear-Recurrence GPU Kernels"
+TITLE = ("Measuring and Modeling the Chunk Size of Linear-Recurrence GPU Kernels: Execution Regimes, Measurement "
+         "Bias and the Limits of Tuning")
 DESCRIPTION = ("Code, measurements and analysis scripts for a study of chunk selection in chunked "
                "linear-recurrence GPU kernels (Mamba-1 selective scan, Mamba-2 SSD, Gated DeltaNet): value "
                "invariance and placement controls, shape keys, execution regimes, whole prefill steps captured as "
@@ -325,6 +326,10 @@ done
   --per-call e2_mamba2_vgpu3090_2p7b_r3.csv,e2_gdn_vgpu3090_1p4b_r3.csv
 "$PY" -u -m $M.e10_routed_interleaved --analyze --out-dir "$W" --tag vgpu3090
 
+# Prefill-step equivalence to the default, step-level bound from single calls and launch/device
+# bottleneck model (CPU, fixed seed)
+"$PY" -u -m $M.jpdc_step_bound --in-dir "$W"
+
 # Oracle headroom under timing noise
 "$PY" -u -m $M.headroom_noise --in-dir "$W" \
   --datasets mamba1_pro6000,mamba1_vgpu3090,mamba2_pro6000,mamba2_vgpu3090,refscan_vgpu3090,mamba1_1p4b_vgpu3090,mamba1_2p8b_vgpu3090
@@ -527,7 +532,7 @@ PAPER_MAP = [
      "none (definitions); launch cost of a Triton call issued from Python: launch-inclusive per-call tables "
      "`e2_mamba1_{pro6000,vgpu3090}.csv`, `e2_mamba1_pro6000_r4plain.csv`",
      "per-call tables written by `e2_oracle_sweep.py` (GPU)", "-"),
-    ("tab:conventions", "sec:methodology",
+    ("S-tab:conventions", "S-sec:supp_moved",
      "none (definitions of the timing conventions; timing code: `common.py`, `cuda_time`)", "-", "-"),
     ("sec:methodology", None,
      "Triton versus CUDA scan on the captured inputs: `e7_vgpu3090.json`; runtime-chunk CUDA scan against the "
@@ -537,13 +542,13 @@ PAPER_MAP = [
      "`e2_<model>_<tag>.csv`",
      "`e7_reference_scan.py` (GPU), `e8_refscan.py --analyze`, `make_tables.py` (validation), "
      "`taco_power_cap.py`; `capture_traces.py` (logged at capture, GPU)", "partly"),
-    ("tab:claims", "sec:results", "none (claims mapped to the tables and sections listed here)", "-", "-"),
+    ("S-tab:claims", "S-sec:supp_moved", "none (claims mapped to the tables and sections listed here)", "-", "-"),
     ("sec:results", None, "none (overview of the results)", "-", "-"),
     ("tab:value_invariance", "sec:res_values",
      "SSD 370M, SSD 2.7B and Gated DeltaNet 1.4B: `e33_value_graph_4c_e33.json`; Triton scan: "
      "`e33_value_graph_4c_e33m1.json` (designs A and C, from the `.jsonl` logs)",
      "`e33_value_invariance_graph.py --analyze`; rows printed by `taco_r2_tables.py` (e33)", "no"),
-    ("tab:predictors", "sec:res_values",
+    ("S-tab:predictors", "S-sec:supp_moved",
      "`taco_report_numbers.json` (`M4a_selector_tables`, data sets `pro6000_device`, `vgpu3090_device`, "
      "`h800_device`; from `e2_mamba1_{pro6000_r4spin,vgpu3090_r4spin,h800_r3spin}.csv`); noise floor: "
      "`taco_r2_stats_m5a.json` (`table_map`)",
@@ -607,6 +612,20 @@ PAPER_MAP = [
      "sweeps `e2_mamba2_vgpu3090{,_2p7b}_r4graph3.csv`, `e2_gdn_vgpu3090_1p4b_r4graph3.csv`",
      "`e32_model_graph_prefill.py --analyze --input-tags` (both sessions); rows printed by `taco_r2_tables.py` "
      "(e32)", "no"),
+    ("tab:equivalence", "sec:res_regime",
+     "`jpdc_step_bound.json` (`task1_equivalence`: equivalence of the held-out table to the default, margins, detectable "
+     "effects, share of tied latency and static chunks; from the whole-step logs "
+     "`e32_model_graph_4c_e32s{1,2}_<model>.jsonl` and the single-call sweeps listed for the whole-step table)",
+     "`jpdc_step_bound.py`", "yes"),
+    ("S-tab:supp_equivalence", "S-sec:supp_equivalence", "`jpdc_step_bound.json` (`task1_equivalence`)",
+     "`jpdc_step_bound.py`", "yes"),
+    ("S-tab:supp_bound", "S-sec:supp_equivalence",
+     "`jpdc_step_bound.json` (`task2_compositional_bound`: step-level bound from single calls, Spearman correlations)",
+     "`jpdc_step_bound.py`", "yes"),
+    ("S-tab:supp_bottleneck", "S-sec:supp_equivalence",
+     "`jpdc_step_bound.json` (`task3_launch_floor_model`: launch/device bottleneck fits on the launch-inclusive and single-call "
+     "graph sweeps of the 370M checkpoints)",
+     "`jpdc_step_bound.py`", "yes"),
     ("sec:res_regime", None,
      "*Launch-bound calls*: `e22_graph_analysis_vgpu3090_rounds3.json` (eager SSD rows), "
      "`e8_analysis_vgpu3090.json`, `e23_fixed_threads_vgpu3090_r4t32.json` (device time). *Where the chunk "
@@ -627,18 +646,18 @@ PAPER_MAP = [
      "`taco_r2_stats_m5a_noise_floors.py`, `taco_n9_pow2_rule.py --pro6000`, `taco_r2_sessions.py`, "
      "`taco_r2_e32_weighted.py`, `e36_packed_graph.py --analyze`, `taco_r2_stats_m6a_workload_weights.py`, "
      "`cost_model.py`, `taco_r2_graph_calibration.py`", "partly"),
-    ("tab:oracle_regret", "sec:res_stress",
+    ("S-tab:oracle_regret", "S-sec:supp_moved",
      "`taco_r2_baselines_m2b.json` (`triton_mamba1`, data sets `pro6000_device`, `vgpu3090_device`, "
      "`h800_device`; from `e2_mamba1_{pro6000_r4spin,vgpu3090_r4spin,h800_r3spin}.csv`); noise floor: "
      "`taco_r2_stats_m5a.json` (`table_map`)",
      "`taco_r2_untuned_baselines.py` (reads the per-call choices of `taco_r2_baselines_m4.json`), "
      "`taco_r2_stats_m5a_noise_floors.py`", "no"),
-    ("tab:tp", "sec:res_stress",
+    ("S-tab:tp", "S-sec:supp_moved",
      "pooled regrets over the shard shapes with shape-bootstrap intervals: `taco_report_numbers.json` "
      "(`M7a_tensor_parallel`); per-shard values and the CUDA-scan rows: `e12_analysis_{vgpu3090,h800}.json` "
      "(from `e12_tp_widths_{vgpu3090,h800}.jsonl`); round-to-round noise: `taco_r2_stats_m5b.json`",
      "`taco_report_numbers.py`, `e12_analysis.py`, `taco_r2_stats_m5b_tp_noise.py`", "partly"),
-    ("tab:reference", "sec:res_stress",
+    ("S-tab:reference", "S-sec:supp_moved",
      "`e8_analysis_vgpu3090.json`, `cost_model_refscan_vgpu3090.json`, `e3_mamba1_vgpu3090_{1p4b,2p8b}_r3.json`, "
      "`cost_model_transfer_e2_mamba1_vgpu3090_{1p4b,2p8b}_r3.json`, "
      "`e3b_information_mamba1_vgpu3090_{1p4b,2p8b}_r3.json`, `headroom_r4.json`; spread from "
@@ -660,7 +679,7 @@ PAPER_MAP = [
      "`e8_refscan.py --analyze`, `e23_fixed_threads_analysis.py`, `cost_model.py`, `headroom_r4.py`, "
      "`taco_r2_stats_m5h_intervals.py`, `e12_analysis.py`, `taco_report_numbers.py`, "
      "`taco_r2_stats_m5b_tp_noise.py`", "partly"),
-    ("tab:baselines", "sec:res_model",
+    ("S-tab:baselines", "S-sec:supp_moved",
      "`taco_r2_baselines_m4.json` (`M4a`: the six a-priori protocols and the pre-specified one; `M4b`: every "
      "calibration-only selector on the same calls, the MLPs over five seeds, the resource-report rule, top-2 and "
      "top-3; fitted on the calibration data of `cost_model_{pro6000_r4spin,vgpu3090_r3spin,h800_r3spin}.json`); "

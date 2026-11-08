@@ -84,8 +84,31 @@ PAIRS = {"ssd370m_rtx3090": ("e2_mamba2_vgpu3090.csv", "e2_mamba2_vgpu3090_r4gra
 NOT_PAIRED = {"ssd2p7b": "e2_mamba2_vgpu3090_2p7b_r3", "gdn1p4b": "e2_gdn_vgpu3090_1p4b_r3"}
 
 
+# CRC-32 of the seed keys that contain a pair name, stored rather than computed: the pair names carry
+# GPU labels, and a key's random stream must not change when a GPU is labelled differently (for
+# example in a renamed copy of the results). Equal to zlib.crc32 of each key as written here.
+PAIR_SEED_CRC = {
+    "t3_clusters|ssd370m_rtx3090": 0x66fdbaad,
+    "t3_clusters|m1_370m_rtx3090": 0x8f8b5c47,
+    "t3_clusters|ssd370m_rtx3090_same_driver": 0xbd77b850,
+    "t3_clusters|m1_370m_rtx3090_same_driver": 0xbd97f852,
+    "t3_clusters|ssd370m_pro6000": 0x13e74870,
+    "t3_clusters|m1_370m_pro6000": 0xfa91ae9a,
+    "t3_ceiling|ssd370m_rtx3090": 0x96fc2537,
+    "t3_ceiling|m1_370m_rtx3090": 0x7f8ac3dd,
+    "t3_ceiling|ssd370m_rtx3090_same_driver": 0x08447f1b,
+    "t3_ceiling|m1_370m_rtx3090_same_driver": 0x08a43f19,
+    "t3_ceiling|ssd370m_pro6000": 0xe3e6d7ea,
+    "t3_ceiling|m1_370m_pro6000": 0x0a903100,
+}
+
+
 def make_rng(*parts) -> np.random.Generator:
-    return np.random.default_rng(np.random.SeedSequence([SEED, zlib.crc32("|".join(map(str, parts)).encode())]))
+    key = "|".join(map(str, parts))
+    crc = PAIR_SEED_CRC.get(key)
+    if crc is None:
+        crc = zlib.crc32(key.encode())
+    return np.random.default_rng(np.random.SeedSequence([SEED, crc]))
 
 
 def _sig(x: float, digits: int = 6) -> float | None:
