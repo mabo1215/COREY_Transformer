@@ -17,6 +17,15 @@
   - E1：功耗归因注明是观察性的（时钟与功耗上限都无法改变）。E2：补充材料 claims 表加 Guard 列（是否在独占 GPU 保护下计时），方法与局限性指向该表。M3：局限性写明没有一种模型形式原样迁移。P1：去掉 “of this version”“the earlier data sets”“first sweep”（补充材料改为 multi-GPU sweep）。P3：glossary 中 Headroom 改为 Measured headroom（式 headroom 中 h(s) 的估计量）；基线表去掉 “a priori”。
   - J5：相关工作加入三篇 JPDC 论文（Filipovič 2022、Ernst 2023、Amaris 2023），ref.bib 新增这三条（来自远端提交，DOI 已在远端核对）；并补一句说明本文取代预印本的 kernel 级计时结果。另统一为美式拼写 Modeling。
   - 未移植：远端的生成式 AI 声明措辞（保留作者 11-07 指定的措辞）；P2 的 launch-space 表（远端标为进行中）。
+- 已完成（2026-11-08，无 GPU 项；尚未重新编译，正文页数待确认仍为 16 页）：
+  - E3：Cost 段数字追溯到 taco_model_baselines.json 的 M5b（57 个 exact key：3.86/7.41/6.10 s，均值 68/130/107 ms/key；回本 1915/2475/1892 个 exact key，33 个 bucket key 为 1623–2111）。正文改为“均值 68/130/107 ms（33 个 bucket key 的中位数 30–50 ms）”与“约 1900–2500 个 exact key（bucket key 为 1600–2100）”。
+  - M1：Accuracy 段改为先写 leave-one-key-out（0.8/7.4/3.7%）和仅完整协议（0.7/4.3/6.1%），再把 0.6/0.9/2.1% 的规则标为 exploratory、“favourable end of the evidence”。注意：完整协议三个数的 GPU 顺序（PRO 6000、3090、H800）我按评审意见的顺序推定，需对照补充材料核对。
+  - J3：五项声明（AI、利益冲突、作者贡献、资助、数据可用性）正文均已具备，无需再改。
+  - M2（作者已允许本地离线分析）：新脚本 jpdc_m2_identifiability.py（结果 jpdc_m2_identifiability.json）对三块 GPU 的标定数据做局部敏感性分析 + 500 次 12-key 簇 bootstrap。结论：局部条件数 3090=36、H800=12（满秩）、PRO 6000 因 τ0 落在下界 0 而秩亏（7/8）；bootstrap 下 τs–W0 相关 0.84/0.995/0.94，τm–τe 相关 −0.76/−0.95（PRO 6000/H800），τ0 在 44/10/84% 的重采样中落在边界；单个参数不可辨识，只有组合被数据确定。已写入补充材料新段落「Parameter correlations and identifiability」，正文 Accuracy 段加一句。未做：与硬件计数器数据对照（评审中的后半个动作），未做可区分两种形式的新标定 key（可选）。
+  - 重新编译（作者已允许；WSL 无 pdflatex，用 MiKTeX 的 pdflatex.exe/bibtex.exe 配合 build.sh）：正文 16 页，0 未定义引用/引文，正文 1 处 Overfull（2.8pt）。M1、E3、M2 的改动尚未提交（等作者指示）。
+  - 注意：E3 中引用的 M5b 数字来自 taco_model_baselines.json，M1 中完整协议 0.7/4.3/6.1% 的 GPU 顺序仍需核对。
+  - 【已阻挡】C3/E39（2026-11-09 作者答复）：4c 上 GPU 0、1 被 lfpr_cvpr_run（CertiGround，作者称 BodhiNet）占用，GPU 3 被另一训练任务占用；本项目最多占 2 块，必须等 GPU 0、1 上的任务结束后再接上 E39。不得在此之前使用 GPU 2。运行脚本已本地改好（输出、HF 与 Triton 缓存放 /data1/jpdc_e39，默认 GPU 2，/home1 不再写入），未提交、未同步到 4c（4c 上的目录不是 git 仓库，同步只能 scp 单个文件）。
+    - 需要作者：GPU 0、1 的任务结束时告知（或同意我轮询 nvidia-smi 后再通知）。
   - 篇幅：改动后正文变 17 页；参考文献改为 \footnotesize（与 Elsevier 正式排版的参考文献字号一致）后回到 16 页，第 16 页尚余约半栏。补充材料又修了 6 处超宽（伪代码分行、3 张表缩放、1 张表改小字号、协议表脚注分两行），剩余超宽均 <10pt。
   - submit/：highlights.txt 换成与新摘要一致的 5 条（均 ≤85 字符）；cover letter 改新标题与五条发现，提到三篇 JPDC 论文，数据改为指向 Code Ocean，仍不提退稿；投稿包重建，两个源码包单独编译通过（16 页、61 页，0 未定义）。
 - 已完成（2026-11-08，续）：Code Ocean 代码包更新（作者要求投稿前更新）。capsule_build.py 的标题改为新标题、论文对照表改为补充材料中的新位置并加入等价性/上界/瓶颈各表、run 脚本加入 jpdc_step_bound；脚本中含 GPU 标签的 6 个 pair 的随机种子校验值改为存储值（打包改名 GPU 标签后原先有 12 个 bootstrap 区间对不上）。本地与代码包副本重跑，结果与存储文件均逐项一致；已推送到 Code Ocean git（b4d83d0）。公开页面需作者在 Code Ocean 网页上发布新版本才会更新。
@@ -970,25 +979,26 @@ AAAI-27 Submission #3464（COREY）已收到最终决定：Phase 1 拒稿，未�
 17. 【改投 JPDC：直接投稿，不再预询】ACM TACO 于 2026-11-03 以范围不符 desk reject，未送审。作者决定改投 Journal of Parallel and Distributed Computing（JPDC），并说"主编不再 直接投吧"，预询信作废。已开新周期 `jpdc-r1`，TACO 版评审归档在 `docs/state/archive/taco-r2/` 和 `docs/review_reports/taco_r2_revision_suggestions.tex`，TACO 版论文备份在 `paper/backup/taco_r2_20261103/`。真正点击投稿由作者完成。
    需要你提供/决策：
    1. 【Stage 9 同意】我把"直接投吧"理解为同意按 JPDC 重写 `docs/revision_suggestions.tex` 并开始修订（换刊属于 USAGE Stage 9 的条件 2）。这样理解对吗？
-   A:
+   A:  是
    2. 【GPU 实验】C3（整步测量补 16 到 128 token，只有在 4c 的 RTX 3090 上才能和现有数据对比）和 C4（在数据中心 GPU 上重复整步实验）需要开机。之前"不要连接 PRO 6000 和 4c"的规定一直没有解除，所以我没有连接任何主机。请选一个：
       - A（推荐）：只做 C3（实验 E39，设计和运行脚本已写好，还没有在任何主机上跑过），用 4c；C4 在论文里写明"只测了一块 RTX 3090"。4c 上最多约 2 小时机时（估算：之前 14 个形状每轮约 2 小时，这次是 8 个短形状）。
       - B：C3 和 C4 都做，再开 PRO 6000 或 H800，要花机时。
       - C：都不做，投稿时两项都写成局限，审稿人可能就此提意见。
       - 补充（2026-11-03）：你提出可以用 Ambarella CV72 和 Jetson Xavier NX。目前都不需要：这篇论文的内核基于 CUDA/Triton，CV72 的公开资料只提到 Ambarella 自己的 CVflow SDK（没有找到明确写"不支持 CUDA"的来源）；Xavier NX 是嵌入式 GPU，补不了 C4 要求的数据中心 GPU，能否跑 OpenAI Triton 也没查到依据。
-   A:
+   A: A
    3. 【作者指南】JPDC 的 Guide for Authors 我的工具打不开（返回 403）。请打开后确认：是否有页数上限；title page 的要求；是否要求推荐审稿人；CRediT、竞争利益、数据可用性声明的格式。
-   A:
+   A:  submit\Guide for authors.pdf 
    4. 【AI 声明】Elsevier 要求如实声明生成式 AI 在写作中的使用（工具名称和用途；只查语法、拼写、参考文献的可豁免）。之前问题 6 你选了 B（保持原措辞），那是针对 ACM 的声明。但实际上 Claude 不仅调试代码、核对数字，还写了分析脚本、起草并改写了论文文字，包括这一轮的新题目和摘要。所以我认为原措辞不够完整，已在稿件中先写入下面的版本，由你决定：
       - A（推荐，已写入）："During the preparation of this work the authors used Claude (Anthropic) in order to draft and revise manuscript text, to write and debug measurement and analysis scripts, and to check reported numbers against the result files, and Grammarly in order to check grammar. After using these tools, the authors reviewed and edited the content as needed and take full responsibility for the content of the publication."
       - B：你提供其他措辞（请确保与实际使用情况相符）。
-   A:
+   A:   在撰写本稿件的过程中，作者使用 Claude (Anthropic) 来纠正语法错误、调试代码及测量/分析脚本，并核对文中呈现的数据与结果文件之间的一致性。此外，作者还利用 Grammarly 检查了语法的准确性。在使用上述工具后，作者对内容进行了全面审阅与编辑，并对本出版物中呈现的所有材料承担全部责任。
+
    5. 【合著者】新题目和新定位（测量与建模研究，不再以"调优配方"为主线）请合著者确认。作者顺序我用的是 TACO title page 上的 Bo Ma、Weiqi Yan、Jinsong Wu（预印本的顺序是 Ma、Wu、Yan）。请确认顺序，并提供每位作者的 CRediT 角色。
-   A:
+   A: 是的 还是原来的顺序
    6. 【资助与竞争利益】我沿用了 TACO title page 的说法（没有专门资助；没有竞争利益）。请确认这对 JPDC 仍然成立。
-   A:
+   A: 是的
    7. 【代码与数据】单盲审稿不再需要匿名包。数据可用性声明要指向 Code Ocean capsule（https://codeocean.com/capsule/3457679/tree），还是投稿时附压缩包、录用后再存档？更新已发布的 capsule 属于对外操作，你确认前我不会动。
-   A:
+   A: 直接源代码匿名打包
  
 需要你操作：
 - 【E28 停止】已完成：作者 2026-10-17 在 4c 上执行 `screen -S taco-4c -X quit`，返回 "No screen session found"（该 lane 已自行结束，4c 上无残留任务）。

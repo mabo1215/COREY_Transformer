@@ -76,6 +76,7 @@ from src.experiments.tpds.common import (GDN_CHUNKS, LOG_DIR, MAMBA2_CHUNKS, RES
                                          write_json)
 
 DEFAULT_CHUNK = {"mamba2": 256, "gdn": 64}
+GDN_RECURRENT_MAX_LEN = 64   # fla GatedDeltaNet: mode = fused_recurrent when q_len <= 64 and not training
 CHUNKS = {"mamba2": MAMBA2_CHUNKS, "gdn": GDN_CHUNKS}
 DEFAULT_DTYPE = {"mamba2": "float16", "gdn": "bfloat16"}
 DEFAULT_MODEL_ID = {"mamba2": "AntonV/mamba2-370m-hf", "gdn": "Idiap/gated-deltanet-swa-1.4B-30B"}
@@ -284,6 +285,11 @@ def run(args, log) -> None:
                 for B in batches:
                     for L in lengths:
                         if L * B > args.max_tokens:
+                            continue
+                        if args.model == "gdn" and L <= GDN_RECURRENT_MAX_LEN:
+                            # The Gated DeltaNet layer runs a fused recurrent kernel for q_len <= 64 in inference,
+                            # which has no chunk parameter: the chunk is not a tunable knob at these lengths.
+                            log(f"L={L} B={B}: skipped, the layer uses the recurrent kernel (no chunk parameter)")
                             continue
                         keys = [row_key(args.label, args.dtype, L, B, m, r, v) for m in modes
                                 for r in range(args.rounds) for v in variants]
