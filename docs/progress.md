@@ -24,8 +24,12 @@
   - M2（作者已允许本地离线分析）：新脚本 jpdc_m2_identifiability.py（结果 jpdc_m2_identifiability.json）对三块 GPU 的标定数据做局部敏感性分析 + 500 次 12-key 簇 bootstrap。结论：局部条件数 3090=36、H800=12（满秩）、PRO 6000 因 τ0 落在下界 0 而秩亏（7/8）；bootstrap 下 τs–W0 相关 0.84/0.995/0.94，τm–τe 相关 −0.76/−0.95（PRO 6000/H800），τ0 在 44/10/84% 的重采样中落在边界；单个参数不可辨识，只有组合被数据确定。已写入补充材料新段落「Parameter correlations and identifiability」，正文 Accuracy 段加一句。未做：与硬件计数器数据对照（评审中的后半个动作），未做可区分两种形式的新标定 key（可选）。
   - 重新编译（作者已允许；WSL 无 pdflatex，用 MiKTeX 的 pdflatex.exe/bibtex.exe 配合 build.sh）：正文 16 页，0 未定义引用/引文，正文 1 处 Overfull（2.8pt）。M1、E3、M2 的改动尚未提交（等作者指示）。
   - 注意：E3 中引用的 M5b 数字来自 taco_model_baselines.json，M1 中完整协议 0.7/4.3/6.1% 的 GPU 顺序仍需核对。
-  - 【已阻挡】C3/E39（2026-11-09 作者答复）：4c 上 GPU 0、1 被 lfpr_cvpr_run（CertiGround，作者称 BodhiNet）占用，GPU 3 被另一训练任务占用；本项目最多占 2 块，必须等 GPU 0、1 上的任务结束后再接上 E39。不得在此之前使用 GPU 2。运行脚本已本地改好（输出、HF 与 Triton 缓存放 /data1/jpdc_e39，默认 GPU 2，/home1 不再写入），未提交、未同步到 4c（4c 上的目录不是 git 仓库，同步只能 scp 单个文件）。
-    - 需要作者：GPU 0、1 的任务结束时告知（或同意我轮询 nvidia-smi 后再通知）。
+  - 【实验已跑完，结果待拉回与分析】C3/E39（2026-11-09）：作者规定本项目最多占用 4c 的 2 块 GPU，并要求等 GPU 0、1 上的其他任务结束；GPU 0、1 空出后启动。
+    - GPU 0：冒烟测试时 GDN 在 L=16 失败——Gated DeltaNet 层在 q_len≤64 时走 fused recurrent kernel（fla gated_deltanet.py 第 237 行），没有 chunk 参数。已修 e32_model_graph_prefill.py：GDN 跳过 L≤64 并写日志（论文中 GDN 小于 65 token 无 chunk 可调，表收益为零，这是结果而非失败）。修后冒烟、第 1 轮、第 2 轮、分析全部 OK（约 1 小时 45 分钟），结果在 4c 的 /data1/jpdc_e39/results。
+    - GPU 1、2：同一套 E39 作为跨板复现（lane 脚本新增 E39_BOARD=g1/g2，结果在 /data1/jpdc_e39_g1、/data1/jpdc_e39_g2，模型快照共用 /data1/jpdc_e39/hf_cache），两块均四步 OK。
+    - 运行脚本：输出、HF 与 Triton 缓存放 /data1（/home1 约 99% 已满，不再写入）；4c 目录不是 git 仓库，用 scp 同步单个文件（e32_model_graph_prefill.py、jpdc_lane_4c.sh 已同步）。代码已提交并推送（论文子模块 fc27297，主仓库 9b951a4）。
+    - 下一步：rsync 拉回三块板的结果；分析 L=16–128 的整步表收益（冒烟 4 格样本显示 SSD 370M 图模式约 8%，远高于 256 token 以上的约 2.3%，样本太小不能下结论）、板间差异、GDN 无 chunk 的情形；改论文整步一节与补充材料，更新 C3；C4 仍写“只测了 RTX 3090”（同型号不同板的复现不能代替数据中心 GPU）。
+    - 无需作者决策。4c 上目前没有本项目的任务。
   - 篇幅：改动后正文变 17 页；参考文献改为 \footnotesize（与 Elsevier 正式排版的参考文献字号一致）后回到 16 页，第 16 页尚余约半栏。补充材料又修了 6 处超宽（伪代码分行、3 张表缩放、1 张表改小字号、协议表脚注分两行），剩余超宽均 <10pt。
   - submit/：highlights.txt 换成与新摘要一致的 5 条（均 ≤85 字符）；cover letter 改新标题与五条发现，提到三篇 JPDC 论文，数据改为指向 Code Ocean，仍不提退稿；投稿包重建，两个源码包单独编译通过（16 页、61 页，0 未定义）。
 - 已完成（2026-11-08，续）：Code Ocean 代码包更新（作者要求投稿前更新）。capsule_build.py 的标题改为新标题、论文对照表改为补充材料中的新位置并加入等价性/上界/瓶颈各表、run 脚本加入 jpdc_step_bound；脚本中含 GPU 标签的 6 个 pair 的随机种子校验值改为存储值（打包改名 GPU 标签后原先有 12 个 bootstrap 区间对不上）。本地与代码包副本重跑，结果与存储文件均逐项一致；已推送到 Code Ocean git（b4d83d0）。公开页面需作者在 Code Ocean 网页上发布新版本才会更新。
