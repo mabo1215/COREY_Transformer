@@ -182,7 +182,7 @@ if (Test-Path (Join-Path $artifact 'README.md')) {
 
 # 6. top-level PDFs, cover letter, title page
 Copy-Item (Join-Path $paper 'main.pdf'), (Join-Path $paper 'appendix.pdf') $sub
-foreach ($f in 'cover_letter.txt', 'Title_Page.docx', 'Highlights.txt', 'Author_Biographies.txt') {
+foreach ($f in 'cover_letter.txt', 'Title_Page.docx', 'Highlights.txt', 'Author_Biographies.txt', 'Author_Biographies.docx') {
   $src = Join-Path $Root "docs\$f"
   if (Test-Path $src) { Copy-Item $src $sub } else { Write-Warning "docs\$f not found" }
 }
@@ -232,7 +232,7 @@ Manuscript                             main.pdf; LaTeX_Source.zip if the system 
 Highlights (separate editable file)    Highlights.txt
 Cover letter                           cover_letter.txt
 Title page, if requested               Title_Page.docx
-Author biographies and photographs     Author_Biographies.txt; Author_Photos\ (one jpg per author)
+Author biographies and photographs     Author_Biographies.docx (text and photographs); Author_Biographies.txt; Author_Photos\ (one jpg per author)
 Supplementary material                 SupplementaryMaterialForReview\Supplementary_Material.pdf
 Code and result files                  SupplementaryMaterialForReview\Code_and_Results.zip
                                        (the same files as SourceCode\ and SourceCode.zip)
