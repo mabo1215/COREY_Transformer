@@ -407,7 +407,7 @@ convention:
 | `vgpu3090full` (`e17_*`) | synthetic sweep of the production kernels at larger widths |
 | `_taco_graph3` (`e2_*_pro6000*`) | CUDA-graph replays on the RTX PRO 6000, warm L2, three rounds (as `_r4graph3`) |
 | `pro6000_taco` (`e27_varlen_*`), `taco` (`packed_steps_*`) | packed variable-length calls on the RTX PRO 6000; the packed steps sampled from the serving traces |
-| `4c_<run>` | stock 24 GB RTX 3090 boards of a lab host (bare metal, two boards used exclusively). `<run>`: `e30`, `e30s2` autotuner state of the SSD and Gated DeltaNet kernels, sessions 1 and 2 (`_pinned`: the autotuner cache of the run); `m1`, `m2`, `gdn` (`e31_*`) output divergence; `e32s1`, `e32s2` whole prefill step as one CUDA graph, sessions 1 and 2 (`e32_model_graph_<session 1>_<model>_<session 2>_<model>.json`: both sessions); `e33`, `e33m1` values and placement in graph replay (production pipelines, Triton scan); `e33align` lengths around 2048; `e38_<dtype>` SSD in fp16 and bf16; `e37calib` graph-timed calibration keys of the work-term model; `e34` launch space of the Triton scan under the full protocol; `e35` per-kernel breakdown and hardware counters; `e36` packed steps under CUDA graphs |
+| `4c_<run>` | stock 24 GB RTX 3090 boards of a lab host (bare metal, two boards used exclusively). `<run>`: `e30`, `e30s2` autotuner state of the SSD and Gated DeltaNet kernels, sessions 1 and 2 (`_pinned`: the autotuner cache of the run); `m1`, `m2`, `gdn` (`e31_*`) output divergence; `e32s1`, `e32s2` whole prefill step as one CUDA graph, sessions 1 and 2 (`e32_model_graph_<session 1>_<model>_<session 2>_<model>.json`: both sessions); `e33`, `e33m1` values and placement in graph replay (production pipelines, Triton scan); `e33align` lengths around 2048; `e38_<dtype>` SSD in fp16 and bf16; `e37calib` graph-timed calibration keys of the work-term model; `e34` launch space of the Triton scan under the full protocol; `e35` per-kernel breakdown and hardware counters; `e36` packed steps under CUDA graphs; `e39s1`, `e39s2` (and `4c_g1_`, `4c_g2_` for two further boards) whole prefill steps of 16 to 128 tokens, protocol of `e32` |
 
 Host names, absolute paths and local build labels recorded in the result metadata are replaced
 by neutral placeholders (`gpu-host`, `workstation`, `host`, `/data`, `/data/lab`, `/shared`, `/repo`, `~`), and
@@ -612,6 +612,10 @@ PAPER_MAP = [
      "sweeps `e2_mamba2_vgpu3090{,_2p7b}_r4graph3.csv`, `e2_gdn_vgpu3090_1p4b_r4graph3.csv`",
      "`e32_model_graph_prefill.py --analyze --input-tags` (both sessions); rows printed by `taco_r2_tables.py` "
      "(e32)", "no"),
+    ("S-tab:supp_short_step", "S-sec:supp_model_graph",
+     "`e32_model_graph_4c_{,g1_,g2_}e39s1_<model>_4c_{,g1_,g2_}e39s2_<model>.json` (steps of 16 to 128 tokens, three boards, "
+     "two sessions; from the `.jsonl` logs of the same tags)",
+     "`e32_model_graph_prefill.py --analyze --input-tags`", "no"),
     ("tab:equivalence", "sec:res_regime",
      "`jpdc_step_bound.json` (`task1_equivalence`: equivalence of the held-out table to the default, margins, detectable "
      "effects, share of tied latency and static chunks; from the whole-step logs "

@@ -30,7 +30,8 @@
     - 运行脚本：输出、HF 与 Triton 缓存放 /data1（/home1 约 99% 已满，不再写入）；4c 目录不是 git 仓库，用 scp 同步单个文件（e32_model_graph_prefill.py、jpdc_lane_4c.sh 已同步）。代码已提交并推送（论文子模块 fc27297，主仓库 9b951a4）。
     - 下一步：rsync 拉回三块板的结果；分析 L=16–128 的整步表收益（冒烟 4 格样本显示 SSD 370M 图模式约 8%，远高于 256 token 以上的约 2.3%，样本太小不能下结论）、板间差异、GDN 无 chunk 的情形；改论文整步一节与补充材料，更新 C3；C4 仍写“只测了 RTX 3090”（同型号不同板的复现不能代替数据中心 GPU）。
     - 【2026-11-09 已回填】三块板结果已 rsync 拉回 src/experiments/results/tpds/（e32_model_graph_4c_e39*、_g1_、_g2_）。结论：L=16–128 整步图模式下，表对默认（chunk 256 > 整步长度）的收益 SSD 370M 6.7–12.6%、SSD 2.7B 5.6–7.1%（三板两会话均为正，batch-4 稳定，batch-1 个别形状符号翻转）；GDN 仅 L=128 可调，−2.6~+1.3%，符号随板而变。论文已改：摘要、贡献条目、新段 “Steps below 256 tokens”、限制（三块同型号板不能代替数据中心 GPU）、结论；补充材料新增 tab:supp_short_step。C3 完成；C4 仍写“只测 RTX 3090”。
-    - 待做：论文尚未重新编译，页数需确认仍为 16 页（加了一段正文，可能溢出；补充材料多一张表）；账本 E39 状态尚未置为 pulled/integrated（本目录规则禁止运行脚本，需在主仓库执行 revstate.py exp set E39 --status integrated）；改动未提交。
+    - 【2026-11-09 已完成】重新编译：正文 16 页、补充材料 62 页，0 未定义；账本 E39 已 integrated；paper 与主仓库已推送。highlights 第 1、2 条与 cover letter 第 1 条已加入 256 token 以下的例外；E39 的 jsonl 日志已拉回；Code Ocean 代码包已更新并推送（bc4c1ad，含新表对照行）；submit/ 投稿包重建，两个源码包单独编译通过。
+    - 待办（作者）：Code Ocean 网页上发布新版本；投稿系统上传（highlights 单独文件、declarations tool）。
     - 无需作者决策。4c 上目前没有本项目的任务。
   - 篇幅：改动后正文变 17 页；参考文献改为 \footnotesize（与 Elsevier 正式排版的参考文献字号一致）后回到 16 页，第 16 页尚余约半栏。补充材料又修了 6 处超宽（伪代码分行、3 张表缩放、1 张表改小字号、协议表脚注分两行），剩余超宽均 <10pt。
   - submit/：highlights.txt 换成与新摘要一致的 5 条（均 ≤85 字符）；cover letter 改新标题与五条发现，提到三篇 JPDC 论文，数据改为指向 Code Ocean，仍不提退稿；投稿包重建，两个源码包单独编译通过（16 页、61 页，0 未定义）。
