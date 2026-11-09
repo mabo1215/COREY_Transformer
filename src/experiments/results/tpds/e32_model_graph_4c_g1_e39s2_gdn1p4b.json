@@ -1,0 +1,246 @@
+{
+  "experiment": "E32",
+  "sessions": [
+    "4c_g1_e39s2_gdn1p4b"
+  ],
+  "created_utc": "2026-11-08T23:11:01Z",
+  "meta": {
+    "4c_g1_e39s2_gdn1p4b": {
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "label": "gdn1p4b",
+      "model_id": "Idiap/gated-deltanet-swa-1.4B-30B",
+      "dtype": "bfloat16",
+      "default_chunk": 64,
+      "chunks": [
+        16,
+        32,
+        64
+      ],
+      "rounds": 5,
+      "repeats": 10,
+      "pre_spin_ms": 50.0,
+      "utc": "2026-11-08T23:09:34Z",
+      "inputs": "capture corpus (192 prompts), concatenated",
+      "torch": "2.8.0+cu128",
+      "pkg_triton": "3.4.0",
+      "pkg_mamba_ssm": "2.3.2.post1",
+      "pkg_flash-linear-attention": "0.5.2"
+    }
+  },
+  "cells": [
+    {
+      "session": "4c_g1_e39s2_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 1,
+      "mode": "eager",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 57.166,
+        "c32": 57.898,
+        "c64": 56.861,
+        "noscan": 41.147
+      },
+      "round_cv_default": 0.006157,
+      "best": "c64",
+      "gain_best_pct": 0.0,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.0,
+      "scan_share_pct": 27.63,
+      "scan_ms_default": 15.713,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": -1.824,
+      "gain_table_ci95": [
+        -6.206,
+        -0.07193
+      ],
+      "table_regret_vs_best_pct": 1.824,
+      "gain_table_pct_of_scan": -6.601
+    },
+    {
+      "session": "4c_g1_e39s2_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 1,
+      "mode": "graph",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 9.431,
+        "c32": 9.6149,
+        "c64": 9.8724,
+        "noscan": 8.9093
+      },
+      "round_cv_default": 0.02748,
+      "best": "c16",
+      "gain_best_pct": 4.47,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.125,
+      "scan_share_pct": 9.755,
+      "scan_ms_default": 0.96307,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": 2.609,
+      "gain_table_ci95": [
+        -4.473,
+        9.947
+      ],
+      "table_regret_vs_best_pct": 1.949,
+      "gain_table_pct_of_scan": 26.74
+    },
+    {
+      "session": "4c_g1_e39s2_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 4,
+      "mode": "eager",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 59.555,
+        "c32": 59.14,
+        "c64": 58.48,
+        "noscan": 41.98
+      },
+      "round_cv_default": 0.01093,
+      "best": "c64",
+      "gain_best_pct": 0.0,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.0,
+      "scan_share_pct": 28.21,
+      "scan_ms_default": 16.5,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": -1.129,
+      "gain_table_ci95": [
+        -2.717,
+        0.4941
+      ],
+      "table_regret_vs_best_pct": 1.129,
+      "gain_table_pct_of_scan": -4.003
+    },
+    {
+      "session": "4c_g1_e39s2_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 4,
+      "mode": "graph",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 26.397,
+        "c32": 25.908,
+        "c64": 25.93,
+        "noscan": 24.261
+      },
+      "round_cv_default": 0.003136,
+      "best": "c32",
+      "gain_best_pct": 0.08292,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.125,
+      "scan_share_pct": 6.437,
+      "scan_ms_default": 1.6691,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": 0.08292,
+      "gain_table_ci95": [
+        0.009644,
+        0.7747
+      ],
+      "table_regret_vs_best_pct": 0.0,
+      "gain_table_pct_of_scan": 1.288
+    }
+  ],
+  "summary": {
+    "gdn1p4b": {
+      "eager": {
+        "4c_g1_e39s2_gdn1p4b": {
+          "n_cells": 2,
+          "gain_table_latency_weighted_pct": -1.471,
+          "gain_table_mean_pct": -1.477,
+          "gain_table_range_pct": [
+            -1.824,
+            -1.129
+          ],
+          "gain_best_latency_weighted_pct": 0.0,
+          "gain_best_mean_pct": 0.0,
+          "gain_best_range_pct": [
+            0.0,
+            0.0
+          ],
+          "scan_share_range_pct": [
+            27.63,
+            28.21
+          ],
+          "scan_share_latency_weighted_pct": 27.93,
+          "round_cv_default_median": 0.008544,
+          "all_chunk_ok": true
+        }
+      },
+      "graph": {
+        "4c_g1_e39s2_gdn1p4b": {
+          "n_cells": 2,
+          "gain_table_latency_weighted_pct": 0.7807,
+          "gain_table_mean_pct": 1.346,
+          "gain_table_range_pct": [
+            0.08292,
+            2.609
+          ],
+          "gain_best_latency_weighted_pct": 1.294,
+          "gain_best_mean_pct": 2.276,
+          "gain_best_range_pct": [
+            0.08292,
+            4.47
+          ],
+          "scan_share_range_pct": [
+            6.437,
+            9.755
+          ],
+          "scan_share_latency_weighted_pct": 7.352,
+          "round_cv_default_median": 0.01531,
+          "all_chunk_ok": true
+        }
+      }
+    }
+  },
+  "tables": {
+    "gdn1p4b|B1": {
+      "source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "buckets": {
+        "16": 16,
+        "64": 16,
+        "128": 32,
+        "256": 32,
+        "512": 32,
+        "1024": 64,
+        "2048": 64,
+        "4096": 64,
+        "8192": 64
+      }
+    },
+    "gdn1p4b|B4": {
+      "source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "buckets": {
+        "16": 32,
+        "64": 32,
+        "128": 32,
+        "256": 32,
+        "512": 64,
+        "1024": 64,
+        "2048": 64,
+        "4096": 64,
+        "8192": 64
+      }
+    }
+  }
+}

@@ -1,0 +1,245 @@
+{
+  "experiment": "E32",
+  "sessions": [
+    "4c_e39s1_gdn1p4b"
+  ],
+  "created_utc": "2026-11-08T20:37:19Z",
+  "meta": {
+    "4c_e39s1_gdn1p4b": {
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "label": "gdn1p4b",
+      "model_id": "Idiap/gated-deltanet-swa-1.4B-30B",
+      "dtype": "bfloat16",
+      "default_chunk": 64,
+      "chunks": [
+        16,
+        32,
+        64
+      ],
+      "rounds": 5,
+      "repeats": 10,
+      "pre_spin_ms": 50.0,
+      "utc": "2026-11-08T20:35:55Z",
+      "inputs": "capture corpus (192 prompts), concatenated",
+      "torch": "2.8.0+cu128",
+      "pkg_triton": "3.4.0",
+      "pkg_mamba_ssm": "2.3.2.post1",
+      "pkg_flash-linear-attention": "0.5.2"
+    }
+  },
+  "cells": [
+    {
+      "session": "4c_e39s1_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 1,
+      "mode": "eager",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 55.356,
+        "c32": 60.484,
+        "c64": 58.889,
+        "noscan": 38.517
+      },
+      "round_cv_default": 0.05829,
+      "best": "c16",
+      "gain_best_pct": 5.999,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.0,
+      "scan_share_pct": 34.59,
+      "scan_ms_default": 20.373,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": -2.707,
+      "gain_table_ci95": [
+        -15.77,
+        8.593
+      ],
+      "table_regret_vs_best_pct": 9.262,
+      "gain_table_pct_of_scan": -7.826
+    },
+    {
+      "session": "4c_e39s1_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 1,
+      "mode": "graph",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 8.8003,
+        "c32": 9.5626,
+        "c64": 8.5519,
+        "noscan": 8.9103
+      },
+      "round_cv_default": 0.001618,
+      "best": "c64",
+      "gain_best_pct": 0.0,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.125,
+      "scan_share_pct": -4.191,
+      "scan_ms_default": -0.3584,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": -11.82,
+      "gain_table_ci95": [
+        -12.01,
+        0.5329
+      ],
+      "table_regret_vs_best_pct": 11.82
+    },
+    {
+      "session": "4c_e39s1_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 4,
+      "mode": "eager",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 55.819,
+        "c32": 56.027,
+        "c64": 54.5,
+        "noscan": 40.004
+      },
+      "round_cv_default": 0.02821,
+      "best": "c64",
+      "gain_best_pct": 0.0,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.0,
+      "scan_share_pct": 26.6,
+      "scan_ms_default": 14.497,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": -2.801,
+      "gain_table_ci95": [
+        -6.04,
+        3.928
+      ],
+      "table_regret_vs_best_pct": 2.801,
+      "gain_table_pct_of_scan": -10.53
+    },
+    {
+      "session": "4c_e39s1_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 4,
+      "mode": "graph",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 25.458,
+        "c32": 24.968,
+        "c64": 25.12,
+        "noscan": 23.352
+      },
+      "round_cv_default": 0.003625,
+      "best": "c32",
+      "gain_best_pct": 0.6055,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.1328,
+      "scan_share_pct": 7.038,
+      "scan_ms_default": 1.768,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": 0.6055,
+      "gain_table_ci95": [
+        -0.2115,
+        0.9052
+      ],
+      "table_regret_vs_best_pct": 0.0,
+      "gain_table_pct_of_scan": 8.603
+    }
+  ],
+  "summary": {
+    "gdn1p4b": {
+      "eager": {
+        "4c_e39s1_gdn1p4b": {
+          "n_cells": 2,
+          "gain_table_latency_weighted_pct": -2.753,
+          "gain_table_mean_pct": -2.754,
+          "gain_table_range_pct": [
+            -2.801,
+            -2.707
+          ],
+          "gain_best_latency_weighted_pct": 3.116,
+          "gain_best_mean_pct": 2.999,
+          "gain_best_range_pct": [
+            0.0,
+            5.999
+          ],
+          "scan_share_range_pct": [
+            26.6,
+            34.59
+          ],
+          "scan_share_latency_weighted_pct": 30.75,
+          "round_cv_default_median": 0.04325,
+          "all_chunk_ok": true
+        }
+      },
+      "graph": {
+        "4c_e39s1_gdn1p4b": {
+          "n_cells": 2,
+          "gain_table_latency_weighted_pct": -2.55,
+          "gain_table_mean_pct": -5.607,
+          "gain_table_range_pct": [
+            -11.82,
+            0.6055
+          ],
+          "gain_best_latency_weighted_pct": 0.4514,
+          "gain_best_mean_pct": 0.3028,
+          "gain_best_range_pct": [
+            0.0,
+            0.6055
+          ],
+          "scan_share_range_pct": [
+            -4.191,
+            7.038
+          ],
+          "scan_share_latency_weighted_pct": 4.186,
+          "round_cv_default_median": 0.002622,
+          "all_chunk_ok": true
+        }
+      }
+    }
+  },
+  "tables": {
+    "gdn1p4b|B1": {
+      "source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "buckets": {
+        "16": 16,
+        "64": 16,
+        "128": 32,
+        "256": 32,
+        "512": 32,
+        "1024": 64,
+        "2048": 64,
+        "4096": 64,
+        "8192": 64
+      }
+    },
+    "gdn1p4b|B4": {
+      "source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "buckets": {
+        "16": 32,
+        "64": 32,
+        "128": 32,
+        "256": 32,
+        "512": 64,
+        "1024": 64,
+        "2048": 64,
+        "4096": 64,
+        "8192": 64
+      }
+    }
+  }
+}

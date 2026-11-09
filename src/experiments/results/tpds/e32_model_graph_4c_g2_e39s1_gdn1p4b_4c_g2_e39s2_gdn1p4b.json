@@ -1,0 +1,476 @@
+{
+  "experiment": "E32",
+  "sessions": [
+    "4c_g2_e39s1_gdn1p4b",
+    "4c_g2_e39s2_gdn1p4b"
+  ],
+  "created_utc": "2026-11-08T23:21:32Z",
+  "meta": {
+    "4c_g2_e39s1_gdn1p4b": {
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "label": "gdn1p4b",
+      "model_id": "Idiap/gated-deltanet-swa-1.4B-30B",
+      "dtype": "bfloat16",
+      "default_chunk": 64,
+      "chunks": [
+        16,
+        32,
+        64
+      ],
+      "rounds": 5,
+      "repeats": 10,
+      "pre_spin_ms": 50.0,
+      "utc": "2026-11-08T22:49:36Z",
+      "inputs": "capture corpus (192 prompts), concatenated",
+      "torch": "2.8.0+cu128",
+      "pkg_triton": "3.4.0",
+      "pkg_mamba_ssm": "2.3.2.post1",
+      "pkg_flash-linear-attention": "0.5.2"
+    },
+    "4c_g2_e39s2_gdn1p4b": {
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "label": "gdn1p4b",
+      "model_id": "Idiap/gated-deltanet-swa-1.4B-30B",
+      "dtype": "bfloat16",
+      "default_chunk": 64,
+      "chunks": [
+        16,
+        32,
+        64
+      ],
+      "rounds": 5,
+      "repeats": 10,
+      "pre_spin_ms": 50.0,
+      "utc": "2026-11-08T23:09:51Z",
+      "inputs": "capture corpus (192 prompts), concatenated",
+      "torch": "2.8.0+cu128",
+      "pkg_triton": "3.4.0",
+      "pkg_mamba_ssm": "2.3.2.post1",
+      "pkg_flash-linear-attention": "0.5.2"
+    }
+  },
+  "cells": [
+    {
+      "session": "4c_g2_e39s1_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 1,
+      "mode": "eager",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 64.397,
+        "c32": 64.459,
+        "c64": 63.355,
+        "noscan": 45.309
+      },
+      "round_cv_default": 0.04195,
+      "best": "c64",
+      "gain_best_pct": 0.0,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.0,
+      "scan_share_pct": 28.48,
+      "scan_ms_default": 18.046,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": -1.742,
+      "gain_table_ci95": [
+        -13.24,
+        -0.648
+      ],
+      "table_regret_vs_best_pct": 1.742,
+      "gain_table_pct_of_scan": -6.117
+    },
+    {
+      "session": "4c_g2_e39s1_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 1,
+      "mode": "graph",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 9.6471,
+        "c32": 9.558,
+        "c64": 9.814,
+        "noscan": 8.1521
+      },
+      "round_cv_default": 0.0006645,
+      "best": "c32",
+      "gain_best_pct": 2.609,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.125,
+      "scan_share_pct": 16.93,
+      "scan_ms_default": 1.662,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": 2.609,
+      "gain_table_ci95": [
+        2.283,
+        8.952
+      ],
+      "table_regret_vs_best_pct": 0.0,
+      "gain_table_pct_of_scan": 15.4
+    },
+    {
+      "session": "4c_g2_e39s1_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 4,
+      "mode": "eager",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 59.512,
+        "c32": 59.184,
+        "c64": 58.439,
+        "noscan": 41.054
+      },
+      "round_cv_default": 0.04134,
+      "best": "c64",
+      "gain_best_pct": 0.0,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.0,
+      "scan_share_pct": 29.75,
+      "scan_ms_default": 17.384,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": -1.276,
+      "gain_table_ci95": [
+        -11.83,
+        7.256
+      ],
+      "table_regret_vs_best_pct": 1.276,
+      "gain_table_pct_of_scan": -4.288
+    },
+    {
+      "session": "4c_g2_e39s1_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 4,
+      "mode": "graph",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 25.401,
+        "c32": 24.895,
+        "c64": 24.932,
+        "noscan": 23.306
+      },
+      "round_cv_default": 0.005377,
+      "best": "c32",
+      "gain_best_pct": 0.148,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.1328,
+      "scan_share_pct": 6.522,
+      "scan_ms_default": 1.6262,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": 0.148,
+      "gain_table_ci95": [
+        -0.8006,
+        1.453
+      ],
+      "table_regret_vs_best_pct": 0.0,
+      "gain_table_pct_of_scan": 2.269
+    },
+    {
+      "session": "4c_g2_e39s2_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 1,
+      "mode": "eager",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 59.019,
+        "c32": 62.495,
+        "c64": 62.368,
+        "noscan": 44.557
+      },
+      "round_cv_default": 0.05069,
+      "best": "c16",
+      "gain_best_pct": 5.369,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.0,
+      "scan_share_pct": 28.56,
+      "scan_ms_default": 17.81,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": -0.2036,
+      "gain_table_ci95": [
+        -12.26,
+        8.119
+      ],
+      "table_regret_vs_best_pct": 5.889,
+      "gain_table_pct_of_scan": -0.7131
+    },
+    {
+      "session": "4c_g2_e39s2_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 1,
+      "mode": "graph",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 9.3537,
+        "c32": 9.5477,
+        "c64": 9.791,
+        "noscan": 8.8842
+      },
+      "round_cv_default": 0.05658,
+      "best": "c16",
+      "gain_best_pct": 4.466,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.125,
+      "scan_share_pct": 9.261,
+      "scan_ms_default": 0.90676,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": 2.485,
+      "gain_table_ci95": [
+        -9.796,
+        2.677
+      ],
+      "table_regret_vs_best_pct": 2.073,
+      "gain_table_pct_of_scan": 26.84
+    },
+    {
+      "session": "4c_g2_e39s2_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 4,
+      "mode": "eager",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 58.017,
+        "c32": 64.86,
+        "c64": 63.799,
+        "noscan": 41.739
+      },
+      "round_cv_default": 0.05142,
+      "best": "c16",
+      "gain_best_pct": 9.064,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.0,
+      "scan_share_pct": 34.58,
+      "scan_ms_default": 22.06,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": -1.663,
+      "gain_table_ci95": [
+        -14.05,
+        7.603
+      ],
+      "table_regret_vs_best_pct": 11.8,
+      "gain_table_pct_of_scan": -4.809
+    },
+    {
+      "session": "4c_g2_e39s2_gdn1p4b",
+      "label": "gdn1p4b",
+      "L": 128,
+      "batch": 4,
+      "mode": "graph",
+      "default": "c64",
+      "n_rounds": 5,
+      "median_ms": {
+        "c16": 25.423,
+        "c32": 24.954,
+        "c64": 24.962,
+        "noscan": 23.331
+      },
+      "round_cv_default": 0.01391,
+      "best": "c32",
+      "gain_best_pct": 0.02844,
+      "all_chunk_ok": true,
+      "max_abs_logit_diff": 0.1328,
+      "scan_share_pct": 6.533,
+      "scan_ms_default": 1.6307,
+      "table_chunk": 32,
+      "table_bucket": 128,
+      "table_fallback": false,
+      "table_source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "gain_table_pct": 0.02844,
+      "gain_table_ci95": [
+        -3.2,
+        3.036
+      ],
+      "table_regret_vs_best_pct": 0.0,
+      "gain_table_pct_of_scan": 0.4354
+    }
+  ],
+  "summary": {
+    "gdn1p4b": {
+      "eager": {
+        "4c_g2_e39s1_gdn1p4b": {
+          "n_cells": 2,
+          "gain_table_latency_weighted_pct": -1.518,
+          "gain_table_mean_pct": -1.509,
+          "gain_table_range_pct": [
+            -1.742,
+            -1.276
+          ],
+          "gain_best_latency_weighted_pct": 0.0,
+          "gain_best_mean_pct": 0.0,
+          "gain_best_range_pct": [
+            0.0,
+            0.0
+          ],
+          "scan_share_range_pct": [
+            28.48,
+            29.75
+          ],
+          "scan_share_latency_weighted_pct": 29.09,
+          "round_cv_default_median": 0.04165,
+          "all_chunk_ok": true
+        },
+        "4c_g2_e39s2_gdn1p4b": {
+          "n_cells": 2,
+          "gain_table_latency_weighted_pct": -0.9416,
+          "gain_table_mean_pct": -0.9333,
+          "gain_table_range_pct": [
+            -1.663,
+            -0.2036
+          ],
+          "gain_best_latency_weighted_pct": 7.237,
+          "gain_best_mean_pct": 7.216,
+          "gain_best_range_pct": [
+            5.369,
+            9.064
+          ],
+          "scan_share_range_pct": [
+            28.56,
+            34.58
+          ],
+          "scan_share_latency_weighted_pct": 31.6,
+          "round_cv_default_median": 0.05106,
+          "all_chunk_ok": true
+        },
+        "cross_session": {
+          "sessions": [
+            "4c_g2_e39s1_gdn1p4b",
+            "4c_g2_e39s2_gdn1p4b"
+          ],
+          "n_cells": 2,
+          "same_best_chunk": 0,
+          "in_session_best_table_transferred_gain_latency_weighted_pct": [
+            0.0,
+            -1.737
+          ],
+          "abs_diff_gain_table_pct_median": 0.9627,
+          "abs_diff_gain_table_pct_max": 1.538,
+          "default_latency_session_ratio_abs_pct_median": 4.992,
+          "default_latency_session_ratio_abs_pct_max": 8.401
+        }
+      },
+      "graph": {
+        "4c_g2_e39s1_gdn1p4b": {
+          "n_cells": 2,
+          "gain_table_latency_weighted_pct": 0.8433,
+          "gain_table_mean_pct": 1.379,
+          "gain_table_range_pct": [
+            0.148,
+            2.609
+          ],
+          "gain_best_latency_weighted_pct": 0.8433,
+          "gain_best_mean_pct": 1.379,
+          "gain_best_range_pct": [
+            0.148,
+            2.609
+          ],
+          "scan_share_range_pct": [
+            6.522,
+            16.93
+          ],
+          "scan_share_latency_weighted_pct": 9.464,
+          "round_cv_default_median": 0.003021,
+          "all_chunk_ok": true
+        },
+        "4c_g2_e39s2_gdn1p4b": {
+          "n_cells": 2,
+          "gain_table_latency_weighted_pct": 0.7231,
+          "gain_table_mean_pct": 1.257,
+          "gain_table_range_pct": [
+            0.02844,
+            2.485
+          ],
+          "gain_best_latency_weighted_pct": 1.281,
+          "gain_best_mean_pct": 2.247,
+          "gain_best_range_pct": [
+            0.02844,
+            4.466
+          ],
+          "scan_share_range_pct": [
+            6.533,
+            9.261
+          ],
+          "scan_share_latency_weighted_pct": 7.301,
+          "round_cv_default_median": 0.03524,
+          "all_chunk_ok": true
+        },
+        "cross_session": {
+          "sessions": [
+            "4c_g2_e39s1_gdn1p4b",
+            "4c_g2_e39s2_gdn1p4b"
+          ],
+          "n_cells": 2,
+          "same_best_chunk": 1,
+          "in_session_best_table_transferred_gain_latency_weighted_pct": [
+            0.7231,
+            0.5868
+          ],
+          "abs_diff_gain_table_pct_median": 0.1218,
+          "abs_diff_gain_table_pct_max": 0.124,
+          "default_latency_session_ratio_abs_pct_median": 0.1775,
+          "default_latency_session_ratio_abs_pct_max": 0.2349
+        }
+      }
+    }
+  },
+  "tables": {
+    "gdn1p4b|B1": {
+      "source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "buckets": {
+        "16": 16,
+        "64": 16,
+        "128": 32,
+        "256": 32,
+        "512": 32,
+        "1024": 64,
+        "2048": 64,
+        "4096": 64,
+        "8192": 64
+      }
+    },
+    "gdn1p4b|B4": {
+      "source": "e2_gdn_vgpu3090_1p4b_r4graph3.csv",
+      "buckets": {
+        "16": 32,
+        "64": 32,
+        "128": 32,
+        "256": 32,
+        "512": 64,
+        "1024": 64,
+        "2048": 64,
+        "4096": 64,
+        "8192": 64
+      }
+    }
+  }
+}
