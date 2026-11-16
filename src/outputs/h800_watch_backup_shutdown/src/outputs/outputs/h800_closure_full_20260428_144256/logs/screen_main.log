@@ -1,0 +1,10 @@
+HF_HOME=/root/Corey_Transformer/system_cache/huggingface
+TRANSFORMERS_CACHE=/root/Corey_Transformer/system_cache/huggingface
+TORCH_HOME=/root/Corey_Transformer/system_cache/torch
+TRITON_CACHE_DIR=/root/Corey_Transformer/system_cache/triton
+HF_ENDPOINT=https://hf-mirror.com
+[2026-04-28 14:42:56] Running: /root/miniconda3/bin/python /root/Corey_Transformer/src/experiments/run_integrated_multiblock_dispatch.py --model mamba-370m --output-dir /root/Corey_Transformer/src/outputs/h800_closure_full_20260428_144256/multiblock_dispatch
+[2026-04-28 14:42:56] Running: /root/miniconda3/bin/python /root/Corey_Transformer/src/experiments/run_real_workload_diversity_h800.py --model mamba-370m --dataset-root /root/Corey_Transformer/src/data/longbench_subset --tasks narrativeqa qasper gov_report multifieldqa_en --samples-per-task 20 --output-dir /root/Corey_Transformer/src/outputs/h800_closure_full_20260428_144256/real_workload_diversity
+[2026-04-28 14:43:51] Running: /root/miniconda3/bin/python /root/Corey_Transformer/src/experiments/run_hf_longbench_baseline.py --model-name pythia-410m-fa3 --model-id EleutherAI/pythia-410m --dataset-root /root/Corey_Transformer/src/data/longbench_subset --tasks narrativeqa qasper gov_report multifieldqa_en --max-samples 20 --device cuda --dtype bfloat16 --attn-implementation flash_attention_3 --output-dir /root/Corey_Transformer/src/outputs/h800_closure_full_20260428_144256/transformer_fa3_longbench
+[2026-04-28 14:47:14] Running: /root/miniconda3/bin/python /root/Corey_Transformer/src/experiments/run_hf_longbench_baseline.py --model-name mamba2-ssd-2.7b --model-id benchang1110/mamba2-2.7b-hf --dataset-root /root/Corey_Transformer/src/data/longbench_subset --tasks narrativeqa qasper gov_report multifieldqa_en --max-samples 20 --device cuda --dtype bfloat16 --trust-remote-code --output-dir /root/Corey_Transformer/src/outputs/h800_closure_full_20260428_144256/mamba2_ssd_longbench
+[2026-04-28 14:53:31] H800 closure experiments submitted/completed under /root/Corey_Transformer/src/outputs/h800_closure_full_20260428_144256

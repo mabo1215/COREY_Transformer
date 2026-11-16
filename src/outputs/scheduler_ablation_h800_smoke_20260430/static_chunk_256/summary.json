@@ -1,0 +1,80 @@
+{
+  "gpu": "NVIDIA H800 PCIe",
+  "torch": "2.8.0+cu128",
+  "model": "mamba-370m",
+  "prompt_len": 122,
+  "prompt_repeat": 1,
+  "max_prompt_length": 1024,
+  "new_tokens": 2,
+  "warmup": 0,
+  "repeats": 1,
+  "h_ref": "log(256)=5.5452",
+  "chunk_min": 256,
+  "chunk_max": 256,
+  "scheduler_mode": "constant",
+  "entropy_stride": 1,
+  "random_seed": 0,
+  "force_chunk": 256,
+  "platform": "Linux-5.15.0-161-generic-x86_64-with-glibc2.35",
+  "chunk_size_kwarg_supported": true,
+  "dispatch_module": "src.corey_selective_scan_dispatch",
+  "dispatch_info": {
+    "module": "src.corey_selective_scan_dispatch",
+    "requested_backend": "auto",
+    "resolved_backend": "runtime_cuda",
+    "runtime_cuda_available": true,
+    "runtime_cuda_reason": "fwd_with_chunk_size",
+    "valid_chunks": [
+      128,
+      256,
+      512,
+      1024,
+      2048
+    ],
+    "chunk_size_honored": true,
+    "recurrence_preserving": true,
+    "eligible_for_w1_speedup": true,
+    "debug_only": false,
+    "fallback_hint": "Set COREY_SELECTIVE_SCAN_BACKEND=original to force the stock path, or COREY_SELECTIVE_SCAN_BACKEND=chunked_emulation for debug-only chunk routing that is not recurrence-preserving."
+  },
+  "eligible_for_w1_speedup": true,
+  "passive": {
+    "prompt_len": 122,
+    "new_tokens": 2,
+    "lat_mean_ms": 820.8359,
+    "lat_std_ms": 0.0,
+    "lat_min_ms": 820.8359,
+    "lat_max_ms": 820.8359,
+    "latencies_ms": [
+      820.8359
+    ]
+  },
+  "active_only": {
+    "prompt_len": 122,
+    "new_tokens": 2,
+    "lat_mean_ms": 68.541,
+    "lat_std_ms": 0.0,
+    "lat_min_ms": 68.541,
+    "lat_max_ms": 68.541,
+    "latencies_ms": [
+      68.541
+    ],
+    "chunk_dist": {
+      "256": 48
+    }
+  },
+  "integrated": {
+    "prompt_len": 122,
+    "new_tokens": 2,
+    "lat_mean_ms": 66.8731,
+    "lat_std_ms": 0.0,
+    "lat_min_ms": 66.8731,
+    "lat_max_ms": 66.8731,
+    "latencies_ms": [
+      66.8731
+    ],
+    "chunk_dist": {
+      "256": 48
+    }
+  }
+}

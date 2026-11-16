@@ -1,0 +1,38 @@
+K Bin-Count Sensitivity Analysis
+============================================================
+Samples per scenario: 1,000,000. Latencies from: RTX 3070, CUDA 12.8, seq_len=4096, dim=1024, d_state=16, FP16.
+Two H_ref policies are compared: principled (log K) and fixed (8.0).
+
+Scenario: standard_normal
+      K   H (nats)   log K   H/logK  chunk*   lat* ms  chunk8   lat8 ms
+  ------------------------------------------------------------------
+     16     1.9614   2.773    0.707     512     0.748     128     1.867
+     32     2.6439   3.466    0.763     512     0.748     256     1.148
+     64     3.3343   4.159    0.802     512     0.748     256     1.148
+    128     4.0268   4.852    0.830     512     0.748     256     1.148
+    256     4.7197   5.545    0.851     512     0.748     256     1.148
+    512     5.4127   6.238    0.868     512     0.748     256     1.148
+   1024     6.1056   6.931    0.881     512     0.748     512     0.748
+   2048     6.7982   7.625    0.892     512     0.748     512     0.748
+
+Scenario: uniform_unit
+      K   H (nats)   log K   H/logK  chunk*   lat* ms  chunk8   lat8 ms
+  ------------------------------------------------------------------
+     16     2.7726   2.773    1.000     512     0.748     256     1.148
+     32     3.4657   3.466    1.000     512     0.748     256     1.148
+     64     4.1589   4.159    1.000     512     0.748     256     1.148
+    128     4.8520   4.852    1.000     512     0.748     256     1.148
+    256     5.5451   5.545    1.000     512     0.748     512     0.748
+    512     6.2381   6.238    1.000     512     0.748     512     0.748
+   1024     6.9310   6.931    1.000     512     0.748     512     0.748
+   2048     7.6236   7.625    1.000     512     0.748     512     0.748
+
+Key observations:
+  - Under H_ref = log K, the normalized ratio H/log K is stable across K,
+    so chunk selection is K-invariant for well-behaved distributions.
+  - Under H_ref = 8.0, small K (K <= 64) yields r < 0.5 and COREY falls
+    back to small chunks even on distributions that should pick chunk 512.
+  - The bin count affects the absolute entropy scale but not the
+    relative ordering of distributions, confirming that the principled
+    H_ref = log K choice decouples scheduler behavior from the
+    chosen histogram resolution.

@@ -1,0 +1,13 @@
+[transformers] The fast path is not available because one of `(selective_state_update, selective_scan_fn, causal_conv1d_fn, causal_conv1d_update, mamba_inner_fn)` is None. Falling back to the sequential implementation of Mamba, as use_mambapy is set to False. To install follow https://github.com/state-spaces/mamba/#installation for mamba-ssm and install the kernels library using `pip install kernels` or https://github.com/Dao-AILab/causal-conv1d for causal-conv1d. For the mamba.py backend, follow https://github.com/alxndrTL/mamba.py.
+[integrated] Device: NVIDIA H800 PCIe
+[integrated] Loading state-spaces/mamba-370m-hf …
+Loading weights:   0%|          | 0/482 [00:00<?, ?it/s]Loading weights:  45%|████▌     | 217/482 [00:00<00:00, 2118.58it/s]Loading weights:  91%|█████████ | 438/482 [00:00<00:00, 2145.81it/s]Loading weights: 100%|██████████| 482/482 [00:00<00:00, 2153.03it/s]
+[integrated] mamba_ssm fast-path: False
+[integrated] Exception: mamba_ssm CUDA kernels missing: ['selective_scan_fn', 'selective_state_update', 'causal_conv1d_fn', 'causal_conv1d_update', 'mamba_inner_fn']
+[integrated] Partial results saved to /root/Corey_Transformer/src/outputs/neurips_required/integrated_end_to_end/summary_partial.json
+Traceback (most recent call last):
+  File "/root/Corey_Transformer/src/experiments/run_integrated_end_to_end.py", line 544, in <module>
+    main()
+  File "/root/Corey_Transformer/src/experiments/run_integrated_end_to_end.py", line 422, in main
+    raise RuntimeError(f"mamba_ssm CUDA kernels missing: {missing}")
+RuntimeError: mamba_ssm CUDA kernels missing: ['selective_scan_fn', 'selective_state_update', 'causal_conv1d_fn', 'causal_conv1d_update', 'mamba_inner_fn']

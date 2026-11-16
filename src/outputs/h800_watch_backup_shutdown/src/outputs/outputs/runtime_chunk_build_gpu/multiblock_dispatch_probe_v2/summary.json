@@ -1,0 +1,35 @@
+{
+  "benchmark": "integrated_multiblock_dispatch",
+  "status": "ready",
+  "dispatch_module": "src.corey_selective_scan_dispatch",
+  "notes": "A true run requires a real dispatch module that compiles or exposes multiple recurrence-preserving selective-scan BLOCK_SIZE variants. Chunked sequence emulation is intentionally not used because it resets scan state at chunk boundaries unless the kernel accepts an initial state.",
+  "dispatch_info": {
+    "module": "src.corey_selective_scan_dispatch",
+    "requested_backend": "runtime_cuda",
+    "resolved_backend": "runtime_cuda",
+    "runtime_cuda_available": true,
+    "runtime_cuda_reason": "fwd_with_chunk_size",
+    "valid_chunks": [
+      128,
+      256,
+      512,
+      1024,
+      2048
+    ],
+    "chunk_size_honored": true,
+    "recurrence_preserving": true,
+    "eligible_for_w1_speedup": true,
+    "debug_only": false,
+    "fallback_hint": "Set COREY_SELECTIVE_SCAN_BACKEND=original to force the stock path, or COREY_SELECTIVE_SCAN_BACKEND=chunked_emulation for debug-only chunk routing that is not recurrence-preserving."
+  },
+  "probe": {
+    "ok": true,
+    "shape": [
+      1,
+      64,
+      128
+    ],
+    "finite_ratio": 0.0684814453125
+  },
+  "next_command": "Run src/experiments/run_integrated_end_to_end.py after wiring this dispatch module into transformers.models.mamba.modeling_mamba.selective_scan_fn on the H800 image."
+}

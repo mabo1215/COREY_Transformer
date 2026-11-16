@@ -1,0 +1,18 @@
+[W1] Running policy_off (Python loop, seq_len=4096)...
+     latency = 325.6 ± 10.0 ms
+[W1] Running policy_static (chunk_size=64)...
+     latency = 2.3 ± 0.1 ms  (chunk_size=64, n_chunks=64)
+[W1] Computing activation entropy for COREY policy...
+     entropy = 4.6812 nats -> chunk_size = 256  (entropy_overhead = 62.73 ms)
+[W1] Running policy_corey (chunk_size=256)...
+     latency = 0.6 ± 0.0 ms  (chunk_size=256, n_chunks=16)
+
+[W1] Comparison summary (seq_len=4096, dim=1024, NVIDIA H800 PCIe):
+  policy_off     : 325.6 ms  (chunk=1, 4096 execution units)  12579.3 tok/s, 1.116 GB
+  policy_static  : 2.3 ms  (chunk=64, 64 execution units)  1748428.9 tok/s, 0.042 GB, 138.99x vs off
+  policy_corey   : 0.6 ms  (chunk=256, 16 execution units)  7055351.3 tok/s, 0.029 GB, 560.82x vs off, 4.04x vs static
+[W1] Outputs written to: /root/Corey_Transformer/src/outputs/h800_single_w1_extra_20260428_201044/triplet_bf16_4096
+{
+  "status": "ok",
+  "output_dir": "/root/Corey_Transformer/src/outputs/h800_single_w1_extra_20260428_201044/triplet_bf16_4096"
+}

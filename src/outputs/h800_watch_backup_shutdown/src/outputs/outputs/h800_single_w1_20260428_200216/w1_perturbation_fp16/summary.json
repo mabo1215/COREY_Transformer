@@ -1,0 +1,82 @@
+{
+  "device_name": "NVIDIA H800 PCIe",
+  "cuda_version": "12.8",
+  "batch_size": 1,
+  "dim": 1024,
+  "seq_len": 4096,
+  "d_state": 16,
+  "dtype": "float16",
+  "warmup_runs": 5,
+  "benchmark_repeats": 30,
+  "corey_min_chunk": 32,
+  "corey_max_chunk": 512,
+  "python": "3.12.3",
+  "platform": "Linux-5.15.0-140-generic-x86_64-with-glibc2.35",
+  "results": [
+    {
+      "distribution": "uniform",
+      "description": "Uniform[0,1] \u2014 maximum entropy for bounded support",
+      "entropy_nats": 5.5451,
+      "entropy_overhead_ms": 113.1528,
+      "corey_chunk_size": 512,
+      "static64_latency_ms": 2.2824,
+      "static64_latency_std": 0.0609,
+      "corey_latency_ms": 0.3063,
+      "corey_latency_std": 0.0227,
+      "corey_n_chunks": 8,
+      "speedup_vs_static64": 7.452
+    },
+    {
+      "distribution": "normal",
+      "description": "Standard Normal \u2014 high entropy, typical random activations",
+      "entropy_nats": 4.6575,
+      "entropy_overhead_ms": 1.4106,
+      "corey_chunk_size": 256,
+      "static64_latency_ms": 2.2755,
+      "static64_latency_std": 0.0508,
+      "corey_latency_ms": 0.5844,
+      "corey_latency_std": 0.0268,
+      "corey_n_chunks": 16,
+      "speedup_vs_static64": 3.894
+    },
+    {
+      "distribution": "laplace",
+      "description": "Laplace(0,1) \u2014 heavy tails, medium entropy",
+      "entropy_nats": 3.8156,
+      "entropy_overhead_ms": 1.1789,
+      "corey_chunk_size": 256,
+      "static64_latency_ms": 2.268,
+      "static64_latency_std": 0.0504,
+      "corey_latency_ms": 0.5867,
+      "corey_latency_std": 0.0348,
+      "corey_n_chunks": 16,
+      "speedup_vs_static64": 3.866
+    },
+    {
+      "distribution": "sparse10",
+      "description": "Sparse 10% \u2014 10% non-zero normal entries, low entropy",
+      "entropy_nats": 0.7917,
+      "entropy_overhead_ms": 7.5678,
+      "corey_chunk_size": 64,
+      "static64_latency_ms": 2.2744,
+      "static64_latency_std": 0.049,
+      "corey_latency_ms": 2.2756,
+      "corey_latency_std": 0.0431,
+      "corey_n_chunks": 64,
+      "speedup_vs_static64": 0.999
+    },
+    {
+      "distribution": "sparse2",
+      "description": "Sparse 2%  \u2014 2% non-zero large entries, very low entropy",
+      "entropy_nats": 0.193,
+      "entropy_overhead_ms": 8.1926,
+      "corey_chunk_size": 32,
+      "static64_latency_ms": 2.3084,
+      "static64_latency_std": 0.2015,
+      "corey_latency_ms": 4.5415,
+      "corey_latency_std": 0.0509,
+      "corey_n_chunks": 128,
+      "speedup_vs_static64": 0.508
+    }
+  ]
+}

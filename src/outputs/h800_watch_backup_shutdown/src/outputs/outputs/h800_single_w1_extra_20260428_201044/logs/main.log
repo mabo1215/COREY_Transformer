@@ -1,0 +1,13 @@
+[2026-04-28 20:10:44] H800 extra W1 kernel bundle
+[2026-04-28 20:10:44] output=/root/Corey_Transformer/src/outputs/h800_single_w1_extra_20260428_201044
+[2026-04-28 20:10:44] START 01_triplet_bf16_4096: /root/miniconda3/bin/python src/experiments/run_w1_triton_triplet.py --batch-size 1 --dim 1024 --seq-len 4096 --d-state 16 --dtype bfloat16 --warmup-runs 5 --benchmark-repeats 30 --output-dir /root/Corey_Transformer/src/outputs/h800_single_w1_extra_20260428_201044/triplet_bf16_4096
+[2026-04-28 20:10:52] DONE 01_triplet_bf16_4096 exit=0
+[2026-04-28 20:10:52] START 02_sweep_bf16_4096: /root/miniconda3/bin/python src/experiments/run_w1_chunk_sweep.py --batch-size 1 --dim 1024 --seq-len 4096 --d-state 16 --dtype bfloat16 --warmup-runs 5 --benchmark-repeats 30 --sweep-chunks 32 64 128 256 512 --output-dir /root/Corey_Transformer/src/outputs/h800_single_w1_extra_20260428_201044/sweep_bf16_4096
+[2026-04-28 20:10:57] DONE 02_sweep_bf16_4096 exit=0
+[2026-04-28 20:10:57] START 03_perturb_bf16_4096: /root/miniconda3/bin/python src/experiments/run_w1_perturbation.py --batch-size 1 --dim 1024 --seq-len 4096 --d-state 16 --dtype bfloat16 --warmup-runs 5 --benchmark-repeats 30 --output-dir /root/Corey_Transformer/src/outputs/h800_single_w1_extra_20260428_201044/perturb_bf16_4096
+[2026-04-28 20:11:02] DONE 03_perturb_bf16_4096 exit=0
+[2026-04-28 20:11:02] START 04_triplet_fp16_8192: /root/miniconda3/bin/python src/experiments/run_w1_triton_triplet.py --batch-size 1 --dim 1024 --seq-len 8192 --d-state 16 --dtype float16 --warmup-runs 5 --benchmark-repeats 30 --output-dir /root/Corey_Transformer/src/outputs/h800_single_w1_extra_20260428_201044/triplet_fp16_8192
+[2026-04-28 20:11:14] DONE 04_triplet_fp16_8192 exit=0
+[2026-04-28 20:11:14] START 05_sweep_fp16_8192: /root/miniconda3/bin/python src/experiments/run_w1_chunk_sweep.py --batch-size 1 --dim 1024 --seq-len 8192 --d-state 16 --dtype float16 --warmup-runs 5 --benchmark-repeats 30 --sweep-chunks 32 64 128 256 512 --output-dir /root/Corey_Transformer/src/outputs/h800_single_w1_extra_20260428_201044/sweep_fp16_8192
+[2026-04-28 20:11:19] DONE 05_sweep_fp16_8192 exit=0
+[2026-04-28 20:11:19] ALL_DONE

@@ -1,0 +1,21 @@
+HF_HOME=/root/Corey_Transformer/system_cache/huggingface
+TRANSFORMERS_CACHE=/root/Corey_Transformer/system_cache/huggingface
+TORCH_HOME=/root/Corey_Transformer/system_cache/torch
+TRITON_CACHE_DIR=/root/Corey_Transformer/system_cache/triton
+HF_ENDPOINT=https://hf-mirror.com
+[2026-04-28 14:57:02] RUN integrated_repeats20: /root/miniconda3/bin/python src/experiments/run_integrated_end_to_end.py --model mamba-370m --new-tokens 32 --warmup 2 --repeats 20 --num-bins 256 --output-dir src/outputs/h800_enhance_20260428_145702/integrated_repeats20
+[2026-04-28 14:58:10] DONE integrated_repeats20
+[2026-04-28 14:58:10] RUN diversity_extra20: /root/miniconda3/bin/python src/experiments/run_real_workload_diversity_h800.py --model mamba-370m --dataset-root src/data/longbench_subset --tasks narrativeqa qasper gov_report multifieldqa_en --samples-per-task 20 --extra-regime-file src/outputs/h800_enhance_20260428_145702/extra_regimes/extra_code.jsonl --extra-regime-file src/outputs/h800_enhance_20260428_145702/extra_regimes/extra_logs.jsonl --extra-regime-file src/outputs/h800_enhance_20260428_145702/extra_regimes/extra_tables.jsonl --extra-regime-file src/outputs/h800_enhance_20260428_145702/extra_regimes/extra_repetition.jsonl --max-extra-per-regime 20 --output-dir src/outputs/h800_enhance_20260428_145702/diversity_extra20
+HF_HOME=/root/Corey_Transformer/system_cache/huggingface
+TRANSFORMERS_CACHE=/root/Corey_Transformer/system_cache/huggingface
+TORCH_HOME=/root/Corey_Transformer/system_cache/torch
+TRITON_CACHE_DIR=/root/Corey_Transformer/system_cache/triton
+HF_ENDPOINT=https://hf-mirror.com
+[skip] integrated_repeats20
+[2026-04-28 15:01:06] RUN diversity_extra20: /root/miniconda3/bin/python src/experiments/run_real_workload_diversity_h800.py --model mamba-370m --dataset-root src/data/longbench_subset --tasks narrativeqa qasper gov_report multifieldqa_en --samples-per-task 20 --extra-regime-file src/outputs/h800_enhance_20260428_145702/extra_regimes/extra_code.jsonl --extra-regime-file src/outputs/h800_enhance_20260428_145702/extra_regimes/extra_logs.jsonl --extra-regime-file src/outputs/h800_enhance_20260428_145702/extra_regimes/extra_tables.jsonl --extra-regime-file src/outputs/h800_enhance_20260428_145702/extra_regimes/extra_repetition.jsonl --max-extra-per-regime 20 --output-dir src/outputs/h800_enhance_20260428_145702/diversity_extra20
+[2026-04-28 15:02:45] DONE diversity_extra20
+[2026-04-28 15:02:45] RUN pythia410m_fa3_50: /root/miniconda3/bin/python src/experiments/run_hf_longbench_baseline.py --model-name pythia-410m-fa3-50 --model-id EleutherAI/pythia-410m --dataset-root src/data/longbench_subset --tasks narrativeqa qasper gov_report multifieldqa_en --max-samples 50 --device cuda --dtype bfloat16 --attn-implementation flash_attention_3 --output-dir src/outputs/h800_enhance_20260428_145702/pythia410m_fa3_50
+[2026-04-28 15:11:09] DONE pythia410m_fa3_50
+[2026-04-28 15:11:09] RUN mamba2_ssd_50: /root/miniconda3/bin/python src/experiments/run_hf_longbench_baseline.py --model-name mamba2-ssd-2.7b-50 --model-id benchang1110/mamba2-2.7b-hf --dataset-root src/data/longbench_subset --tasks narrativeqa qasper gov_report multifieldqa_en --max-samples 50 --device cuda --dtype bfloat16 --trust-remote-code --output-dir src/outputs/h800_enhance_20260428_145702/mamba2_ssd_50
+[2026-04-28 15:25:24] DONE mamba2_ssd_50
+[2026-04-28 15:25:24] ALL_ENHANCE_DONE src/outputs/h800_enhance_20260428_145702

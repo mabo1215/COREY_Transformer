@@ -1,0 +1,214 @@
+﻿diff --git a/csrc/selective_scan/selective_scan.cpp b/csrc/selective_scan/selective_scan.cpp
+index cde867c..aac9675 100644
+--- a/csrc/selective_scan/selective_scan.cpp
++++ b/csrc/selective_scan/selective_scan.cpp
+@@ -56,6 +56,19 @@ void selective_scan_fwd_cuda(SSMParamsBase &params, cudaStream_t stream);
+ template <typename input_t, typename weight_t>
+ void selective_scan_bwd_cuda(SSMParamsBwd &params, cudaStream_t stream);
+ 
++int default_selective_scan_chunk_size(const int seqlen) {
++    if (seqlen <= 128) {
++        return 128;
++    } else if (seqlen <= 256) {
++        return 256;
++    } else if (seqlen <= 512) {
++        return 512;
++    } else if (seqlen <= 1024) {
++        return 1024;
++    }
++    return 2048;
++}
++
+ void set_ssm_params_fwd(SSMParamsBase &params,
+                         // sizes
+                         const size_t batch,
+@@ -64,6 +77,7 @@ void set_ssm_params_fwd(SSMParamsBase &params,
+                         const size_t dstate,
+                         const size_t n_groups,
+                         const size_t n_chunks,
++                        const size_t chunk_size,
+                         const bool is_variable_B,
+                         const bool is_variable_C,
+                         // device pointers
+@@ -90,6 +104,7 @@ void set_ssm_params_fwd(SSMParamsBase &params,
+     params.dstate = dstate;
+     params.n_groups = n_groups;
+     params.n_chunks = n_chunks;
++    params.chunk_size = chunk_size;
+     params.dim_ngroups_ratio = dim / n_groups;
+ 
+     params.delta_softplus = delta_softplus;
+@@ -148,6 +163,7 @@ void set_ssm_params_bwd(SSMParamsBwd &params,
+                         const size_t dstate,
+                         const size_t n_groups,
+                         const size_t n_chunks,
++                        const size_t chunk_size,
+                         const bool is_variable_B,
+                         const bool is_variable_C,
+                         // device pointers
+@@ -175,7 +191,7 @@ void set_ssm_params_bwd(SSMParamsBwd &params,
+                         bool delta_softplus,
+                         bool recompute_out_z) {
+     // Pass in "dout" instead of "out", we're not gonna use "out" unless we have z
+-    set_ssm_params_fwd(params, batch, dim, seqlen, dstate, n_groups, n_chunks, is_variable_B, is_variable_C,
++    set_ssm_params_fwd(params, batch, dim, seqlen, dstate, n_groups, n_chunks, chunk_size, is_variable_B, is_variable_C,
+                        u, delta, A, B, C, has_z ? out : dout,
+                        has_z ? z : dout,
+                        // If not recompute_out_z, pass dout instead of out_z.
+@@ -229,7 +245,8 @@ selective_scan_fwd(const at::Tensor &u, const at::Tensor &delta,
+                   const c10::optional<at::Tensor> &D_,
+                   const c10::optional<at::Tensor> &z_,
+                   const c10::optional<at::Tensor> &delta_bias_,
+-                  bool delta_softplus) {
++                  bool delta_softplus,
++                  int64_t runtime_chunk_size) {
+     auto input_type = u.scalar_type();
+     auto weight_type = A.scalar_type();
+     TORCH_CHECK(input_type == at::ScalarType::Float || input_type == at::ScalarType::Half || input_type == at::ScalarType::BFloat16);
+@@ -304,8 +321,14 @@ selective_scan_fwd(const at::Tensor &u, const at::Tensor &delta,
+         out_z = torch::empty_like(z);
+     }
+ 
+-    const int n_chunks = (seqlen + 2048 - 1) / 2048;
+-    // const int n_chunks = (seqlen + 1024 - 1) / 1024;
++    TORCH_CHECK(
++        runtime_chunk_size == 128 || runtime_chunk_size == 256 ||
++        runtime_chunk_size == 512 || runtime_chunk_size == 1024 ||
++        runtime_chunk_size == 2048,
++        "selective_scan runtime chunk_size must be one of {128, 256, 512, 1024, 2048}"
++    );
++    const int chunk_size = static_cast<int>(runtime_chunk_size);
++    const int n_chunks = (seqlen + chunk_size - 1) / chunk_size;
+     // at::Tensor out = torch::empty_like(u);
+     // Right now u has BHL layout and delta has HBL layout, and we want out to have HBL layout
+     at::Tensor out = torch::empty_like(delta);
+@@ -313,7 +336,7 @@ selective_scan_fwd(const at::Tensor &u, const at::Tensor &delta,
+     x = torch::empty({batch_size, dim, n_chunks, dstate * 2}, u.options().dtype(weight_type));
+ 
+     SSMParamsBase params;
+-    set_ssm_params_fwd(params, batch_size, dim, seqlen, dstate, n_groups, n_chunks, is_variable_B, is_variable_C,
++    set_ssm_params_fwd(params, batch_size, dim, seqlen, dstate, n_groups, n_chunks, chunk_size, is_variable_B, is_variable_C,
+                        u, delta, A, B, C, out, z, out_z,
+                        D_.has_value() ? D_.value().data_ptr() : nullptr,
+                        delta_bias_.has_value() ? delta_bias_.value().data_ptr() : nullptr,
+@@ -335,6 +358,20 @@ selective_scan_fwd(const at::Tensor &u, const at::Tensor &delta,
+     return result;
+ }
+ 
++std::vector<at::Tensor>
++selective_scan_fwd_default(const at::Tensor &u, const at::Tensor &delta,
++                  const at::Tensor &A, const at::Tensor &B, const at::Tensor &C,
++                  const c10::optional<at::Tensor> &D_,
++                  const c10::optional<at::Tensor> &z_,
++                  const c10::optional<at::Tensor> &delta_bias_,
++                  bool delta_softplus) {
++    const int seqlen = u.size(2);
++    return selective_scan_fwd(
++        u, delta, A, B, C, D_, z_, delta_bias_, delta_softplus,
++        default_selective_scan_chunk_size(seqlen)
++    );
++}
++
+ std::vector<at::Tensor>
+ selective_scan_bwd(const at::Tensor &u, const at::Tensor &delta,
+                   const at::Tensor &A, const at::Tensor &B, const at::Tensor &C,
+@@ -466,7 +503,7 @@ selective_scan_bwd(const at::Tensor &u, const at::Tensor &delta,
+     if (delta_bias_.has_value()) { ddelta_bias = torch::zeros_like(delta_bias_.value()); }
+ 
+     SSMParamsBwd params;
+-    set_ssm_params_bwd(params, batch_size, dim, seqlen, dstate, n_groups, n_chunks, is_variable_B, is_variable_C,
++    set_ssm_params_bwd(params, batch_size, dim, seqlen, dstate, n_groups, n_chunks, 2048, is_variable_B, is_variable_C,
+                        u, delta, A, B, C, z, out, out_z,
+                        D_.has_value() ? D_.value().data_ptr() : nullptr,
+                        delta_bias_.has_value() ? delta_bias_.value().data_ptr() : nullptr,
+@@ -492,6 +529,9 @@ selective_scan_bwd(const at::Tensor &u, const at::Tensor &delta,
+ }
+ 
+ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+-    m.def("fwd", &selective_scan_fwd, "Selective scan forward");
++    m.def("fwd", &selective_scan_fwd_default, "Selective scan forward");
++    m.def("fwd_with_chunk_size", &selective_scan_fwd, "Selective scan forward with runtime chunk_size");
++    m.def("fwd_chunked", &selective_scan_fwd, "Selective scan forward with runtime chunk_size");
++    m.def("fwd_runtime_chunk", &selective_scan_fwd, "Selective scan forward with runtime chunk_size");
+     m.def("bwd", &selective_scan_bwd, "Selective scan backward");
+ }
+diff --git a/csrc/selective_scan/selective_scan.h b/csrc/selective_scan/selective_scan.h
+index e2c7bcd..a2e92b5 100644
+--- a/csrc/selective_scan/selective_scan.h
++++ b/csrc/selective_scan/selective_scan.h
+@@ -26,7 +26,7 @@ struct SSMScanParamsBase {
+ struct SSMParamsBase {
+     using index_t = uint32_t;
+ 
+-    int batch, dim, seqlen, dstate, n_groups, n_chunks;
++    int batch, dim, seqlen, dstate, n_groups, n_chunks, chunk_size;
+     int dim_ngroups_ratio;
+     bool is_variable_B;
+     bool is_variable_C;
+diff --git a/csrc/selective_scan/selective_scan_fwd_kernel.cuh b/csrc/selective_scan/selective_scan_fwd_kernel.cuh
+index 80e9e37..e6cdee3 100755
+--- a/csrc/selective_scan/selective_scan_fwd_kernel.cuh
++++ b/csrc/selective_scan/selective_scan_fwd_kernel.cuh
+@@ -6,6 +6,7 @@
+ 
+ #include <c10/util/BFloat16.h>
+ #include <c10/util/Half.h>
++#include <c10/util/Exception.h>
+ #include <c10/cuda/CUDAException.h>  // For C10_CUDA_CHECK and C10_CUDA_KERNEL_LAUNCH_CHECK
+ 
+ #ifndef USE_ROCM
+@@ -351,26 +352,21 @@ template<typename input_t, typename weight_t>
+ void selective_scan_fwd_cuda(SSMParamsBase &params, cudaStream_t stream) {
+ 
+     #ifndef USE_ROCM
+-        if (params.seqlen <= 128) {           
++        if (params.chunk_size == 128) {
+             selective_scan_fwd_launch<32, 4, input_t, weight_t>(params, stream);
+-        } else if (params.seqlen <= 256) {
++        } else if (params.chunk_size == 256) {
+             selective_scan_fwd_launch<32, 8, input_t, weight_t>(params, stream);
+-        } else if (params.seqlen <= 512) {
++        } else if (params.chunk_size == 512) {
+             selective_scan_fwd_launch<32, 16, input_t, weight_t>(params, stream);
+-        } else if (params.seqlen <= 1024) {
++        } else if (params.chunk_size == 1024) {
+             selective_scan_fwd_launch<64, 16, input_t, weight_t>(params, stream);
+-        } else {
++        } else if (params.chunk_size == 2048) {
+             selective_scan_fwd_launch<128, 16, input_t, weight_t>(params, stream);
+-        }
+-    #else
+-        if (params.seqlen <= 256) {
+-            selective_scan_fwd_launch<64, 4, input_t, weight_t>(params, stream);
+-        } else if (params.seqlen <= 512) {
+-            selective_scan_fwd_launch<64, 8, input_t, weight_t>(params, stream);
+-        } else if (params.seqlen <= 1024) {
+-            selective_scan_fwd_launch<64, 16, input_t, weight_t>(params, stream);
+         } else {
+-            selective_scan_fwd_launch<128, 16, input_t, weight_t>(params, stream);
++            TORCH_CHECK(false, "selective_scan runtime chunk_size must be one of {128, 256, 512, 1024, 2048}");
+         }
++    #else
++        TORCH_CHECK(params.chunk_size == 2048, "runtime chunk_size dispatch is currently enabled only for CUDA builds");
++        selective_scan_fwd_launch<128, 16, input_t, weight_t>(params, stream);
+     #endif
+ }
+diff --git a/mamba_ssm/utils/generation.py b/mamba_ssm/utils/generation.py
+index 222f128..8c0a4e3 100644
+--- a/mamba_ssm/utils/generation.py
++++ b/mamba_ssm/utils/generation.py
+@@ -11,7 +11,13 @@ import torch.nn.functional as F
+ from einops import rearrange, repeat
+ from torch import Tensor
+ from torch.profiler import ProfilerActivity, profile, record_function
+-from transformers.generation import GreedySearchDecoderOnlyOutput, SampleDecoderOnlyOutput, TextStreamer
++try:
++    from transformers.generation import GreedySearchDecoderOnlyOutput, SampleDecoderOnlyOutput, TextStreamer
++except ImportError:
++    from transformers.generation import GenerateDecoderOnlyOutput, TextStreamer
++
++    GreedySearchDecoderOnlyOutput = GenerateDecoderOnlyOutput
++    SampleDecoderOnlyOutput = GenerateDecoderOnlyOutput
+ 
+ 
+ @dataclass

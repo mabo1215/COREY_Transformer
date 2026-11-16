@@ -1,0 +1,28 @@
+[integrated] Device: NVIDIA H800 PCIe
+[integrated] Loading state-spaces/mamba-370m-hf …
+[integrated] Using installed mamba_ssm / causal_conv1d CUDA kernels.
+Loading weights:   0%|          | 0/482 [00:00<?, ?it/s]Loading weights:  49%|████▉     | 237/482 [00:00<00:00, 2291.60it/s]Loading weights:  97%|█████████▋| 469/482 [00:00<00:00, 2302.71it/s]Loading weights: 100%|██████████| 482/482 [00:00<00:00, 2310.52it/s]
+[integrated] mamba_ssm fast-path: True
+[integrated] (1/3) Timing passive baseline …
+  passive: 868.57 ± 4.68 ms (prompt_len=122)
+[integrated] (2/3) Timing active-hook-only (chunk selected, not routed) …
+  active-only: 883.57 ± 2.91 ms
+  chunk distribution: {256: 336}
+[integrated] (3/3) Timing active+routed (chunk selected AND routed into scan) …
+  active+routed: 891.92 ± 2.84 ms
+  chunk distribution: {256: 336}
+
+[integrated] === Table: integrated measurement ===
+Configuration                                   Latency (ms)  vs. Passive
+Passive (stock fast path, static chunk)           868.57 ±  4.68         1.00x
+Active hook only (chunk selected, not routed)     883.57 ±  2.91       1.017x
+Active + routed (integrated)                      891.92 ±  2.84       1.027x
+  => Overhead: +23.35 ms (+2.7%)
+
+  NOTE: selective_scan_fn in the installed mamba_ssm does not accept
+  chunk_size as a kwarg (compile-time constant).  The 'Active+routed'
+  row above reflects entropy overhead only (same as active-hook-only).
+  True chunk routing requires a mamba_ssm build that exposes chunk_size
+  at the Python API level.  Kernel-level speedup evidence is in Table 3.
+
+[integrated] Results saved to /root/Corey_Transformer/src/outputs/neurips_required/integrated_end_to_end/summary.json

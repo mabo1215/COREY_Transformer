@@ -1,5 +1,17 @@
 # 论文进度
 
+## 2026-11-17 本地历史实验输出纳入 Git（作者指示）
+
+### 已全部修改
+1. **ARCHIVE-1：归档早期实验原始输出**：为 `src/outputs/` 增加精确的忽略规则例外，包含嵌套远端备份和运行日志，新增保存 611 个此前仅在本地的文件（约 25.50 MiB）。覆盖 H800、RTX 3090、RTX 4050 的历史运行、`revision_matrix_*`、`scheduler_ablation_*`、`routed_quality_*` 和 `h800_watch_backup*`，便于换机恢复与追溯；原始输出内容保持不变。
+2. **ARCHIVE-2：检查归档范围与敏感信息**：检查文本文件及历史压缩包；凭据候选命中均为变量引用或运行时读取，并非明文密钥。仅开放历史输出目录，`.env`、缓存、其他输出目录及 `src/logs/` 的既有忽略策略保持有效。本次不重新运行实验，不修改论文或投稿包。
+
+### 未修改或部分修改
+- 本次归档任务无未完成事项；论文修订的既有待办仍以账本及下文记录为准。
+
+### 遗留问题
+- 本次无新增需作者决策的问题；既有问题仍保留在下文原有问题区。
+
 ## 【jpdc-r1】2026-11-06 改投 JPDC（分支 jpdc-r1）
 - ACM TACO 范围不符退稿（编辑部直接退稿，未送审）。目标改为 JPDC（单盲，Elsevier）。作者须知 PDF 在 submit/。
 - 已完成：论文由 acmart 改为 elsarticle（作者/单位/通讯作者、highlights、7 个关键词、编号参考文献 elsarticle-num）；补充材料包装（build.bat/build.sh）同步改版；预印本改为第一人称；引言加入并行计算视角；文末加入 Data availability、CRediT、竞争利益、资助、生成式 AI 声明；submit/highlights.txt（5 条，均 ≤85 字符）；submit/cover_letter_jpdc.txt。

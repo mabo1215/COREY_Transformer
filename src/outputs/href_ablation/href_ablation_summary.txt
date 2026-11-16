@@ -1,0 +1,29 @@
+H_ref Ablation: Chunk Selection and Latency Sensitivity
+============================================================
+COREY formula:  r = min(H/H_ref, 1)  |  C = clip(2^round(log2(C_min + r*(C_max-C_min))), C_min=32, C_max=512)
+Latencies from: RTX 3070, CUDA 12.8, seq_len=4096, batch=1, dim=1024, d_state=16, FP16
+Static baseline (chunk=64): 3.2992 ms
+
+Scenario: randn_w1  (H = 4.6043 nats, synthetic randn input (W1 benchmark, seed=42))
+       H_ref       r    chunk   latency_ms   speedup_vs_64
+  --------------------------------------------------------
+  log2(K=64)  1.0000      512       0.7481          4.4101x
+         5.0  0.9209      512       0.7481          4.4101x
+         6.0  0.7674      512       0.7481          4.4101x
+         8.0  0.5755      256       1.1477          2.8746x <-- default
+
+Scenario: real_ckpt  (H = 4.0200 nats, mean over 80 real Mamba checkpoint prompts)
+       H_ref       r    chunk   latency_ms   speedup_vs_64
+  --------------------------------------------------------
+  log2(K=64)  0.9666      512       0.7481          4.4101x
+         5.0  0.8040      512       0.7481          4.4101x
+         6.0  0.6700      256       1.1477          2.8746x
+         8.0  0.5025      256       1.1477          2.8746x <-- default
+
+Key findings:
+  - For the randn W1 benchmark (H=4.60), all H_ref < 4.60 fully saturate r=1.0
+    and select C=512 (0.75 ms), while H_ref=8.0 gives r=0.575 -> C=256 (1.15 ms).
+  - For real checkpoint activations (H=4.02), H_ref=4.16 gives r=0.966 -> C=512,
+    while H_ref=8.0 gives r=0.503 -> C=256, a 0.40 ms (35%) latency penalty.
+  - H_ref should be calibrated to the histogram bin count K;
+    H_ref=log(K) is the principled upper bound for the entropy estimator.

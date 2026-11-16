@@ -1,0 +1,80 @@
+{
+  "config": {
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "torch_version": "2.11.0+cu128",
+    "triton_version": "3.6.0",
+    "seq_len": 4096,
+    "batch": 1,
+    "static_chunk": 64,
+    "min_chunk": 32,
+    "max_chunk": 512
+  },
+  "results": [
+    {
+      "policy": "off",
+      "seq_len": 4096,
+      "batch": 1,
+      "avg_latency_ms": 10.1535,
+      "avg_kernel_launches": 4096.0,
+      "hbm_bytes_per_call": 16384,
+      "estimated_bandwidth_gbs": 0.002,
+      "peak_mem_mb": 0.02,
+      "profiler": {
+        "total_cuda_us": 23.8,
+        "kernel_count_profiled": 16,
+        "avg_kernel_us": 1.486,
+        "top_kernels": [
+          {
+            "name": "_chunked_scan_kernel",
+            "count": 16,
+            "self_device_us": 23.8
+          }
+        ]
+      }
+    },
+    {
+      "policy": "static",
+      "seq_len": 4096,
+      "batch": 1,
+      "avg_latency_ms": 1.3508,
+      "avg_kernel_launches": 64.0,
+      "hbm_bytes_per_call": 16384,
+      "estimated_bandwidth_gbs": 0.012,
+      "peak_mem_mb": 0.02,
+      "profiler": {
+        "total_cuda_us": 21.8,
+        "kernel_count_profiled": 16,
+        "avg_kernel_us": 1.362,
+        "top_kernels": [
+          {
+            "name": "_chunked_scan_kernel",
+            "count": 16,
+            "self_device_us": 21.8
+          }
+        ]
+      }
+    },
+    {
+      "policy": "corey",
+      "seq_len": 4096,
+      "batch": 1,
+      "avg_latency_ms": 0.274,
+      "avg_kernel_launches": 9.0,
+      "hbm_bytes_per_call": 16384,
+      "estimated_bandwidth_gbs": 0.06,
+      "peak_mem_mb": 0.02,
+      "profiler": {
+        "total_cuda_us": 11.9,
+        "kernel_count_profiled": 9,
+        "avg_kernel_us": 1.318,
+        "top_kernels": [
+          {
+            "name": "_chunked_scan_kernel",
+            "count": 9,
+            "self_device_us": 11.9
+          }
+        ]
+      }
+    }
+  ]
+}

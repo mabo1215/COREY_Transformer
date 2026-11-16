@@ -1,0 +1,42 @@
+[Perturb] Device: NVIDIA H800 PCIe
+[Perturb] Config: batch=1, dim=1024, seq_len=4096, d_state=16, dtype=float16
+
+[Perturb] Distribution: uniform
+  entropy = 5.5451 nats -> COREY chunk = 512  (entropy overhead = 113.15 ms)
+  static-64:   2.282 ± 0.061 ms  (64 kernel calls)
+  corey-512 : 0.306 ± 0.023 ms  (8 kernel calls)  speedup vs static-64: 7.45x
+
+[Perturb] Distribution: normal
+  entropy = 4.6575 nats -> COREY chunk = 256  (entropy overhead = 1.41 ms)
+  static-64:   2.276 ± 0.051 ms  (64 kernel calls)
+  corey-256 : 0.584 ± 0.027 ms  (16 kernel calls)  speedup vs static-64: 3.89x
+
+[Perturb] Distribution: laplace
+  entropy = 3.8156 nats -> COREY chunk = 256  (entropy overhead = 1.18 ms)
+  static-64:   2.268 ± 0.050 ms  (64 kernel calls)
+  corey-256 : 0.587 ± 0.035 ms  (16 kernel calls)  speedup vs static-64: 3.87x
+
+[Perturb] Distribution: sparse10
+  entropy = 0.7917 nats -> COREY chunk = 64  (entropy overhead = 7.57 ms)
+  static-64:   2.274 ± 0.049 ms  (64 kernel calls)
+  corey-64  : 2.276 ± 0.043 ms  (64 kernel calls)  speedup vs static-64: 1.00x
+
+[Perturb] Distribution: sparse2
+  entropy = 0.1930 nats -> COREY chunk = 32  (entropy overhead = 8.19 ms)
+  static-64:   2.308 ± 0.202 ms  (64 kernel calls)
+  corey-32  : 4.542 ± 0.051 ms  (128 kernel calls)  speedup vs static-64: 0.51x
+
+[Perturb] Summary (Device: NVIDIA H800 PCIe, seq_len=4096, dim=1024):
+  Dist          Entropy  COREY chunk    COREY lat  static-64 lat   Speedup
+  ------------ -------- ------------ ------------ -------------- ---------
+  uniform         5.545          512      0.306 ms        2.282 ms     7.45x
+  normal          4.657          256      0.584 ms        2.276 ms     3.89x
+  laplace         3.816          256      0.587 ms        2.268 ms     3.87x
+  sparse10        0.792           64      2.276 ms        2.274 ms     1.00x
+  sparse2         0.193           32      4.542 ms        2.308 ms     0.51x
+
+[Perturb] Outputs written to: /root/Corey_Transformer/src/outputs/h800_single_w1_20260428_200216/w1_perturbation_fp16
+{
+  "status": "ok",
+  "output_dir": "/root/Corey_Transformer/src/outputs/h800_single_w1_20260428_200216/w1_perturbation_fp16"
+}

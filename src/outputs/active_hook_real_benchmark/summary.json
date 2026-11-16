@@ -1,0 +1,133 @@
+{
+  "metadata": {
+    "model": "mamba-370m",
+    "model_id": "state-spaces/mamba-370m-hf",
+    "layer_idx": 0,
+    "prompt_excerpt": "The state space model processes long sequences by maintaining a compact hidden s",
+    "seq_len": 42,
+    "d_inner": 2048,
+    "d_state": 16,
+    "u_shape": [
+      1,
+      2048,
+      42
+    ],
+    "entropy_nats": 2.28274,
+    "entropy_first_ms": 28.8065,
+    "entropy_mean_ms": 0.5223,
+    "entropy_std_ms": 0.0059,
+    "corey_chunk": 128,
+    "static_chunk": 64,
+    "h_ref": 8.0,
+    "num_bins": 256,
+    "synthetic_H": 4.6,
+    "synthetic_chunk": 256,
+    "chunk_stable": false,
+    "w1_ref_static_ms": 3.58,
+    "w1_ref_corey_ms": 1.867,
+    "w1_ref_speedup": 1.9175,
+    "device": "cpu",
+    "gpu_name": "cpu",
+    "platform": "Windows-11-10.0.22631-SP0",
+    "capture_method": "x_proj_forward_hook",
+    "activation_source": "real_checkpoint"
+  },
+  "measurements": [
+    {
+      "measurement": "entropy_overhead",
+      "value_ms": 0.5223,
+      "std_ms": 0.0059,
+      "description": "COREY entropy estimator on real u (2048\u00d742)"
+    },
+    {
+      "measurement": "w1_ref_static",
+      "value_ms": 3.58,
+      "std_ms": "",
+      "description": "W1 Table 3 latency  chunk=static-64"
+    },
+    {
+      "measurement": "w1_ref_corey",
+      "value_ms": 1.867,
+      "std_ms": "",
+      "description": "W1 Table 3 latency  chunk=corey-128"
+    },
+    {
+      "measurement": "w1_ref_speedup",
+      "value_ms": "",
+      "std_ms": "",
+      "description": "speedup 1.92\u00d7  (chunk=128 vs 64)"
+    }
+  ],
+  "layer_sweep": [
+    {
+      "layer_idx": 0,
+      "u_shape": [
+        1,
+        2048,
+        42
+      ],
+      "entropy_nats": 2.28274,
+      "chunk": 128
+    },
+    {
+      "layer_idx": 8,
+      "u_shape": [
+        1,
+        2048,
+        42
+      ],
+      "entropy_nats": 2.90008,
+      "chunk": 256
+    },
+    {
+      "layer_idx": 16,
+      "u_shape": [
+        1,
+        2048,
+        42
+      ],
+      "entropy_nats": 3.214866,
+      "chunk": 256
+    },
+    {
+      "layer_idx": 24,
+      "u_shape": [
+        1,
+        2048,
+        42
+      ],
+      "entropy_nats": 3.289116,
+      "chunk": 256
+    },
+    {
+      "layer_idx": 32,
+      "u_shape": [
+        1,
+        2048,
+        42
+      ],
+      "entropy_nats": 3.611103,
+      "chunk": 256
+    },
+    {
+      "layer_idx": 40,
+      "u_shape": [
+        1,
+        2048,
+        42
+      ],
+      "entropy_nats": 3.541494,
+      "chunk": 256
+    },
+    {
+      "layer_idx": 47,
+      "u_shape": [
+        1,
+        2048,
+        42
+      ],
+      "entropy_nats": 3.502488,
+      "chunk": 256
+    }
+  ]
+}

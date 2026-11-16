@@ -1,0 +1,32 @@
+{
+  "benchmark": "integrated_multiblock_dispatch",
+  "status": "blocked",
+  "dispatch_module": "src.corey_selective_scan_dispatch",
+  "notes": "A true run requires a real dispatch module that compiles or exposes multiple recurrence-preserving selective-scan BLOCK_SIZE variants. Chunked sequence emulation is intentionally not used because it resets scan state at chunk boundaries unless the kernel accepts an initial state.",
+  "dispatch_info": {
+    "module": "src.corey_selective_scan_dispatch",
+    "requested_backend": "auto",
+    "resolved_backend": "original",
+    "runtime_cuda_available": false,
+    "runtime_cuda_reason": "patched fwd_with_chunk_size/fwd_chunked/fwd_runtime_chunk not found",
+    "valid_chunks": [
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024,
+      2048
+    ],
+    "chunk_size_honored": false,
+    "recurrence_preserving": true,
+    "eligible_for_w1_speedup": false,
+    "debug_only": true,
+    "fallback_hint": "Set COREY_SELECTIVE_SCAN_BACKEND=original to force the stock path, or COREY_SELECTIVE_SCAN_BACKEND=chunked_emulation for debug-only chunk routing that is not recurrence-preserving."
+  },
+  "probe": {
+    "ok": false,
+    "error": "TypeError('original backend does not honor runtime chunk_size')"
+  },
+  "error": "Dispatch probe failed."
+}

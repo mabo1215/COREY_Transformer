@@ -1,0 +1,35 @@
+[2026-04-28 09:32:12] ============================================================
+[2026-04-28 09:32:12] NeurIPS required experiment automation
+[2026-04-28 09:32:12] Repo       : /root/Corey_Transformer
+[2026-04-28 09:32:12] Output     : /root/Corey_Transformer/src/outputs/neurips_required
+[2026-04-28 09:32:12] Model      : mamba-370m
+[2026-04-28 09:32:12] Use 8GPU   : 0
+[2026-04-28 09:32:12] Tasks      : narrativeqa qasper gov_report multifieldqa_en
+[2026-04-28 09:32:12] Logs       : /root/Corey_Transformer/src/outputs/neurips_required/logs
+[2026-04-28 09:32:12] ============================================================
+[2026-04-28 09:32:12] Experiment 1/3 already complete; skipping -> /root/Corey_Transformer/src/outputs/neurips_required/integrated_end_to_end
+[2026-04-28 09:32:12] Experiment 2/3 already complete; skipping -> /root/Corey_Transformer/src/outputs/neurips_required/heterogeneous_corpus
+[2026-04-28 09:32:12] Experiment 3/3: external baseline harness
+[2026-04-28 09:32:12] Baseline models: rwkv flashattention mamba2
+[2026-04-28 09:32:12] Baseline mode: auto
+[2026-04-28 09:32:12] External baselines subset=narrativeqa
+[2026-04-28 09:32:12] Running: /root/miniconda3/bin/python /root/Corey_Transformer/src/experiments/run_external_baselines.py --models rwkv flashattention mamba2 --model-id benchang1110/mamba2-2.7b-hf --data-file /root/Corey_Transformer/src/data/longbench_subset/narrativeqa/test.jsonl --max-prompts 20 --mode auto --device cuda --output-dir /root/Corey_Transformer/src/outputs/neurips_required/external_baselines_narrativeqa
+[2026-04-28 09:32:12] External baselines subset=narrativeqa complete -> /root/Corey_Transformer/src/outputs/neurips_required/external_baselines_narrativeqa
+[2026-04-28 09:32:12] External baselines subset=qasper
+[2026-04-28 09:32:12] Running: /root/miniconda3/bin/python /root/Corey_Transformer/src/experiments/run_external_baselines.py --models rwkv flashattention mamba2 --model-id benchang1110/mamba2-2.7b-hf --data-file /root/Corey_Transformer/src/data/longbench_subset/qasper/test.jsonl --max-prompts 20 --mode auto --device cuda --output-dir /root/Corey_Transformer/src/outputs/neurips_required/external_baselines_qasper
+[2026-04-28 09:32:12] External baselines subset=qasper complete -> /root/Corey_Transformer/src/outputs/neurips_required/external_baselines_qasper
+[2026-04-28 09:32:12] External baselines subset=gov_report
+[2026-04-28 09:32:12] Running: /root/miniconda3/bin/python /root/Corey_Transformer/src/experiments/run_external_baselines.py --models rwkv flashattention mamba2 --model-id benchang1110/mamba2-2.7b-hf --data-file /root/Corey_Transformer/src/data/longbench_subset/gov_report/test.jsonl --max-prompts 20 --mode auto --device cuda --output-dir /root/Corey_Transformer/src/outputs/neurips_required/external_baselines_gov_report
+[2026-04-28 09:32:13] External baselines subset=gov_report complete -> /root/Corey_Transformer/src/outputs/neurips_required/external_baselines_gov_report
+[2026-04-28 09:32:13] External baselines subset=multifieldqa_en
+[2026-04-28 09:32:13] Running: /root/miniconda3/bin/python /root/Corey_Transformer/src/experiments/run_external_baselines.py --models rwkv flashattention mamba2 --model-id benchang1110/mamba2-2.7b-hf --data-file /root/Corey_Transformer/src/data/longbench_subset/multifieldqa_en/test.jsonl --max-prompts 20 --mode auto --device cuda --output-dir /root/Corey_Transformer/src/outputs/neurips_required/external_baselines_multifieldqa_en
+[2026-04-28 09:32:13] External baselines subset=multifieldqa_en complete -> /root/Corey_Transformer/src/outputs/neurips_required/external_baselines_multifieldqa_en
+[2026-04-28 09:32:13] Experiment 3/3 complete
+[2026-04-28 09:32:13] Experiment 3b: FlashAttention-3 matched H800/H100 benchmark
+[2026-04-28 09:32:13] Running: /root/miniconda3/bin/python /root/Corey_Transformer/src/experiments/run_flashattention3_matched_benchmark.py --seq-lens 1024 2048 4096 8192 --batch-size 1 --n-heads 16 --head-dims 64 --dtype bf16 --warmup 10 --repeats 100 --device cuda --output-dir /root/Corey_Transformer/src/outputs/neurips_required/flashattention3_matched --causal
+[2026-04-28 09:32:16] Experiment 3b complete -> /root/Corey_Transformer/src/outputs/neurips_required/flashattention3_matched
+[2026-04-28 09:32:16] ============================================================
+[2026-04-28 09:32:16] All three experiments completed in 4s
+[2026-04-28 09:32:16] Results: /root/Corey_Transformer/src/outputs/neurips_required
+[2026-04-28 09:32:16] Logs   : /root/Corey_Transformer/src/outputs/neurips_required/logs
+[2026-04-28 09:32:16] ============================================================

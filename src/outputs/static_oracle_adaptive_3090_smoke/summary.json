@@ -1,0 +1,311 @@
+{
+  "plan": "static_chunk_sweep__best_static_oracle__adaptive_scheduler",
+  "output_dir": "src/outputs/static_oracle_adaptive_3090_smoke",
+  "sweep_chunks": [
+    128,
+    256
+  ],
+  "adaptive_scheduler_mode": "sampled_hist",
+  "adaptive_entropy_stride": 8,
+  "adaptive_chunk_min": 128,
+  "adaptive_chunk_max": 256,
+  "best_static_oracle": {
+    "name": "static_chunk_256",
+    "kind": "static",
+    "forced_chunk": 256,
+    "scheduler_mode": "constant",
+    "entropy_stride": 1,
+    "lat_mean_ms": 96.469,
+    "lat_std_ms": 0.0,
+    "lat_min_ms": 96.469,
+    "lat_max_ms": 96.469,
+    "vs_passive_ratio": 0.04040434247104161,
+    "passive_lat_mean_ms": 2387.5899,
+    "chunk_dist": {
+      "256": 48
+    },
+    "prompt_len": 122,
+    "new_tokens": 2,
+    "summary_path": "src/outputs/static_oracle_adaptive_3090_smoke/static_chunk_256/summary.json",
+    "vs_best_static_ratio": 1.0,
+    "speedup_over_best_static": 1.0
+  },
+  "adaptive": {
+    "name": "adaptive_sampled_hist_s8",
+    "kind": "adaptive",
+    "forced_chunk": null,
+    "scheduler_mode": "sampled_hist",
+    "entropy_stride": 8,
+    "lat_mean_ms": 117.2514,
+    "lat_std_ms": 0.0,
+    "lat_min_ms": 117.2514,
+    "lat_max_ms": 117.2514,
+    "vs_passive_ratio": 0.04893003497506351,
+    "passive_lat_mean_ms": 2396.3073,
+    "chunk_dist": {
+      "128": 1,
+      "256": 47
+    },
+    "prompt_len": 122,
+    "new_tokens": 2,
+    "summary_path": "src/outputs/static_oracle_adaptive_3090_smoke/adaptive_sampled_hist_s8/summary.json",
+    "vs_best_static_ratio": 1.2154308638008067,
+    "speedup_over_best_static": 0.8227535023035971
+  },
+  "rows": [
+    {
+      "name": "static_chunk_128",
+      "kind": "static",
+      "forced_chunk": 128,
+      "scheduler_mode": "constant",
+      "entropy_stride": 1,
+      "lat_mean_ms": 113.9072,
+      "lat_std_ms": 0.0,
+      "lat_min_ms": 113.9072,
+      "lat_max_ms": 113.9072,
+      "vs_passive_ratio": 0.045923585886876755,
+      "passive_lat_mean_ms": 2480.3638,
+      "chunk_dist": {
+        "128": 48
+      },
+      "prompt_len": 122,
+      "new_tokens": 2,
+      "summary_path": "src/outputs/static_oracle_adaptive_3090_smoke/static_chunk_128/summary.json",
+      "vs_best_static_ratio": 1.1807648052742332,
+      "speedup_over_best_static": 0.8469087116529946
+    },
+    {
+      "name": "static_chunk_256",
+      "kind": "static",
+      "forced_chunk": 256,
+      "scheduler_mode": "constant",
+      "entropy_stride": 1,
+      "lat_mean_ms": 96.469,
+      "lat_std_ms": 0.0,
+      "lat_min_ms": 96.469,
+      "lat_max_ms": 96.469,
+      "vs_passive_ratio": 0.04040434247104161,
+      "passive_lat_mean_ms": 2387.5899,
+      "chunk_dist": {
+        "256": 48
+      },
+      "prompt_len": 122,
+      "new_tokens": 2,
+      "summary_path": "src/outputs/static_oracle_adaptive_3090_smoke/static_chunk_256/summary.json",
+      "vs_best_static_ratio": 1.0,
+      "speedup_over_best_static": 1.0
+    },
+    {
+      "name": "adaptive_sampled_hist_s8",
+      "kind": "adaptive",
+      "forced_chunk": null,
+      "scheduler_mode": "sampled_hist",
+      "entropy_stride": 8,
+      "lat_mean_ms": 117.2514,
+      "lat_std_ms": 0.0,
+      "lat_min_ms": 117.2514,
+      "lat_max_ms": 117.2514,
+      "vs_passive_ratio": 0.04893003497506351,
+      "passive_lat_mean_ms": 2396.3073,
+      "chunk_dist": {
+        "128": 1,
+        "256": 47
+      },
+      "prompt_len": 122,
+      "new_tokens": 2,
+      "summary_path": "src/outputs/static_oracle_adaptive_3090_smoke/adaptive_sampled_hist_s8/summary.json",
+      "vs_best_static_ratio": 1.2154308638008067,
+      "speedup_over_best_static": 0.8227535023035971
+    }
+  ],
+  "child_summaries": {
+    "static_chunk_128": {
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "torch": "2.4.0+cu121",
+      "model": "mamba-370m",
+      "prompt_len": 122,
+      "prompt_repeat": 1,
+      "max_prompt_length": 256,
+      "new_tokens": 2,
+      "warmup": 0,
+      "repeats": 1,
+      "h_ref": "log(256)=5.5452",
+      "chunk_min": 128,
+      "chunk_max": 128,
+      "scheduler_mode": "constant",
+      "entropy_stride": 1,
+      "force_chunk": 128,
+      "platform": "Linux-5.15.0-176-generic-x86_64-with-glibc2.35",
+      "chunk_size_kwarg_supported": false,
+      "dispatch_module": null,
+      "dispatch_info": null,
+      "eligible_for_w1_speedup": false,
+      "passive": {
+        "prompt_len": 122,
+        "new_tokens": 2,
+        "lat_mean_ms": 2480.3638,
+        "lat_std_ms": 0.0,
+        "lat_min_ms": 2480.3638,
+        "lat_max_ms": 2480.3638,
+        "latencies_ms": [
+          2480.3638
+        ]
+      },
+      "active_only": {
+        "prompt_len": 122,
+        "new_tokens": 2,
+        "lat_mean_ms": 112.7862,
+        "lat_std_ms": 0.0,
+        "lat_min_ms": 112.7862,
+        "lat_max_ms": 112.7862,
+        "latencies_ms": [
+          112.7862
+        ],
+        "chunk_dist": {
+          "128": 48
+        }
+      },
+      "integrated": {
+        "prompt_len": 122,
+        "new_tokens": 2,
+        "lat_mean_ms": 113.9072,
+        "lat_std_ms": 0.0,
+        "lat_min_ms": 113.9072,
+        "lat_max_ms": 113.9072,
+        "latencies_ms": [
+          113.9072
+        ],
+        "chunk_dist": {
+          "128": 48
+        }
+      },
+      "_summary_path": "src/outputs/static_oracle_adaptive_3090_smoke/static_chunk_128/summary.json"
+    },
+    "static_chunk_256": {
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "torch": "2.4.0+cu121",
+      "model": "mamba-370m",
+      "prompt_len": 122,
+      "prompt_repeat": 1,
+      "max_prompt_length": 256,
+      "new_tokens": 2,
+      "warmup": 0,
+      "repeats": 1,
+      "h_ref": "log(256)=5.5452",
+      "chunk_min": 256,
+      "chunk_max": 256,
+      "scheduler_mode": "constant",
+      "entropy_stride": 1,
+      "force_chunk": 256,
+      "platform": "Linux-5.15.0-176-generic-x86_64-with-glibc2.35",
+      "chunk_size_kwarg_supported": false,
+      "dispatch_module": null,
+      "dispatch_info": null,
+      "eligible_for_w1_speedup": false,
+      "passive": {
+        "prompt_len": 122,
+        "new_tokens": 2,
+        "lat_mean_ms": 2387.5899,
+        "lat_std_ms": 0.0,
+        "lat_min_ms": 2387.5899,
+        "lat_max_ms": 2387.5899,
+        "latencies_ms": [
+          2387.5899
+        ]
+      },
+      "active_only": {
+        "prompt_len": 122,
+        "new_tokens": 2,
+        "lat_mean_ms": 95.0161,
+        "lat_std_ms": 0.0,
+        "lat_min_ms": 95.0161,
+        "lat_max_ms": 95.0161,
+        "latencies_ms": [
+          95.0161
+        ],
+        "chunk_dist": {
+          "256": 48
+        }
+      },
+      "integrated": {
+        "prompt_len": 122,
+        "new_tokens": 2,
+        "lat_mean_ms": 96.469,
+        "lat_std_ms": 0.0,
+        "lat_min_ms": 96.469,
+        "lat_max_ms": 96.469,
+        "latencies_ms": [
+          96.469
+        ],
+        "chunk_dist": {
+          "256": 48
+        }
+      },
+      "_summary_path": "src/outputs/static_oracle_adaptive_3090_smoke/static_chunk_256/summary.json"
+    },
+    "adaptive_sampled_hist_s8": {
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "torch": "2.4.0+cu121",
+      "model": "mamba-370m",
+      "prompt_len": 122,
+      "prompt_repeat": 1,
+      "max_prompt_length": 256,
+      "new_tokens": 2,
+      "warmup": 0,
+      "repeats": 1,
+      "h_ref": "log(256)=5.5452",
+      "chunk_min": 128,
+      "chunk_max": 256,
+      "scheduler_mode": "sampled_hist",
+      "entropy_stride": 8,
+      "force_chunk": null,
+      "platform": "Linux-5.15.0-176-generic-x86_64-with-glibc2.35",
+      "chunk_size_kwarg_supported": false,
+      "dispatch_module": null,
+      "dispatch_info": null,
+      "eligible_for_w1_speedup": false,
+      "passive": {
+        "prompt_len": 122,
+        "new_tokens": 2,
+        "lat_mean_ms": 2396.3073,
+        "lat_std_ms": 0.0,
+        "lat_min_ms": 2396.3073,
+        "lat_max_ms": 2396.3073,
+        "latencies_ms": [
+          2396.3073
+        ]
+      },
+      "active_only": {
+        "prompt_len": 122,
+        "new_tokens": 2,
+        "lat_mean_ms": 213.2552,
+        "lat_std_ms": 0.0,
+        "lat_min_ms": 213.2552,
+        "lat_max_ms": 213.2552,
+        "latencies_ms": [
+          213.2552
+        ],
+        "chunk_dist": {
+          "128": 1,
+          "256": 47
+        }
+      },
+      "integrated": {
+        "prompt_len": 122,
+        "new_tokens": 2,
+        "lat_mean_ms": 117.2514,
+        "lat_std_ms": 0.0,
+        "lat_min_ms": 117.2514,
+        "lat_max_ms": 117.2514,
+        "latencies_ms": [
+          117.2514
+        ],
+        "chunk_dist": {
+          "128": 1,
+          "256": 47
+        }
+      },
+      "_summary_path": "src/outputs/static_oracle_adaptive_3090_smoke/adaptive_sampled_hist_s8/summary.json"
+    }
+  }
+}

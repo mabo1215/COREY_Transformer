@@ -1,0 +1,78 @@
+{
+  "gpu": "NVIDIA H800 PCIe",
+  "torch": "2.8.0+cu128",
+  "model": "mamba-370m",
+  "prompt_len": 122,
+  "new_tokens": 32,
+  "warmup": 2,
+  "repeats": 5,
+  "h_ref": "log(256)=5.5452",
+  "platform": "Linux-5.15.0-140-generic-x86_64-with-glibc2.35",
+  "chunk_size_kwarg_supported": true,
+  "dispatch_module": "src.corey_selective_scan_dispatch",
+  "dispatch_info": {
+    "module": "src.corey_selective_scan_dispatch",
+    "requested_backend": "runtime_cuda",
+    "resolved_backend": "runtime_cuda",
+    "runtime_cuda_available": true,
+    "runtime_cuda_reason": "fwd_with_chunk_size",
+    "valid_chunks": [
+      128,
+      256,
+      512,
+      1024,
+      2048
+    ],
+    "chunk_size_honored": true,
+    "recurrence_preserving": true,
+    "eligible_for_w1_speedup": true,
+    "debug_only": false,
+    "fallback_hint": "Set COREY_SELECTIVE_SCAN_BACKEND=original to force the stock path, or COREY_SELECTIVE_SCAN_BACKEND=chunked_emulation for debug-only chunk routing that is not recurrence-preserving."
+  },
+  "eligible_for_w1_speedup": true,
+  "passive": {
+    "prompt_len": 122,
+    "new_tokens": 32,
+    "lat_mean_ms": 895.7984,
+    "lat_std_ms": 5.4835,
+    "lat_min_ms": 887.6091,
+    "lat_max_ms": 902.1615,
+    "latencies_ms": [
+      887.6091,
+      891.5565,
+      900.6195,
+      897.0453,
+      902.1615
+    ]
+  },
+  "active_only": {
+    "prompt_len": 122,
+    "new_tokens": 32,
+    "lat_mean_ms": 896.5624,
+    "lat_std_ms": 13.8462,
+    "lat_min_ms": 884.9845,
+    "lat_max_ms": 923.7216,
+    "latencies_ms": [
+      889.4805,
+      884.9845,
+      923.7216,
+      891.7455,
+      892.88
+    ]
+  },
+  "integrated": {
+    "prompt_len": 122,
+    "new_tokens": 32,
+    "lat_mean_ms": 905.8209,
+    "lat_std_ms": 23.3388,
+    "lat_min_ms": 889.7896,
+    "lat_max_ms": 952.1479,
+    "latencies_ms": [
+      898.8171,
+      894.1749,
+      889.7896,
+      894.1749,
+      952.1479
+    ]
+  }
+}

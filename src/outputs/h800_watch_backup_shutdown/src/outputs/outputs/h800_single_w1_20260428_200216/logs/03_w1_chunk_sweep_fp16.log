@@ -1,0 +1,31 @@
+[ChunkSweep] Device: NVIDIA H800 PCIe
+[ChunkSweep] Config: batch=1, dim=1024, seq_len=4096, d_state=16, dtype=float16
+[ChunkSweep] Computing activation entropy for COREY chunk selection...
+     entropy = 4.6815 nats -> COREY chunk_size = 256  (overhead = 109.40 ms)
+[ChunkSweep] Benchmarking static-32...
+     latency = 4.456 ± 0.087 ms  (n_chunks=128, 919264.8 tok/s)
+[ChunkSweep] Benchmarking static-64...
+     latency = 2.231 ± 0.007 ms  (n_chunks=64, 1835914.2 tok/s)
+[ChunkSweep] Benchmarking static-128...
+     latency = 1.128 ± 0.006 ms  (n_chunks=32, 3630021.4 tok/s)
+[ChunkSweep] Benchmarking static-256 [COREY selection]...
+     latency = 0.576 ± 0.004 ms  (n_chunks=16, 7110273.6 tok/s)
+[ChunkSweep] Benchmarking static-512...
+     latency = 0.300 ± 0.003 ms  (n_chunks=8, 13671456.6 tok/s)
+
+[ChunkSweep] Oracle (best static): chunk_size=512, latency=0.300 ms
+[ChunkSweep] COREY entropy-selected: chunk_size=256, latency=0.576 ms
+[ChunkSweep] COREY vs oracle: 92.3% slower
+
+[ChunkSweep] Full latency curve (chunk_size -> latency_mean_ms):
+  chunk=  32     4.456 ± 0.087 ms  (128 kernel calls)
+  chunk=  64     2.231 ± 0.007 ms  (64 kernel calls)
+  chunk= 128     1.128 ± 0.006 ms  (32 kernel calls)
+  chunk= 256     0.576 ± 0.004 ms  (16 kernel calls) <-- COREY (entropy-guided)
+  chunk= 512     0.300 ± 0.003 ms  (8 kernel calls) <-- oracle (fastest static)
+
+[ChunkSweep] Outputs written to: /root/Corey_Transformer/src/outputs/h800_single_w1_20260428_200216/w1_chunk_sweep_fp16
+{
+  "status": "ok",
+  "output_dir": "/root/Corey_Transformer/src/outputs/h800_single_w1_20260428_200216/w1_chunk_sweep_fp16"
+}
